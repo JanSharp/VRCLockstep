@@ -1,0 +1,18 @@
+{
+  "name": "com.jansharp.lock-step",
+  "version": "0.1.0",
+  "description": "Lock step networking (at least similar) infrastructure for UdonSharp.",
+  "displayName": "Lock Step",
+  "unity": "2019.4",
+  "author": {
+    "name": "JanSharp",
+    "email": "steinmeister36@gmail.com",
+    "url": "https://jansharp.github.io"
+  },
+  "license": "MIT",
+  "vpmDependencies": {
+    "com.vrchat.udonsharp": "^1.1.x"
+  },
+  "url": "https://github.com/JanSharp/VRCLockStep/releases/download/v0.1.0/com.jansharp.lock-step.zip",
+  "changelogUrl": "https://github.com/JanSharp/VRCLockStep/blob/v0.1.0/CHANGELOG.md"
+}
