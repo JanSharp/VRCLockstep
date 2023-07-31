@@ -390,10 +390,12 @@ namespace JanSharp
             isTickPaused = false;
 
             if (!isCatchingUp)
-            {
+                // If it is currently catching up, it will continue catching up while already being master.
+                // Any new input actions must enqueued _after_ the wait tick, as that tick may already
+                // have been executed on a different client.
+                waitTick++;
+            else
                 waitTick = uint.MaxValue;
-            }
-            // If it is currently catching up, it will continue catching up while already being master.
 
             lateJoinerInputActionSync.gameObject.SetActive(true);
             lateJoinerInputActionSync.lockStepIsMaster = true;
