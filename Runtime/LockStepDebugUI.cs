@@ -191,12 +191,14 @@ namespace JanSharp
             if (clientStates == null)
                 clientStates = (DataDictionary)lockStep.GetProgramVariable(ClientStatesFieldName);
 
+            if (clientStates != null)
+                clientStatesKeys = clientStates.GetKeys();
+
             UpdateList(
                 clientStatesListObj,
                 clientStates == null,
                 clientStates == null ? 0 : clientStates.Count,
                 nameof(CreateValueLabelListElemObj),
-                nameof(PreUpdatingClientStateListElems),
                 nameof(UpdateClientStateListElemObj)
             );
         }
@@ -209,12 +211,6 @@ namespace JanSharp
             listElemObj[ListObjElem_GameObj] = elemGameObj;
             listElemObj[ValueLabel_ListElemObj_Value] = texts[0];
             listElemObj[ValueLabel_ListElemObj_Label] = texts.Length >= 2 ? texts[1] : null;
-        }
-
-        // (object[] listObj) => void;
-        public void PreUpdatingClientStateListElems()
-        {
-            clientStatesKeys = clientStates.GetKeys();
         }
 
         private string FormatPlayerId(int playerId)
@@ -253,7 +249,6 @@ namespace JanSharp
                 false,
                 count,
                 nameof(CreateValueLabelListElemObj),
-                null,
                 nameof(UpdateLeftClientsListElemObj)
             );
         }
@@ -323,8 +318,6 @@ namespace JanSharp
             int backingDataCount,
             // (GameObject elemGameObj) => object[] listElemObj;
             string createListObjElemEventName,
-            // (object[] listObj) => void; optional.
-            string preUpdatingListElemsEventName,
             // (object[] listObj, object[] listElemObj, int elemIndex) => void;
             string updateListObjElemEventName)
         {
@@ -364,10 +357,6 @@ namespace JanSharp
             listObj[ListObj_Elems] = elems;
 
             this.listObj = listObj;
-
-            if (preUpdatingListElemsEventName != null)
-                SendCustomEvent(preUpdatingListElemsEventName);
-
             for (int i = 0; i < elemCount; i++)
             {
                 if (i >= backingDataCount)
