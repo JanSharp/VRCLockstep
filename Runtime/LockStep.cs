@@ -296,6 +296,7 @@ namespace JanSharp
             ignoreLocalInputActions = true;
             stillAllowLocalClientJoinedIA = true;
             ignoreIncomingInputActions = false;
+            isWaitingForLateJoinerSync = true;
             SendClientJoinedIA();
         }
 
