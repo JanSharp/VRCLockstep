@@ -17,6 +17,7 @@ namespace JanSharp
         private const uint InputActionIdBits = 0x7fff;
 
         [System.NonSerialized] public LockStep lockStep;
+        [System.NonSerialized] public bool lockStepIsMaster;
         [System.NonSerialized] public uint shiftedPlayerId;
 
         // Who is the current owner of this object. Null if object is not currently in use. 
@@ -59,6 +60,11 @@ namespace JanSharp
         // This method will be called on all clients when the original owner has left and the object is about to be disabled.
         public override void _OnCleanup() { }
 
+        public uint MakeUniqueId()
+        {
+            return shiftedPlayerId | (nextInputActionIndex++);
+        }
+
         ///<summary>
         ///Returns the uniqueId for the send input action, or 0 in case of error.
         ///</summary>
@@ -67,8 +73,9 @@ namespace JanSharp
             uint index = (nextInputActionIndex++);
             if (!VRCJson.TrySerializeToJson(inputActionData, JsonExportType.Minify, out DataToken jsonToken))
             {
-                Debug.LogError($"<dlt> Unable to serialize data for input action "
-                    + $"id {inputActionId}, index: {index}, player id {Owner.playerId} : {jsonToken.Error}");
+                Debug.LogError($"<dlt> Unable to serialize data for input action id {inputActionId}, index: {index}"
+                    + (isLateJoinerSyncInst ? ", (late joiner sync inst)" : $", player id {Owner.playerId}")
+                    + $" : {jsonToken.Error}");
                 return 0u;
             }
 
@@ -97,9 +104,44 @@ namespace JanSharp
             return uniqueId;
         }
 
+        public void DequeueEverything()
+        {
+            if (siqCount == 0)
+                return;
+
+            ArrQueue.Clear(ref syncedIntQueue, ref siqStartIndex, ref siqCount);
+            ArrQueue.Clear(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount);
+
+            if (isLateJoinerSyncInst)
+            {
+                ArrQueue.Clear(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
+                return;
+            }
+
+            while (uiqCount != 0)
+            {
+                uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
+                if (uniqueId != 0u)
+                    lockStep.InputActionSent(uniqueId);
+            }
+
+            // Since there was something already in the process of sending, potentially a split input action
+            // do still send one set of data indicating that syncing has been aborted, in case any other
+            // client is still receiving data from this script.
+            // In most cases, if not all, the DequeueEverything function will be called when there aren't
+            // any player's receiving data anymore, that's kind of the purpose of this function, however
+            // just in case something weird happens with VRChat, this here exists.
+            // Not only does it prevent this weird case from causing issues, it also prevents this script
+            // here from erroring when PreSerialization does eventually run, because that function
+            // expects at least 1 element to be in the queue.
+            ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, 0u);
+            ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, "");
+            ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, 0u);
+        }
+
         private void CheckSyncStart()
         {
-            if (Owner == null)
+            if (!isLateJoinerSyncInst && Owner == null)
             {
                 Debug.LogError("<dlt> Attempt to send input actions when there is no player assigned with the sync script.");
                 return;
@@ -138,7 +180,7 @@ namespace JanSharp
             }
 
             uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
-            if (uniqueId != 0u)
+            if (!isLateJoinerSyncInst && uniqueId != 0u)
                 lockStep.InputActionSent(uniqueId);
 
             if (siqCount != 0)
@@ -150,6 +192,15 @@ namespace JanSharp
             if (firstSync)
             {
                 firstSync = false;
+                return;
+            }
+
+            if (isLateJoinerSyncInst && lockStepIsMaster)
+                return;
+
+            if (syncedInt == 0u)
+            {
+                partialSyncedData = null;
                 return;
             }
 
@@ -177,9 +228,9 @@ namespace JanSharp
                 // This can legitimately happen when someone joins late and starts receiving
                 // data in the middle of a split input action. In that case the data should get
                 // ignored anyway, so returning is correct.
-                Debug.LogError($"<dlt> Unable to deserialize json for input action "
-                    + $"id: {id}, index: {index}, player id: {Owner.playerId} : {jsonToken.Error}\n\n"
-                    + $"Source json:\n{syncedData}");
+                Debug.LogError($"<dlt> Unable to deserialize json for input action id {id}, index: {index}"
+                    + (isLateJoinerSyncInst ? ", (late joiner sync inst)" : $", player id {Owner.playerId}")
+                    + $" : {jsonToken.Error}\n\nSource json:\n{syncedData}");
                 return;
             }
 

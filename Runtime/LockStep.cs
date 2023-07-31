@@ -6,25 +6,54 @@ using VRC.SDK3.Data;
 
 namespace JanSharp
 {
+    internal enum ClientState : byte
+    {
+        Master,
+        WaitingForLateJoinerSync,
+        Normal,
+    }
+
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockStep : UdonSharpBehaviour
     {
-        private const float TickRate = 15f;
-        public const string InputActionDataField = "iaData";
+        private const float TickRate = 16f;
+        private const string InputActionDataField = "iaData";
 
+        // LJ = late joiner, IA = input action
+        private const uint LJCurrentTickIAId = 0;
+        private const uint LJClientStatesIAId = 1;
+        // custom game states will have ids starting at this, ascending
+        private const uint LJFirstCustomGameStateIAId = 2;
+
+        public InputActionSync lateJoinerInputActionSync;
         public LockStepTickSync tickSync;
         [System.NonSerialized] public uint currentTick;
-        [System.NonSerialized] public uint waitTick;
+        [System.NonSerialized] public uint waitTick; // The system will run this tick, but not past it.
 
         private VRCPlayerApi localPlayer;
         private InputActionSync inputActionSyncForLocalPlayer;
-        private float startTime;
-        private bool isMaster;
-        private bool isInitialized;
+        private uint startTick;
+        private float tickStartTime;
+        // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
+        // private float currentTickRate = TickRate;
+        private bool isTickPaused = true;
+        private bool isMaster = false;
+        private bool ignoreLocalInputActions = true;
+        private bool stillAllowLocalClientJoinedIA = false;
+        private bool ignoreIncomingInputActions = true;
+        private bool isWaitingForLateJoinerSync = false;
+        private bool sendLateJoinerDataAtEndOfTick = false;
+        private bool isCatchingUp = false;
+        private bool isSinglePlayer = false;
 
         [System.NonSerialized] public DataList iaData;
         private uint clientJoinedIAId;
-        private uint lateJoinerDataReceivedIAId;
+        private uint clientGotLateJoinerDataIAId;
+        private uint clientCaughtUpIAId;
+        private uint clientLeftIAId;
+        private uint masterChangedIAId;
+
+        private uint unrecoverableStateDueToUniqueId = 0u;
 
         ///cSpell:ignore xxpppppp
 
@@ -32,12 +61,12 @@ namespace JanSharp
         // uint => DataList
         // uint: unique id - pppppppp pppppppp iiiiiiii iiiiiiii (p = player id, i = input action index)
         // DataList: input action data, plus input action id appended
-        private DataDictionary pendingActions;
+        private DataDictionary pendingActions = new DataDictionary();
 
         // uint => uint[]
         // uint: tick to run in
         // uint[]: unique id (same as for pendingActions)
-        private DataDictionary queuedInputActions;
+        private DataDictionary queuedInputActions = new DataDictionary();
 
         ///cSpell:ignore iahi, iahen
         private UdonSharpBehaviour[] inputActionHandlerInstances = new UdonSharpBehaviour[ArrList.MinCapacity];
@@ -45,22 +74,64 @@ namespace JanSharp
         private string[] inputActionHandlerEventNames = new string[ArrList.MinCapacity];
         private int iahenCount = 0;
 
-        public VRCPlayerApi[] players = new VRCPlayerApi[ArrList.MinCapacity];
-        public int playersCount = 0;
+        // **Internal Game State**
+        // int => byte
+        // int: playerId
+        // byte: ClientState
+        private DataDictionary clientStates = null;
+        // non game state
+        private int[] leftClients = new int[ArrList.MinCapacity];
+        private int leftClientsCount = 0;
+        // This flag ultimately indicates that there is no client with the Master state in the clientStates game state
+        private bool currentlyNoMaster = true;
+
+        private int initiateLateJoinerSyncSentCount = 0;
+        private int processLeftPlayersSentCount = 0;
+
+        // Used by the debug UI.
+        private float lastUpdateTime;
 
         private void Start()
         {
             localPlayer = Networking.LocalPlayer;
+            lateJoinerInputActionSync.lockStep = this;
+
+            // TODO: this should probably happen somewhere else, not sure how and where at this moment though
+            clientJoinedIAId = RegisterInputAction(this, nameof(OnClientJoinedIA));
+            clientGotLateJoinerDataIAId = RegisterInputAction(this, nameof(OnClientGotLateJoinerDataIA));
+            clientCaughtUpIAId = RegisterInputAction(this, nameof(OnClientCaughtUpIA));
+            clientLeftIAId = RegisterInputAction(this, nameof(OnClientLeftIA));
+            masterChangedIAId = RegisterInputAction(this, nameof(OnMasterChangedIA));
         }
 
         private void Update()
         {
-            float timePassed = Time.time - startTime;
-            uint runUntilTick = System.Math.Min(waitTick, (uint)(timePassed * TickRate));
+            float startTime = Time.realtimeSinceStartup;
+
+            if (isTickPaused)
+            {
+                lastUpdateTime = Time.realtimeSinceStartup - startTime;
+                return;
+            }
+
+            if (isCatchingUp)
+            {
+                CatchUp();
+                lastUpdateTime = Time.realtimeSinceStartup - startTime;
+                return;
+            }
+
+            float timePassed = Time.time - tickStartTime;
+            uint runUntilTick = System.Math.Min(waitTick, startTick + (uint)(timePassed * TickRate));
             for (uint tick = currentTick + 1; tick <= runUntilTick; tick++)
             {
-                currentTick = tick;
-                RunTick();
+                if (sendLateJoinerDataAtEndOfTick)
+                {
+                    sendLateJoinerDataAtEndOfTick = false;
+                    SendLateJoinerData();
+                }
+                if (!TryRunNextTick())
+                    break;
             }
 
             if (isMaster)
@@ -70,16 +141,95 @@ namespace JanSharp
                 tickSync.syncedTick = currentTick - 1u;
             }
 
-            clientJoinedIAId = RegisterInputAction(this, nameof(OnClientJoinedIA));
-            lateJoinerDataReceivedIAId = RegisterInputAction(this, nameof(OnLateJoinerDataReceivedIA));
+            lastUpdateTime = Time.realtimeSinceStartup - startTime;
         }
 
-        private void RunTick()
+        private void CatchUp()
         {
-            Debug.Log($"<dlt> Running tick {currentTick}");
-            if (queuedInputActions.Remove(currentTick, out DataToken uniqueIdsToken))
+            float startTime = Time.realtimeSinceStartup;
+            while (true)
+            {
+                if (currentTick == waitTick || !TryRunNextTick())
+                    break;
+                float realtimePassed = Time.realtimeSinceStartup - startTime;
+                // If secondsPassed == 0f then this platform is reporting the same realtimeSinceStartup during a frame,
+                // in which case there's no way to know how long we've been processing ticks already, so to be on the save
+                // side we only process 1 tick per frame.
+                if (realtimePassed == 0f || realtimePassed >= 0.01f) // 10ms.
+                    break;
+            }
+
+            // As soon as we are within 1 second of the current tick, consider it done catching up.
+            // This little leeway is required, as it may not be able to reach waitTick because
+            // input actions may arrive after tick sync data.
+            if (waitTick - currentTick < TickRate)
+            {
+                if (isMaster)
+                {
+                    waitTick = uint.MaxValue;
+                }
+                RemoveOutdatedQueuedInputActions();
+                isCatchingUp = false;
+                SendClientCaughtUpIA();
+                tickStartTime = Time.time;
+            }
+        }
+
+        private void RemoveOutdatedQueuedInputActions()
+        {
+            DataList keys = queuedInputActions.GetKeys();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                DataToken tickToRunToken = keys[i];
+                if (tickToRunToken.UInt > currentTick)
+                    continue;
+
+                queuedInputActions.Remove(tickToRunToken, out DataToken uniqueIdsToken);
                 foreach (uint uniqueId in (uint[])uniqueIdsToken.Reference)
-                    RunInputActionForUniqueId(uniqueId);
+                    pendingActions.Remove(uniqueId); // Remove simply does nothing if it already doesn't exist.
+            }
+        }
+
+        private bool TryRunNextTick()
+        {
+            uint nextTick = currentTick + 1u;
+            uint[] uniqueIds = null;
+            if (queuedInputActions.Remove(nextTick, out DataToken uniqueIdsToken))
+            {
+                uniqueIds = (uint[])uniqueIdsToken.Reference;
+                foreach (uint uniqueId in uniqueIds)
+                    if (!pendingActions.ContainsKey(uniqueId))
+                    {
+                        int playerId = (int)(uniqueId >> PlayerIdKeyShift);
+                        if (uniqueId != unrecoverableStateDueToUniqueId && !clientStates.ContainsKey(playerId))
+                        {
+                            // This variable is purely used as to not spam the log file every frame with this error message.
+                            unrecoverableStateDueToUniqueId = uniqueId;
+                            /// cSpell:ignore desync
+                            Debug.LogError($"<dlt> There's an input action queued to run on the tick {nextTick} "
+                                + $"originating from the player {playerId}, however the input action "
+                                + $"with the unique id {uniqueId} was never received and the given player id "
+                                + $"is not in the instance. This is an error state the system "
+                                + $"cannot recover from, as ignoring the input action would be a desync. "
+                                + $"If the system does magically recover from this then the input action with "
+                                + $"given unique id does get received at a later point somehow. I couldn't tell "
+                                + $"you how though.");
+                        }
+                        return false;
+                    }
+            }
+
+            currentTick = nextTick;
+            // Debug.Log($"<dlt> Running tick {currentTick}");
+            if (uniqueIds != null)
+                RunInputActionsForUniqueIds(uniqueIds);
+            return true;
+        }
+
+        private void RunInputActionsForUniqueIds(uint[] uniqueIds)
+        {
+            foreach (uint uniqueId in uniqueIds)
+                RunInputActionForUniqueId(uniqueId);
         }
 
         private void RunInputActionForUniqueId(uint uniqueId)
@@ -101,6 +251,15 @@ namespace JanSharp
 
         public void SendInputAction(uint inputActionId, DataList inputActionData)
         {
+            if (ignoreLocalInputActions && !(stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId))
+                return;
+
+            if (isSinglePlayer)
+            {
+                TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData);
+                return;
+            }
+
             uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData);
             // Modify the inputActionData after sending it, otherwise bad data would be sent.
             inputActionData.Add(inputActionId);
@@ -112,75 +271,201 @@ namespace JanSharp
             if (isMaster)
             {
                 RunInputActionForUniqueId(uniqueId);
-                tickSync.AddInputActionToRun(currentTick, uniqueId);
+                if (!isSinglePlayer)
+                    tickSync.AddInputActionToRun(currentTick, uniqueId);
             }
-        }
-
-        // public override void OnPlayerJoined(VRCPlayerApi player)
-        // {
-        //     // CheckMasterSwitch();
-        //     // if (isMaster && !player.isLocal)
-        //     //     SendLateJoinderData();
-        // }
-
-        public override void OnPlayerLeft(VRCPlayerApi player)
-        {
-            SendCustomEventDelayedFrames(nameof(CheckMasterSwitch), 1);
         }
 
         public void OnInputActionSyncPlayerAssigned(VRCPlayerApi player, InputActionSync inputActionSync)
         {
-            if (player.isLocal)
-            {
-                inputActionSyncForLocalPlayer = inputActionSync;
-                CheckMasterSwitch();
+            if (!player.isLocal)
+                return;
 
-                if (!isMaster)
-                {
-                    // Inform everyone that this client officially joined the instance.
-                    SendClientJoinedIA();
-                }
+            inputActionSyncForLocalPlayer = inputActionSync;
+            SendCustomEventDelayedSeconds(nameof(OnLocalInputActionSyncPlayerAssignedDelayed), 2f);
+        }
+
+        public void OnLocalInputActionSyncPlayerAssignedDelayed()
+        {
+            if (localPlayer.isMaster)
+            {
+                BecomeInitialMaster();
+                return;
             }
 
-            if (isMaster && !player.isLocal)
-                SendLateJoinerDataReceivedIA();
+            ignoreLocalInputActions = true;
+            stillAllowLocalClientJoinedIA = true;
+            ignoreIncomingInputActions = false;
+            SendClientJoinedIA();
         }
 
-        private void CheckMasterSwitch()
+        public void OnInputActionSyncPlayerUnassigned(VRCPlayerApi player)
         {
-            if (!isMaster && Networking.IsMaster)
-                BecomeMaster();
+            int playerId = player.playerId;
+
+            if (isMaster)
+            {
+                ArrList.Add(ref leftClients, ref leftClientsCount, playerId);
+                processLeftPlayersSentCount++;
+                SendCustomEventDelayedSeconds(nameof(ProcessLeftPlayers), 1f);
+                return;
+            }
+
+            // Already removed... was it the master that got removed?
+            if (!clientStates.TryGetValue(playerId, out DataToken clientStateToken))
+            {
+                DataList allStates = clientStates.GetValues();
+                bool foundMaster = false;
+                for (int i = 0; i < allStates.Count; i++)
+                {
+                    if ((ClientState)allStates[i].Byte == ClientState.Master)
+                    {
+                        foundMaster = true;
+                        break;
+                    }
+                }
+                if (!foundMaster)
+                    SetMasterLeftFlag();
+                return;
+            }
+
+            ArrList.Add(ref leftClients, ref leftClientsCount, playerId);
+            if ((ClientState)clientStateToken.Byte == ClientState.Master)
+                SetMasterLeftFlag();
         }
 
-        private void BecomeMaster()
+        private void SetMasterLeftFlag()
+        {
+            if (currentlyNoMaster)
+                return;
+            currentlyNoMaster = true;
+            SendCustomEventDelayedFrames(nameof(CheckMasterChange), 1);
+        }
+
+        private void BecomeInitialMaster()
         {
             isMaster = true;
-            waitTick = uint.MaxValue;
+            currentlyNoMaster = false;
+            ignoreLocalInputActions = false;
+            ignoreIncomingInputActions = false;
+            clientStates = new DataDictionary();
+            clientStates.Add(localPlayer.playerId, (byte)ClientState.Master);
+            lateJoinerInputActionSync.lockStepIsMaster = true;
+            // Just to quadruple check, setting owner on both. Trust issues with VRChat.
+            Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
-            if (!isInitialized)
+            tickSync.RequestSerialization();
+            currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
+            waitTick = uint.MaxValue;
+            EnterSingePlayerMode();
+            // TODO: Raise OnInit();
+            // TODO: Raise OnClientJoined(int playerId);
+            isTickPaused = false;
+            tickStartTime = Time.time;
+        }
+
+        private bool IsAnyClientWaitingForLateJoinerSync()
+        {
+            DataList allStates = clientStates.GetValues();
+            for (int i = 0; i < allStates.Count; i++)
+                if ((ClientState)allStates[i].Byte == ClientState.WaitingForLateJoinerSync)
+                    return true;
+            return false;
+        }
+
+        public void CheckMasterChange()
+        {
+            if (isMaster || !currentlyNoMaster || !Networking.IsMaster)
+                return;
+
+            currentlyNoMaster = false;
+            isMaster = true;
+            ignoreLocalInputActions = false;
+            stillAllowLocalClientJoinedIA = false;
+            ignoreIncomingInputActions = false;
+            isWaitingForLateJoinerSync = false;
+            isTickPaused = false;
+
+            if (!isCatchingUp)
             {
-                // Becoming master when it is not initialized yet means this is a fresh instance.
-                OnInit();
-                isInitialized = true;
-                tickSync.RequestSerialization();
+                waitTick = uint.MaxValue;
+            }
+            // If it is currently catching up, it will continue catching up while already being master.
+
+            lateJoinerInputActionSync.gameObject.SetActive(true);
+            lateJoinerInputActionSync.lockStepIsMaster = true;
+            Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
+            Networking.SetOwner(localPlayer, tickSync.gameObject);
+            tickSync.RequestSerialization();
+
+            // ProcessLeftPlayers also checks this, but doing it before SendMasterChangedIA is cleaner.
+            CheckSingePlayerModeChange();
+            SendMasterChangedIA();
+            processLeftPlayersSentCount++;
+            ProcessLeftPlayers();
+            InstantlyRunQueuedInputActions();
+
+            if (IsAnyClientWaitingForLateJoinerSync())
+            {
+                initiateLateJoinerSyncSentCount++;
+                FlagForLateJoinerSync();
             }
         }
 
-        private void OnInit()
+        private void InstantlyRunQueuedInputActions()
         {
-            // NOTE: call all registered OnInit handlers
+            inputActionSyncForLocalPlayer.DequeueEverything();
         }
 
-        private void SendLateJoinerDataReceivedIA()
+        public void ProcessLeftPlayers()
+        {
+            if ((--processLeftPlayersSentCount) != 0)
+                return;
+
+            CheckSingePlayerModeChange();
+
+            for (int i = 0; i < leftClientsCount; i++)
+                SendClientLeftIA(leftClients[i]);
+
+            ArrList.Clear(ref leftClients, ref leftClientsCount);
+        }
+
+        private void CheckSingePlayerModeChange()
+        {
+            bool shouldBeSinglePlayer = clientStates.Count - leftClientsCount <= 1;
+            if (isSinglePlayer == shouldBeSinglePlayer)
+                return;
+            if (shouldBeSinglePlayer)
+                EnterSingePlayerMode();
+            else
+                ExitSinglePlayerMode();
+        }
+
+        private void EnterSingePlayerMode()
+        {
+            isSinglePlayer = true;
+            lateJoinerInputActionSync.DequeueEverything();
+            InstantlyRunQueuedInputActions();
+            tickSync.ClearInputActionsToRun();
+        }
+
+        private void ExitSinglePlayerMode()
+        {
+            isSinglePlayer = false;
+        }
+
+        private void SendMasterChangedIA()
         {
             iaData = new DataList();
-            // TODO: Impl.
-            SendInputAction(lateJoinerDataReceivedIAId, iaData);
+            iaData.Add(localPlayer.playerId);
+            SendInputAction(masterChangedIAId, iaData);
         }
 
-        public void OnLateJoinerDataReceivedIA()
+        public void OnMasterChangedIA()
         {
-            // TODO: Impl.
+            int playerId = iaData[0].Int;
+            clientStates[playerId] = (byte)ClientState.Master;
+            currentlyNoMaster = false;
         }
 
         private void SendClientJoinedIA()
@@ -192,33 +477,139 @@ namespace JanSharp
 
         public void OnClientJoinedIA()
         {
-            VRCPlayerApi player = VRCPlayerApi.GetPlayerById(iaData[0].Int);
-            if (player == null)
-            {
-                Debug.Log($"<dlt> Received ClientJoinedIA, but couldn't get the VRCPlayerApi for "
-                    + $"player id {iaData[0].Int}. Assuming the player already left again, ignoring.");
-                return;
-            }
+            int playerId = iaData[0].Int;
+            clientStates.Add(playerId, (byte)ClientState.WaitingForLateJoinerSync);
 
             if (isMaster)
             {
-                // TODO: Impl.
+                initiateLateJoinerSyncSentCount++;
+                SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), 5f);
+            }
+        }
 
-                // TODO: Raise on player joined event.
-            }
-            else
+        public void FlagForLateJoinerSync()
+        {
+            if ((--initiateLateJoinerSyncSentCount) != 0)
+                return;
+
+            if (IsAnyClientWaitingForLateJoinerSync())
+                sendLateJoinerDataAtEndOfTick = true;
+        }
+
+        private void SendLateJoinerData()
+        {
+            iaData = new DataList();
+            iaData.Add(clientStates.Count);
+            iaData.AddRange(clientStates.GetKeys());
+            iaData.AddRange(clientStates.GetValues());
+            lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, iaData);
+
+            // TODO: send custom game states
+
+            iaData = new DataList();
+            iaData.Add(currentTick);
+            lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, iaData);
+        }
+
+        private void OnLJClientStatesIA()
+        {
+            clientStates = new DataDictionary();
+            int count = iaData[0].Int;
+            for (int i = 0; i < count; i++)
             {
-                // TODO: Save as pending in case the master leaves in an inopportune moment.
+                // Putting them into variables of the "correct" types just to see if they round trip properly through json.
+                // TODO: Once I've tested this, it should just reuse the DataTokens that it already gest from indexing.
+                int playerId = iaData[1 + i].Int;
+                byte clientState = iaData[1 + count + i].Byte;
+                clientStates.Add(playerId, clientState);
             }
+        }
+
+        private void OnLJCustomGameStateIA(uint inputActionId)
+        {
+            // TODO: impl
+        }
+
+        private void OnLJCurrentTickIA()
+        {
+            currentTick = iaData[0].UInt;
+
+            lateJoinerInputActionSync.gameObject.SetActive(false);
+            isWaitingForLateJoinerSync = false;
+            ignoreLocalInputActions = false;
+            stillAllowLocalClientJoinedIA = false;
+            SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
+            // TODO: Raise OnClientBeginCatchUp(int playerId);
+            isTickPaused = false;
+            isCatchingUp = true;
+        }
+
+        private void SendClientGotLateJoinerDataIA()
+        {
+            iaData = new DataList();
+            iaData.Add(localPlayer.playerId);
+            SendInputAction(clientGotLateJoinerDataIAId, iaData);
+        }
+
+        public void OnClientGotLateJoinerDataIA()
+        {
+            int playerId = iaData[0].Int;
+            clientStates[playerId] = (byte)ClientState.Normal;
+            // TODO: Raise OnClientJoined(int playerId);
+        }
+
+        private void SendClientLeftIA(int playerId)
+        {
+            iaData = new DataList();
+            iaData.Add(playerId);
+            SendInputAction(clientLeftIAId, iaData);
+        }
+
+        public void OnClientLeftIA()
+        {
+            int playerId = iaData[0].Int;
+            clientStates.Remove(playerId);
+            if (isMaster && !IsAnyClientWaitingForLateJoinerSync())
+            {
+                sendLateJoinerDataAtEndOfTick = false;
+                lateJoinerInputActionSync.DequeueEverything();
+            }
+            // TODO: Raise OnClientLeft(int playerId);
+        }
+
+        private void SendClientCaughtUpIA()
+        {
+            iaData = new DataList();
+            iaData.Add(localPlayer.playerId);
+            SendInputAction(clientCaughtUpIAId, iaData);
+        }
+
+        public void OnClientCaughtUpIA()
+        {
+            // TODO: Raise OnClientCaughtUp(int playerId);
         }
 
         public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, uint uniqueId, DataList inputActionData)
         {
-            if (isMaster)
+            if (isLateJoinerSync)
             {
-                RunInputAction(inputActionId, inputActionData);
-                tickSync.AddInputActionToRun(currentTick, uniqueId);
+                if (!isWaitingForLateJoinerSync)
+                    return;
+                iaData = inputActionData;
+                if (inputActionId == LJClientStatesIAId)
+                    OnLJClientStatesIA();
+                else if (inputActionId == LJCurrentTickIAId)
+                    OnLJCurrentTickIA();
+                else
+                    OnLJCustomGameStateIA(inputActionId);
+                return;
             }
+
+            if (ignoreIncomingInputActions)
+                return;
+
+            if (isMaster)
+                TryToInstantlyRunInputActionOnMaster(inputActionId, uniqueId, inputActionData);
             else
             {
                 inputActionData.Add(inputActionId);
@@ -226,17 +617,46 @@ namespace JanSharp
             }
         }
 
-        public void EnqueueInputActionAtTick(uint tickToRunIn, uint uniqueId)
+        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, uint uniqueId, DataList inputActionData)
         {
-            if (isMaster)
+            if (isCatchingUp) // Can't instantly run it while still catching up, enqueue it after all input actions.
             {
-                Debug.LogWarning("<dlt> As the master I should not be receiving "
-                    + "data about running an input action at a tick...");
+                if (uniqueId == 0u)
+                {
+                    // It'll only be 0 if the local player is the one trying to instantly run it.
+                    // Received data always has a unique id.
+                    uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
+                }
+                pendingActions.Add(uniqueId, inputActionData);
+                EnqueueInputActionAtTick(waitTick, uniqueId);
+                waitTick++;
+                return;
             }
 
-            // This client recently joined and is still waiting on late joiner sync data, ignore any input actions
-            if (!isInitialized)
+            if (!isSinglePlayer)
+            {
+                if (uniqueId == 0u)
+                {
+                    Debug.LogError("<dlt> Impossible, the uniqueId when instantly running an input action "
+                        + "on master cannot be 0 while not in single player, because every input action "
+                        + "get sent over the network and gets a unique id assigned in the process. "
+                        + "Something is very wrong in the code. Ignoring this action.");
+                    return;
+                }
+                tickSync.AddInputActionToRun(currentTick, uniqueId);
+            }
+            RunInputAction(inputActionId, inputActionData);
+        }
+
+        public void EnqueueInputActionAtTick(uint tickToRunIn, uint uniqueId)
+        {
+            if (ignoreIncomingInputActions)
                 return;
+            if (isMaster && !isCatchingUp) // IF it is catching up, it's still enqueueing actions for later.
+            {
+                Debug.LogWarning("<dlt> The master client (which is this client) should "
+                    + "not be receiving data about running an input action at a tick...");
+            }
 
             // Mark the input action to run at the given tick.
             DataToken tickToRunInToken = new DataToken(tickToRunIn);

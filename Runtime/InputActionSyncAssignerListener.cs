@@ -25,6 +25,9 @@ namespace JanSharp
         }
 
         // This event is called when any player's object has been unassigned.
-        public override void _OnPlayerUnassigned(VRCPlayerApi player, int poolIndex, UdonBehaviour poolObject) { }
+        public override void _OnPlayerUnassigned(VRCPlayerApi player, int poolIndex, UdonBehaviour poolObject)
+        {
+            lockStep.OnInputActionSyncPlayerUnassigned(player);
+        }
     }
 }

@@ -34,13 +34,16 @@ There is both a game state and some local only flags.
 
 The game state: probably a dictionary: playerId => state, with state being:
 
+TODO: Add CatchingUp as a client state
+
 - Master
 - WaitingForLateJoinerSync
 - Normal
 
 Non game state flags:
 
-- leftClients: collection of clients (player ids) which have left the instance but are still in the above game state.
+- `leftClients`: collection of clients (player ids) which have left the instance but are still in the above game state.
+- `currentlyNoMaster`: bool
 
 # Player Join
 
@@ -72,8 +75,8 @@ Non game state flags:
           - (Technically it could, however it would never get run locally anyway, as it happens before the game states that will be sent to this client get captured and serialized)
   - Send `ClientJoinIA`
 - Receive `ClientJoinIA`
-  - On Every client, except sending
-    - Mark the given player id as "waiting for late joiner sync" in an internal "client state" game state
+  - On Every client, except sending (because the sending client will never run it)
+    - Mark the given player id as "waiting for late joiner sync" in an internal "client states" game state
   - On master
     - Wait 5 seconds
       - Reset timer if another `ClientJoinIA` is received
@@ -123,40 +126,56 @@ Any systems using this should disable functionality that would require sending i
 
 # Player Leave
 
+What if there were input actions that were supposed to run but we never received them? Like when the master sent and ran an action, but the action itself was never received, but the tick sync for it was?\
+It's supposed to be impossible. An input action only get enqueued to run on a specific tick if it has already been successfully sent, making it incredibly unlikely for the tick sync with the input action enqueued in some tick to arrive before the input action itself. If it does happen though, then the system cannot recover, as it doesn't know if it is only the local client missing the input action, so it cannot drop the input action. Even when the local client became master, it cannot make that decision, because other clients may have already run past this tick because they did receive the input action. If this can actually happen, I don't know. But since I don't know, I can't make any assumptions, so again, it is unrecoverable if it does happen.
+
+TODO: handle continuing catching up while already master
+
+TODO: handle someone joining as the master is still catching up (it should continue catching up, and once done it should begin late joiner sync.)
+
+TODO: if a player leaves, check if it should stop syncing for late joiners, and clear any data currently queued in the late joiner sync script
+
 When the world converts from multiplayer to single player, the system must remove all queued data from the InputActionSync scripts (both the local player's one and the late joiner one), and instantly raise their associated actions (though there's no thing to do for the late joiner ones, just drop them).
 
 - Ignore OnPlayerLeave (for now? So long as I can trust the player object pool I suppose)
 - When an InputActionSync get unassigned
-  - On every client that isn't the master
-    - Check if the given client still exists in the internal "client state" game state
-      - If yes, Mark the given client as "left" locally
-      - Check if the leaving client had the "master" state in the internal "client state" game state
-        - If yes
-        - Set extra flag for "master left"
-        - Wait 1 frame (Because I have trust issues with VRChat)
-        - Call CheckMasterChange
   - On the master client
     - Mark the given client as "left" locally
     - Wait 1 second
     - Check if [single player mode](#single-player-mode) should be activated, and activate it if yes
     - Send `ClientLeftIA`
+  - On every client that isn't the master
+    - Check if the given client still exists in the internal "client states" game state
+      - If no
+        - Check if there **aren't** any clients in the internal "client states" game state
+          - Set `currentlyNoMaster` flag
+          - Wait 1 frame (Because I have trust issues with VRChat)
+          - Call CheckMasterChange
+      - If yes
+        - Mark the given client as "left" locally
+        - Check if the leaving client had the "master" state in the internal "client states" game state
+          - If yes
+            - Set `currentlyNoMaster` flag
+            - Wait 1 frame (Because I have trust issues with VRChat)
+            - Call CheckMasterChange
 - Receive `ClientLeftIA`
   - On every client
     - Remove the client from the "client state" game state
+    - If isMaster
+      - Check if there are any clients waiting for late joiner data
+        - If no, clear late joiner sync queue
     - Raise the `OnClientLeft(int playerId)` event
 
 ## Master Transfer
 
-- OnOwnerShipTransfer on LockStepTickSync
+- OnOwnershipTransfer on LockStepTickSync
   - On every client
     - Wait 1 frame (Because I have trust issues with VRChat)
-    - Check if the local client is now instance master
-      - Set the "became master" flag
-      - If yes, call CheckMasterChange
+    - Call CheckMasterChange
 
 - CheckMasterChange
-  - If the "master left" and the "became master" flags are set
-    - Unset both flags
+  - If this client isn't master, the `currentlyNoMaster` flag is set and Networking.IsMaster is true
+    - Unset `currentlyNoMaster` flag
     - Set isMaster to true in the Lock Step script
     - Reenable the late joiner InputActionSync script
       - Take ownership
@@ -168,6 +187,7 @@ When the world converts from multiplayer to single player, the system must remov
       - [Initiate late joiner sync](#initiate-late-joiner-sync)
 - Receive `MasterChangedIA`
   - Mark the new master as the master in the internal "client states" game state
+  - Set `currentlyNoMaster` to false
 
 ## Single Player Mode
 
@@ -334,3 +354,8 @@ These events are not allowed to modify the game states, nor change registration 
 
 - `OnClientBeginCatchUp(int playerId)` (This is an exception as it is allowed to change event registration, but still must not modify game states)
 - Every unity or VRChat event
+
+These 2 aren't really events, but they are called by the Lock Step system.
+
+- SerializeState
+- DeserializeState (Allowed to modify (or initialize) the game state it is associated with)

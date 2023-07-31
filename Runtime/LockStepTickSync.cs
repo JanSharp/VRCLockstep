@@ -28,6 +28,11 @@ namespace JanSharp
             ArrList.Add(ref inputActionsToRun, ref iatrCount, (tickToRunIn << TickToRunInShift) | uniqueId);
         }
 
+        public void ClearInputActionsToRun()
+        {
+            ArrList.Clear(ref inputActionsToRun, ref iatrCount);
+        }
+
         public override void OnPreSerialization()
         {
             if (firstSync || retrying)
@@ -82,6 +87,11 @@ namespace JanSharp
                     (uint)(inputActionToRun & UniqueIdBits)
                 );
             }
+        }
+
+        public override void OnOwnershipTransferred(VRCPlayerApi player)
+        {
+            lockStep.SendCustomEventDelayedFrames(nameof(LockStep.CheckMasterChange), 1);
         }
     }
 }

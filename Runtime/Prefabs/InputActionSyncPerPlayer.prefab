@@ -52,11 +52,9 @@ MonoBehaviour:
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
-    SerializationNodes:
-    - Name: Owner
-      Entry: 6
-      Data: 
+    SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 3057684914458451643}
+  isLateJoinerSyncInst: 0
 --- !u!114 &3057684914458451643
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,7 +74,7 @@ MonoBehaviour:
   SynchronizePosition: 0
   AllowCollisionOwnershipTransfer: 0
   Reliable: 0
-  _syncMethod: 0
+  _syncMethod: 3
   serializedProgramAsset: {fileID: 11400000, guid: c9ffc32d583930cb79ddaa4399f8c341,
     type: 2}
   programSource: {fileID: 11400000, guid: cab19e6227288b0899a47d8f17a0c151, type: 2}
