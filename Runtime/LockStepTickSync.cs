@@ -25,7 +25,7 @@ namespace JanSharp
 
         public void AddInputActionToRun(uint tickToRunIn, uint uniqueId)
         {
-            ArrList.Add(ref inputActionsToRun, ref iatrCount, (tickToRunIn << TickToRunInShift) | uniqueId);
+            ArrList.Add(ref inputActionsToRun, ref iatrCount, (((ulong)tickToRunIn) << TickToRunInShift) | (ulong)uniqueId);
         }
 
         public void ClearInputActionsToRun()
