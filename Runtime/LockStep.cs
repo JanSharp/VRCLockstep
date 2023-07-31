@@ -671,8 +671,10 @@ namespace JanSharp
             if (queuedInputActions.TryGetValue(tickToRunInToken, out DataToken uniqueIdsToken))
             {
                 uint[] uniqueIds = (uint[])uniqueIdsToken.Reference;
-                uint[] newUniqueIds = new uint[uniqueIds.Length + 1];
+                int oldLength = uniqueIds.Length;
+                uint[] newUniqueIds = new uint[oldLength + 1];
                 uniqueIds.CopyTo(newUniqueIds, 0);
+                newUniqueIds[oldLength] = uniqueId;
                 queuedInputActions.SetValue(tickToRunInToken, new DataToken(newUniqueIds));
                 return;
             }
