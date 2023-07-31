@@ -237,10 +237,9 @@ In order to make your life easier, when supporting import/export, it is recommen
 For any kind of serialization in the Lock Step system, DataLists taking a certain form are used:
 
 - The list must be flat (no other lists or dictionaries contained within)
-- Every value must be a primitive:
-  - float, double
-     - sbyte, byte, short, ushort, int, uint, long, ulong <!-- TODO: Check if long and ulong are limited in size due to json being potentially all doubles. -->
-  - char, string (null strings are allowed) <!-- TODO: Unless Udon and VRC Json are truly stupid, need to test it. -->
+- Only the following types may be in the ist:
+  - double
+  - string (null strings are allowed) <!-- TODO: Unless Udon and VRC Json are truly stupid, need to test it. -->
   - bool
 
 If serialization of lists, dictionaries or similar is required, simply have a sequence of values starting with the a length integer and then all values proceeding said length value.

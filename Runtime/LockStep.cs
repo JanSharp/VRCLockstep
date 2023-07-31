@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -457,13 +457,13 @@ namespace JanSharp
         private void SendMasterChangedIA()
         {
             iaData = new DataList();
-            iaData.Add(localPlayer.playerId);
+            iaData.Add((double)localPlayer.playerId);
             SendInputAction(masterChangedIAId, iaData);
         }
 
         public void OnMasterChangedIA()
         {
-            int playerId = iaData[0].Int;
+            int playerId = (int)iaData[0].Double;
             clientStates[playerId] = (byte)ClientState.Master;
             currentlyNoMaster = false;
         }
@@ -471,13 +471,13 @@ namespace JanSharp
         private void SendClientJoinedIA()
         {
             iaData = new DataList();
-            iaData.Add(localPlayer.playerId);
+            iaData.Add((double)localPlayer.playerId);
             SendInputAction(clientJoinedIAId, iaData);
         }
 
         public void OnClientJoinedIA()
         {
-            int playerId = iaData[0].Int;
+            int playerId = (int)iaData[0].Double;
             clientStates.Add(playerId, (byte)ClientState.WaitingForLateJoinerSync);
 
             if (isMaster)
@@ -499,9 +499,14 @@ namespace JanSharp
         private void SendLateJoinerData()
         {
             iaData = new DataList();
-            iaData.Add(clientStates.Count);
-            iaData.AddRange(clientStates.GetKeys());
-            iaData.AddRange(clientStates.GetValues());
+            iaData.Add((double)clientStates.Count);
+            DataList keys = clientStates.GetKeys();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                DataToken keyToken = keys[i];
+                iaData.Add((double)keyToken.Int);
+                iaData.Add((double)clientStates[keyToken].Byte);
+            }
             lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, iaData);
 
             // TODO: send custom game states
@@ -514,13 +519,12 @@ namespace JanSharp
         private void OnLJClientStatesIA()
         {
             clientStates = new DataDictionary();
-            int count = iaData[0].Int;
-            for (int i = 0; i < count; i++)
+            int stopBeforeIndex = 1 + 2 * (int)iaData[0].Double;
+            for (int i = 1; i < stopBeforeIndex; i += 2)
             {
-                // Putting them into variables of the "correct" types just to see if they round trip properly through json.
-                // TODO: Once I've tested this, it should just reuse the DataTokens that it already gest from indexing.
-                int playerId = iaData[1 + i].Int;
-                byte clientState = iaData[1 + count + i].Byte;
+                // Can't just reuse the tokens from iaData, because they're doubles, because of the json round trip.
+                int playerId = (int)iaData[i].Double;
+                byte clientState = (byte)iaData[i + 1].Double;
                 clientStates.Add(playerId, clientState);
             }
         }
@@ -532,7 +536,7 @@ namespace JanSharp
 
         private void OnLJCurrentTickIA()
         {
-            currentTick = iaData[0].UInt;
+            currentTick = (uint)iaData[0].Double;
 
             lateJoinerInputActionSync.gameObject.SetActive(false);
             isWaitingForLateJoinerSync = false;
@@ -547,13 +551,13 @@ namespace JanSharp
         private void SendClientGotLateJoinerDataIA()
         {
             iaData = new DataList();
-            iaData.Add(localPlayer.playerId);
+            iaData.Add((double)localPlayer.playerId);
             SendInputAction(clientGotLateJoinerDataIAId, iaData);
         }
 
         public void OnClientGotLateJoinerDataIA()
         {
-            int playerId = iaData[0].Int;
+            int playerId = (int)iaData[0].Double;
             clientStates[playerId] = (byte)ClientState.Normal;
             // TODO: Raise OnClientJoined(int playerId);
         }
@@ -561,13 +565,13 @@ namespace JanSharp
         private void SendClientLeftIA(int playerId)
         {
             iaData = new DataList();
-            iaData.Add(playerId);
+            iaData.Add((double)playerId);
             SendInputAction(clientLeftIAId, iaData);
         }
 
         public void OnClientLeftIA()
         {
-            int playerId = iaData[0].Int;
+            int playerId = (int)iaData[0].Double;
             clientStates.Remove(playerId);
             if (isMaster && !IsAnyClientWaitingForLateJoinerSync())
             {
@@ -580,7 +584,7 @@ namespace JanSharp
         private void SendClientCaughtUpIA()
         {
             iaData = new DataList();
-            iaData.Add(localPlayer.playerId);
+            iaData.Add((double)localPlayer.playerId);
             SendInputAction(clientCaughtUpIAId, iaData);
         }
 
