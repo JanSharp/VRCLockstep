@@ -482,6 +482,7 @@ namespace JanSharp
 
             if (isMaster)
             {
+                CheckSingePlayerModeChange();
                 initiateLateJoinerSyncSentCount++;
                 SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), 5f);
             }
