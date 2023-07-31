@@ -63,6 +63,7 @@ namespace JanSharp
                 return;
             }
 
+            ClearInputActionsToRun();
             SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
         }
 
