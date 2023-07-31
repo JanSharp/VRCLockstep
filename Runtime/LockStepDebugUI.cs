@@ -73,7 +73,14 @@ namespace JanSharp
             "Normal",
         };
 
-        // TODO: left players
+        public RectTransform leftClientsParent;
+        public TextMeshProUGUI leftClientsCountText;
+        public float leftClientsElemHeight;
+        private object[] leftClientsListObj;
+        private int[] leftClients;
+        private const string LeftClientsFieldName = "leftClients";
+        private const string LeftClientsCountFieldName = "leftClientsCount";
+
         // TODO: pending input actions
         // TODO: queued input actions
         // NOTE: Probably also list of registered input actions, but that's for later
@@ -84,6 +91,7 @@ namespace JanSharp
             InitializeFlags();
             InitializeNumbers();
             InitializeClientStates();
+            InitializeLeftClients();
             Update();
         }
 
@@ -94,6 +102,7 @@ namespace JanSharp
             UpdatePerformance();
             UpdateNumbers();
             UpdateClientStates();
+            UpdateLeftClients();
             debugLastUpdateTime = Time.realtimeSinceStartup - startTime;
         }
 
@@ -169,7 +178,12 @@ namespace JanSharp
 
         private void InitializeClientStates()
         {
-            clientStatesListObj = NewListObj(null, clientStatesElemHeight, clientStatesParent, clientStatesCountText);
+            clientStatesListObj = NewListObj(
+                null,
+                clientStatesElemHeight,
+                clientStatesParent,
+                clientStatesCountText
+            );
         }
 
         private void UpdateClientStates()
@@ -181,20 +195,20 @@ namespace JanSharp
                 clientStatesListObj,
                 clientStates == null,
                 clientStates == null ? 0 : clientStates.Count,
-                nameof(CreateClientStateListElemObj),
+                nameof(CreateValueLabelListElemObj),
                 nameof(PreUpdatingClientStateListElems),
                 nameof(UpdateClientStateListElemObj)
             );
         }
 
         // (GameObject elemGameObj) => object[] listElemObj;
-        public void CreateClientStateListElemObj()
+        public void CreateValueLabelListElemObj()
         {
             TextMeshProUGUI[] texts = elemGameObj.GetComponentsInChildren<TextMeshProUGUI>();
-            listElemObj = new object[ClientState_ListElemObj_Size];
+            listElemObj = new object[ValueLabel_ListElemObj_Size];
             listElemObj[ListObjElem_GameObj] = elemGameObj;
-            listElemObj[ClientState_ListElemObj_Value] = texts[0];
-            listElemObj[ClientState_ListElemObj_Label] = texts[1];
+            listElemObj[ValueLabel_ListElemObj_Value] = texts[0];
+            listElemObj[ValueLabel_ListElemObj_Label] = texts.Length >= 2 ? texts[1] : null;
         }
 
         // (object[] listObj) => void;
@@ -213,10 +227,42 @@ namespace JanSharp
         public void UpdateClientStateListElemObj()
         {
             DataToken playerIdToken = clientStatesKeys[elemIndex];
-            ((TextMeshProUGUI)listElemObj[ClientState_ListElemObj_Value]).text
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text
                 = clientStateNameLut[clientStates[playerIdToken].Byte];
-            ((TextMeshProUGUI)listElemObj[ClientState_ListElemObj_Label]).text
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text
                 = FormatPlayerId(playerIdToken.Int);
+        }
+
+        private void InitializeLeftClients()
+        {
+            leftClientsListObj = NewListObj(
+                null,
+                leftClientsElemHeight,
+                leftClientsParent,
+                leftClientsCountText
+            );
+        }
+
+        private void UpdateLeftClients()
+        {
+            leftClients = (int[])lockStep.GetProgramVariable(LeftClientsFieldName);
+            int count = (int)lockStep.GetProgramVariable(LeftClientsCountFieldName);
+
+            UpdateList(
+                leftClientsListObj,
+                false,
+                count,
+                nameof(CreateValueLabelListElemObj),
+                null,
+                nameof(UpdateLeftClientsListElemObj)
+            );
+        }
+
+        // (object[] listObj, object[] listElemObj, int elemIndex) => void;
+        public void UpdateLeftClientsListElemObj()
+        {
+            int playerId = leftClients[elemIndex];
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = FormatPlayerId(playerId);
         }
 
         // I'm intentionally breaking the naming convention here, because defining "classes" like this is
@@ -238,9 +284,9 @@ namespace JanSharp
         private const int ListObjElem_Size = 1;
 
         // This is what inheritance looks like
-        private const int ClientState_ListElemObj_Value = ListObjElem_Size + 0; // TextMeshProUGUI
-        private const int ClientState_ListElemObj_Label = ListObjElem_Size + 1; // TextMeshProUGUI
-        private const int ClientState_ListElemObj_Size = ListObjElem_Size + 2;
+        private const int ValueLabel_ListElemObj_Value = ListObjElem_Size + 0; // TextMeshProUGUI
+        private const int ValueLabel_ListElemObj_Label = ListObjElem_Size + 1; // TextMeshProUGUI
+        private const int ValueLabel_ListElemObj_Size = ListObjElem_Size + 2;
 
         private object[] NewListObj(
             object backingData,
