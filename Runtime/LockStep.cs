@@ -528,6 +528,8 @@ namespace JanSharp
                 int playerId = (int)iaData[i].Double;
                 byte clientState = (byte)iaData[i + 1].Double;
                 clientStates.Add(playerId, clientState);
+                if ((ClientState)clientState == ClientState.Master)
+                    currentlyNoMaster = false;
             }
         }
 
