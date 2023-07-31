@@ -171,6 +171,7 @@ namespace JanSharp
                 RemoveOutdatedQueuedInputActions();
                 isCatchingUp = false;
                 SendClientCaughtUpIA();
+                startTick = currentTick;
                 tickStartTime = Time.time;
             }
         }
@@ -356,6 +357,7 @@ namespace JanSharp
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
             tickSync.RequestSerialization();
+            startTick = 0u;
             currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
             waitTick = uint.MaxValue;
             EnterSingePlayerMode();
