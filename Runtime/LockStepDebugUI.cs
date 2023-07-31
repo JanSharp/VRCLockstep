@@ -87,7 +87,9 @@ namespace JanSharp
         private object[] pendingInputActionsListObj;
         private DataDictionary pendingInputActions;
         private DataList pendingInputActionsKeys;
+        private string[] inputActionHandlerEventNames;
         private const string PendingInputActionsFieldName = "pendingActions";
+        private const string InputActionHandlerEventNamesFieldName = "inputActionHandlerEventNames";
 
         public RectTransform queuedInputActionsParent;
         public TextMeshProUGUI queuedInputActionsCountText;
@@ -286,6 +288,7 @@ namespace JanSharp
         {
             if (pendingInputActions == null)
                 pendingInputActions = (DataDictionary)lockStep.GetProgramVariable(PendingInputActionsFieldName);
+            inputActionHandlerEventNames = (string[])lockStep.GetProgramVariable(InputActionHandlerEventNamesFieldName);
 
             if (pendingInputActions != null)
                 pendingInputActionsKeys = pendingInputActions.GetKeys();
@@ -303,7 +306,11 @@ namespace JanSharp
         public void UpdatePendingInputActionsElemObj()
         {
             DataToken uniqueIdToken = pendingInputActionsKeys[elemIndex];
+            DataList iaData = pendingInputActions[uniqueIdToken].DataList;
+            uint inputActionId = iaData[iaData.Count - 1].UInt;
+            string inputActionEventName = inputActionHandlerEventNames[inputActionId];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = $"<mspace=0.55em>0x{uniqueIdToken.UInt:x8}";
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>{inputActionId}</mspace> {inputActionEventName}";
         }
 
         private void InitializeQueuedInputActions()
