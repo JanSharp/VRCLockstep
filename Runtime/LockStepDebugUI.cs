@@ -81,8 +81,24 @@ namespace JanSharp
         private const string LeftClientsFieldName = "leftClients";
         private const string LeftClientsCountFieldName = "leftClientsCount";
 
-        // TODO: pending input actions
-        // TODO: queued input actions
+        public RectTransform pendingInputActionsParent;
+        public TextMeshProUGUI pendingInputActionsCountText;
+        public float pendingInputActionsElemHeight;
+        private object[] pendingInputActionsListObj;
+        private DataDictionary pendingInputActions;
+        private DataList pendingInputActionsKeys;
+        private const string PendingInputActionsFieldName = "pendingActions";
+
+        public RectTransform queuedInputActionsParent;
+        public TextMeshProUGUI queuedInputActionsCountText;
+        public float queuedInputActionsElemHeight;
+        private object[] queuedInputActionsListObj;
+        private DataDictionary queuedInputActions;
+        private uint[][] queuedInputActionsUnrolled = new uint[ArrList.MinCapacity][];
+        ///cSpell:ignore qiau
+        private int qiauCount = 0;
+        private const string QueuedInputActionsFieldName = "queuedInputActions";
+
         // NOTE: Probably also list of registered input actions, but that's for later
         // NOTE: Probably also some visualization of game states, but that's for later
 
@@ -92,6 +108,8 @@ namespace JanSharp
             InitializeNumbers();
             InitializeClientStates();
             InitializeLeftClients();
+            InitializePendingInputActions();
+            InitializeQueuedInputActions();
             Update();
         }
 
@@ -103,6 +121,8 @@ namespace JanSharp
             UpdateNumbers();
             UpdateClientStates();
             UpdateLeftClients();
+            UpdatePendingInputActions();
+            UpdateQueuedInputActions();
             debugLastUpdateTime = Time.realtimeSinceStartup - startTime;
         }
 
@@ -170,10 +190,18 @@ namespace JanSharp
             }
         }
 
+        ///cSpell:ignore mspace
+
         private void UpdateNumbers()
         {
             for (int i = 0; i < numbersFieldNames.Length; i++)
-                numbersValues[i].text = lockStep.GetProgramVariable(numbersFieldNames[i]).ToString();
+                numbersValues[i].text = $"<mspace=0.55em>{lockStep.GetProgramVariable(numbersFieldNames[i])}";
+        }
+
+        private string FormatPlayerId(int playerId)
+        {
+            VRCPlayerApi player = VRCPlayerApi.GetPlayerById(playerId);
+            return player == null ? playerId.ToString() : $"{playerId} - {player.displayName}";
         }
 
         private void InitializeClientStates()
@@ -201,22 +229,6 @@ namespace JanSharp
                 nameof(CreateValueLabelListElemObj),
                 nameof(UpdateClientStateListElemObj)
             );
-        }
-
-        // (GameObject elemGameObj) => object[] listElemObj;
-        public void CreateValueLabelListElemObj()
-        {
-            TextMeshProUGUI[] texts = elemGameObj.GetComponentsInChildren<TextMeshProUGUI>();
-            listElemObj = new object[ValueLabel_ListElemObj_Size];
-            listElemObj[ListObjElem_GameObj] = elemGameObj;
-            listElemObj[ValueLabel_ListElemObj_Value] = texts[0];
-            listElemObj[ValueLabel_ListElemObj_Label] = texts.Length >= 2 ? texts[1] : null;
-        }
-
-        private string FormatPlayerId(int playerId)
-        {
-            VRCPlayerApi player = VRCPlayerApi.GetPlayerById(playerId);
-            return player == null ? playerId.ToString() : $"{playerId} - {player.displayName}";
         }
 
         // (object[] listObj, object[] listElemObj, int elemIndex) => void;
@@ -258,6 +270,95 @@ namespace JanSharp
         {
             int playerId = leftClients[elemIndex];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = FormatPlayerId(playerId);
+        }
+
+        private void InitializePendingInputActions()
+        {
+            pendingInputActionsListObj = NewListObj(
+                null,
+                pendingInputActionsElemHeight,
+                pendingInputActionsParent,
+                pendingInputActionsCountText
+            );
+        }
+
+        private void UpdatePendingInputActions()
+        {
+            if (pendingInputActions == null)
+                pendingInputActions = (DataDictionary)lockStep.GetProgramVariable(PendingInputActionsFieldName);
+
+            if (pendingInputActions != null)
+                pendingInputActionsKeys = pendingInputActions.GetKeys();
+
+            UpdateList(
+                pendingInputActionsListObj,
+                pendingInputActions == null,
+                pendingInputActions == null ? 0 : pendingInputActions.Count,
+                nameof(CreateValueLabelListElemObj),
+                nameof(UpdatePendingInputActionsElemObj)
+            );
+        }
+
+        // (object[] listObj, object[] listElemObj, int elemIndex) => void;
+        public void UpdatePendingInputActionsElemObj()
+        {
+            DataToken uniqueIdToken = pendingInputActionsKeys[elemIndex];
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = $"<mspace=0.55em>0x{uniqueIdToken.UInt:x8}";
+        }
+
+        private void InitializeQueuedInputActions()
+        {
+            queuedInputActionsListObj = NewListObj(
+                null,
+                queuedInputActionsElemHeight,
+                queuedInputActionsParent,
+                queuedInputActionsCountText
+            );
+        }
+
+        private void UpdateQueuedInputActions()
+        {
+            if (queuedInputActions == null)
+                queuedInputActions = (DataDictionary)lockStep.GetProgramVariable(QueuedInputActionsFieldName);
+
+            if (queuedInputActions != null)
+            {
+                ArrList.Clear(ref queuedInputActionsUnrolled, ref qiauCount);
+                DataList keys = queuedInputActions.GetKeys();
+                for (int i = 0; i < keys.Count; i ++)
+                {
+                    DataToken keyToken = keys[i];
+                    uint tick = keyToken.UInt;
+                    foreach (uint uniqueId in (uint[])queuedInputActions[keyToken].Reference)
+                        ArrList.Add(ref queuedInputActionsUnrolled, ref qiauCount, new uint[] { tick, uniqueId });
+                }
+            }
+
+            UpdateList(
+                queuedInputActionsListObj,
+                queuedInputActions == null,
+                queuedInputActions == null ? 0 : qiauCount,
+                nameof(CreateValueLabelListElemObj),
+                nameof(UpdateQueuedInputActionsListElemObj)
+            );
+        }
+
+        // (object[] listObj, object[] listElemObj, int elemIndex) => void;
+        public void UpdateQueuedInputActionsListElemObj()
+        {
+            uint[] pair = queuedInputActionsUnrolled[elemIndex];
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = pair[0].ToString();
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>0x{pair[1]:x8}";
+        }
+
+        // (GameObject elemGameObj) => object[] listElemObj;
+        public void CreateValueLabelListElemObj()
+        {
+            TextMeshProUGUI[] texts = elemGameObj.GetComponentsInChildren<TextMeshProUGUI>();
+            listElemObj = new object[ValueLabel_ListElemObj_Size];
+            listElemObj[ListObjElem_GameObj] = elemGameObj;
+            listElemObj[ValueLabel_ListElemObj_Value] = texts[0];
+            listElemObj[ValueLabel_ListElemObj_Label] = texts.Length >= 2 ? texts[1] : null;
         }
 
         // I'm intentionally breaking the naming convention here, because defining "classes" like this is
