@@ -33,6 +33,7 @@ namespace JanSharp
         private VRCPlayerApi localPlayer;
         private InputActionSync inputActionSyncForLocalPlayer;
         private uint startTick;
+        private uint immutableUntilTick;
         private float tickStartTime;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
         // private float currentTickRate = TickRate;
@@ -273,9 +274,18 @@ namespace JanSharp
         {
             if (isMaster)
             {
-                RunInputActionForUniqueId(uniqueId);
                 if (!isSinglePlayer)
+                {
+                    if (currentTick <= immutableUntilTick)
+                    {
+                        immutableUntilTick++;
+                        EnqueueInputActionAtTick(immutableUntilTick, uniqueId, allowOnMaster: true);
+                        tickSync.AddInputActionToRun(immutableUntilTick, uniqueId);
+                        return;
+                    }
                     tickSync.AddInputActionToRun(currentTick, uniqueId);
+                }
+                RunInputActionForUniqueId(uniqueId);
             }
         }
 
@@ -391,13 +401,16 @@ namespace JanSharp
             isWaitingForLateJoinerSync = false;
             isTickPaused = false;
 
-            if (!isCatchingUp)
+            if (isCatchingUp)
                 // If it is currently catching up, it will continue catching up while already being master.
                 // Any new input actions must enqueued _after_ the wait tick, as that tick may already
                 // have been executed on a different client.
                 waitTick++;
             else
+            {
+                immutableUntilTick = waitTick;
                 waitTick = uint.MaxValue;
+            }
 
             lateJoinerInputActionSync.gameObject.SetActive(true);
             lateJoinerInputActionSync.lockStepIsMaster = true;
@@ -410,7 +423,8 @@ namespace JanSharp
             SendMasterChangedIA();
             processLeftPlayersSentCount++;
             ProcessLeftPlayers();
-            InstantlyRunQueuedInputActions();
+            if (isSinglePlayer)
+                InstantlyRunQueuedInputActions();
 
             if (IsAnyClientWaitingForLateJoinerSync())
             {
@@ -662,11 +676,11 @@ namespace JanSharp
             RunInputAction(inputActionId, inputActionData);
         }
 
-        public void EnqueueInputActionAtTick(uint tickToRunIn, uint uniqueId)
+        public void EnqueueInputActionAtTick(uint tickToRunIn, uint uniqueId, bool allowOnMaster = false)
         {
             if (ignoreIncomingInputActions)
                 return;
-            if (isMaster && !isCatchingUp) // IF it is catching up, it's still enqueueing actions for later.
+            if (isMaster && !isCatchingUp && !allowOnMaster) // If it is catching up, it's still enqueueing actions for later.
             {
                 Debug.LogWarning("<dlt> The master client (which is this client) should "
                     + "not be receiving data about running an input action at a tick...");

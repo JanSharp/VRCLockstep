@@ -52,6 +52,7 @@ namespace JanSharp
         {
             "currentTick",
             "waitTick",
+            "immutableUntilTick",
             "startTick",
             "tickStartTime",
             "unrecoverableStateDueToUniqueId",
