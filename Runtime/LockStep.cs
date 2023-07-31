@@ -194,8 +194,9 @@ namespace JanSharp
         private bool TryRunNextTick()
         {
             uint nextTick = currentTick + 1u;
+            DataToken nextTickToken = nextTick;
             uint[] uniqueIds = null;
-            if (queuedInputActions.Remove(nextTick, out DataToken uniqueIdsToken))
+            if (queuedInputActions.TryGetValue(nextTickToken, out DataToken uniqueIdsToken))
             {
                 uniqueIds = (uint[])uniqueIdsToken.Reference;
                 foreach (uint uniqueId in uniqueIds)
@@ -219,6 +220,7 @@ namespace JanSharp
                         return false;
                     }
             }
+            queuedInputActions.Remove(nextTickToken);
 
             currentTick = nextTick;
             // Debug.Log($"<dlt> Running tick {currentTick}");
