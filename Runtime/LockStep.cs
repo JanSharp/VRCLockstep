@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -269,6 +269,17 @@ namespace JanSharp
             }
 
             uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData);
+
+            if (stillAllowLocalClientJoinedIA)
+            {
+                if (ignoreLocalInputActions)
+                    return; // Do not save client joined IA because it will never be executed locally.
+                Debug.LogError("<dlt> stillAllowLocalClientJoinedIA is true while ignoreLocalInputActions is false. "
+                    + "This is an invalid state, stillAllowLocalClientJoinedIA should only ever be true if "
+                    + "ignoreLocalInputActions is also true. Continuing as though stillAllowLocalClientJoinedIA was false."
+                );
+            }
+
             // Modify the inputActionData after sending it, otherwise bad data would be sent.
             inputActionData.Add(inputActionId);
             inputActionsByUniqueId.Add(uniqueId, inputActionData);
