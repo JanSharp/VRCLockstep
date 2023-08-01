@@ -594,10 +594,20 @@ namespace JanSharp
             SendInputAction(clientGotLateJoinerDataIAId, iaData);
         }
 
+        private void CheckIfLateJoinerSyncShouldStop()
+        {
+            if (isMaster && !IsAnyClientWaitingForLateJoinerSync())
+            {
+                sendLateJoinerDataAtEndOfTick = false;
+                lateJoinerInputActionSync.DequeueEverything(doCallback: false);
+            }
+        }
+
         public void OnClientGotLateJoinerDataIA()
         {
             int playerId = (int)iaData[0].Double;
             clientStates[playerId] = (byte)ClientState.Normal;
+            CheckIfLateJoinerSyncShouldStop();
             // TODO: Raise OnClientJoined(int playerId);
         }
 
@@ -617,11 +627,7 @@ namespace JanSharp
             if (index != -1)
                 ArrList.RemoveAt(ref leftClients, ref leftClientsCount, index);
 
-            if (isMaster && !IsAnyClientWaitingForLateJoinerSync())
-            {
-                sendLateJoinerDataAtEndOfTick = false;
-                lateJoinerInputActionSync.DequeueEverything();
-            }
+            CheckIfLateJoinerSyncShouldStop();
             // TODO: Raise OnClientLeft(int playerId);
         }
 
