@@ -82,14 +82,14 @@ namespace JanSharp
         private const string LeftClientsFieldName = "leftClients";
         private const string LeftClientsCountFieldName = "leftClientsCount";
 
-        public RectTransform pendingInputActionsParent;
-        public TextMeshProUGUI pendingInputActionsCountText;
-        public float pendingInputActionsElemHeight;
-        private object[] pendingInputActionsListObj;
-        private DataDictionary pendingInputActions;
-        private DataList pendingInputActionsKeys;
+        public RectTransform inputActionsByUniqueIdParent;
+        public TextMeshProUGUI inputActionsByUniqueIdCountText;
+        public float inputActionsByUniqueIdElemHeight;
+        private object[] inputActionsByUniqueIdListObj;
+        private DataDictionary inputActionsByUniqueId;
+        private DataList inputActionsByUniqueIdKeys;
         private string[] inputActionHandlerEventNames;
-        private const string PendingInputActionsFieldName = "pendingActions";
+        private const string InputActionsByUniqueIdsFieldName = "inputActionsByUniqueId";
         private const string InputActionHandlerEventNamesFieldName = "inputActionHandlerEventNames";
 
         public RectTransform queuedInputActionsParent;
@@ -111,7 +111,7 @@ namespace JanSharp
             InitializeNumbers();
             InitializeClientStates();
             InitializeLeftClients();
-            InitializePendingInputActions();
+            InitializeInputActionsByUniqueIds();
             InitializeQueuedInputActions();
             Update();
         }
@@ -124,7 +124,7 @@ namespace JanSharp
             UpdateNumbers();
             UpdateClientStates();
             UpdateLeftClients();
-            UpdatePendingInputActions();
+            UpdateInputActionsByUniqueIds();
             UpdateQueuedInputActions();
             debugLastUpdateTime = Time.realtimeSinceStartup - startTime;
         }
@@ -275,39 +275,39 @@ namespace JanSharp
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = FormatPlayerId(playerId);
         }
 
-        private void InitializePendingInputActions()
+        private void InitializeInputActionsByUniqueIds()
         {
-            pendingInputActionsListObj = NewListObj(
+            inputActionsByUniqueIdListObj = NewListObj(
                 null,
-                pendingInputActionsElemHeight,
-                pendingInputActionsParent,
-                pendingInputActionsCountText
+                inputActionsByUniqueIdElemHeight,
+                inputActionsByUniqueIdParent,
+                inputActionsByUniqueIdCountText
             );
         }
 
-        private void UpdatePendingInputActions()
+        private void UpdateInputActionsByUniqueIds()
         {
-            if (pendingInputActions == null)
-                pendingInputActions = (DataDictionary)lockStep.GetProgramVariable(PendingInputActionsFieldName);
+            if (inputActionsByUniqueId == null)
+                inputActionsByUniqueId = (DataDictionary)lockStep.GetProgramVariable(InputActionsByUniqueIdsFieldName);
             inputActionHandlerEventNames = (string[])lockStep.GetProgramVariable(InputActionHandlerEventNamesFieldName);
 
-            if (pendingInputActions != null)
-                pendingInputActionsKeys = pendingInputActions.GetKeys();
+            if (inputActionsByUniqueId != null)
+                inputActionsByUniqueIdKeys = inputActionsByUniqueId.GetKeys();
 
             UpdateList(
-                pendingInputActionsListObj,
-                pendingInputActions == null,
-                pendingInputActions == null ? 0 : pendingInputActions.Count,
+                inputActionsByUniqueIdListObj,
+                inputActionsByUniqueId == null,
+                inputActionsByUniqueId == null ? 0 : inputActionsByUniqueId.Count,
                 nameof(CreateValueLabelListElemObj),
-                nameof(UpdatePendingInputActionsElemObj)
+                nameof(UpdateInputActionsByUniqueIdsElemObj)
             );
         }
 
         // (object[] listObj, object[] listElemObj, int elemIndex) => void;
-        public void UpdatePendingInputActionsElemObj()
+        public void UpdateInputActionsByUniqueIdsElemObj()
         {
-            DataToken uniqueIdToken = pendingInputActionsKeys[elemIndex];
-            DataList iaData = pendingInputActions[uniqueIdToken].DataList;
+            DataToken uniqueIdToken = inputActionsByUniqueIdKeys[elemIndex];
+            DataList iaData = inputActionsByUniqueId[uniqueIdToken].DataList;
             uint inputActionId = iaData[iaData.Count - 1].UInt;
             string inputActionEventName = inputActionHandlerEventNames[inputActionId];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = $"<mspace=0.55em>0x{uniqueIdToken.UInt:x8}";

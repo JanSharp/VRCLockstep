@@ -5139,7 +5139,7 @@ GameObject:
   - component: {fileID: 1504122096859059173}
   - component: {fileID: 4976995402450802765}
   m_Layer: 17
-  m_Name: PendingInputActions
+  m_Name: InputActionsByUniqueId
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6919,7 +6919,7 @@ GameObject:
   - component: {fileID: 3095886630932375626}
   - component: {fileID: 3519803617778814715}
   m_Layer: 17
-  m_Name: PendingInputActionsCountText
+  m_Name: InputActionsByUniqueIdCountText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7582,7 +7582,7 @@ GameObject:
   - component: {fileID: 5855666713680576409}
   - component: {fileID: 6089105486167487281}
   m_Layer: 17
-  m_Name: PendingInputActionsHeaderText
+  m_Name: InputActionsByUniqueIdHeaderText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7634,7 +7634,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Pending IAs
+  m_text: IAs by Unique Id
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -8777,7 +8777,7 @@ GameObject:
   - component: {fileID: 5781452666763636003}
   - component: {fileID: 670602632070420686}
   m_Layer: 17
-  m_Name: PendingInputActionsPanel
+  m_Name: InputActionsByUniqueIdPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9141,7 +9141,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2273898071986464499}
   m_Layer: 17
-  m_Name: PendingInputAction
+  m_Name: InputActionByUniqueId
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9377,9 +9377,9 @@ MonoBehaviour:
   leftClientsParent: {fileID: 1076127283718322557}
   leftClientsCountText: {fileID: 5674328718552528265}
   leftClientsElemHeight: 20
-  pendingInputActionsParent: {fileID: 1504122096859059173}
-  pendingInputActionsCountText: {fileID: 3095886630932375626}
-  pendingInputActionsElemHeight: 20
+  inputActionsByUniqueIdParent: {fileID: 1504122096859059173}
+  inputActionsByUniqueIdCountText: {fileID: 3095886630932375626}
+  inputActionsByUniqueIdElemHeight: 20
   queuedInputActionsParent: {fileID: 4292871374791026383}
   queuedInputActionsCountText: {fileID: 3417651031863463344}
   queuedInputActionsElemHeight: 20
@@ -11224,7 +11224,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6524193289073593613}
   m_Layer: 17
-  m_Name: PendingInputActionsHeader
+  m_Name: InputActionsByUniqueIdHeader
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

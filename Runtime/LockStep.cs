@@ -62,11 +62,15 @@ namespace JanSharp
         // uint => DataList
         // uint: unique id - pppppppp pppppppp iiiiiiii iiiiiiii (p = player id, i = input action index)
         // DataList: input action data, plus input action id appended
-        private DataDictionary pendingActions = new DataDictionary();
+        //
+        // Unique ids associated with their input actions, all of which are input actions
+        // which have not been run yet and are either waiting for the tick in which they will be run,
+        // or waiting for tick sync to inform this client of which tick to run them in.
+        private DataDictionary inputActionsByUniqueId = new DataDictionary();
 
         // uint => uint[]
         // uint: tick to run in
-        // uint[]: unique id (same as for pendingActions)
+        // uint[]: unique id (same as for inputActionsByUniqueId)
         private DataDictionary queuedInputActions = new DataDictionary();
 
         ///cSpell:ignore iahi, iahen
@@ -188,7 +192,7 @@ namespace JanSharp
 
                 queuedInputActions.Remove(tickToRunToken, out DataToken uniqueIdsToken);
                 foreach (uint uniqueId in (uint[])uniqueIdsToken.Reference)
-                    pendingActions.Remove(uniqueId); // Remove simply does nothing if it already doesn't exist.
+                    inputActionsByUniqueId.Remove(uniqueId); // Remove simply does nothing if it already doesn't exist.
             }
         }
 
@@ -201,7 +205,7 @@ namespace JanSharp
             {
                 uniqueIds = (uint[])uniqueIdsToken.Reference;
                 foreach (uint uniqueId in uniqueIds)
-                    if (!pendingActions.ContainsKey(uniqueId))
+                    if (!inputActionsByUniqueId.ContainsKey(uniqueId))
                     {
                         int playerId = (int)(uniqueId >> PlayerIdKeyShift);
                         if (uniqueId != unrecoverableStateDueToUniqueId && !clientStates.ContainsKey(playerId))
@@ -238,7 +242,7 @@ namespace JanSharp
 
         private void RunInputActionForUniqueId(uint uniqueId)
         {
-            pendingActions.Remove(uniqueId, out DataToken inputActionDataToken);
+            inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             DataList inputActionData = inputActionDataToken.DataList;
             int lastIndex = inputActionData.Count - 1;
             uint inputActionId = inputActionData[lastIndex].UInt;
@@ -267,7 +271,7 @@ namespace JanSharp
             uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData);
             // Modify the inputActionData after sending it, otherwise bad data would be sent.
             inputActionData.Add(inputActionId);
-            pendingActions.Add(uniqueId, inputActionData);
+            inputActionsByUniqueId.Add(uniqueId, inputActionData);
         }
 
         public void InputActionSent(uint uniqueId)
@@ -641,7 +645,7 @@ namespace JanSharp
             else
             {
                 inputActionData.Add(inputActionId);
-                pendingActions.Add(uniqueId, inputActionData);
+                inputActionsByUniqueId.Add(uniqueId, inputActionData);
             }
         }
 
@@ -655,7 +659,7 @@ namespace JanSharp
                     // Received data always has a unique id.
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
-                pendingActions.Add(uniqueId, inputActionData);
+                inputActionsByUniqueId.Add(uniqueId, inputActionData);
                 EnqueueInputActionAtTick(waitTick, uniqueId);
                 waitTick++;
                 return;
