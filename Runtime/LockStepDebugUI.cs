@@ -26,6 +26,7 @@ namespace JanSharp
             "isCatchingUp",
             "isSinglePlayer",
             "currentlyNoMaster",
+            "checkMasterChangeAfterProcessingLJGameStates",
         };
         private Toggle[] flagToggles;
         private TextMeshProUGUI[] flagLabels;
@@ -55,6 +56,8 @@ namespace JanSharp
             "immutableUntilTick",
             "startTick",
             "tickStartTime",
+            "unprocessedLJSerializedGSCount",
+            "nextLJGameStateToProcess",
             "unrecoverableStateDueToUniqueId",
         };
         private TextMeshProUGUI[] numbersValues;

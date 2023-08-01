@@ -65,6 +65,7 @@ namespace JanSharp
 
             ClearInputActionsToRun();
             SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
+            // TODO: Count how many times this runs per second.
         }
 
         public void RequestSerializationDelayed() => RequestSerialization();

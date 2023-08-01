@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -18,6 +18,8 @@ namespace JanSharp
     {
         private const float TickRate = 16f;
         private const string InputActionDataField = "iaData";
+
+        // TODO: what happens when late joiner sync is in process and another client joins in that time?
 
         // LJ = late joiner, IA = input action
         private const uint LJCurrentTickIAId = 0;
@@ -46,6 +48,7 @@ namespace JanSharp
         private bool sendLateJoinerDataAtEndOfTick = false;
         private bool isCatchingUp = false;
         private bool isSinglePlayer = false;
+        private bool checkMasterChangeAfterProcessingLJGameStates = false;
 
         [System.NonSerialized] public DataList iaData;
         private uint clientJoinedIAId;
@@ -90,8 +93,16 @@ namespace JanSharp
         // This flag ultimately indicates that there is no client with the Master state in the clientStates game state
         private bool currentlyNoMaster = true;
 
+        private DataList[] unprocessedLJSerializedGameStates = new DataList[ArrList.MinCapacity];
+        private int unprocessedLJSerializedGSCount = 0;
+        private int nextLJGameStateToProcess = -1;
+        private float nextLJGameStateToProcessTime = 0f;
+        private const float LJGameStateProcessingFrequency = 0.1f;
+        private bool IsProcessingLJGameStates => nextLJGameStateToProcess != -1;
+
         private int initiateLateJoinerSyncSentCount = 0;
         private int processLeftPlayersSentCount = 0;
+        private int checkOtherMasterCandidatesSentCount = 0;
 
         // Used by the debug UI.
         private float lastUpdateTime;
@@ -115,6 +126,8 @@ namespace JanSharp
 
             if (isTickPaused)
             {
+                if (nextLJGameStateToProcess != -1 && Time.time >= nextLJGameStateToProcessTime)
+                    ProcessNextLJSerializedGameState();
                 lastUpdateTime = Time.realtimeSinceStartup - startTime;
                 return;
             }
@@ -403,17 +416,96 @@ namespace JanSharp
             return false;
         }
 
-        public void CheckMasterChange()
+        private bool IsAnyClientNotWaitingForLateJoinerSync()
         {
-            if (isMaster || !currentlyNoMaster || !Networking.IsMaster)
+            DataList allStates = clientStates.GetValues();
+            for (int i = 0; i < allStates.Count; i++)
+                if ((ClientState)allStates[i].Byte != ClientState.WaitingForLateJoinerSync)
+                    return true;
+            return false;
+        }
+
+        public void CheckOtherMasterCandidates()
+        {
+            if ((--checkOtherMasterCandidatesSentCount) != 0)
                 return;
 
-            currentlyNoMaster = false;
+            DataList allPlayerIds = clientStates.GetKeys();
+            for (int i = 0; i < allPlayerIds.Count; i++)
+            {
+                DataToken playerIdToken = allPlayerIds[i];
+                if ((ClientState)clientStates[playerIdToken].Byte == ClientState.WaitingForLateJoinerSync)
+                    continue;
+                int playerId = playerIdToken.Int;
+                VRCPlayerApi player = VRCPlayerApi.GetPlayerById(playerId);
+                if (player == null)
+                    continue;
+                Debug.Log("<dlt> // TODO: Ask the given client to become master. Keep in mind that "
+                    + "that client isn't even running ticks right now, so it requires a special input action. "
+                    + "For now this simply gets ignored and the local client becomes master instead, "
+                    + "causing every other client which isn't still waiting for late joiner sync "
+                    + "to pretty much just break. The behaviour is undefined. "
+                    + "Note that this this is super low priority because chances of this here "
+                    + "ever happening are stupidly low or even impossible.");
+                // return; // once the above is implemented, uncomment the return here.
+            }
+            // Nope, no other play may become master, so we take it and completely reset.
+            clientStates = null;
+            CheckMasterChange();
+        }
+
+        private void FactoryReset()
+        {
+            lateJoinerInputActionSync.gameObject.SetActive(true);
+            lateJoinerInputActionSync.lockStepIsMaster = false;
+            tickSync.ClearInputActionsToRun();
+            ForgetAboutUnprocessedLJSerializedGameSates();
+            ForgetAboutLeftPlayers();
+            ForgetAboutInputActionsWaitingToBeSent();
+            clientStates = null;
+            inputActionsByUniqueId.Clear();
+            uniqueIdsByTick.Clear();
+            isTickPaused = true;
+        }
+
+        public void CheckMasterChange()
+        {
+            if (isMaster || !currentlyNoMaster || !Networking.IsMaster || checkOtherMasterCandidatesSentCount != 0)
+                return;
+
+            if (IsProcessingLJGameStates)
+            {
+                checkMasterChangeAfterProcessingLJGameStates = true;
+                return;
+            }
+
+            if (isWaitingForLateJoinerSync)
+            {
+                if (clientStates != null && IsAnyClientNotWaitingForLateJoinerSync())
+                {
+                    checkOtherMasterCandidatesSentCount++;
+                    SendCustomEventDelayedSeconds(nameof(CheckOtherMasterCandidates), 1f);
+                    return;
+                }
+                // The master left before finishing sending late joiner data and we are now the new master
+                // without all the data, therefore we must completely reset the system and pretend we
+                // are the first client in the instance.
+                // Because of this, not a single event - not even the deserialization events for game states -
+                // must raised while isWaitingForLateJoinerSync is still true, otherwise deserialization of a
+                // game state may happen before OnInit, which is invalid behaviour for this system.
+                isWaitingForLateJoinerSync = false;
+                stillAllowLocalClientJoinedIA = false;
+                isCatchingUp = false;
+                FactoryReset();
+                BecomeInitialMaster();
+                return;
+            }
+
             isMaster = true;
+            currentlyNoMaster = false;
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = false;
-            isWaitingForLateJoinerSync = false;
             isTickPaused = false;
 
             if (isCatchingUp)
@@ -450,7 +542,12 @@ namespace JanSharp
 
         private void InstantlyRunInputActionsWaitingToBeSent()
         {
-            inputActionSyncForLocalPlayer.DequeueEverything();
+            inputActionSyncForLocalPlayer.DequeueEverything(doCallback: true);
+        }
+
+        private void ForgetAboutInputActionsWaitingToBeSent()
+        {
+            inputActionSyncForLocalPlayer.DequeueEverything(doCallback: false);
         }
 
         public void ProcessLeftPlayers()
@@ -463,6 +560,11 @@ namespace JanSharp
             for (int i = 0; i < leftClientsCount; i++)
                 SendClientLeftIA(leftClients[i]);
 
+            ArrList.Clear(ref leftClients, ref leftClientsCount);
+        }
+
+        private void ForgetAboutLeftPlayers()
+        {
             ArrList.Clear(ref leftClients, ref leftClientsCount);
         }
 
@@ -480,7 +582,7 @@ namespace JanSharp
         private void EnterSingePlayerMode()
         {
             isSinglePlayer = true;
-            lateJoinerInputActionSync.DequeueEverything();
+            lateJoinerInputActionSync.DequeueEverything(doCallback: false);
             InstantlyRunInputActionsWaitingToBeSent();
             tickSync.ClearInputActionsToRun();
         }
@@ -570,7 +672,15 @@ namespace JanSharp
 
         private void OnLJCustomGameStateIA(uint inputActionId)
         {
-            // TODO: impl
+            if (inputActionId - LJFirstCustomGameStateIAId != (uint)unprocessedLJSerializedGSCount)
+            {
+                Debug.LogError($"<dlt> Expected game state index {unprocessedLJSerializedGSCount}, "
+                    + $"got {inputActionId - LJFirstCustomGameStateIAId}. Either some math "
+                    + $"is wrong or the game states are somehow out of order."
+                );
+                return;
+            }
+            ArrList.Add(ref unprocessedLJSerializedGameStates, ref unprocessedLJSerializedGSCount, iaData);
         }
 
         private void OnLJCurrentTickIA()
@@ -579,19 +689,47 @@ namespace JanSharp
 
             lateJoinerInputActionSync.gameObject.SetActive(false);
             isWaitingForLateJoinerSync = false;
+            TryMoveToNextLJSerializedGameState();
+        }
+
+        private void TryMoveToNextLJSerializedGameState()
+        {
+            nextLJGameStateToProcess++;
+            nextLJGameStateToProcessTime = Time.time + LJGameStateProcessingFrequency;
+            if (nextLJGameStateToProcess >= unprocessedLJSerializedGSCount)
+                DoneProcessingLJGameStates();
+        }
+
+        private void ProcessNextLJSerializedGameState()
+        {
+            int gameStateIndex = nextLJGameStateToProcess;
+            iaData = unprocessedLJSerializedGameStates[gameStateIndex];
+
+            // TODO: impl
+
+            TryMoveToNextLJSerializedGameState();
+        }
+
+        private void ForgetAboutUnprocessedLJSerializedGameSates()
+        {
+            nextLJGameStateToProcess = -1;
+            checkMasterChangeAfterProcessingLJGameStates = false;
+            ArrList.Clear(ref unprocessedLJSerializedGameStates, ref unprocessedLJSerializedGSCount);
+        }
+
+        private void DoneProcessingLJGameStates()
+        {
+            bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
+            ForgetAboutUnprocessedLJSerializedGameSates();
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
             // TODO: Raise OnClientBeginCatchUp(int playerId);
             isTickPaused = false;
             isCatchingUp = true;
-        }
 
-        private void SendClientGotLateJoinerDataIA()
-        {
-            iaData = new DataList();
-            iaData.Add((double)localPlayer.playerId);
-            SendInputAction(clientGotLateJoinerDataIAId, iaData);
+            if (doCheckMasterChange)
+                CheckMasterChange();
         }
 
         private void CheckIfLateJoinerSyncShouldStop()
@@ -601,6 +739,13 @@ namespace JanSharp
                 sendLateJoinerDataAtEndOfTick = false;
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
             }
+        }
+
+        private void SendClientGotLateJoinerDataIA()
+        {
+            iaData = new DataList();
+            iaData.Add((double)localPlayer.playerId);
+            SendInputAction(clientGotLateJoinerDataIAId, iaData);
         }
 
         public void OnClientGotLateJoinerDataIA()

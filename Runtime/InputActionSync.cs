@@ -104,7 +104,7 @@ namespace JanSharp
             return uniqueId;
         }
 
-        public void DequeueEverything()
+        public void DequeueEverything(bool doCallback)
         {
             if (siqCount == 0)
                 return;
@@ -112,17 +112,16 @@ namespace JanSharp
             ArrQueue.Clear(ref syncedIntQueue, ref siqStartIndex, ref siqCount);
             ArrQueue.Clear(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount);
 
-            if (isLateJoinerSyncInst)
-            {
+            if (!doCallback || isLateJoinerSyncInst)
                 ArrQueue.Clear(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
-                return;
-            }
-
-            while (uiqCount != 0)
+            else
             {
-                uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
-                if (uniqueId != 0u)
-                    lockStep.InputActionSent(uniqueId);
+                while (uiqCount != 0)
+                {
+                    uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
+                    if (uniqueId != 0u)
+                        lockStep.InputActionSent(uniqueId);
+                }
             }
 
             // Since there was something already in the process of sending, potentially a split input action
