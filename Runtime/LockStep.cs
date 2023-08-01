@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -601,6 +601,11 @@ namespace JanSharp
         {
             int playerId = (int)iaData[0].Double;
             clientStates.Remove(playerId);
+
+            int index = ArrList.IndexOf(ref leftClients, ref leftClientsCount, playerId);
+            if (index != -1)
+                ArrList.RemoveAt(ref leftClients, ref leftClientsCount, index);
+
             if (isMaster && !IsAnyClientWaitingForLateJoinerSync())
             {
                 sendLateJoinerDataAtEndOfTick = false;
