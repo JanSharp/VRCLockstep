@@ -80,7 +80,7 @@ namespace JanSharp
             lockStep.waitTick = syncedTick;
             foreach (ulong inputActionToRun in syncedInputActionsToRun)
             {
-                lockStep.EnqueueInputActionAtTick(
+                lockStep.AssociateInputActionWithTick(
                     (uint)(inputActionToRun >> TickToRunInShift),
                     // Since casting in Udon isn't actually casting, it's a call to Convert.ToX
                     // I'm quite certain we first have to truncate the top bits manually, otherwise

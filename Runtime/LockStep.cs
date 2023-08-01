@@ -70,8 +70,8 @@ namespace JanSharp
 
         // uint => uint[]
         // uint: tick to run in
-        // uint[]: unique id (same as for inputActionsByUniqueId)
-        private DataDictionary queuedInputActions = new DataDictionary();
+        // uint[]: unique ids (same as for inputActionsByUniqueId)
+        private DataDictionary uniqueIdsByTick = new DataDictionary();
 
         ///cSpell:ignore iahi, iahen
         private UdonSharpBehaviour[] inputActionHandlerInstances = new UdonSharpBehaviour[ArrList.MinCapacity];
@@ -173,7 +173,7 @@ namespace JanSharp
                 {
                     waitTick = uint.MaxValue;
                 }
-                RemoveOutdatedQueuedInputActions();
+                RemoveOutdatedUniqueIdsByTick();
                 isCatchingUp = false;
                 SendClientCaughtUpIA();
                 startTick = currentTick;
@@ -181,16 +181,16 @@ namespace JanSharp
             }
         }
 
-        private void RemoveOutdatedQueuedInputActions()
+        private void RemoveOutdatedUniqueIdsByTick()
         {
-            DataList keys = queuedInputActions.GetKeys();
+            DataList keys = uniqueIdsByTick.GetKeys();
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken tickToRunToken = keys[i];
                 if (tickToRunToken.UInt > currentTick)
                     continue;
 
-                queuedInputActions.Remove(tickToRunToken, out DataToken uniqueIdsToken);
+                uniqueIdsByTick.Remove(tickToRunToken, out DataToken uniqueIdsToken);
                 foreach (uint uniqueId in (uint[])uniqueIdsToken.Reference)
                     inputActionsByUniqueId.Remove(uniqueId); // Remove simply does nothing if it already doesn't exist.
             }
@@ -201,7 +201,7 @@ namespace JanSharp
             uint nextTick = currentTick + 1u;
             DataToken nextTickToken = nextTick;
             uint[] uniqueIds = null;
-            if (queuedInputActions.TryGetValue(nextTickToken, out DataToken uniqueIdsToken))
+            if (uniqueIdsByTick.TryGetValue(nextTickToken, out DataToken uniqueIdsToken))
             {
                 uniqueIds = (uint[])uniqueIdsToken.Reference;
                 foreach (uint uniqueId in uniqueIds)
@@ -225,7 +225,7 @@ namespace JanSharp
                         return false;
                     }
             }
-            queuedInputActions.Remove(nextTickToken);
+            uniqueIdsByTick.Remove(nextTickToken);
 
             currentTick = nextTick;
             // Debug.Log($"<dlt> Running tick {currentTick}");
@@ -283,7 +283,7 @@ namespace JanSharp
                     if (currentTick <= immutableUntilTick)
                     {
                         immutableUntilTick++;
-                        EnqueueInputActionAtTick(immutableUntilTick, uniqueId, allowOnMaster: true);
+                        AssociateInputActionWithTick(immutableUntilTick, uniqueId, allowOnMaster: true);
                         tickSync.AddInputActionToRun(immutableUntilTick, uniqueId);
                         return;
                     }
@@ -428,7 +428,7 @@ namespace JanSharp
             processLeftPlayersSentCount++;
             ProcessLeftPlayers();
             if (isSinglePlayer)
-                InstantlyRunQueuedInputActions();
+                InstantlyRunInputActionsWaitingToBeSent();
 
             if (IsAnyClientWaitingForLateJoinerSync())
             {
@@ -437,7 +437,7 @@ namespace JanSharp
             }
         }
 
-        private void InstantlyRunQueuedInputActions()
+        private void InstantlyRunInputActionsWaitingToBeSent()
         {
             inputActionSyncForLocalPlayer.DequeueEverything();
         }
@@ -470,7 +470,7 @@ namespace JanSharp
         {
             isSinglePlayer = true;
             lateJoinerInputActionSync.DequeueEverything();
-            InstantlyRunQueuedInputActions();
+            InstantlyRunInputActionsWaitingToBeSent();
             tickSync.ClearInputActionsToRun();
         }
 
@@ -660,7 +660,7 @@ namespace JanSharp
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
                 inputActionsByUniqueId.Add(uniqueId, inputActionData);
-                EnqueueInputActionAtTick(waitTick, uniqueId);
+                AssociateInputActionWithTick(waitTick, uniqueId);
                 waitTick++;
                 return;
             }
@@ -680,7 +680,7 @@ namespace JanSharp
             RunInputAction(inputActionId, inputActionData);
         }
 
-        public void EnqueueInputActionAtTick(uint tickToRunIn, uint uniqueId, bool allowOnMaster = false)
+        public void AssociateInputActionWithTick(uint tickToRunIn, uint uniqueId, bool allowOnMaster = false)
         {
             if (ignoreIncomingInputActions)
                 return;
@@ -692,17 +692,17 @@ namespace JanSharp
 
             // Mark the input action to run at the given tick.
             DataToken tickToRunInToken = new DataToken(tickToRunIn);
-            if (queuedInputActions.TryGetValue(tickToRunInToken, out DataToken uniqueIdsToken))
+            if (uniqueIdsByTick.TryGetValue(tickToRunInToken, out DataToken uniqueIdsToken))
             {
                 uint[] uniqueIds = (uint[])uniqueIdsToken.Reference;
                 int oldLength = uniqueIds.Length;
                 uint[] newUniqueIds = new uint[oldLength + 1];
                 uniqueIds.CopyTo(newUniqueIds, 0);
                 newUniqueIds[oldLength] = uniqueId;
-                queuedInputActions.SetValue(tickToRunInToken, new DataToken(newUniqueIds));
+                uniqueIdsByTick.SetValue(tickToRunInToken, new DataToken(newUniqueIds));
                 return;
             }
-            queuedInputActions.Add(tickToRunInToken, new DataToken(new uint[] { uniqueId }));
+            uniqueIdsByTick.Add(tickToRunInToken, new DataToken(new uint[] { uniqueId }));
         }
 
         public uint RegisterInputAction(UdonSharpBehaviour handlerInstance, string handlerEventName)

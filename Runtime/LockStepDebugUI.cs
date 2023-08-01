@@ -92,15 +92,15 @@ namespace JanSharp
         private const string InputActionsByUniqueIdsFieldName = "inputActionsByUniqueId";
         private const string InputActionHandlerEventNamesFieldName = "inputActionHandlerEventNames";
 
-        public RectTransform queuedInputActionsParent;
-        public TextMeshProUGUI queuedInputActionsCountText;
-        public float queuedInputActionsElemHeight;
-        private object[] queuedInputActionsListObj;
-        private DataDictionary queuedInputActions;
-        private uint[][] queuedInputActionsUnrolled = new uint[ArrList.MinCapacity][];
-        ///cSpell:ignore qiau
-        private int qiauCount = 0;
-        private const string QueuedInputActionsFieldName = "queuedInputActions";
+        public RectTransform uniqueIdsByTickParent;
+        public TextMeshProUGUI uniqueIdsByTickCountText;
+        public float uniqueIdsByTickElemHeight;
+        private object[] uniqueIdsByTickListObj;
+        private DataDictionary uniqueIdsByTick;
+        private uint[][] uniqueIdsByTickUnrolled = new uint[ArrList.MinCapacity][];
+        ///cSpell:ignore uibtu
+        private int uibtuCount = 0;
+        private const string UniqueIdsByTickFieldName = "uniqueIdsByTick";
 
         // NOTE: Probably also list of registered input actions, but that's for later
         // NOTE: Probably also some visualization of game states, but that's for later
@@ -112,7 +112,7 @@ namespace JanSharp
             InitializeClientStates();
             InitializeLeftClients();
             InitializeInputActionsByUniqueIds();
-            InitializeQueuedInputActions();
+            InitializeUniqueIdsByTick();
             Update();
         }
 
@@ -125,7 +125,7 @@ namespace JanSharp
             UpdateClientStates();
             UpdateLeftClients();
             UpdateInputActionsByUniqueIds();
-            UpdateQueuedInputActions();
+            UpdateUniqueIdsByTick();
             debugLastUpdateTime = Time.realtimeSinceStartup - startTime;
         }
 
@@ -314,47 +314,47 @@ namespace JanSharp
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>{inputActionId}</mspace> {inputActionEventName}";
         }
 
-        private void InitializeQueuedInputActions()
+        private void InitializeUniqueIdsByTick()
         {
-            queuedInputActionsListObj = NewListObj(
+            uniqueIdsByTickListObj = NewListObj(
                 null,
-                queuedInputActionsElemHeight,
-                queuedInputActionsParent,
-                queuedInputActionsCountText
+                uniqueIdsByTickElemHeight,
+                uniqueIdsByTickParent,
+                uniqueIdsByTickCountText
             );
         }
 
-        private void UpdateQueuedInputActions()
+        private void UpdateUniqueIdsByTick()
         {
-            if (queuedInputActions == null)
-                queuedInputActions = (DataDictionary)lockStep.GetProgramVariable(QueuedInputActionsFieldName);
+            if (uniqueIdsByTick == null)
+                uniqueIdsByTick = (DataDictionary)lockStep.GetProgramVariable(UniqueIdsByTickFieldName);
 
-            if (queuedInputActions != null)
+            if (uniqueIdsByTick != null)
             {
-                ArrList.Clear(ref queuedInputActionsUnrolled, ref qiauCount);
-                DataList keys = queuedInputActions.GetKeys();
+                ArrList.Clear(ref uniqueIdsByTickUnrolled, ref uibtuCount);
+                DataList keys = uniqueIdsByTick.GetKeys();
                 for (int i = 0; i < keys.Count; i ++)
                 {
                     DataToken keyToken = keys[i];
                     uint tick = keyToken.UInt;
-                    foreach (uint uniqueId in (uint[])queuedInputActions[keyToken].Reference)
-                        ArrList.Add(ref queuedInputActionsUnrolled, ref qiauCount, new uint[] { tick, uniqueId });
+                    foreach (uint uniqueId in (uint[])uniqueIdsByTick[keyToken].Reference)
+                        ArrList.Add(ref uniqueIdsByTickUnrolled, ref uibtuCount, new uint[] { tick, uniqueId });
                 }
             }
 
             UpdateList(
-                queuedInputActionsListObj,
-                queuedInputActions == null,
-                queuedInputActions == null ? 0 : qiauCount,
+                uniqueIdsByTickListObj,
+                uniqueIdsByTick == null,
+                uniqueIdsByTick == null ? 0 : uibtuCount,
                 nameof(CreateValueLabelListElemObj),
-                nameof(UpdateQueuedInputActionsListElemObj)
+                nameof(UpdateUniqueIdsByTickListElemObj)
             );
         }
 
         // (object[] listObj, object[] listElemObj, int elemIndex) => void;
-        public void UpdateQueuedInputActionsListElemObj()
+        public void UpdateUniqueIdsByTickListElemObj()
         {
-            uint[] pair = queuedInputActionsUnrolled[elemIndex];
+            uint[] pair = uniqueIdsByTickUnrolled[elemIndex];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = pair[0].ToString();
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>0x{pair[1]:x8}";
         }
