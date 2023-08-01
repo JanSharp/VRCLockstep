@@ -50,6 +50,8 @@ namespace JanSharp
         private int uiqStartIndex = 0;
         private int uiqCount = 0;
 
+        public int QueuedSyncsCount => siqCount;
+
         // receiving
 
         private string partialSyncedData = null;

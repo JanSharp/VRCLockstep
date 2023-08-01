@@ -56,6 +56,7 @@ namespace JanSharp
             "immutableUntilTick",
             "startTick",
             "tickStartTime",
+            "syncCountForLatestLJSync",
             "unprocessedLJSerializedGSCount",
             "nextLJGameStateToProcess",
             "unrecoverableStateDueToUniqueId",

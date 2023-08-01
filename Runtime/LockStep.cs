@@ -19,8 +19,6 @@ namespace JanSharp
         private const float TickRate = 16f;
         private const string InputActionDataField = "iaData";
 
-        // TODO: what happens when late joiner sync is in process and another client joins in that time?
-
         // LJ = late joiner, IA = input action
         private const uint LJCurrentTickIAId = 0;
         private const uint LJClientStatesIAId = 1;
@@ -37,6 +35,7 @@ namespace JanSharp
         private uint startTick;
         private uint immutableUntilTick;
         private float tickStartTime;
+        private int syncCountForLatestLJSync = -1;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
         // private float currentTickRate = TickRate;
         private bool isTickPaused = true;
@@ -635,8 +634,16 @@ namespace JanSharp
                 sendLateJoinerDataAtEndOfTick = true;
         }
 
+        private int Clamp(int value, int min, int max)
+        {
+            return System.Math.Min(max, System.Math.Max(min, value));
+        }
+
         private void SendLateJoinerData()
         {
+            if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20))
+                lateJoinerInputActionSync.DequeueEverything(doCallback: false);
+
             iaData = new DataList();
             iaData.Add((double)clientStates.Count);
             DataList keys = clientStates.GetKeys();
@@ -653,10 +660,16 @@ namespace JanSharp
             iaData = new DataList();
             iaData.Add(currentTick);
             lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, iaData);
+
+            syncCountForLatestLJSync = lateJoinerInputActionSync.QueuedSyncsCount;
         }
 
         private void OnLJClientStatesIA()
         {
+            // If this client was already receiving data, but then it restarted from
+            // the beginning, forget about everything that's been received so far.
+            ForgetAboutUnprocessedLJSerializedGameSates();
+
             clientStates = new DataDictionary();
             int stopBeforeIndex = 1 + 2 * (int)iaData[0].Double;
             for (int i = 1; i < stopBeforeIndex; i += 2)
