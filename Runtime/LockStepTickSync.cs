@@ -25,11 +25,13 @@ namespace JanSharp
 
         public void AddInputActionToRun(uint tickToRunIn, uint uniqueId)
         {
+            Debug.Log($"<dlt> LockStepTickSync  AddInputActionToRun");
             ArrList.Add(ref inputActionsToRun, ref iatrCount, (((ulong)tickToRunIn) << TickToRunInShift) | (ulong)uniqueId);
         }
 
         public void ClearInputActionsToRun()
         {
+            Debug.Log($"<dlt> LockStepTickSync  ClearInputActionsToRun");
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
         }
 
@@ -63,7 +65,7 @@ namespace JanSharp
                 return;
             }
 
-            ClearInputActionsToRun();
+            ArrList.Clear(ref inputActionsToRun, ref iatrCount);
             SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
             // TODO: Count how many times this runs per second.
         }
@@ -93,6 +95,7 @@ namespace JanSharp
 
         public override void OnOwnershipTransferred(VRCPlayerApi player)
         {
+            Debug.Log($"<dlt> LockStepTickSync  OnOwnershipTransferred");
             lockStep.SendCustomEventDelayedFrames(nameof(LockStep.CheckMasterChange), 1);
         }
     }
