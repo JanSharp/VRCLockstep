@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -102,6 +102,7 @@ namespace JanSharp
         private int initiateLateJoinerSyncSentCount = 0;
         private int processLeftPlayersSentCount = 0;
         private int checkOtherMasterCandidatesSentCount = 0;
+        private int someoneLeftWhileWeWereWaitingForLJSyncSentCount = 0;
 
         // Used by the debug UI.
         private float lastUpdateTime;
@@ -340,7 +341,7 @@ namespace JanSharp
             SendClientJoinedIA();
         }
 
-        public void OnInputActionSyncPlayerUnassigned(VRCPlayerApi player)
+        public override void OnPlayerLeft(VRCPlayerApi player)
         {
             int playerId = player.playerId;
 
@@ -352,9 +353,22 @@ namespace JanSharp
                 return;
             }
 
-            // Already removed... was it the master that got removed?
+            if (clientStates == null) // Implies `isWaitingForLateJoinerSync`
+            {
+                if (!isWaitingForLateJoinerSync)
+                    Debug.LogError("<dlt> clientStates should be impossible to "
+                        + "be null when isWaitingForLateJoinerSync is false.");
+                // Still waiting for late joiner sync, so who knows,
+                // maybe this client will become the new master.
+                someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
+                SendCustomEventDelayedSeconds(nameof(SomeoneLeftWhileWeWereWaitingForLJSync), 2.5f);
+                // Note that the delay should be > then the delay for the call to OnLocalInputActionSyncPlayerAssignedDelayed.
+                return;
+            }
+
             if (!clientStates.TryGetValue(playerId, out DataToken clientStateToken))
             {
+                // Already removed... was it the master that got removed?
                 DataList allStates = clientStates.GetValues();
                 bool foundMaster = false;
                 for (int i = 0; i < allStates.Count; i++)
@@ -375,12 +389,39 @@ namespace JanSharp
                 SetMasterLeftFlag();
         }
 
+        public void SomeoneLeftWhileWeWereWaitingForLJSync()
+        {
+            if ((--someoneLeftWhileWeWereWaitingForLJSyncSentCount) != 0)
+                return;
+
+            if (clientStates == null)
+            {
+                if (!currentlyNoMaster)
+                {
+                    Debug.LogError("<dlt> currentlyNoMaster should be impossible to "
+                        + "be false when clientStates is null. Setting it to true "
+                        + "in order to resolve this error state.");
+                    currentlyNoMaster = true;
+                }
+
+                // clientStates is still null... so maybe this client should be taking charge.
+                CheckMasterChange();
+
+                // Nope, not taking charge, so some other client is not giving us late joiner data.
+                if (!isMaster)
+                {
+                    // Tell that client that we exist.
+                    SendClientJoinedIA();
+                }
+            }
+        }
+
         private void SetMasterLeftFlag()
         {
             if (currentlyNoMaster)
                 return;
             currentlyNoMaster = true;
-            SendCustomEventDelayedFrames(nameof(CheckMasterChange), 1);
+            SendCustomEventDelayedSeconds(nameof(CheckMasterChange), 0.2f);
         }
 
         private void BecomeInitialMaster()
@@ -462,6 +503,7 @@ namespace JanSharp
             ForgetAboutLeftPlayers();
             ForgetAboutInputActionsWaitingToBeSent();
             clientStates = null;
+            currentlyNoMaster = true;
             inputActionsByUniqueId.Clear();
             uniqueIdsByTick.Clear();
             isTickPaused = true;
@@ -615,7 +657,11 @@ namespace JanSharp
         public void OnClientJoinedIA()
         {
             int playerId = (int)iaData[0].Double;
-            clientStates.Add(playerId, (byte)ClientState.WaitingForLateJoinerSync);
+            // Using set value, because the given player may already have a state,
+            // because it is valid for the client joined input action to be sent
+            // multiple times. And whenever it is sent, it means the client is waiting
+            // for late joiner sync.
+            clientStates.SetValue(playerId, (byte)ClientState.WaitingForLateJoinerSync);
 
             if (isMaster)
             {
