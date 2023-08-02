@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -691,6 +691,18 @@ namespace JanSharp
         {
             Debug.Log($"<dlt> LockStep  ExitSinglePlayerMode");
             isSinglePlayer = false;
+            // (0u, 0u) Indicate that any input actions associated with ticks
+            // before this client became master should be dropped. This isn't
+            // useful for the true initial master, but if a client reset the instance
+            // because the master left before sending late joiner data finished,
+            // then this is required to get rid of any old lingering input actions.
+            // The system being MP, turning SP and then MP again is also no problem
+            // for this here, as turning MP means a new client joined, so nothing
+            // would actually get dropped.
+            // And this must be done through the tick sync script, not using an input
+            // action, in order to avoid race conditions, because those would
+            // absolutely happen when using an input action to clear tick associations.
+            tickSync.AddInputActionToRun(0u, 0u);
         }
 
         private void SendMasterChangedIA()
@@ -986,9 +998,30 @@ namespace JanSharp
             RunInputAction(inputActionId, inputActionData);
         }
 
+        private void ClearUniqueIdsByTick()
+        {
+            Debug.Log($"<dlt> LockStep  ClearUniqueIdsByTick");
+            // When only clearing uniqueIdsByTick we can't just clear inputActionsByUniqueId,
+            // because that may contain very new input actions which have not been associated
+            // with a tick yet, so they'd be associated with future ticks which means we must
+            // keep them alive. The below logic just removes the ones we know for certain that
+            // they can be removed, just to free up some memory.
+            DataList allValues = uniqueIdsByTick.GetValues();
+            for (int i = 0; i < allValues.Count; i++)
+                foreach (uint uniqueId in (uint[])allValues[i].Reference)
+                    inputActionsByUniqueId.Remove(uniqueId);
+            uniqueIdsByTick.Clear();
+        }
+
         public void AssociateInputActionWithTick(uint tickToRunIn, uint uniqueId, bool allowOnMaster = false)
         {
             Debug.Log($"<dlt> LockStep  AssociateInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x8}");
+            if (tickToRunIn == 0u && uniqueId == 0u)
+            {
+                ClearUniqueIdsByTick();
+                return;
+            }
+
             if (ignoreIncomingInputActions)
                 return;
             if (isMaster && !isCatchingUp && !allowOnMaster) // If it is catching up, it's still enqueueing actions for later.
