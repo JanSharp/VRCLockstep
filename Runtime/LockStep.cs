@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -988,7 +988,7 @@ namespace JanSharp
 
         public void AssociateInputActionWithTick(uint tickToRunIn, uint uniqueId, bool allowOnMaster = false)
         {
-            Debug.Log($"<dlt> LockStep  AssociateInputActionWithTick tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x8}");
+            Debug.Log($"<dlt> LockStep  AssociateInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x8}");
             if (ignoreIncomingInputActions)
                 return;
             if (isMaster && !isCatchingUp && !allowOnMaster) // If it is catching up, it's still enqueueing actions for later.
