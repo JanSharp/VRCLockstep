@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -278,7 +278,7 @@ namespace JanSharp
 
         public void SendInputAction(uint inputActionId, DataList inputActionData)
         {
-            Debug.Log($"<dlt> LockStep  SendInputAction");
+            Debug.Log($"<dlt> LockStep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             if (ignoreLocalInputActions && !(stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId))
                 return;
 
@@ -289,11 +289,15 @@ namespace JanSharp
             }
 
             uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData);
+            Debug.Log($"<dlt> LockStep  SendInputAction (inner) - uniqueId: 0x{uniqueId:x8}");
 
             if (stillAllowLocalClientJoinedIA)
             {
                 if (ignoreLocalInputActions)
+                {
+                    Debug.Log($"<dlt> LockStep  SendInputAction (inner) - ignoreLocalInputActions is true, returning");
                     return; // Do not save client joined IA because it will never be executed locally.
+                }
                 Debug.LogError("<dlt> stillAllowLocalClientJoinedIA is true while ignoreLocalInputActions is false. "
                     + "This is an invalid state, stillAllowLocalClientJoinedIA should only ever be true if "
                     + "ignoreLocalInputActions is also true. Continuing as though stillAllowLocalClientJoinedIA was false."
@@ -353,7 +357,7 @@ namespace JanSharp
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            Debug.Log($"<dlt> LockStep  OnPlayerLeft");
+            Debug.Log($"<dlt> LockStep  OnPlayerLeft - player is null: {player == null}");
             int playerId = player.playerId;
 
             if (isMaster)
@@ -893,7 +897,7 @@ namespace JanSharp
 
         public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, uint uniqueId, DataList inputActionData)
         {
-            Debug.Log($"<dlt> LockStep  ReceivedInputAction");
+            Debug.Log($"<dlt> LockStep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x8}{(isLateJoinerSync ? "" : $", event name {inputActionHandlerEventNames[inputActionId]}")}");
             if (isLateJoinerSync)
             {
                 if (!isWaitingForLateJoinerSync)
@@ -954,7 +958,7 @@ namespace JanSharp
 
         public void AssociateInputActionWithTick(uint tickToRunIn, uint uniqueId, bool allowOnMaster = false)
         {
-            Debug.Log($"<dlt> LockStep  AssociateInputActionWithTick");
+            Debug.Log($"<dlt> LockStep  AssociateInputActionWithTick tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x8}");
             if (ignoreIncomingInputActions)
                 return;
             if (isMaster && !isCatchingUp && !allowOnMaster) // If it is catching up, it's still enqueueing actions for later.

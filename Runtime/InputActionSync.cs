@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -107,6 +107,7 @@ namespace JanSharp
             }
             CheckSyncStart();
 
+            Debug.Log($"<dlt> InputActionSync  SendInputAction - uniqueId: 0x{uniqueId:x8}");
             return uniqueId;
         }
 
