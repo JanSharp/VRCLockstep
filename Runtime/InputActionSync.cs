@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -206,8 +206,13 @@ namespace JanSharp
                 return;
             }
 
-            if (isLateJoinerSyncInst && lockStepIsMaster)
+            if ((isLateJoinerSyncInst && lockStepIsMaster) || lockStep == null)
+            {
+                // When lockStep is still null, this can safely ignore any incoming data,
+                // because this script can handle broken partial actions and LockStep
+                // doesn't except to get input actions instantly after joining.
                 return;
+            }
 
             if (syncedInt == 0u)
             {
