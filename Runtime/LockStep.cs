@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -43,7 +43,7 @@ namespace JanSharp
         private bool ignoreLocalInputActions = true;
         private bool stillAllowLocalClientJoinedIA = false;
         private bool ignoreIncomingInputActions = true;
-        private bool isWaitingForLateJoinerSync = false;
+        private bool isWaitingForLateJoinerSync = true;
         private bool sendLateJoinerDataAtEndOfTick = false;
         private bool isCatchingUp = false;
         private bool isSinglePlayer = false;
@@ -342,6 +342,13 @@ namespace JanSharp
         public void OnLocalInputActionSyncPlayerAssignedDelayed()
         {
             Debug.Log($"<dlt> LockStep  OnLocalInputActionSyncPlayerAssignedDelayed");
+            if (isMaster)
+            {
+                Debug.Log($"<dlt> isMaster is already true 2 seconds after the local player's "
+                    + $"InputActionSync script has been assigned... nothing to do here then.");
+                return;
+            }
+
             if (localPlayer.isMaster)
             {
                 BecomeInitialMaster();
@@ -351,7 +358,6 @@ namespace JanSharp
             ignoreLocalInputActions = true;
             stillAllowLocalClientJoinedIA = true;
             ignoreIncomingInputActions = false;
-            isWaitingForLateJoinerSync = true;
             SendClientJoinedIA();
         }
 
@@ -359,6 +365,11 @@ namespace JanSharp
         {
             Debug.Log($"<dlt> LockStep  OnPlayerLeft - player is null: {player == null}");
             int playerId = player.playerId;
+
+            // inputActionSyncForLocalPlayer could still be null while this event is running,
+            // but if that's the case, isMaster is false and clientStates is null,
+            // so the only function that needs to handle inputActionSyncForLocalPlayer being null
+            // is SomeoneLeftWhileWeWereWaitingForLJSync.
 
             if (isMaster)
             {
@@ -420,6 +431,14 @@ namespace JanSharp
                     currentlyNoMaster = true;
                 }
 
+                if (inputActionSyncForLocalPlayer == null)
+                {
+                    // CheckMasterChange should happen, but the local player needs the sync script first.
+                    someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
+                    SendCustomEventDelayedSeconds(nameof(SomeoneLeftWhileWeWereWaitingForLJSync), 1f);
+                    return;
+                }
+
                 // clientStates is still null... so maybe this client should be taking charge.
                 CheckMasterChange();
 
@@ -448,6 +467,7 @@ namespace JanSharp
             currentlyNoMaster = false;
             ignoreLocalInputActions = false;
             ignoreIncomingInputActions = false;
+            isWaitingForLateJoinerSync = false;
             clientStates = new DataDictionary();
             clientStates.Add(localPlayer.playerId, (byte)ClientState.Master);
             lateJoinerInputActionSync.lockStepIsMaster = true;
@@ -526,6 +546,7 @@ namespace JanSharp
             ForgetAboutInputActionsWaitingToBeSent();
             clientStates = null;
             currentlyNoMaster = true;
+            isWaitingForLateJoinerSync = true;
             inputActionsByUniqueId.Clear();
             uniqueIdsByTick.Clear();
             isTickPaused = true;
@@ -534,6 +555,16 @@ namespace JanSharp
         public void CheckMasterChange()
         {
             Debug.Log($"<dlt> LockStep  CheckMasterChange");
+
+            if (inputActionSyncForLocalPlayer == null)
+            {
+                // This can happen when on ownership transferred runs on LockStepTickSync,
+                // in which case nothing needs to happen here, because 
+                // inputActionSyncForLocalPlayer still being null is handled by OnPlayerLeft
+                // which will eventually call CheckMasterChange, if needed.
+                return;
+            }
+
             if (isMaster || !currentlyNoMaster || !Networking.IsMaster || checkOtherMasterCandidatesSentCount != 0)
                 return;
 
@@ -557,7 +588,6 @@ namespace JanSharp
                 // Because of this, not a single event - not even the deserialization events for game states -
                 // must raised while isWaitingForLateJoinerSync is still true, otherwise deserialization of a
                 // game state may happen before OnInit, which is invalid behaviour for this system.
-                isWaitingForLateJoinerSync = false;
                 stillAllowLocalClientJoinedIA = false;
                 isCatchingUp = false;
                 FactoryReset();
