@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -21,7 +21,8 @@ namespace JanSharp
             "ignoreLocalInputActions",
             "stillAllowLocalClientJoinedIA",
             "ignoreIncomingInputActions",
-            "isWaitingForLateJoinerSync",
+            "isWaitingToSendClientJoinedIA",
+            "isWaitingToSendClientJoinedIA",
             "sendLateJoinerDataAtEndOfTick",
             "isCatchingUp",
             "isSinglePlayer",

@@ -43,7 +43,8 @@ namespace JanSharp
         private bool ignoreLocalInputActions = true;
         private bool stillAllowLocalClientJoinedIA = false;
         private bool ignoreIncomingInputActions = true;
-        private bool isWaitingForLateJoinerSync = true;
+        private bool isWaitingToSendClientJoinedIA = true;
+        private bool isWaitingForLateJoinerSync = false;
         private bool sendLateJoinerDataAtEndOfTick = false;
         private bool isCatchingUp = false;
         private bool isSinglePlayer = false;
@@ -123,6 +124,7 @@ namespace JanSharp
 
         private void Update()
         {
+            // TODO: Use stopwatches instead of realtimeSinceStartup.
             float startTime = Time.realtimeSinceStartup;
 
             if (isTickPaused)
@@ -379,11 +381,11 @@ namespace JanSharp
                 return;
             }
 
-            if (clientStates == null) // Implies `isWaitingForLateJoinerSync`
+            if (clientStates == null) // Implies `isWaitingAfterJustJoining || isWaitingForLateJoinerSync`
             {
-                if (!isWaitingForLateJoinerSync)
-                    Debug.LogError("<dlt> clientStates should be impossible to "
-                        + "be null when isWaitingForLateJoinerSync is false.");
+                if (!(isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync))
+                    Debug.LogError("<dlt> clientStates should be impossible to be null when "
+                        + "isWaitingAfterJustJoining and isWaitingForLateJoinerSync are both false.");
                 // Still waiting for late joiner sync, so who knows,
                 // maybe this client will become the new master.
                 someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
@@ -467,6 +469,7 @@ namespace JanSharp
             currentlyNoMaster = false;
             ignoreLocalInputActions = false;
             ignoreIncomingInputActions = false;
+            isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = false;
             clientStates = new DataDictionary();
             clientStates.Add(localPlayer.playerId, (byte)ClientState.Master);
@@ -546,7 +549,8 @@ namespace JanSharp
             ForgetAboutInputActionsWaitingToBeSent();
             clientStates = null;
             currentlyNoMaster = true;
-            isWaitingForLateJoinerSync = true;
+            isWaitingToSendClientJoinedIA = true;
+            isWaitingForLateJoinerSync = false;
             inputActionsByUniqueId.Clear();
             uniqueIdsByTick.Clear();
             isTickPaused = true;
@@ -574,7 +578,7 @@ namespace JanSharp
                 return;
             }
 
-            if (isWaitingForLateJoinerSync)
+            if (isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync)
             {
                 if (clientStates != null && IsAnyClientNotWaitingForLateJoinerSync())
                 {
@@ -726,6 +730,8 @@ namespace JanSharp
             Debug.Log($"<dlt> LockStep  SendClientJoinedIA");
             iaData = new DataList();
             iaData.Add((double)localPlayer.playerId);
+            isWaitingToSendClientJoinedIA = false;
+            isWaitingForLateJoinerSync = true;
             SendInputAction(clientJoinedIAId, iaData);
         }
 
@@ -811,6 +817,7 @@ namespace JanSharp
         private void OnLJCustomGameStateIA(uint inputActionId)
         {
             Debug.Log($"<dlt> LockStep  OnLJCustomGameStateIA");
+            // TODO: ignore if client states are still null
             if (inputActionId - LJFirstCustomGameStateIAId != (uint)unprocessedLJSerializedGSCount)
             {
                 Debug.LogError($"<dlt> Expected game state index {unprocessedLJSerializedGSCount}, "
@@ -825,6 +832,7 @@ namespace JanSharp
         private void OnLJCurrentTickIA()
         {
             Debug.Log($"<dlt> LockStep  OnLJCurrentTickIA");
+            // TODO: ignore if client states are still null
             currentTick = (uint)iaData[0].Double;
 
             lateJoinerInputActionSync.gameObject.SetActive(false);
