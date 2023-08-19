@@ -836,13 +836,37 @@ namespace JanSharp
         {
             Debug.Log($"<dlt> LockStep  OnLJCurrentTickIA - clientStates is null: {clientStates == null}");
             if (clientStates == null) // This data was not meant for this client. Continue waiting.
+            {
+                SendCustomEventDelayedSeconds(nameof(AskForLateJoinerSyncAgain), 2.5f);
                 return;
+            }
 
             currentTick = (uint)iaData[0].Double;
 
             lateJoinerInputActionSync.gameObject.SetActive(false);
             isWaitingForLateJoinerSync = false;
             TryMoveToNextLJSerializedGameState();
+        }
+
+        public void AskForLateJoinerSyncAgain()
+        {
+            Debug.Log($"<dlt> LockStep  AskForLateJoinerSyncAgain");
+            // Does not need to keep track of the amount of time this has been raised to only run for the last
+            // one, because even after the first time it was sent, by the time this runs the condition below
+            // should already be true. And if it isn't, no new late joiner data has been received, so it it
+            // should be impossible for this event to have been sent twice. But even if that were to happen,
+            // late joiner sync initialization has a 5 second delay on the master, so it doesn't really
+            // matter.
+            if (clientStates != null)
+                return;
+
+            Debug.LogWarning($"<dlt> The master has not sent another set of late joiner data for 2.5 seconds "
+                + "since the last set finished, however this client is still waiting on that data. This "
+                + "should be impossible because the master keeps track of joined clients, however "
+                + "through mysterious means the first input action for late joiner sync may have been "
+                + "lost to the ether, through means unknown to me. Therefore this client is asking the "
+                + "master to send late joiner data again.");
+            SendClientJoinedIA();
         }
 
         private void TryMoveToNextLJSerializedGameState()
