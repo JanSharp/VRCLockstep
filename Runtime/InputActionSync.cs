@@ -35,7 +35,6 @@ namespace JanSharp
 
         [UdonSynced] private uint syncedInt = 0u; // Initial values for first sync, which gets ignored.
         [UdonSynced] private string syncedData = "";
-        private bool firstSync = true; // TODO: remove this
         private bool retrying = false;
 
         private uint[] syncedIntQueue = new uint[ArrQueue.MinCapacity];
@@ -162,7 +161,7 @@ namespace JanSharp
         public override void OnPreSerialization()
         {
             Debug.Log($"<dlt> InputActionSync  {this.name}  OnPreSerialization");
-            if (firstSync || retrying)
+            if (retrying)
             {
                 retrying = false;
                 return;
@@ -182,13 +181,6 @@ namespace JanSharp
                 return;
             }
 
-            if (firstSync)
-            {
-                firstSync = false;
-                SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
-                return;
-            }
-
             uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
             if (!isLateJoinerSyncInst && uniqueId != 0u)
                 lockStep.InputActionSent(uniqueId);
@@ -200,12 +192,6 @@ namespace JanSharp
         public override void OnDeserialization(DeserializationResult result)
         {
             Debug.Log($"<dlt> InputActionSync  {this.name}  OnDeserialization");
-            if (firstSync)
-            {
-                firstSync = false;
-                return;
-            }
-
             if ((isLateJoinerSyncInst && lockStepIsMaster) || lockStep == null)
             {
                 // When lockStep is still null, this can safely ignore any incoming data,

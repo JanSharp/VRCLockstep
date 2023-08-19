@@ -15,7 +15,6 @@ namespace JanSharp
         public LockStep lockStep;
         [UdonSynced] public uint syncedTick;
         [UdonSynced] private ulong[] syncedInputActionsToRun = new ulong[0];
-        private bool firstSync = true; // TODO: remove this
         private bool retrying = false;
 
         ///cSpell:ignore iatr
@@ -37,7 +36,7 @@ namespace JanSharp
 
         public override void OnPreSerialization()
         {
-            if (firstSync || retrying)
+            if (retrying)
             {
                 retrying = false;
                 return;
@@ -58,13 +57,6 @@ namespace JanSharp
                 return;
             }
 
-            if (firstSync)
-            {
-                firstSync = false;
-                SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
-                return;
-            }
-
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
             SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
             // TODO: Count how many times this runs per second.
@@ -74,12 +66,6 @@ namespace JanSharp
 
         public override void OnDeserialization()
         {
-            if (firstSync)
-            {
-                firstSync = false;
-                return;
-            }
-
             lockStep.waitTick = syncedTick;
             foreach (ulong inputActionToRun in syncedInputActionsToRun)
             {
