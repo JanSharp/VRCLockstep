@@ -732,6 +732,7 @@ namespace JanSharp
             iaData.Add((double)localPlayer.playerId);
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = true;
+            clientStates = null; // To know if this client actually received all data, first to last.
             SendInputAction(clientJoinedIAId, iaData);
         }
 
@@ -816,8 +817,10 @@ namespace JanSharp
 
         private void OnLJCustomGameStateIA(uint inputActionId)
         {
-            Debug.Log($"<dlt> LockStep  OnLJCustomGameStateIA");
-            // TODO: ignore if client states are still null
+            Debug.Log($"<dlt> LockStep  OnLJCustomGameStateIA - clientStates is null: {clientStates == null}");
+            if (clientStates == null) // This data was not meant for this client. Continue waiting.
+                return;
+
             if (inputActionId - LJFirstCustomGameStateIAId != (uint)unprocessedLJSerializedGSCount)
             {
                 Debug.LogError($"<dlt> Expected game state index {unprocessedLJSerializedGSCount}, "
@@ -831,8 +834,10 @@ namespace JanSharp
 
         private void OnLJCurrentTickIA()
         {
-            Debug.Log($"<dlt> LockStep  OnLJCurrentTickIA");
-            // TODO: ignore if client states are still null
+            Debug.Log($"<dlt> LockStep  OnLJCurrentTickIA - clientStates is null: {clientStates == null}");
+            if (clientStates == null) // This data was not meant for this client. Continue waiting.
+                return;
+
             currentTick = (uint)iaData[0].Double;
 
             lateJoinerInputActionSync.gameObject.SetActive(false);

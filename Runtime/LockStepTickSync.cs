@@ -15,7 +15,7 @@ namespace JanSharp
         public LockStep lockStep;
         [UdonSynced] public uint syncedTick;
         [UdonSynced] private ulong[] syncedInputActionsToRun = new ulong[0];
-        private bool firstSync = true;
+        private bool firstSync = true; // TODO: remove this
         private bool retrying = false;
 
         ///cSpell:ignore iatr

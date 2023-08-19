@@ -35,7 +35,7 @@ namespace JanSharp
 
         [UdonSynced] private uint syncedInt = 0u; // Initial values for first sync, which gets ignored.
         [UdonSynced] private string syncedData = "";
-        private bool firstSync = true;
+        private bool firstSync = true; // TODO: remove this
         private bool retrying = false;
 
         private uint[] syncedIntQueue = new uint[ArrQueue.MinCapacity];
