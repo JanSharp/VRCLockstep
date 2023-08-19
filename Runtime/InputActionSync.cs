@@ -58,15 +58,15 @@ namespace JanSharp
 
         // This method will be called on all clients when the object is enabled and the Owner has been assigned.
         public override void _OnOwnerSet() {
-            Debug.Log($"<dlt> InputActionSync  _OnOwnerSet"); }
+            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnOwnerSet"); }
 
         // This method will be called on all clients when the original owner has left and the object is about to be disabled.
         public override void _OnCleanup() {
-            Debug.Log($"<dlt> InputActionSync  _OnCleanup"); }
+            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnCleanup"); }
 
         public uint MakeUniqueId()
         {
-            Debug.Log($"<dlt> InputActionSync  MakeUniqueId");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  MakeUniqueId");
             return shiftedPlayerId | (nextInputActionIndex++);
         }
 
@@ -107,13 +107,13 @@ namespace JanSharp
             }
             CheckSyncStart();
 
-            Debug.Log($"<dlt> InputActionSync  SendInputAction - uniqueId: 0x{uniqueId:x8}");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction - uniqueId: 0x{uniqueId:x8}");
             return uniqueId;
         }
 
         public void DequeueEverything(bool doCallback)
         {
-            Debug.Log($"<dlt> InputActionSync  DequeueEverything");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  DequeueEverything");
             if (siqCount == 0)
                 return;
 
@@ -148,7 +148,7 @@ namespace JanSharp
 
         private void CheckSyncStart()
         {
-            Debug.Log($"<dlt> InputActionSync  CheckSyncStart");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  CheckSyncStart");
             if (!isLateJoinerSyncInst && Owner == null)
             {
                 Debug.LogError("<dlt> Attempt to send input actions when there is no player assigned with the sync script.");
@@ -161,7 +161,7 @@ namespace JanSharp
 
         public override void OnPreSerialization()
         {
-            Debug.Log($"<dlt> InputActionSync  OnPreSerialization");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  OnPreSerialization");
             if (firstSync || retrying)
             {
                 retrying = false;
@@ -174,7 +174,7 @@ namespace JanSharp
 
         public override void OnPostSerialization(SerializationResult result)
         {
-            Debug.Log($"<dlt> InputActionSync  OnPostSerialization");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  OnPostSerialization");
             if (!result.success)
             {
                 retrying = true;
@@ -199,7 +199,7 @@ namespace JanSharp
 
         public override void OnDeserialization(DeserializationResult result)
         {
-            Debug.Log($"<dlt> InputActionSync  OnDeserialization");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  OnDeserialization");
             if (firstSync)
             {
                 firstSync = false;
