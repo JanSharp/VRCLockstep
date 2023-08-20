@@ -132,8 +132,6 @@ TODO: handle continuing catching up while already master
 
 TODO: handle someone joining as the master is still catching up (it should continue catching up, and once done it should begin late joiner sync.)
 
-TODO: if a player leaves, check if it should stop syncing for late joiners, and clear any data currently queued in the late joiner sync script
-
 When the world converts from multiplayer to single player, the system must remove all queued data from the InputActionSync scripts (both the local player's one and the late joiner one), and instantly raise their associated actions (though there's no thing to do for the late joiner ones, just drop them).
 
 - Ignore OnPlayerLeave (for now? So long as I can trust the player object pool I suppose)
