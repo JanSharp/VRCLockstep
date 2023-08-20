@@ -186,10 +186,10 @@ namespace JanSharp
                 debugMinUpdateMS = float.MaxValue;
             }
 
-            averageUpdateMS = averageUpdateMS * 0.875 + lastUpdateMS * 0.125;
+            averageUpdateMS = averageUpdateMS * 0.9375 + lastUpdateMS * 0.0625; // 1/16
             lockStepPerformanceText.text = averageUpdateMS.ToString("f3") + formattedMaxAndMax;
 
-            debugAverageUpdateMS = debugAverageUpdateMS * 0.875 + debugLastUpdateMS * 0.125;
+            debugAverageUpdateMS = debugAverageUpdateMS * 0.9375 + debugLastUpdateMS * 0.0625; // 1/16
             debugUIPerformanceText.text = debugAverageUpdateMS.ToString("f3") + debugFormattedMaxAndMax;
         }
 
