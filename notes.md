@@ -221,12 +221,6 @@ Optionally a game state can be flagged as supporting import/export. When flagged
 
 In order to make your life easier, when supporting import/export, it is recommended to use an integer as the first value in the serialized data which is a simple incrementing version number of the data structure version. This makes it easy when deserializing to know what data format to expect in the serialized data stream, plus it allows for easy detection for old - no longer supported - versions of exported data, which therefore allows for graceful early aborting.
 
-# Lock Step Events
-
-- OnInit
-- OnClientBeginCatchUp (non game state event)
-- OnClientCaughtUp (non game state event)
-
 # Serialization Rules
 
 <!-- cSpell:ignore sbyte, ushort, ulong -->
