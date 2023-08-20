@@ -658,7 +658,10 @@ namespace JanSharp
 
             CheckSingePlayerModeChange();
 
-            for (int i = 0; i < leftClientsCount; i++)
+            // Must be a backwards loop, because SendClientLeftIA may ultimately remove the player id from
+            // the leftClients list. Specifically when only the master is left in the instance, causing input
+            // actions to be run instantly, and the OnClientLeftIA handler removes the player id.
+            for (int i = leftClientsCount - 1; i >= 0; i--)
                 SendClientLeftIA(leftClients[i]);
 
             ArrList.Clear(ref leftClients, ref leftClientsCount);
