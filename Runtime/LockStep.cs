@@ -106,7 +106,7 @@ namespace JanSharp
         private int someoneLeftWhileWeWereWaitingForLJSyncSentCount = 0;
 
         // Used by the debug UI.
-        private float lastUpdateTime;
+        private System.Diagnostics.Stopwatch lastUpdateSW = new System.Diagnostics.Stopwatch();
 
         private void Start()
         {
@@ -124,21 +124,21 @@ namespace JanSharp
 
         private void Update()
         {
-            // TODO: Use stopwatches instead of realtimeSinceStartup.
-            float startTime = Time.realtimeSinceStartup;
+            lastUpdateSW.Reset();
+            lastUpdateSW.Start();
 
             if (isTickPaused)
             {
                 if (nextLJGameStateToProcess != -1 && Time.time >= nextLJGameStateToProcessTime)
                     ProcessNextLJSerializedGameState();
-                lastUpdateTime = Time.realtimeSinceStartup - startTime;
+                lastUpdateSW.Stop();
                 return;
             }
 
             if (isCatchingUp)
             {
                 CatchUp();
-                lastUpdateTime = Time.realtimeSinceStartup - startTime;
+                lastUpdateSW.Stop();
                 return;
             }
 
@@ -162,24 +162,19 @@ namespace JanSharp
                 tickSync.syncedTick = currentTick - 1u;
             }
 
-            lastUpdateTime = Time.realtimeSinceStartup - startTime;
+            lastUpdateSW.Stop();
         }
 
         private void CatchUp()
         {
             Debug.Log($"<dlt> LockStep  CatchUp");
-            float startTime = Time.realtimeSinceStartup;
-            while (true)
-            {
-                if (currentTick == waitTick || !TryRunNextTick())
-                    break;
-                float realtimePassed = Time.realtimeSinceStartup - startTime;
-                // If secondsPassed == 0f then this platform is reporting the same realtimeSinceStartup during a frame,
-                // in which case there's no way to know how long we've been processing ticks already, so to be on the save
-                // side we only process 1 tick per frame.
-                if (realtimePassed == 0f || realtimePassed >= 0.01f) // 10ms.
-                    break;
-            }
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+            while (currentTick != waitTick
+                && TryRunNextTick()
+                && stopwatch.ElapsedMilliseconds < 10L)
+            { }
+            stopwatch.Stop(); // I don't think this actually matters, but it's not used anymore so sure.
 
             // As soon as we are within 1 second of the current tick, consider it done catching up.
             // This little leeway is required, as it may not be able to reach waitTick because

@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -36,17 +36,17 @@ namespace JanSharp
         private int lastFullSecond = int.MinValue;
 
         public TextMeshProUGUI lockStepPerformanceText;
-        private const string lockStepLastUpdateTimeFieldName = "lastUpdateTime";
-        private float averageUpdateTime;
-        private float minUpdateTime = float.MaxValue;
-        private float maxUpdateTime = float.MinValue;
+        private const string lockStepLastUpdateSWFieldName = "lastUpdateSW";
+        private double averageUpdateMS;
+        private double minUpdateMS = double.MaxValue;
+        private double maxUpdateMS = double.MinValue;
         private string formattedMaxAndMax;
 
         public TextMeshProUGUI debugUIPerformanceText;
-        private float debugLastUpdateTime;
-        private float debugAverageUpdateTime;
-        private float debugMinUpdateTime = float.MaxValue;
-        private float debugMaxUpdateTime = float.MinValue;
+        private System.Diagnostics.Stopwatch debugLastUpdateSW = new System.Diagnostics.Stopwatch();
+        private double debugAverageUpdateMS;
+        private double debugMinUpdateMS = double.MaxValue;
+        private double debugMaxUpdateMS = double.MinValue;
         private string debugFormattedMaxAndMax;
 
         public Transform numbersParent;
@@ -112,6 +112,11 @@ namespace JanSharp
 
         void Start()
         {
+            long freq = System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log($"<dlt> StopWatch IsHighResolution: {System.Diagnostics.Stopwatch.IsHighResolution}, "
+                + $"ticks per second: {freq}, "
+                + $"nano seconds per tick: {1_000_000_000L / freq}.");
+
             InitializeFlags();
             InitializeNumbers();
             InitializeClientStates();
@@ -123,7 +128,8 @@ namespace JanSharp
 
         void Update()
         {
-            float startTime = Time.realtimeSinceStartup;
+            debugLastUpdateSW.Reset();
+            debugLastUpdateSW.Start();
             UpdateFlags();
             UpdatePerformance();
             UpdateNumbers();
@@ -131,7 +137,7 @@ namespace JanSharp
             UpdateLeftClients();
             UpdateInputActionsByUniqueIds();
             UpdateUniqueIdsByTick();
-            debugLastUpdateTime = Time.realtimeSinceStartup - startTime;
+            debugLastUpdateSW.Stop();
         }
 
         private void InitializeFlags()
@@ -156,31 +162,35 @@ namespace JanSharp
 
         private void UpdatePerformance()
         {
-            float lastUpdateTime = (float)lockStep.GetProgramVariable(lockStepLastUpdateTimeFieldName);
-            maxUpdateTime = Mathf.Max(maxUpdateTime, lastUpdateTime);
-            minUpdateTime = Mathf.Min(minUpdateTime, lastUpdateTime);
-            debugMaxUpdateTime = Mathf.Max(debugMaxUpdateTime, debugLastUpdateTime);
-            debugMinUpdateTime = Mathf.Min(debugMinUpdateTime, debugLastUpdateTime);
+            System.Diagnostics.Stopwatch lastUpdateSW
+                = (System.Diagnostics.Stopwatch)lockStep.GetProgramVariable(lockStepLastUpdateSWFieldName);
+            double lastUpdateMS = lastUpdateSW.Elapsed.TotalMilliseconds;
+            double debugLastUpdateMS = debugLastUpdateSW.Elapsed.TotalMilliseconds;
+
+            maxUpdateMS = System.Math.Max(maxUpdateMS, lastUpdateMS);
+            minUpdateMS = System.Math.Min(minUpdateMS, lastUpdateMS);
+            debugMaxUpdateMS = System.Math.Max(debugMaxUpdateMS, debugLastUpdateMS);
+            debugMinUpdateMS = System.Math.Min(debugMinUpdateMS, debugLastUpdateMS);
 
             int currentFullSecond = (int)(Time.realtimeSinceStartup / MinMaxTimeFrame);
             if (currentFullSecond != lastFullSecond)
             {
                 lastFullSecond = currentFullSecond;
 
-                formattedMaxAndMax = $" | {(minUpdateTime * 1000f):f3} | {(maxUpdateTime * 1000f):f3}";
-                maxUpdateTime = float.MinValue;
-                minUpdateTime = float.MaxValue;
+                formattedMaxAndMax = $" | {minUpdateMS:f3} | {maxUpdateMS:f3}";
+                maxUpdateMS = float.MinValue;
+                minUpdateMS = float.MaxValue;
 
-                debugFormattedMaxAndMax = $" | {(debugMinUpdateTime * 1000f):f3} | {(debugMaxUpdateTime * 1000f):f3}";
-                debugMaxUpdateTime = float.MinValue;
-                debugMinUpdateTime = float.MaxValue;
+                debugFormattedMaxAndMax = $" | {debugMinUpdateMS:f3} | {debugMaxUpdateMS:f3}";
+                debugMaxUpdateMS = float.MinValue;
+                debugMinUpdateMS = float.MaxValue;
             }
 
-            averageUpdateTime = averageUpdateTime * 0.875f + lastUpdateTime * 0.125f;
-            lockStepPerformanceText.text = (averageUpdateTime * 1000f).ToString("f3") + formattedMaxAndMax;
+            averageUpdateMS = averageUpdateMS * 0.875 + lastUpdateMS * 0.125;
+            lockStepPerformanceText.text = averageUpdateMS.ToString("f3") + formattedMaxAndMax;
 
-            debugAverageUpdateTime = debugAverageUpdateTime * 0.875f + debugLastUpdateTime * 0.125f;
-            debugUIPerformanceText.text = (debugAverageUpdateTime * 1000f).ToString("f3") + debugFormattedMaxAndMax;
+            debugAverageUpdateMS = debugAverageUpdateMS * 0.875 + debugLastUpdateMS * 0.125;
+            debugUIPerformanceText.text = debugAverageUpdateMS.ToString("f3") + debugFormattedMaxAndMax;
         }
 
         private void InitializeNumbers()
