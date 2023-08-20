@@ -10,6 +10,7 @@ namespace JanSharp
     {
         Master,
         WaitingForLateJoinerSync,
+        CatchingUp,
         Normal,
     }
 
@@ -933,7 +934,7 @@ namespace JanSharp
         {
             Debug.Log($"<dlt> LockStep  OnClientGotLateJoinerDataIA");
             int playerId = (int)iaData[0].Double;
-            clientStates[playerId] = (byte)ClientState.Normal;
+            clientStates[playerId] = (byte)ClientState.CatchingUp;
             CheckIfLateJoinerSyncShouldStop();
             // TODO: Raise OnClientJoined(int playerId);
         }
@@ -969,6 +970,8 @@ namespace JanSharp
         public void OnClientCaughtUpIA()
         {
             Debug.Log($"<dlt> LockStep  OnClientCaughtUpIA");
+            int playerId = (int)iaData[0].Double;
+            clientStates[playerId] = (byte)ClientState.Normal;
             // TODO: Raise OnClientCaughtUp(int playerId);
         }
 

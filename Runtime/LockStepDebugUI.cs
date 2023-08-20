@@ -76,6 +76,7 @@ namespace JanSharp
         {
             "Master",
             "WaitingForLateJoinerSync",
+            "CatchingUp",
             "Normal",
         };
 

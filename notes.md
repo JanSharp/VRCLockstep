@@ -34,10 +34,9 @@ There is both a game state and some local only flags.
 
 The game state: probably a dictionary: playerId => state, with state being:
 
-TODO: Add CatchingUp as a client state
-
 - Master
 - WaitingForLateJoinerSync
+- CatchingUp
 - Normal
 
 Non game state flags:
