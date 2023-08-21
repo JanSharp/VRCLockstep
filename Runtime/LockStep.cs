@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -82,6 +82,13 @@ namespace JanSharp
         private int iahiCount = 0;
         private string[] inputActionHandlerEventNames = new string[ArrList.MinCapacity];
         private int iahenCount = 0;
+
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onInitListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientJoinedListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientCaughtUpListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientLeftListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onTickListeners;
 
         // **Internal Game State**
         // int => byte
@@ -478,8 +485,8 @@ namespace JanSharp
             currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
             waitTick = uint.MaxValue;
             EnterSingePlayerMode();
-            // TODO: Raise OnInit();
-            // TODO: Raise OnClientJoined(int playerId);
+            RaiseOnInit();
+            RaiseOnClientJoined(localPlayer.playerId);
             isTickPaused = false;
             tickStartTime = Time.time;
         }
@@ -904,7 +911,7 @@ namespace JanSharp
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
-            // TODO: Raise OnClientBeginCatchUp(int playerId);
+            RaiseOnClientBeginCatchUp(localPlayer.playerId);
             isTickPaused = false;
             isCatchingUp = true;
 
@@ -936,7 +943,7 @@ namespace JanSharp
             int playerId = (int)iaData[0].Double;
             clientStates[playerId] = (byte)ClientState.CatchingUp;
             CheckIfLateJoinerSyncShouldStop();
-            // TODO: Raise OnClientJoined(int playerId);
+            RaiseOnClientJoined(playerId);
         }
 
         private void SendClientLeftIA(int playerId)
@@ -956,7 +963,7 @@ namespace JanSharp
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
 
             CheckIfLateJoinerSyncShouldStop();
-            // TODO: Raise OnClientLeft(int playerId);
+            RaiseOnClientLeft(playerId);
         }
 
         private void SendClientCaughtUpIA()
@@ -972,7 +979,7 @@ namespace JanSharp
             Debug.Log($"<dlt> LockStep  OnClientCaughtUpIA");
             int playerId = (int)iaData[0].Double;
             clientStates[playerId] = (byte)ClientState.Normal;
-            // TODO: Raise OnClientCaughtUp(int playerId);
+            RaiseOnClientCaughtUp(playerId);
         }
 
         public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, uint uniqueId, DataList inputActionData)
@@ -1081,6 +1088,60 @@ namespace JanSharp
                 return;
             }
             uniqueIdsByTick.Add(tickToRunInToken, new DataToken(new uint[] { uniqueId }));
+        }
+
+        private void RaiseOnInit()
+        {
+            Debug.Log($"<dlt> LockStep  RaiseOnInit");
+            foreach (UdonSharpBehaviour listener in onInitListeners)
+                listener.SendCustomEvent(nameof(LockStepEventType.OnInit));
+        }
+
+        private void RaiseOnClientJoined(int playerId)
+        {
+            Debug.Log($"<dlt> LockStep  RaiseOnClientJoined");
+            foreach (UdonSharpBehaviour listener in onClientJoinedListeners)
+            {
+                listener.SetProgramVariable("lockStepPlayerId", playerId);
+                listener.SendCustomEvent(nameof(LockStepEventType.OnClientJoined));
+            }
+        }
+
+        private void RaiseOnClientBeginCatchUp(int playerId)
+        {
+            Debug.Log($"<dlt> LockStep  RaiseOnClientBeginCatchUp");
+            foreach (UdonSharpBehaviour listener in onClientBeginCatchUpListeners)
+            {
+                listener.SetProgramVariable("lockStepPlayerId", playerId);
+                listener.SendCustomEvent(nameof(LockStepEventType.OnClientBeginCatchUp));
+            }
+        }
+
+        private void RaiseOnClientCaughtUp(int playerId)
+        {
+            Debug.Log($"<dlt> LockStep  RaiseOnClientCaughtUp");
+            foreach (UdonSharpBehaviour listener in onClientCaughtUpListeners)
+            {
+                listener.SetProgramVariable("lockStepPlayerId", playerId);
+                listener.SendCustomEvent(nameof(LockStepEventType.OnClientCaughtUp));
+            }
+        }
+
+        private void RaiseOnClientLeft(int playerId)
+        {
+            Debug.Log($"<dlt> LockStep  RaiseOnClientLeft");
+            foreach (UdonSharpBehaviour listener in onClientLeftListeners)
+            {
+                listener.SetProgramVariable("lockStepPlayerId", playerId);
+                listener.SendCustomEvent(nameof(LockStepEventType.OnClientLeft));
+            }
+        }
+
+        private void RaiseOnTick() // TODO: actually raise this somewhere
+        {
+            Debug.Log($"<dlt> LockStep  RaiseOnTick");
+            foreach (UdonSharpBehaviour listener in onTickListeners)
+                listener.SendCustomEvent(nameof(LockStepEventType.OnTick));
         }
 
         public uint RegisterInputAction(UdonSharpBehaviour handlerInstance, string handlerEventName)

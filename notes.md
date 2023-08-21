@@ -331,7 +331,7 @@ Only inside of these events, modification of game states and changing Lock Step 
 
 - `OnInit()` (This is [special](#first-client). Also, it only runs on the first client, but at that time it is the only - therefore every - client.)
 - `OnClientJoined(int playerId)`
-- `OnPlayerCaughtUp(int playerId)`
+- `OnClientCaughtUp(int playerId)`
 - `OnClientLeft(int playerId)`
 - `OnTick()`
 - Every custom input action handler

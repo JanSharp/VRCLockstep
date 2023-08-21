@@ -304,6 +304,12 @@ MonoBehaviour:
   _udonSharpBackingUdonBehaviour: {fileID: 6658752726484821156}
   lateJoinerInputActionSync: {fileID: 7193904039871208266}
   tickSync: {fileID: 4878089997896310911}
+  onInitListeners: []
+  onClientJoinedListeners: []
+  onClientBeginCatchUpListeners: []
+  onClientCaughtUpListeners: []
+  onClientLeftListeners: []
+  onTickListeners: []
 --- !u!114 &6658752726484821156
 MonoBehaviour:
   m_ObjectHideFlags: 0

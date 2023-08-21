@@ -14,7 +14,7 @@
     "com.vrchat.worlds": "^3.1.x",
     "com.vrchat.udonsharp": "^1.1.x",
     "com.cyan.playerobjectpool": "^1.1.2",
-    "com.jansharp.common": ">=0.1.3"
+    "com.jansharp.common": ">=0.2.1"
   },
   "url": "https://github.com/JanSharp/VRCLockStep/releases/download/v0.1.0/com.jansharp.lock-step.zip",
   "changelogUrl": "https://github.com/JanSharp/VRCLockStep/blob/v0.1.0/CHANGELOG.md"

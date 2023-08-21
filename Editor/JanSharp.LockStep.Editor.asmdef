@@ -1,0 +1,24 @@
+{
+    "name": "JanSharp.LockStep.Editor",
+    "references": [
+        "JanSharp.LockStep",
+        "JanSharp.Common",
+        "JanSharp.Common.Editor",
+        "UdonSharp.Runtime",
+        "UdonSharp.Editor",
+        "VRC.SDK3",
+        "VRC.SDKBase",
+        "VRC.Udon"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
