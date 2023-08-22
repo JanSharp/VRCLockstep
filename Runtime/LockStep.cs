@@ -90,8 +90,7 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientLeftListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onTickListeners;
 
-        private LockStepGameState[] allGameStates = new LockStepGameState[ArrList.MinCapacity];
-        private int agsCount = 0;
+        [SerializeField] [HideInInspector] private LockStepGameState[] allGameStates;
 
         // **Internal Game State**
         // int => byte
@@ -797,7 +796,7 @@ namespace JanSharp
             }
             lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, iaData);
 
-            for (int i = 0; i < agsCount; i++)
+            for (int i = 0; i < allGameStates.Length; i++)
             {
                 iaData = allGameStates[i].SerializeGameState();
                 lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, iaData);
@@ -1157,13 +1156,6 @@ namespace JanSharp
             ArrList.Add(ref inputActionHandlerInstances, ref iahiCount, handlerInstance);
             ArrList.Add(ref inputActionHandlerEventNames, ref iahenCount, handlerEventName);
             return (uint)(iahiCount - 1);
-        }
-
-        // TODO: Populate the list with editor scripting and remove this.
-        public void RegisterGameState(LockStepGameState gameState)
-        {
-            Debug.Log($"<dlt> LockStep  RegisterGameState - display nme: {gameState.GameStateDisplayName}");
-            ArrList.Add(ref allGameStates, ref agsCount, gameState);
         }
     }
 }

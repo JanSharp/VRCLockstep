@@ -21,6 +21,7 @@ namespace JanSharp
             { LockStepEventType.OnClientLeft, new List<UdonSharpBehaviour>() },
             { LockStepEventType.OnTick, new List<UdonSharpBehaviour>() },
         };
+        private static List<LockStepGameState> allGameStates = new List<LockStepGameState>();
 
         private static Dictionary<System.Type, LockStepEventType> cache = new Dictionary<System.Type, LockStepEventType>();
 
@@ -36,7 +37,8 @@ namespace JanSharp
         static LockStepOnBuild()
         {
             JanSharp.OnBuildUtil.RegisterType<LockStep>(PreOnBuild, -1);
-            JanSharp.OnBuildUtil.RegisterType<UdonSharpBehaviour>(AllOnBuild);
+            JanSharp.OnBuildUtil.RegisterType<UdonSharpBehaviour>(EventListenersOnBuild, 0);
+            JanSharp.OnBuildUtil.RegisterType<LockStepGameState>(GameStatesOnBuild, 0);
             JanSharp.OnBuildUtil.RegisterType<LockStep>(PostOnBuild, 1);
         }
 
@@ -44,12 +46,14 @@ namespace JanSharp
         {
             foreach (List<UdonSharpBehaviour> listeners in allListeners.Values)
                 listeners.Clear();
+            allGameStates.Clear();
             return true;
         }
 
         private static bool PostOnBuild(LockStep lockStep)
         {
             SerializedObject lockStepProxy = new SerializedObject(lockStep);
+
             foreach (var kvp in allListeners)
             {
                 EditorUtil.SetArrayProperty(
@@ -58,6 +62,13 @@ namespace JanSharp
                     (p, v) => p.objectReferenceValue = v
                 );
             }
+
+            EditorUtil.SetArrayProperty(
+                lockStepProxy.FindProperty("allGameStates"),
+                allGameStates,
+                (p, v) => p.objectReferenceValue = v
+            );
+
             lockStepProxy.ApplyModifiedProperties();
             return true;
         }
@@ -90,7 +101,7 @@ namespace JanSharp
             return result;
         }
 
-        private static bool AllOnBuild(UdonSharpBehaviour ub)
+        private static bool EventListenersOnBuild(UdonSharpBehaviour ub)
         {
             if (TryGetEventTypes(ub, out LockStepEventType events))
             {
@@ -100,6 +111,12 @@ namespace JanSharp
                 return true;
             }
             return false;
+        }
+
+        private static bool GameStatesOnBuild(LockStepGameState gameState)
+        {
+            allGameStates.Add(gameState);
+            return true;
         }
     }
 }

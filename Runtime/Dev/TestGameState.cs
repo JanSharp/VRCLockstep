@@ -30,7 +30,6 @@ namespace JanSharp
 
         private void Start()
         {
-            lockStep.RegisterGameState(this);
             setDisplayNameIAId = lockStep.RegisterInputAction(this, nameof(OnSetDisplayNameIA));
             setDescriptionNameIAId = lockStep.RegisterInputAction(this, nameof(OnSetDescriptionIA));
 
