@@ -325,7 +325,7 @@ Keep in mind that `OnClientBeginCatchUp` is the only non game state event (and o
 
 ## Game State Events
 
-Game state events are raised on every client in the exact some order on on the same game tick.
+Game state events are raised on every client in the exact same order on the same game tick.
 
 Only inside of these events, modification of game states and changing Lock Step event registration is allowed. See [game states](#game-states) for what rules to follow when modifying game states.
 

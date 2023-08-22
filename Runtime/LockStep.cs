@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -89,6 +89,9 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientCaughtUpListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientLeftListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onTickListeners;
+
+        private LockStepGameState[] allGameStates = new LockStepGameState[ArrList.MinCapacity];
+        private int agsCount = 0;
 
         // **Internal Game State**
         // int => byte
@@ -339,6 +342,8 @@ namespace JanSharp
             Debug.Log($"<dlt> LockStep  OnInputActionSyncPlayerAssigned");
             if (!player.isLocal)
                 return;
+
+            // TODO: maybe save static data about players in lock step and expose them as a game state safe api. Things like the display name.
 
             inputActionSyncForLocalPlayer = inputActionSync;
             SendCustomEventDelayedSeconds(nameof(OnLocalInputActionSyncPlayerAssignedDelayed), 2f);
@@ -792,7 +797,11 @@ namespace JanSharp
             }
             lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, iaData);
 
-            // TODO: send custom game states
+            for (int i = 0; i < agsCount; i++)
+            {
+                iaData = allGameStates[i].SerializeGameState();
+                lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, iaData);
+            }
 
             iaData = new DataList();
             iaData.Add(currentTick);
@@ -889,9 +898,7 @@ namespace JanSharp
             Debug.Log($"<dlt> LockStep  ProcessNextLJSerializedGameState");
             int gameStateIndex = nextLJGameStateToProcess;
             iaData = unprocessedLJSerializedGameStates[gameStateIndex];
-
-            // TODO: impl
-
+            allGameStates[gameStateIndex].DeserializeGameState(iaData);
             TryMoveToNextLJSerializedGameState();
         }
 
@@ -1150,6 +1157,13 @@ namespace JanSharp
             ArrList.Add(ref inputActionHandlerInstances, ref iahiCount, handlerInstance);
             ArrList.Add(ref inputActionHandlerEventNames, ref iahenCount, handlerEventName);
             return (uint)(iahiCount - 1);
+        }
+
+        // TODO: Populate the list with editor scripting and remove this.
+        public void RegisterGameState(LockStepGameState gameState)
+        {
+            Debug.Log($"<dlt> LockStep  RegisterGameState - display nme: {gameState.GameStateDisplayName}");
+            ArrList.Add(ref allGameStates, ref agsCount, gameState);
         }
     }
 }
