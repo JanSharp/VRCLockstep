@@ -15,7 +15,7 @@ namespace JanSharp
         public override string GameStateDisplayName => "Test Game State";
 
         /// <summary>int playerId => PlayerData</summary>
-        public DataDictionary allPlayerData = new DataDictionary();
+        [System.NonSerialized] public DataDictionary allPlayerData = new DataDictionary();
 
         public const int PlayerData_PlayerId = 0; // int
         public const int PlayerData_DisplayName = 1; // string
