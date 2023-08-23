@@ -27,4 +27,23 @@ namespace JanSharp {
             this.eventType = eventType;
         }
     }
+
+    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    public class LockStepInputActionAttribute : System.Attribute
+    {
+        private readonly string idFieldName;
+        public string IdFieldName => idFieldName;
+
+        /// <summary>
+        /// <para>Use 'nameof(fieldName)' as the parameter.</para>
+        /// <para>The id field must be a uint. It is the id to use when calling SendInputAction</para>
+        /// <para>The field must be serialized, but doesn't have to be public. It should definitely have the
+        /// [HideInInspector] attribute, as it is not set from the inspector.</para>
+        /// <para>When it is private it must have the [System.SerializeField] attribute.</para>
+        /// </summary>
+        public LockStepInputActionAttribute(string idFieldName)
+        {
+            this.idFieldName = idFieldName;
+        }
+    }
 }

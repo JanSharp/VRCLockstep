@@ -6,6 +6,7 @@ using UnityEditor;
 using UdonSharpEditor;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
 
 namespace JanSharp
 {
@@ -23,7 +24,14 @@ namespace JanSharp
         };
         private static List<LockStepGameState> allGameStates = new List<LockStepGameState>();
 
-        private static Dictionary<System.Type, LockStepEventType> cache = new Dictionary<System.Type, LockStepEventType>();
+        private static List<(UdonSharpBehaviour inst, string iaName)> allInputActions = new List<(UdonSharpBehaviour inst, string iaName)>();
+
+        private static Dictionary<System.Type, TypeCache> cache = new Dictionary<System.Type, TypeCache>();
+        private class TypeCache
+        {
+            public LockStepEventType events;
+            public List<(string iaName, string fieldName)> inputActions = new List<(string iaName, string fieldName)>();
+        }
 
         private static readonly LockStepEventType[] allEventTypes = new LockStepEventType[] {
             LockStepEventType.OnInit,
@@ -47,6 +55,7 @@ namespace JanSharp
             foreach (List<UdonSharpBehaviour> listeners in allListeners.Values)
                 listeners.Clear();
             allGameStates.Clear();
+            allInputActions.Clear();
             return true;
         }
 
@@ -69,48 +78,87 @@ namespace JanSharp
                 (p, v) => p.objectReferenceValue = v
             );
 
+            EditorUtil.SetArrayProperty(
+                lockStepProxy.FindProperty("inputActionHandlerInstances"),
+                allInputActions.Select(ia => ia.inst).ToList(),
+                (p, v) => p.objectReferenceValue = v
+            );
+
+            EditorUtil.SetArrayProperty(
+                lockStepProxy.FindProperty("inputActionHandlerEventNames"),
+                allInputActions.Select(ia => ia.iaName).ToList(),
+                (p, v) => p.stringValue = v
+            );
+
             lockStepProxy.ApplyModifiedProperties();
             return true;
         }
 
-        private static bool TryGetEventTypes(UdonSharpBehaviour ub, out LockStepEventType events)
+        private static bool TryGetEventTypes(UdonSharpBehaviour ub, out TypeCache cached)
         {
             System.Type ubType = ub.GetType();
-            if (cache.TryGetValue(ubType, out events))
+            if (cache.TryGetValue(ubType, out cached))
                 return true;
 
             bool result = true;
-            events = 0;
+            TypeCache typeCache = new TypeCache();
 
-            foreach (MethodInfo method in ubType.GetMethods(BindingFlags.Instance | BindingFlags.Public))
+            void CheckEventAttribute(MethodInfo method)
             {
                 LockStepEventAttribute attr = method.GetCustomAttribute<LockStepEventAttribute>();
                 if (attr == null)
-                    continue;
+                    return;
                 if (method.Name != attr.EventType.ToString())
                 {
                     Debug.LogError($"The method name {method.Name} does not match the expected lock step "
                         + $"event name {attr.EventType.ToString()} for the {ubType.Name} script.", ub);
                     result = false;
-                    continue;
+                    return;
                 }
-                events |= attr.EventType;
+                typeCache.events |= attr.EventType;
             }
 
-            cache[ubType] = events;
+            void CheckInputActionAttribute(MethodInfo method)
+            {
+                LockStepInputActionAttribute attr = method.GetCustomAttribute<LockStepInputActionAttribute>();
+                if (attr == null)
+                    return;
+                typeCache.inputActions.Add((method.Name, attr.IdFieldName));
+            }
+
+            foreach (MethodInfo method in ubType.GetMethods(BindingFlags.Instance | BindingFlags.Public))
+            {
+                CheckEventAttribute(method);
+                CheckInputActionAttribute(method);
+            }
+
+            cached = typeCache;
+            cache[ubType] = typeCache;
             return result;
         }
 
         private static bool EventListenersOnBuild(UdonSharpBehaviour ub)
         {
-            if (TryGetEventTypes(ub, out LockStepEventType events))
+            if (!TryGetEventTypes(ub, out TypeCache cached))
+                return false;
+
+            foreach (LockStepEventType eventType in allEventTypes)
+                if ((cached.events & eventType) != 0)
+                    allListeners[eventType].Add(ub);
+
+            if (cached.inputActions.Any())
             {
-                foreach (LockStepEventType eventType in allEventTypes)
-                    if ((events & eventType) != 0)
-                        allListeners[eventType].Add(ub);
-                return true;
+                SerializedObject ubProxy = new SerializedObject(ub);
+                foreach (var ia in cached.inputActions)
+                {
+                    // uintValue is not a thing in 2019.4. It exists in 2022.1.
+                    ubProxy.FindProperty(ia.fieldName).intValue = allInputActions.Count;
+                    allInputActions.Add((ub, ia.iaName));
+                }
+                ubProxy.ApplyModifiedProperties();
             }
-            return false;
+
+            return true;
         }
 
         private static bool GameStatesOnBuild(LockStepGameState gameState)

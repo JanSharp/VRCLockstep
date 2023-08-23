@@ -22,19 +22,9 @@ namespace JanSharp
         public const int PlayerData_Description = 2; // string
         public const int PlayerData_Size = 3;
 
+        // These 2 are set by LockStep as parameters.
         private int lockStepPlayerId;
-
         private DataList iaData;
-        private uint setDisplayNameIAId;
-        private uint setDescriptionNameIAId;
-
-        private void Start()
-        {
-            setDisplayNameIAId = lockStep.RegisterInputAction(this, nameof(OnSetDisplayNameIA));
-            setDescriptionNameIAId = lockStep.RegisterInputAction(this, nameof(OnSetDescriptionIA));
-
-            ui.UpdateUI();
-        }
 
         [LockStepEvent(LockStepEventType.OnInit)]
         public void OnInit()
@@ -98,6 +88,8 @@ namespace JanSharp
             lockStep.SendInputAction(setDisplayNameIAId, iaData);
         }
 
+        [SerializeField] [HideInInspector] private uint setDisplayNameIAId;
+        [LockStepInputAction(nameof(setDisplayNameIAId))]
         public void OnSetDisplayNameIA()
         {
             Debug.Log("<dlt> TestGameState  OnSetDisplayNameIA");
@@ -119,6 +111,8 @@ namespace JanSharp
             lockStep.SendInputAction(setDescriptionNameIAId, iaData);
         }
 
+        [SerializeField] [HideInInspector] private uint setDescriptionNameIAId;
+        [LockStepInputAction(nameof(setDescriptionNameIAId))]
         public void OnSetDescriptionIA()
         {
             Debug.Log("<dlt> TestGameState  OnSetDescriptionIA");

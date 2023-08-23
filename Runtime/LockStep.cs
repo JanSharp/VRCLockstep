@@ -51,12 +51,7 @@ namespace JanSharp
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
 
-        [System.NonSerialized] public DataList iaData;
-        private uint clientJoinedIAId;
-        private uint clientGotLateJoinerDataIAId;
-        private uint clientCaughtUpIAId;
-        private uint clientLeftIAId;
-        private uint masterChangedIAId;
+        private DataList iaData; // Set for input actions as a parameter.
 
         private uint unrecoverableStateDueToUniqueId = 0u;
 
@@ -77,11 +72,8 @@ namespace JanSharp
         // uint[]: unique ids (same as for inputActionsByUniqueId)
         private DataDictionary uniqueIdsByTick = new DataDictionary();
 
-        ///cSpell:ignore iahi, iahen
-        private UdonSharpBehaviour[] inputActionHandlerInstances = new UdonSharpBehaviour[ArrList.MinCapacity];
-        private int iahiCount = 0;
-        private string[] inputActionHandlerEventNames = new string[ArrList.MinCapacity];
-        private int iahenCount = 0;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] inputActionHandlerInstances;
+        [SerializeField] [HideInInspector] private string[] inputActionHandlerEventNames;
 
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onInitListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientJoinedListeners;
@@ -123,13 +115,6 @@ namespace JanSharp
             Debug.Log($"<dlt> LockStep  Start");
             localPlayer = Networking.LocalPlayer;
             lateJoinerInputActionSync.lockStep = this;
-
-            // TODO: this should probably happen somewhere else, not sure how and where at this moment though
-            clientJoinedIAId = RegisterInputAction(this, nameof(OnClientJoinedIA));
-            clientGotLateJoinerDataIAId = RegisterInputAction(this, nameof(OnClientGotLateJoinerDataIA));
-            clientCaughtUpIAId = RegisterInputAction(this, nameof(OnClientCaughtUpIA));
-            clientLeftIAId = RegisterInputAction(this, nameof(OnClientLeftIA));
-            masterChangedIAId = RegisterInputAction(this, nameof(OnMasterChangedIA));
         }
 
         private void Update()
@@ -727,6 +712,8 @@ namespace JanSharp
             SendInputAction(masterChangedIAId, iaData);
         }
 
+        [SerializeField] [HideInInspector] private uint masterChangedIAId;
+        [LockStepInputAction(nameof(masterChangedIAId))]
         public void OnMasterChangedIA()
         {
             Debug.Log($"<dlt> LockStep  OnMasterChangedIA");
@@ -746,6 +733,8 @@ namespace JanSharp
             SendInputAction(clientJoinedIAId, iaData);
         }
 
+        [SerializeField] [HideInInspector] private uint clientJoinedIAId;
+        [LockStepInputAction(nameof(clientJoinedIAId))]
         public void OnClientJoinedIA()
         {
             Debug.Log($"<dlt> LockStep  OnClientJoinedIA");
@@ -943,6 +932,8 @@ namespace JanSharp
             SendInputAction(clientGotLateJoinerDataIAId, iaData);
         }
 
+        [SerializeField] [HideInInspector] private uint clientGotLateJoinerDataIAId;
+        [LockStepInputAction(nameof(clientGotLateJoinerDataIAId))]
         public void OnClientGotLateJoinerDataIA()
         {
             Debug.Log($"<dlt> LockStep  OnClientGotLateJoinerDataIA");
@@ -960,6 +951,8 @@ namespace JanSharp
             SendInputAction(clientLeftIAId, iaData);
         }
 
+        [SerializeField] [HideInInspector] private uint clientLeftIAId;
+        [LockStepInputAction(nameof(clientLeftIAId))]
         public void OnClientLeftIA()
         {
             Debug.Log($"<dlt> LockStep  OnClientLeftIA");
@@ -980,6 +973,8 @@ namespace JanSharp
             SendInputAction(clientCaughtUpIAId, iaData);
         }
 
+        [SerializeField] [HideInInspector] private uint clientCaughtUpIAId;
+        [LockStepInputAction(nameof(clientCaughtUpIAId))]
         public void OnClientCaughtUpIA()
         {
             Debug.Log($"<dlt> LockStep  OnClientCaughtUpIA");
@@ -1148,14 +1143,6 @@ namespace JanSharp
             Debug.Log($"<dlt> LockStep  RaiseOnTick");
             foreach (UdonSharpBehaviour listener in onTickListeners)
                 listener.SendCustomEvent(nameof(LockStepEventType.OnTick));
-        }
-
-        public uint RegisterInputAction(UdonSharpBehaviour handlerInstance, string handlerEventName)
-        {
-            Debug.Log($"<dlt> LockStep  RegisterInputAction");
-            ArrList.Add(ref inputActionHandlerInstances, ref iahiCount, handlerInstance);
-            ArrList.Add(ref inputActionHandlerEventNames, ref iahenCount, handlerEventName);
-            return (uint)(iahiCount - 1);
         }
     }
 }
