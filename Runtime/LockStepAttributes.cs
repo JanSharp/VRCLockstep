@@ -39,7 +39,7 @@ namespace JanSharp {
         /// <para>The id field must be a uint. It is the id to use when calling SendInputAction</para>
         /// <para>The field must be serialized, but doesn't have to be public. It should definitely have the
         /// [HideInInspector] attribute, as it is not set from the inspector.</para>
-        /// <para>When it is private it must have the [System.SerializeField] attribute.</para>
+        /// <para>When it is private it must have the [SerializeField] attribute.</para>
         /// </summary>
         public LockStepInputActionAttribute(string idFieldName)
         {
