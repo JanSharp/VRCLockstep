@@ -20,7 +20,7 @@ namespace JanSharp
             Debug.Log($"<dlt> TestGameStateUIElem  OnDescriptionEndEdit - playerId: {playerId}");
             if (!this.gameObject.activeSelf) // Just to make sure.
                 return;
-            gameState.SendSetDescriptionIA(playerId, descriptionField.text);
+            gameState.SetDescription(playerId, descriptionField.text);
         }
     }
 }

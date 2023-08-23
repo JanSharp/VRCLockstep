@@ -102,7 +102,15 @@ namespace JanSharp
             ui.UpdateUI();
         }
 
-        public void SendSetDescriptionIA(int playerId, string description)
+        public void SetDescription(int playerId, string description)
+        {
+            object[] playerData = (object[])allPlayerData[playerId].Reference;
+            if ((string)playerData[TestGameState.PlayerData_Description] == description)
+                return;
+            SendSetDescriptionIA(playerId, description);
+        }
+
+        private void SendSetDescriptionIA(int playerId, string description)
         {
             Debug.Log("<dlt> TestGameState  SendSetDescriptionIA");
             iaData = new DataList();
