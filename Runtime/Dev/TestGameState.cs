@@ -10,7 +10,7 @@ namespace JanSharp
     public class TestGameState : LockStepGameState
     {
         [SerializeField] private TestGameStateUI ui;
-        [SerializeField] private LockStep lockStep; // TODO: Automatically set references to LockStep using editor scripting.
+        [SerializeField] [HideInInspector] private LockStep lockStep; // Set by LockStep's OnBuild handler.
 
         public override string GameStateDisplayName => "Test Game State";
 

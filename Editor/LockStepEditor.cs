@@ -13,6 +13,8 @@ namespace JanSharp
     [InitializeOnLoad]
     public static class LockStepOnBuild
     {
+        private static LockStep lockStep = null;
+
         private static Dictionary<LockStepEventType, List<UdonSharpBehaviour>> allListeners = new Dictionary<LockStepEventType, List<UdonSharpBehaviour>>()
         {
             { LockStepEventType.OnInit, new List<UdonSharpBehaviour>() },
@@ -31,6 +33,7 @@ namespace JanSharp
         {
             public LockStepEventType events;
             public List<(string iaName, string fieldName)> inputActions = new List<(string iaName, string fieldName)>();
+            public List<string> lockStepFieldNames = new List<string>();
         }
 
         private static readonly LockStepEventType[] allEventTypes = new LockStepEventType[] {
@@ -52,6 +55,14 @@ namespace JanSharp
 
         private static bool PreOnBuild(LockStep lockStep)
         {
+            if (LockStepOnBuild.lockStep != null && LockStepOnBuild.lockStep != lockStep)
+            {
+                Debug.LogError("[LockStep] There must only be one instance "
+                    + $"of the {nameof(LockStep)} script in a scene.", lockStep);
+                return false;
+            }
+            LockStepOnBuild.lockStep = lockStep;
+
             foreach (List<UdonSharpBehaviour> listeners in allListeners.Values)
                 listeners.Clear();
             allGameStates.Clear();
@@ -132,6 +143,16 @@ namespace JanSharp
                 CheckInputActionAttribute(method);
             }
 
+            foreach (FieldInfo field in ubType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            {
+                if (field.FieldType == typeof(LockStep))
+                {
+                    SerializedObject ubProxy = new SerializedObject(ub);
+                    if (ubProxy.FindProperty(field.Name) != null)
+                        typeCache.lockStepFieldNames.Add(field.Name);
+                }
+            }
+
             cached = typeCache;
             cache[ubType] = typeCache;
             return result;
@@ -146,17 +167,27 @@ namespace JanSharp
                 if ((cached.events & eventType) != 0)
                     allListeners[eventType].Add(ub);
 
+            SerializedObject ubProxy = null;
+
             if (cached.inputActions.Any())
             {
-                SerializedObject ubProxy = new SerializedObject(ub);
+                ubProxy = ubProxy ?? new SerializedObject(ub);
                 foreach (var ia in cached.inputActions)
                 {
                     // uintValue is not a thing in 2019.4. It exists in 2022.1.
                     ubProxy.FindProperty(ia.fieldName).intValue = allInputActions.Count;
                     allInputActions.Add((ub, ia.iaName));
                 }
-                ubProxy.ApplyModifiedProperties();
             }
+
+            if (cached.lockStepFieldNames.Any())
+            {
+                ubProxy = ubProxy ?? new SerializedObject(ub);
+                foreach (string fieldName in cached.lockStepFieldNames)
+                    ubProxy.FindProperty(fieldName).objectReferenceValue = lockStep;
+            }
+
+            ubProxy?.ApplyModifiedProperties();
 
             return true;
         }
