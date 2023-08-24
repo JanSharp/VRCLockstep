@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -78,7 +78,7 @@ namespace JanSharp
         ///</summary>
         public uint SendInputAction(uint inputActionId, DataList inputActionData)
         {
-            Debug.Log($"<dlt> InputActionSync  SendInputAction");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction");
             uint index = (nextInputActionIndex++);
             if (!VRCJson.TrySerializeToJson(inputActionData, JsonExportType.Minify, out DataToken jsonToken))
             {
@@ -92,6 +92,7 @@ namespace JanSharp
             uint uniqueId = 0u;
             string jsonString = jsonToken.String;
             int length = jsonString.Length;
+            Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction (inner) - json string length: {length}");
             for (int startIndex = 0; startIndex < length; startIndex += MaxSyncedDataSize)
             {
                 int remainingLength = length - startIndex;
@@ -106,6 +107,8 @@ namespace JanSharp
                 else
                     prepSyncedData = jsonString.Substring(startIndex, MaxSyncedDataSize);
 
+                Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction (inner) - enqueueing "
+                    + $"syncedInt: 0x{prepSyncedInt:X8}, syncedData length: {prepSyncedData.Length}, uniqueId: 0x{uniqueId:X8}");
                 ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, prepSyncedInt);
                 ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, prepSyncedData);
                 ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, uniqueId);
@@ -179,7 +182,7 @@ namespace JanSharp
 
         public override void OnPostSerialization(SerializationResult result)
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  OnPostSerialization");
+            Debug.Log($"<dlt> InputActionSync  {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}");
             if (!result.success)
             {
                 retrying = true;
