@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -100,6 +100,8 @@ namespace JanSharp
                 {
                     prepSyncedInt ^= SplitDataFlag;
                     uniqueId = shiftedPlayerId | index;
+                    if (startIndex != 0)
+                        prepSyncedData = jsonString.Substring(startIndex);
                 }
                 else
                     prepSyncedData = jsonString.Substring(startIndex, MaxSyncedDataSize);
