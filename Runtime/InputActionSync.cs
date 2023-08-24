@@ -56,12 +56,16 @@ namespace JanSharp
         private string partialSyncedData = null;
 
         // This method will be called on all clients when the object is enabled and the Owner has been assigned.
-        public override void _OnOwnerSet() {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnOwnerSet"); }
+        public override void _OnOwnerSet()
+        {
+            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnOwnerSet");
+        }
 
         // This method will be called on all clients when the original owner has left and the object is about to be disabled.
-        public override void _OnCleanup() {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnCleanup"); }
+        public override void _OnCleanup()
+        {
+            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnCleanup");
+        }
 
         public uint MakeUniqueId()
         {
