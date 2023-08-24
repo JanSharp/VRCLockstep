@@ -186,7 +186,7 @@ namespace JanSharp
             if (!result.success)
             {
                 retrying = true;
-                SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), 5f);
+                SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), 5f); // TODO: Impl exponential back off.
                 return;
             }
 
