@@ -232,8 +232,8 @@ namespace JanSharp
                         }
                         return false;
                     }
+                uniqueIdsByTick.Remove(nextTickToken);
             }
-            uniqueIdsByTick.Remove(nextTickToken);
 
             currentTick = nextTick;
             // Debug.Log($"<dlt> Running tick {currentTick}");
@@ -555,7 +555,7 @@ namespace JanSharp
             if (inputActionSyncForLocalPlayer == null)
             {
                 // This can happen when on ownership transferred runs on LockStepTickSync,
-                // in which case nothing needs to happen here, because 
+                // in which case nothing needs to happen here, because
                 // inputActionSyncForLocalPlayer still being null is handled by OnPlayerLeft
                 // which will eventually call CheckMasterChange, if needed.
                 return;
