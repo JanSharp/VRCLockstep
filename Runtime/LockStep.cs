@@ -124,7 +124,7 @@ namespace JanSharp
 
             if (isTickPaused)
             {
-                if (nextLJGameStateToProcess != -1 && Time.time >= nextLJGameStateToProcessTime)
+                if (IsProcessingLJGameStates && Time.time >= nextLJGameStateToProcessTime)
                     ProcessNextLJSerializedGameState();
                 lastUpdateSW.Stop();
                 return;
