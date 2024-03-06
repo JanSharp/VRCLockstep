@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -102,7 +102,7 @@ namespace JanSharp
         private const float LJGameStateProcessingFrequency = 0.1f;
         private bool IsProcessingLJGameStates => nextLJGameStateToProcess != -1;
 
-        private int initiateLateJoinerSyncSentCount = 0;
+        private int flagForLateJoinerSyncSentCount = 0;
         private int processLeftPlayersSentCount = 0;
         private int checkOtherMasterCandidatesSentCount = 0;
         private int someoneLeftWhileWeWereWaitingForLJSyncSentCount = 0;
@@ -625,7 +625,7 @@ namespace JanSharp
 
             if (IsAnyClientWaitingForLateJoinerSync())
             {
-                initiateLateJoinerSyncSentCount++;
+                flagForLateJoinerSyncSentCount++;
                 FlagForLateJoinerSync();
             }
         }
@@ -748,7 +748,7 @@ namespace JanSharp
             if (isMaster)
             {
                 CheckSingePlayerModeChange();
-                initiateLateJoinerSyncSentCount++;
+                flagForLateJoinerSyncSentCount++;
                 SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), 5f);
             }
         }
@@ -756,7 +756,7 @@ namespace JanSharp
         public void FlagForLateJoinerSync()
         {
             Debug.Log($"<dlt> LockStep  FlagForLateJoinerSync");
-            if ((--initiateLateJoinerSyncSentCount) != 0)
+            if ((--flagForLateJoinerSyncSentCount) != 0)
                 return;
 
             if (IsAnyClientWaitingForLateJoinerSync())
