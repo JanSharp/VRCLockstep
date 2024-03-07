@@ -20,7 +20,7 @@ namespace JanSharp
         [System.NonSerialized] public bool lockStepIsMaster;
         [System.NonSerialized] public uint shiftedPlayerId;
 
-        // Who is the current owner of this object. Null if object is not currently in use. 
+        // Who is the current owner of this object. Null if object is not currently in use.
         // [System.NonSerialized] public VRCPlayerApi Owner; // In the base class.
 
         public bool isLateJoinerSyncInst = false;
@@ -58,18 +58,24 @@ namespace JanSharp
         // This method will be called on all clients when the object is enabled and the Owner has been assigned.
         public override void _OnOwnerSet()
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnOwnerSet");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  _OnOwnerSet");
+            #endif
         }
 
         // This method will be called on all clients when the original owner has left and the object is about to be disabled.
         public override void _OnCleanup()
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  _OnCleanup");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  _OnCleanup");
+            #endif
         }
 
         public uint MakeUniqueId()
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  MakeUniqueId");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  MakeUniqueId");
+            #endif
             return shiftedPlayerId | (nextInputActionIndex++);
         }
 
@@ -78,11 +84,13 @@ namespace JanSharp
         ///</summary>
         public uint SendInputAction(uint inputActionId, DataList inputActionData)
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction");
+            #endif
             uint index = (nextInputActionIndex++);
             if (!VRCJson.TrySerializeToJson(inputActionData, JsonExportType.Minify, out DataToken jsonToken))
             {
-                Debug.LogError($"<dlt> Unable to serialize data for input action id {inputActionId}, index: {index}"
+                Debug.LogError($"[LockStep] Unable to serialize data for input action id {inputActionId}, index: {index}"
                     + (isLateJoinerSyncInst ? ", (late joiner sync inst)" : $", player id {Owner.playerId}")
                     + $" : {jsonToken.Error}");
                 return 0u;
@@ -92,7 +100,9 @@ namespace JanSharp
             uint uniqueId = 0u;
             string jsonString = jsonToken.String;
             int length = jsonString.Length;
-            Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction (inner) - json string length: {length}");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - json string length: {length}");
+            #endif
             for (int startIndex = 0; startIndex < length; startIndex += MaxSyncedDataSize)
             {
                 int remainingLength = length - startIndex;
@@ -107,21 +117,27 @@ namespace JanSharp
                 else
                     prepSyncedData = jsonString.Substring(startIndex, MaxSyncedDataSize);
 
-                Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction (inner) - enqueueing "
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - enqueueing "
                     + $"syncedInt: 0x{prepSyncedInt:X8}, syncedData length: {prepSyncedData.Length}, uniqueId: 0x{uniqueId:X8}");
+                #endif
                 ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, prepSyncedInt);
                 ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, prepSyncedData);
                 ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, uniqueId);
             }
             CheckSyncStart();
 
-            Debug.Log($"<dlt> InputActionSync  {this.name}  SendInputAction - uniqueId: 0x{uniqueId:x8}");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction - uniqueId: 0x{uniqueId:x8}");
+            #endif
             return uniqueId;
         }
 
         public void DequeueEverything(bool doCallback)
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  DequeueEverything");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  DequeueEverything");
+            #endif
             if (siqCount == 0)
                 return;
 
@@ -156,10 +172,12 @@ namespace JanSharp
 
         private void CheckSyncStart()
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  CheckSyncStart");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  CheckSyncStart");
+            #endif
             if (!isLateJoinerSyncInst && Owner == null)
             {
-                Debug.LogError("<dlt> Attempt to send input actions when there is no player assigned with the sync script.");
+                Debug.LogError("[LockStep] Attempt to send input actions when there is no player assigned with the sync script.");
                 return;
             }
             RequestSerialization();
@@ -169,7 +187,9 @@ namespace JanSharp
 
         public override void OnPreSerialization()
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  OnPreSerialization");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnPreSerialization");
+            #endif
             if (retrying)
             {
                 retrying = false;
@@ -182,7 +202,9 @@ namespace JanSharp
 
         public override void OnPostSerialization(SerializationResult result)
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}");
+            #endif
             if (!result.success)
             {
                 retrying = true;
@@ -200,7 +222,9 @@ namespace JanSharp
 
         public override void OnDeserialization(DeserializationResult result)
         {
-            Debug.Log($"<dlt> InputActionSync  {this.name}  OnDeserialization");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization");
+            #endif
             if ((isLateJoinerSyncInst && lockStepIsMaster) || lockStep == null)
             {
                 // When lockStep is still null, this can safely ignore any incoming data,
@@ -239,7 +263,7 @@ namespace JanSharp
                 // This can legitimately happen when someone joins late and starts receiving
                 // data in the middle of a split input action. In that case the data should get
                 // ignored anyway, so returning is correct.
-                Debug.LogError($"<dlt> Unable to deserialize json for input action id {id}, index: {index}"
+                Debug.LogError($"[LockStep] Unable to deserialize json for input action id {id}, index: {index}"
                     + (isLateJoinerSyncInst ? ", (late joiner sync inst)" : $", player id {Owner.playerId}")
                     + $" : {jsonToken.Error}\n\nSource json:\n{syncedData}");
                 return;

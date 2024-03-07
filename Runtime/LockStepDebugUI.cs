@@ -114,7 +114,7 @@ namespace JanSharp
         void Start()
         {
             long freq = System.Diagnostics.Stopwatch.Frequency;
-            Debug.Log($"<dlt> StopWatch IsHighResolution: {System.Diagnostics.Stopwatch.IsHighResolution}, "
+            Debug.Log($"[LockStepDebug] StopWatch IsHighResolution: {System.Diagnostics.Stopwatch.IsHighResolution}, "
                 + $"ticks per second: {freq}, "
                 + $"nano seconds per tick: {1_000_000_000L / freq}.");
 

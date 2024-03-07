@@ -24,13 +24,17 @@ namespace JanSharp
 
         public void AddInputActionToRun(uint tickToRunIn, uint uniqueId)
         {
-            Debug.Log($"<dlt> LockStepTickSync  AddInputActionToRun");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStepTickSync  AddInputActionToRun");
+            #endif
             ArrList.Add(ref inputActionsToRun, ref iatrCount, (((ulong)tickToRunIn) << TickToRunInShift) | (ulong)uniqueId);
         }
 
         public void ClearInputActionsToRun()
         {
-            Debug.Log($"<dlt> LockStepTickSync  ClearInputActionsToRun");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStepTickSync  ClearInputActionsToRun");
+            #endif
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
         }
 
@@ -81,7 +85,9 @@ namespace JanSharp
 
         public override void OnOwnershipTransferred(VRCPlayerApi player)
         {
-            Debug.Log($"<dlt> LockStepTickSync  OnOwnershipTransferred");
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStepTickSync  OnOwnershipTransferred");
+            #endif
             lockStep.SendCustomEventDelayedFrames(nameof(LockStep.CheckMasterChange), 1);
         }
     }
