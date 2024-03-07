@@ -79,7 +79,7 @@ Non game state flags:
   - On Every client, except sending (because the sending client will never run it)
     - Mark the given player id as "waiting for late joiner sync" in an internal "client states" game state
   - On master
-    - Wait 5 seconds
+    - Wait 5 seconds (-- TODO: keep track of how many players have joined recently and increase the delay if there's a lot of players joining)
       - Reset timer if another `ClientJoinIA` is received
     - [Initiate late joiner sync](#initiate-late-joiner-sync)
 - On newly joined client
@@ -130,9 +130,7 @@ Any systems using this should disable functionality that would require sending i
 What if there were input actions that were supposed to run but we never received them? Like when the master sent and ran an action, but the action itself was never received, but the tick sync for it was?\
 It's supposed to be impossible. An input action only get enqueued to run on a specific tick if it has already been successfully sent, making it incredibly unlikely for the tick sync with the input action enqueued in some tick to arrive before the input action itself. If it does happen though, then the system cannot recover, as it doesn't know if it is only the local client missing the input action, so it cannot drop the input action. Even when the local client became master, it cannot make that decision, because other clients may have already run past this tick because they did receive the input action. If this can actually happen, I don't know. But since I don't know, I can't make any assumptions, so again, it is unrecoverable if it does happen.
 
-TODO: handle continuing catching up while already master
-
-TODO: handle someone joining as the master is still catching up (it should continue catching up, and once done it should begin late joiner sync.)
+TODO: input actions sent from the local client on the master client must also be delayed by 1 frame. That way sending input actions behaves consistently across all clients, that is to say that sending it never instantly runs the sent input action, be it on the master or on a client. It always runs in some later frame. In fact it must wait with running input actions until they have been sent. Because when the master leaves, and some tick sync went out without the associated input action going out, all other clients would wait for that input action for eternity.
 
 When the world converts from multiplayer to single player, the system must remove all queued data from the InputActionSync scripts (both the local player's one and the late joiner one), and instantly raise their associated actions (though there's no thing to do for the late joiner ones, just drop them).
 

@@ -54,7 +54,7 @@ namespace JanSharp
         {
             "currentTick",
             "waitTick",
-            "immutableUntilTick",
+            "firstMutableTick",
             "startTick",
             "tickStartTime",
             "syncCountForLatestLJSync",

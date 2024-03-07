@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -34,7 +34,7 @@ namespace JanSharp
         private VRCPlayerApi localPlayer;
         private InputActionSync inputActionSyncForLocalPlayer;
         private uint startTick;
-        private uint immutableUntilTick;
+        private uint firstMutableTick; // Effectively 1 tick past the last immutable tick.
         private float tickStartTime;
         private int syncCountForLatestLJSync = -1;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
@@ -141,8 +141,17 @@ namespace JanSharp
             uint runUntilTick = System.Math.Min(waitTick, startTick + (uint)(timePassed * TickRate));
             for (uint tick = currentTick + 1; tick <= runUntilTick; tick++)
             {
-                if (sendLateJoinerDataAtEndOfTick)
+                if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick)
                 {
+                    // Waiting until the first mutable tick, because if the master was catching up and
+                    // associating new input actions with ticks while doing so, those would be enqueued at
+                    // the current first mutable tick at that time. Incoming player joined actions would also
+                    // be enqueued at the end just the same. This means if late joiner sync data was to be
+                    // sent before all these input actions that were added during catch up have run, then
+                    // there could be a case where a client receives late joiner sync data at a tick before
+                    // it knows which input actions were associated with ticks right after receiving LJ data.
+                    // It would think that there are no actions there, so it would desync. This edge case
+                    // requires multiple players to join while the master is still catching up.
                     sendLateJoinerDataAtEndOfTick = false;
                     SendLateJoinerData();
                 }
@@ -174,17 +183,16 @@ namespace JanSharp
             // As soon as we are within 1 second of the current tick, consider it done catching up.
             // This little leeway is required, as it may not be able to reach waitTick because
             // input actions may arrive after tick sync data.
-            if (waitTick - currentTick < TickRate)
+            // Run all the way to waitTick when isMaster, otherwise other clients would most likely desync.
+            if (isMaster ? currentTick == waitTick : waitTick - currentTick < TickRate)
             {
-                if (isMaster)
-                {
-                    waitTick = uint.MaxValue;
-                }
                 RemoveOutdatedUniqueIdsByTick();
                 isCatchingUp = false;
                 SendClientCaughtUpIA();
                 startTick = currentTick;
                 tickStartTime = Time.time;
+                if (isMaster)
+                    FinishCatchingUpOnMaster();
             }
         }
 
@@ -220,7 +228,7 @@ namespace JanSharp
                         {
                             // This variable is purely used as to not spam the log file every frame with this error message.
                             unrecoverableStateDueToUniqueId = uniqueId;
-                            /// cSpell:ignore desync
+                            /// cSpell:ignore desync, desyncs
                             Debug.LogError($"<dlt> There's an input action queued to run on the tick {nextTick} "
                                 + $"originating from the player {playerId}, however the input action "
                                 + $"with the unique id {uniqueId} was never received and the given player id "
@@ -236,6 +244,12 @@ namespace JanSharp
             }
 
             currentTick = nextTick;
+            // Slowly increase the immutable tick. This prevents potential lag spikes when many input actions
+            // were sent while catching up. This approach also prevents being caught catching up forever by
+            // not touching waitTick.
+            // Still continue increasing it even when done catching up, for the same reason: no lag spikes.
+            if ((currentTick % TickRate) == 0u)
+                firstMutableTick++;
             // Debug.Log($"<dlt> Running tick {currentTick}");
             if (uniqueIds != null)
                 RunInputActionsForUniqueIds(uniqueIds);
@@ -274,7 +288,7 @@ namespace JanSharp
             if (ignoreLocalInputActions && !(stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId))
                 return;
 
-            if (isSinglePlayer)
+            if (isSinglePlayer) // Guaranteed to be master while in single player.
             {
                 TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData);
                 return;
@@ -304,21 +318,20 @@ namespace JanSharp
         public void InputActionSent(uint uniqueId)
         {
             Debug.Log($"<dlt> LockStep  InputActionSent");
-            if (isMaster)
+            if (!isMaster)
+                return;
+
+            if (currentTick < firstMutableTick)
             {
+                AssociateInputActionWithTick(firstMutableTick, uniqueId, allowOnMaster: true);
                 if (!isSinglePlayer)
-                {
-                    if (currentTick <= immutableUntilTick)
-                    {
-                        immutableUntilTick++;
-                        AssociateInputActionWithTick(immutableUntilTick, uniqueId, allowOnMaster: true);
-                        tickSync.AddInputActionToRun(immutableUntilTick, uniqueId);
-                        return;
-                    }
-                    tickSync.AddInputActionToRun(currentTick, uniqueId);
-                }
-                RunInputActionForUniqueId(uniqueId);
+                    tickSync.AddInputActionToRun(firstMutableTick, uniqueId);
+                return;
             }
+
+            if (!isSinglePlayer)
+                tickSync.AddInputActionToRun(currentTick, uniqueId);
+            RunInputActionForUniqueId(uniqueId);
         }
 
         public void OnInputActionSyncPlayerAssigned(VRCPlayerApi player, InputActionSync inputActionSync)
@@ -591,23 +604,14 @@ namespace JanSharp
                 return;
             }
 
-            isMaster = true;
-            currentlyNoMaster = false;
+            isMaster = true; // currentlyNoMaster will be set to false in SendMasterChangedIA later.
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = false;
             isTickPaused = false;
-
-            if (isCatchingUp)
-                // If it is currently catching up, it will continue catching up while already being master.
-                // Any new input actions must enqueued _after_ the wait tick, as that tick may already
-                // have been executed on a different client.
-                waitTick++;
-            else
-            {
-                immutableUntilTick = waitTick;
-                waitTick = uint.MaxValue;
-            }
+            // The immutable tick prevents any newly enqueued input actions from being enqueued too early,
+            // to prevent desyncs when not in single player as wells as poor IA ordering in general.
+            firstMutableTick = waitTick + 1;
 
             lateJoinerInputActionSync.gameObject.SetActive(true);
             lateJoinerInputActionSync.lockStepIsMaster = true;
@@ -615,12 +619,15 @@ namespace JanSharp
             Networking.SetOwner(localPlayer, tickSync.gameObject);
             tickSync.RequestSerialization();
 
-            // ProcessLeftPlayers also checks this, but doing it before SendMasterChangedIA is cleaner.
-            CheckSingePlayerModeChange();
-            SendMasterChangedIA();
+            if (!isCatchingUp) // We aren't catching up, so "finish" catching up right now.
+            {
+                // ProcessLeftPlayers also checks this, but doing it before SendMasterChangedIA is cleaner.
+                CheckSingePlayerModeChange();
+                FinishCatchingUpOnMaster();
+            }
             processLeftPlayersSentCount++;
             ProcessLeftPlayers();
-            if (isSinglePlayer)
+            if (isSinglePlayer) // In case it was already single player before CheckMasterChange ran.
                 InstantlyRunInputActionsWaitingToBeSent();
 
             if (IsAnyClientWaitingForLateJoinerSync())
@@ -628,6 +635,13 @@ namespace JanSharp
                 flagForLateJoinerSyncSentCount++;
                 FlagForLateJoinerSync();
             }
+        }
+
+        private void FinishCatchingUpOnMaster()
+        {
+            Debug.Log($"<dlt> LockStep  FinishCatchingUpOnMaster");
+            waitTick = uint.MaxValue;
+            SendMasterChangedIA();
         }
 
         private void InstantlyRunInputActionsWaitingToBeSent()
@@ -759,6 +773,8 @@ namespace JanSharp
             if ((--flagForLateJoinerSyncSentCount) != 0)
                 return;
 
+            // If isMaster && isCatchingUp, this actually does _not_ need special handling, because
+            // sendLateJoinerDataAtEndOfTick is only checked after catching up is done.
             if (IsAnyClientWaitingForLateJoinerSync())
                 sendLateJoinerDataAtEndOfTick = true;
         }
@@ -1015,8 +1031,8 @@ namespace JanSharp
         private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, uint uniqueId, DataList inputActionData)
         {
             Debug.Log($"<dlt> LockStep  TryToInstantlyRunInputActionOnMaster");
-            if (isCatchingUp) // Can't instantly run it while still catching up, enqueue it after all input actions.
-            {
+            if (currentTick < firstMutableTick) // Can't run it in the current tick. A check for isCatchingUp
+            { // is not needed, because the condition above will always be true when isCatchingUp is true.
                 if (uniqueId == 0u)
                 {
                     // It'll only be 0 if the local player is the one trying to instantly run it.
@@ -1024,8 +1040,7 @@ namespace JanSharp
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
                 inputActionsByUniqueId.Add(uniqueId, inputActionData);
-                AssociateInputActionWithTick(waitTick, uniqueId);
-                waitTick++;
+                AssociateInputActionWithTick(firstMutableTick, uniqueId);
                 return;
             }
 
