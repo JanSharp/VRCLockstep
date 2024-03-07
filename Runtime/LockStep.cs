@@ -80,6 +80,7 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientCaughtUpListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientLeftListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onMasterChangedListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onTickListeners;
 
         [SerializeField] [HideInInspector] private LockStepGameState[] allGameStates;
@@ -109,6 +110,37 @@ namespace JanSharp
 
         // Used by the debug UI.
         private System.Diagnostics.Stopwatch lastUpdateSW = new System.Diagnostics.Stopwatch();
+
+        ///<summary>
+        ///<para>This is NOT part of the game state.</para>
+        ///<para>Guaranteed to be true on exactly 1 client during the execution of any LockStep event or input
+        ///action. Outside of those functions it is possible for this to be true for 0 clients at some point
+        ///in time. This is generally useful to only send an input action once - that is from the current
+        ///master client.</para>
+        ///<para>However unfortunately it is possible for input actions sent by the master to get dropped if
+        ///the master leaves the instance shortly after sending input actions. Therefore it may be required to
+        ///handle the master changed event and validate the current state, resending input actions that got
+        ///dropped in there. It is guaranteed that any input actions sent by the previous master will have
+        ///run before the master changed event.</para>
+        ///</summary>
+        public bool IsMaster => isMaster && !isCatchingUp; // The actions run during catch up are actions that
+        // have already been run by the previous master. Therefore this must return false, otherwise this
+        // IsMaster property would return true on 2 clients when running the same input action.
+        // I _think_ that this covers all edge cases, since if those input actions were to use this IsMaster
+        // to modify the game state, then the only way to do that is though sending another input action. If
+        // the master leaves shortly after doing so, those newly sent input actions would not even get
+        // associated with a tick to run in, which means that IsMaster then being true in an input action
+        // twice would be fine, because some other client became master and is running still queued actions,
+        // however it won't run newly sent input actions twice, because remember how the ones sent from the
+        // original master before leaving didn't get associated with a tick.
+        // Now if they _did_ get associated with a tick then we can safely assume that at least 1 tick has
+        // passed since the moment where they got sent, That means waitTick has advanced past the original
+        // input action that sent the new input actions. Technically there is an edge case where if the ticks
+        // do not advance at all during this entire time and it ends up syncing the tick association without
+        // advancing any ticks, and the master leaves immediately afterwards, then another client would run
+        // an input action with IsMaster being true again, which would be incorrect behavior. But the only
+        // way this should be possible to happen is if ticks get paused using the tick pase boolean, which is
+        // currently not possible and should never be possible.
 
         private void Start()
         {
@@ -652,6 +684,10 @@ namespace JanSharp
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = false;
             isTickPaused = false;
+            isCatchingUp = true; // Catch up as quickly as possible to the waitTick. Unless it was already
+            // catching up, this should usually only quickly advance by 1 or 2 ticks, which is fine. The real
+            // reason this is required is for the public IsMaster property to behave correctly.
+
             // The immutable tick prevents any newly enqueued input actions from being enqueued too early,
             // to prevent desyncs when not in single player as wells as poor IA ordering in general.
             firstMutableTick = waitTick + 1;
@@ -662,22 +698,10 @@ namespace JanSharp
             Networking.SetOwner(localPlayer, tickSync.gameObject);
             tickSync.RequestSerialization();
 
-            if (!isCatchingUp) // We aren't catching up, so "finish" catching up right now.
-            {
-                // ProcessLeftPlayers also checks this, but doing it before SendMasterChangedIA is cleaner.
-                CheckSingePlayerModeChange();
-                FinishCatchingUpOnMaster();
-            }
             processLeftPlayersSentCount++;
             ProcessLeftPlayers();
             if (isSinglePlayer) // In case it was already single player before CheckMasterChange ran.
                 InstantlyRunInputActionsWaitingToBeSent();
-
-            if (IsAnyClientWaitingForLateJoinerSync())
-            {
-                flagForLateJoinerSyncSentCount++;
-                FlagForLateJoinerSync();
-            }
         }
 
         private void FinishCatchingUpOnMaster()
@@ -687,6 +711,12 @@ namespace JanSharp
             #endif
             waitTick = uint.MaxValue;
             SendMasterChangedIA();
+
+            if (IsAnyClientWaitingForLateJoinerSync())
+            {
+                flagForLateJoinerSyncSentCount++;
+                FlagForLateJoinerSync();
+            }
         }
 
         private void InstantlyRunInputActionsWaitingToBeSent()
@@ -797,6 +827,7 @@ namespace JanSharp
             int playerId = (int)iaData[0].Double;
             clientStates[playerId] = (byte)ClientState.Master;
             currentlyNoMaster = false;
+            RaiseOnMasterChanged(playerId);
         }
 
         private void SendClientJoinedIA()
@@ -1269,6 +1300,18 @@ namespace JanSharp
             {
                 listener.SetProgramVariable("lockStepPlayerId", playerId);
                 listener.SendCustomEvent(nameof(LockStepEventType.OnClientLeft));
+            }
+        }
+
+        private void RaiseOnMasterChanged(int newMasterPlayerId)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  RaiseOnMasterChanged");
+            #endif
+            foreach (UdonSharpBehaviour listener in onMasterChangedListeners)
+            {
+                listener.SetProgramVariable("lockStepPlayerId", newMasterPlayerId);
+                listener.SendCustomEvent(nameof(LockStepEventType.OnMasterChanged));
             }
         }
 

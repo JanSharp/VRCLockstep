@@ -22,6 +22,7 @@ namespace JanSharp
             { LockStepEventType.OnClientBeginCatchUp, new List<UdonSharpBehaviour>() },
             { LockStepEventType.OnClientCaughtUp, new List<UdonSharpBehaviour>() },
             { LockStepEventType.OnClientLeft, new List<UdonSharpBehaviour>() },
+            { LockStepEventType.OnMasterChanged, new List<UdonSharpBehaviour>() },
             { LockStepEventType.OnTick, new List<UdonSharpBehaviour>() },
         };
         private static List<LockStepGameState> allGameStates = new List<LockStepGameState>();
@@ -42,6 +43,7 @@ namespace JanSharp
             LockStepEventType.OnClientBeginCatchUp,
             LockStepEventType.OnClientCaughtUp,
             LockStepEventType.OnClientLeft,
+            LockStepEventType.OnMasterChanged,
             LockStepEventType.OnTick,
         };
 
