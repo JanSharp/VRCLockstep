@@ -1041,7 +1041,7 @@ namespace JanSharp
                 }
                 inputActionData.Add((double)inputActionId);
                 inputActionsByUniqueId.Add(uniqueId, inputActionData);
-                AssociateInputActionWithTick(firstMutableTick, uniqueId);
+                AssociateInputActionWithTick(firstMutableTick, uniqueId, allowOnMaster: true);
                 return;
             }
 
@@ -1086,7 +1086,7 @@ namespace JanSharp
 
             if (ignoreIncomingInputActions)
                 return;
-            if (isMaster && !isCatchingUp && !allowOnMaster) // If it is catching up, it's still enqueueing actions for later.
+            if (isMaster && !allowOnMaster)
             {
                 Debug.LogWarning("<dlt> The master client (which is this client) should "
                     + "not be receiving data about running an input action at a tick...");
