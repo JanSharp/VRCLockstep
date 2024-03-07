@@ -58,7 +58,7 @@ namespace JanSharp
             }
 
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
-            SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
+            SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1); // TODO: reduce frequency.
             // TODO: Count how many times this runs per second.
         }
 
