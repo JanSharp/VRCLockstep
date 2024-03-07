@@ -269,7 +269,7 @@ namespace JanSharp
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             DataList inputActionData = inputActionDataToken.DataList;
             int lastIndex = inputActionData.Count - 1;
-            uint inputActionId = inputActionData[lastIndex].UInt;
+            uint inputActionId = (uint)inputActionData[lastIndex].Double;
             inputActionData.RemoveAt(lastIndex);
             RunInputAction(inputActionId, inputActionData);
         }
@@ -311,7 +311,7 @@ namespace JanSharp
             }
 
             // Modify the inputActionData after sending it, otherwise bad data would be sent.
-            inputActionData.Add(inputActionId);
+            inputActionData.Add((double)inputActionId);
             inputActionsByUniqueId.Add(uniqueId, inputActionData);
         }
 
@@ -1023,7 +1023,7 @@ namespace JanSharp
                 TryToInstantlyRunInputActionOnMaster(inputActionId, uniqueId, inputActionData);
             else
             {
-                inputActionData.Add(inputActionId);
+                inputActionData.Add((double)inputActionId);
                 inputActionsByUniqueId.Add(uniqueId, inputActionData);
             }
         }
@@ -1039,6 +1039,7 @@ namespace JanSharp
                     // Received data always has a unique id.
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
+                inputActionData.Add((double)inputActionId);
                 inputActionsByUniqueId.Add(uniqueId, inputActionData);
                 AssociateInputActionWithTick(firstMutableTick, uniqueId);
                 return;

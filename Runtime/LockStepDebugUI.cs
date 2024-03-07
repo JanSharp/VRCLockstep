@@ -324,7 +324,7 @@ namespace JanSharp
         {
             DataToken uniqueIdToken = inputActionsByUniqueIdKeys[elemIndex];
             DataList iaData = inputActionsByUniqueId[uniqueIdToken].DataList;
-            uint inputActionId = iaData[iaData.Count - 1].UInt;
+            uint inputActionId = (uint)iaData[iaData.Count - 1].Double;
             string inputActionEventName = inputActionHandlerEventNames[inputActionId];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = $"<mspace=0.55em>0x{uniqueIdToken.UInt:x8}";
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>{inputActionId}</mspace> {inputActionEventName}";
