@@ -51,16 +51,13 @@ namespace JanSharp
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
 
-        private DataList iaData; // Set for input actions as a parameter.
-
         private uint unrecoverableStateDueToUniqueId = 0u;
 
         ///cSpell:ignore xxpppppp
 
         public const int PlayerIdKeyShift = 16;
-        // uint => DataList
-        // uint: unique id - pppppppp pppppppp iiiiiiii iiiiiiii (p = player id, i = input action index)
-        // DataList: input action data, plus input action id appended
+        // uint uniqueId => objet[] { uint inputActionId, byte[] inputActionData }
+        // uniqueId: pppppppp pppppppp iiiiiiii iiiiiiii (p = player id, i = input action index)
         //
         // Unique ids associated with their input actions, all of which are input actions
         // which have not been run yet and are either waiting for the tick in which they will be run,
@@ -96,7 +93,7 @@ namespace JanSharp
         // This flag ultimately indicates that there is no client with the Master state in the clientStates game state
         private bool currentlyNoMaster = true;
 
-        private DataList[] unprocessedLJSerializedGameStates = new DataList[ArrList.MinCapacity];
+        private byte[][] unprocessedLJSerializedGameStates = new byte[ArrList.MinCapacity][];
         private int unprocessedLJSerializedGSCount = 0;
         private int nextLJGameStateToProcess = -1;
         private float nextLJGameStateToProcessTime = 0f;
@@ -311,24 +308,22 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  RunInputActionForUniqueId");
             #endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
-            DataList inputActionData = inputActionDataToken.DataList;
-            int lastIndex = inputActionData.Count - 1;
-            uint inputActionId = (uint)inputActionData[lastIndex].Double;
-            inputActionData.RemoveAt(lastIndex);
-            RunInputAction(inputActionId, inputActionData);
+            object[] inputActionData = (object[])inputActionDataToken.Reference;
+            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1]);
         }
 
-        private void RunInputAction(uint inputActionId, DataList inputActionData)
+        private void RunInputAction(uint inputActionId, byte[] inputActionData)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RunInputAction");
             #endif
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
-            inst.SetProgramVariable(InputActionDataField, inputActionData);
+            ResetReadStream();
+            readStream = inputActionData;
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
         }
 
-        public void SendInputAction(uint inputActionId, DataList inputActionData)
+        public void SendInputAction(uint inputActionId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
@@ -336,13 +331,18 @@ namespace JanSharp
             if (ignoreLocalInputActions && !(stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId))
                 return;
 
+            byte[] inputActionData = new byte[writeStreamSize];
+            for (int i = 0; i < writeStreamSize; i++)
+                inputActionData[i] = writeStream[i];
+            ResetWriteStream();
+
             if (isSinglePlayer) // Guaranteed to be master while in single player.
             {
                 TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData);
                 return;
             }
 
-            uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData);
+            uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendInputAction (inner) - uniqueId: 0x{uniqueId:x8}");
             #endif
@@ -361,9 +361,7 @@ namespace JanSharp
                     + "ignoreLocalInputActions is also true. Continuing as though stillAllowLocalClientJoinedIA was false.");
             }
 
-            // Modify the inputActionData after sending it, otherwise bad data would be sent.
-            inputActionData.Add((double)inputActionId);
-            inputActionsByUniqueId.Add(uniqueId, inputActionData);
+            inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
         }
 
         public void InputActionSent(uint uniqueId)
@@ -812,9 +810,8 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendMasterChangedIA");
             #endif
-            iaData = new DataList();
-            iaData.Add((double)localPlayer.playerId);
-            SendInputAction(masterChangedIAId, iaData);
+            Write(localPlayer.playerId);
+            SendInputAction(masterChangedIAId);
         }
 
         [SerializeField] [HideInInspector] private uint masterChangedIAId;
@@ -824,7 +821,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnMasterChangedIA");
             #endif
-            int playerId = (int)iaData[0].Double;
+            int playerId = ReadInt();
             clientStates[playerId] = (byte)ClientState.Master;
             currentlyNoMaster = false;
             RaiseOnMasterChanged(playerId);
@@ -835,12 +832,11 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientJoinedIA");
             #endif
-            iaData = new DataList();
-            iaData.Add((double)localPlayer.playerId);
+            Write(localPlayer.playerId);
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
-            SendInputAction(clientJoinedIAId, iaData);
+            SendInputAction(clientJoinedIAId);
         }
 
         [SerializeField] [HideInInspector] private uint clientJoinedIAId;
@@ -850,7 +846,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientJoinedIA");
             #endif
-            int playerId = (int)iaData[0].Double;
+            int playerId = ReadInt();
             // Using set value, because the given player may already have a state,
             // because it is valid for the client joined input action to be sent
             // multiple times. And whenever it is sent, it means the client is waiting
@@ -892,26 +888,27 @@ namespace JanSharp
             if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20))
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
-            iaData = new DataList();
-            iaData.Add((double)clientStates.Count);
+            Write(clientStates.Count);
             DataList keys = clientStates.GetKeys();
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken keyToken = keys[i];
-                iaData.Add((double)keyToken.Int);
-                iaData.Add((double)clientStates[keyToken].Byte);
+                Write(keyToken.Int);
+                Write(clientStates[keyToken].Byte);
             }
-            lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, iaData);
+            lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, writeStream, writeStreamSize);
+            ResetWriteStream();
 
             for (int i = 0; i < allGameStates.Length; i++)
             {
-                iaData = allGameStates[i].SerializeGameState();
-                lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, iaData);
+                allGameStates[i].SerializeGameState();
+                lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, writeStream, writeStreamSize);
+                ResetWriteStream();
             }
 
-            iaData = new DataList();
-            iaData.Add(currentTick);
-            lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, iaData);
+            Write(currentTick);
+            lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, writeStream, writeStreamSize);
+            ResetWriteStream();
 
             syncCountForLatestLJSync = lateJoinerInputActionSync.QueuedSyncsCount;
         }
@@ -926,12 +923,12 @@ namespace JanSharp
             ForgetAboutUnprocessedLJSerializedGameSates();
 
             clientStates = new DataDictionary();
-            int stopBeforeIndex = 1 + 2 * (int)iaData[0].Double;
+            int stopBeforeIndex = 1 + 2 * ReadInt();
             for (int i = 1; i < stopBeforeIndex; i += 2)
             {
                 // Can't just reuse the tokens from iaData, because they're doubles, because of the json round trip.
-                int playerId = (int)iaData[i].Double;
-                byte clientState = (byte)iaData[i + 1].Double;
+                int playerId = ReadInt();
+                byte clientState = ReadByte();
                 clientStates.Add(playerId, clientState);
                 if ((ClientState)clientState == ClientState.Master)
                     currentlyNoMaster = false;
@@ -953,7 +950,7 @@ namespace JanSharp
                     + $"is wrong or the game states are somehow out of order.");
                 return;
             }
-            ArrList.Add(ref unprocessedLJSerializedGameStates, ref unprocessedLJSerializedGSCount, iaData);
+            ArrList.Add(ref unprocessedLJSerializedGameStates, ref unprocessedLJSerializedGSCount, readStream);
         }
 
         private void OnLJCurrentTickIA()
@@ -967,7 +964,7 @@ namespace JanSharp
                 return;
             }
 
-            currentTick = (uint)iaData[0].Double;
+            currentTick = ReadUInt();
 
             lateJoinerInputActionSync.gameObject.SetActive(false);
             isWaitingForLateJoinerSync = false;
@@ -1014,8 +1011,9 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  ProcessNextLJSerializedGameState");
             #endif
             int gameStateIndex = nextLJGameStateToProcess;
-            iaData = unprocessedLJSerializedGameStates[gameStateIndex];
-            allGameStates[gameStateIndex].DeserializeGameState(iaData);
+            ResetReadStream();
+            readStream = unprocessedLJSerializedGameStates[gameStateIndex];
+            allGameStates[gameStateIndex].DeserializeGameState(); // TODO: Use return error message.
             TryMoveToNextLJSerializedGameState();
         }
 
@@ -1064,9 +1062,8 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientGotLateJoinerDataIA");
             #endif
-            iaData = new DataList();
-            iaData.Add((double)localPlayer.playerId);
-            SendInputAction(clientGotLateJoinerDataIAId, iaData);
+            Write(localPlayer.playerId);
+            SendInputAction(clientGotLateJoinerDataIAId);
         }
 
         [SerializeField] [HideInInspector] private uint clientGotLateJoinerDataIAId;
@@ -1076,7 +1073,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientGotLateJoinerDataIA");
             #endif
-            int playerId = (int)iaData[0].Double;
+            int playerId = ReadInt();
             clientStates[playerId] = (byte)ClientState.CatchingUp;
             CheckIfLateJoinerSyncShouldStop();
             RaiseOnClientJoined(playerId);
@@ -1087,9 +1084,8 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientLeftIA");
             #endif
-            iaData = new DataList();
-            iaData.Add((double)playerId);
-            SendInputAction(clientLeftIAId, iaData);
+            Write(playerId);
+            SendInputAction(clientLeftIAId);
         }
 
         [SerializeField] [HideInInspector] private uint clientLeftIAId;
@@ -1099,7 +1095,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientLeftIA");
             #endif
-            int playerId = (int)iaData[0].Double;
+            int playerId = ReadInt();
             clientStates.Remove(playerId);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
@@ -1113,9 +1109,8 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientCaughtUpIA");
             #endif
-            iaData = new DataList();
-            iaData.Add((double)localPlayer.playerId);
-            SendInputAction(clientCaughtUpIAId, iaData);
+            Write(localPlayer.playerId);
+            SendInputAction(clientCaughtUpIAId);
         }
 
         [SerializeField] [HideInInspector] private uint clientCaughtUpIAId;
@@ -1125,12 +1120,12 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientCaughtUpIA");
             #endif
-            int playerId = (int)iaData[0].Double;
+            int playerId = ReadInt();
             clientStates[playerId] = (byte)ClientState.Normal;
             RaiseOnClientCaughtUp(playerId);
         }
 
-        public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, uint uniqueId, DataList inputActionData)
+        public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, uint uniqueId, byte[] inputActionData)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x8}{(isLateJoinerSync ? "" : $", event name {inputActionHandlerEventNames[inputActionId]}")}");
@@ -1139,7 +1134,8 @@ namespace JanSharp
             {
                 if (!isWaitingForLateJoinerSync)
                     return;
-                iaData = inputActionData;
+                ResetReadStream();
+                readStream = inputActionData;
                 if (inputActionId == LJClientStatesIAId)
                     OnLJClientStatesIA();
                 else if (inputActionId == LJCurrentTickIAId)
@@ -1155,13 +1151,10 @@ namespace JanSharp
             if (isMaster)
                 TryToInstantlyRunInputActionOnMaster(inputActionId, uniqueId, inputActionData);
             else
-            {
-                inputActionData.Add((double)inputActionId);
-                inputActionsByUniqueId.Add(uniqueId, inputActionData);
-            }
+                inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
         }
 
-        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, uint uniqueId, DataList inputActionData)
+        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, uint uniqueId, byte[] inputActionData)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  TryToInstantlyRunInputActionOnMaster");
@@ -1174,8 +1167,7 @@ namespace JanSharp
                     // Received data always has a unique id.
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
-                inputActionData.Add((double)inputActionId);
-                inputActionsByUniqueId.Add(uniqueId, inputActionData);
+                inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
                 AssociateInputActionWithTick(firstMutableTick, uniqueId, allowOnMaster: true);
                 return;
             }
@@ -1323,5 +1315,49 @@ namespace JanSharp
             foreach (UdonSharpBehaviour listener in onTickListeners)
                 listener.SendCustomEvent(nameof(LockStepEventType.OnTick));
         }
+
+        private byte[] writeStream = new byte[64];
+        private int writeStreamSize = 0;
+
+        public void ResetWriteStream() => writeStreamSize = 0;
+        public void Write(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(byte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(ushort value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(int value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(uint value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(long value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(ulong value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(float value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(double value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(Vector2 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(Vector3 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(Vector4 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(Quaternion value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+
+        ///<summary>Arrays assigned to this variable always have the exact length of the data that is actually
+        ///available to be read, and once assigned to this variable they are immutable.</summary>
+        private byte[] readStream = new byte[0];
+        private int readStreamPosition = 0;
+
+        public void ResetReadStream() => readStreamPosition = 0;
+        public sbyte ReadSByte() => DataStream.ReadSByte(ref readStream, ref readStreamPosition);
+        public byte ReadByte() => DataStream.ReadByte(ref readStream, ref readStreamPosition);
+        public short ReadShort() => DataStream.ReadShort(ref readStream, ref readStreamPosition);
+        public ushort ReadUShort() => DataStream.ReadUShort(ref readStream, ref readStreamPosition);
+        public int ReadInt() => DataStream.ReadInt(ref readStream, ref readStreamPosition);
+        public uint ReadUInt() => DataStream.ReadUInt(ref readStream, ref readStreamPosition);
+        public long ReadLong() => DataStream.ReadLong(ref readStream, ref readStreamPosition);
+        public ulong ReadULong() => DataStream.ReadULong(ref readStream, ref readStreamPosition);
+        public float ReadFloat() => DataStream.ReadFloat(ref readStream, ref readStreamPosition);
+        public double ReadDouble() => DataStream.ReadDouble(ref readStream, ref readStreamPosition);
+        public Vector2 ReadVector2() => DataStream.ReadVector2(ref readStream, ref readStreamPosition);
+        public Vector3 ReadVector3() => DataStream.ReadVector3(ref readStream, ref readStreamPosition);
+        public Vector4 ReadVector4() => DataStream.ReadVector4(ref readStream, ref readStreamPosition);
+        public Quaternion ReadQuaternion() => DataStream.ReadQuaternion(ref readStream, ref readStreamPosition);
+        public char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
+        public string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
     }
 }

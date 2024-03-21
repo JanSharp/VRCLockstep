@@ -24,7 +24,6 @@ namespace JanSharp
 
         // These 2 are set by LockStep as parameters.
         private int lockStepPlayerId;
-        private DataList iaData;
 
         [LockStepEvent(LockStepEventType.OnInit)]
         public void OnInit()
@@ -82,10 +81,9 @@ namespace JanSharp
         private void SendSetDisplayNameIA(int playerId, string displayName)
         {
             Debug.Log("<dlt> TestGameState  SendSetDisplayNameIA");
-            iaData = new DataList();
-            iaData.Add((double)playerId);
-            iaData.Add(displayName);
-            lockStep.SendInputAction(setDisplayNameIAId, iaData);
+            lockStep.Write(playerId);
+            lockStep.Write(displayName);
+            lockStep.SendInputAction(setDisplayNameIAId);
         }
 
         [SerializeField] [HideInInspector] private uint setDisplayNameIAId;
@@ -93,11 +91,11 @@ namespace JanSharp
         public void OnSetDisplayNameIA()
         {
             Debug.Log("<dlt> TestGameState  OnSetDisplayNameIA");
-            int playerId = (int)iaData[0].Double;
+            int playerId = lockStep.ReadInt();
             if (!allPlayerData.TryGetValue(playerId, out DataToken playerDataToken))
                 return; // Could hve left already.
             object[] playerData = (object[])playerDataToken.Reference;
-            playerData[PlayerData_DisplayName] = iaData[1].String;
+            playerData[PlayerData_DisplayName] = lockStep.ReadString();
 
             ui.UpdateUI();
         }
@@ -113,10 +111,9 @@ namespace JanSharp
         private void SendSetDescriptionIA(int playerId, string description)
         {
             Debug.Log("<dlt> TestGameState  SendSetDescriptionIA");
-            iaData = new DataList();
-            iaData.Add((double)playerId);
-            iaData.Add(description);
-            lockStep.SendInputAction(setDescriptionNameIAId, iaData);
+            lockStep.Write(playerId);
+            lockStep.Write(description);
+            lockStep.SendInputAction(setDescriptionNameIAId);
         }
 
         [SerializeField] [HideInInspector] private uint setDescriptionNameIAId;
@@ -124,47 +121,43 @@ namespace JanSharp
         public void OnSetDescriptionIA()
         {
             Debug.Log("<dlt> TestGameState  OnSetDescriptionIA");
-            int playerId = (int)iaData[0].Double;
+            int playerId = lockStep.ReadInt();
             if (!allPlayerData.TryGetValue(playerId, out DataToken playerDataToken))
                 return; // Could hve left already.
             object[] playerData = (object[])playerDataToken.Reference;
-            playerData[PlayerData_Description] = iaData[1].String;
+            playerData[PlayerData_Description] = lockStep.ReadString();
 
             ui.UpdateUI();
         }
 
-        public override DataList SerializeGameState()
+        public override void SerializeGameState()
         {
             Debug.Log("<dlt> TestGameState  SerializeGameState");
-            DataList stream = new DataList();
 
             int count = allPlayerData.Count;
-            stream.Add((double)count);
+            lockStep.Write(count);
             DataList allPlayerDataValues = allPlayerData.GetValues();
             for (int i = 0; i < count; i++)
             {
                 object[] playerData = (object[])allPlayerDataValues[i].Reference;
-                stream.Add((double)(int)playerData[PlayerData_PlayerId]);
-                stream.Add((string)playerData[PlayerData_DisplayName]);
-                stream.Add((string)playerData[PlayerData_Description]);
+                lockStep.Write((int)playerData[PlayerData_PlayerId]);
+                lockStep.Write((string)playerData[PlayerData_DisplayName]);
+                lockStep.Write((string)playerData[PlayerData_Description]);
             }
-
-            return stream;
         }
 
-        public override string DeserializeGameState(DataList stream)
+        public override string DeserializeGameState()
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
-            int i = 0;
 
-            int count = (int)stream[i++].Double;
+            int count = lockStep.ReadInt();
             for (int j = 0; j < count; j++)
             {
-                int playerId = (int)stream[i++].Double;
+                int playerId = lockStep.ReadInt();
                 object[] playerData = new object[PlayerData_Size];
                 playerData[PlayerData_PlayerId] = playerId;
-                playerData[PlayerData_DisplayName] = stream[i++].String;
-                playerData[PlayerData_Description] = stream[i++].String;
+                playerData[PlayerData_DisplayName] = lockStep.ReadString();
+                playerData[PlayerData_Description] = lockStep.ReadString();
                 allPlayerData.Add(playerId, new DataToken(playerData));
             }
 

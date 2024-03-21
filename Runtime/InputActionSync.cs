@@ -4,7 +4,6 @@ using VRC.SDKBase;
 using VRC.Udon;
 using Cyan.PlayerObjectPool;
 using VRC.Udon.Common;
-using VRC.SDK3.Data;
 
 namespace JanSharp
 {
@@ -34,14 +33,14 @@ namespace JanSharp
         // sending
 
         [UdonSynced] private uint syncedInt = 0u; // Initial values for first sync, which gets ignored.
-        [UdonSynced] private string syncedData = "";
+        [UdonSynced] private byte[] syncedData = new byte[0];
         private bool retrying = false;
 
         private uint[] syncedIntQueue = new uint[ArrQueue.MinCapacity];
         private int siqStartIndex = 0;
         private int siqCount = 0;
 
-        private string[] syncedDataQueue = new string[ArrQueue.MinCapacity];
+        private byte[][] syncedDataQueue = new byte[ArrQueue.MinCapacity][];
         private int sdqStartIndex = 0;
         private int sdqCount = 0;
 
@@ -53,7 +52,7 @@ namespace JanSharp
 
         // receiving
 
-        private string partialSyncedData = null;
+        private byte[] syncedDataBuffer = null;
 
         // This method will be called on all clients when the object is enabled and the Owner has been assigned.
         public override void _OnOwnerSet()
@@ -82,44 +81,40 @@ namespace JanSharp
         ///<summary>
         ///Returns the uniqueId for the send input action, or 0 in case of error.
         ///</summary>
-        public uint SendInputAction(uint inputActionId, DataList inputActionData)
+        public uint SendInputAction(uint inputActionId, byte[] inputActionData, int inputActionDataSize)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction");
             #endif
             uint index = (nextInputActionIndex++);
-            if (!VRCJson.TrySerializeToJson(inputActionData, JsonExportType.Minify, out DataToken jsonToken))
-            {
-                Debug.LogError($"[LockStep] Unable to serialize data for input action id {inputActionId}, index: {index}"
-                    + (isLateJoinerSyncInst ? ", (late joiner sync inst)" : $", player id {Owner.playerId}")
-                    + $" : {jsonToken.Error}");
-                return 0u;
-            }
 
             uint prepSyncedInt = (index << InputActionIndexShift) | SplitDataFlag | inputActionId;
             uint uniqueId = 0u;
-            string jsonString = jsonToken.String;
-            int length = jsonString.Length;
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - json string length: {length}");
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - inputActionDataSize: {inputActionDataSize}");
             #endif
-            for (int startIndex = 0; startIndex < length; startIndex += MaxSyncedDataSize)
+            for (int startIndex = 0;
+                startIndex < inputActionDataSize || (inputActionDataSize == 0 && startIndex == 0);
+                startIndex += MaxSyncedDataSize)
             {
-                int remainingLength = length - startIndex;
-                string prepSyncedData = jsonString;
-                if (remainingLength <= MaxSyncedDataSize)
+                int remainingLength = inputActionDataSize - startIndex;
+                int prepSize;
+                if (remainingLength > MaxSyncedDataSize)
+                    prepSize = MaxSyncedDataSize;
+                else
                 {
+                    prepSize = remainingLength;
                     prepSyncedInt ^= SplitDataFlag;
                     uniqueId = shiftedPlayerId | index;
-                    if (startIndex != 0)
-                        prepSyncedData = jsonString.Substring(startIndex);
                 }
-                else
-                    prepSyncedData = jsonString.Substring(startIndex, MaxSyncedDataSize);
+
+                byte[] prepSyncedData = new byte[prepSize];
+                for (int i = 0; i < prepSize; i++) // I can see the Udon performance crumble in front of my eyes.
+                    prepSyncedData[i] = inputActionData[startIndex + i];
 
                 #if LockStepDebug
                 Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - enqueueing "
-                    + $"syncedInt: 0x{prepSyncedInt:X8}, syncedData length: {prepSyncedData.Length}, uniqueId: 0x{uniqueId:X8}");
+                    + $"syncedInt: 0x{prepSyncedInt:X8}, syncedData length: {prepSize}, uniqueId: 0x{uniqueId:X8}");
                 #endif
                 ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, prepSyncedInt);
                 ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, prepSyncedData);
@@ -166,7 +161,7 @@ namespace JanSharp
             // here from erroring when PreSerialization does eventually run, because that function
             // expects at least 1 element to be in the queue.
             ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, 0u);
-            ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, "");
+            ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, new byte[0]);
             ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, 0u);
         }
 
@@ -220,6 +215,22 @@ namespace JanSharp
                 SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
         }
 
+        private void AppendToSyncedDataBuffer()
+        {
+            if (syncedDataBuffer == null)
+            {
+                // syncedData gets modified by Udon during the next deserialization if the data size is the same.
+                syncedDataBuffer = new byte[syncedData.Length];
+                syncedData.CopyTo(syncedDataBuffer, 0);
+                return;
+            }
+            int oldLength = syncedDataBuffer.Length;
+            byte[] biggerBuffer = new byte[oldLength + syncedData.Length];
+            syncedDataBuffer.CopyTo(biggerBuffer , 0);
+            syncedData.CopyTo(biggerBuffer, oldLength);
+            syncedDataBuffer = biggerBuffer;
+        }
+
         public override void OnDeserialization(DeserializationResult result)
         {
             #if LockStepDebug
@@ -235,41 +246,19 @@ namespace JanSharp
 
             if (syncedInt == 0u)
             {
-                partialSyncedData = null;
+                syncedDataBuffer = null;
                 return;
             }
 
+            AppendToSyncedDataBuffer();
             if ((syncedInt & SplitDataFlag) != 0u)
-            {
-                if (partialSyncedData == null)
-                    partialSyncedData = syncedData;
-                else
-                    partialSyncedData += syncedData;
                 return;
-            }
-
-            if (partialSyncedData != null)
-            {
-                syncedData = partialSyncedData + syncedData;
-                partialSyncedData = null;
-            }
 
             uint id = syncedInt & InputActionIdBits;
             // Can just right shift because index uses all the highest bits;
             uint index = syncedInt >> InputActionIndexShift;
-
-            if (!VRCJson.TryDeserializeFromJson(syncedData, out DataToken jsonToken))
-            {
-                // This can legitimately happen when someone joins late and starts receiving
-                // data in the middle of a split input action. In that case the data should get
-                // ignored anyway, so returning is correct.
-                Debug.LogError($"[LockStep] Unable to deserialize json for input action id {id}, index: {index}"
-                    + (isLateJoinerSyncInst ? ", (late joiner sync inst)" : $", player id {Owner.playerId}")
-                    + $" : {jsonToken.Error}\n\nSource json:\n{syncedData}");
-                return;
-            }
-
-            lockStep.ReceivedInputAction(isLateJoinerSyncInst, id, shiftedPlayerId | index, jsonToken.DataList);
+            lockStep.ReceivedInputAction(isLateJoinerSyncInst, id, shiftedPlayerId | index, syncedDataBuffer);
+            syncedDataBuffer = null;
         }
     }
 }
