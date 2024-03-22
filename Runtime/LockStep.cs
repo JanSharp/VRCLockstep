@@ -880,6 +880,18 @@ namespace JanSharp
             return System.Math.Min(max, System.Math.Max(min, value));
         }
 
+        private void LogBinaryData(byte[] data, int size)
+        {
+            string result = "";
+            for (int i = 0; i < size; i++)
+            {
+                if ((i % 32) == 0)
+                    result += "<v>\n";
+                result += data[i].ToString("x2");
+            }
+            Debug.Log($"[LockStepDebug] LockStep  LogBinaryData:{result}");
+        }
+
         private void SendLateJoinerData()
         {
             #if LockStepDebug
@@ -902,6 +914,10 @@ namespace JanSharp
             for (int i = 0; i < allGameStates.Length; i++)
             {
                 allGameStates[i].SerializeGameState();
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] LockStep  SendLateJoinerData (inner) - writeStreamSize: {writeStreamSize}");
+                LogBinaryData(writeStream, writeStreamSize);
+                #endif
                 lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, writeStream, writeStreamSize);
                 ResetWriteStream();
             }
@@ -1013,6 +1029,10 @@ namespace JanSharp
             int gameStateIndex = nextLJGameStateToProcess;
             ResetReadStream();
             readStream = unprocessedLJSerializedGameStates[gameStateIndex];
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}");
+            LogBinaryData(readStream, readStream.Length);
+            #endif
             allGameStates[gameStateIndex].DeserializeGameState(); // TODO: Use return error message.
             TryMoveToNextLJSerializedGameState();
         }
