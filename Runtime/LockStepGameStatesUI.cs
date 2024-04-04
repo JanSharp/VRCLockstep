@@ -81,17 +81,26 @@ namespace JanSharp
 
         public void ExportSelectAll()
         {
-
+            foreach (LockStepExportGSEntry entry in exportGSEntries)
+                entry.mainToggle.isOn = true;
         }
 
         public void ExportSelectNone()
         {
-
+            foreach (LockStepExportGSEntry entry in exportGSEntries)
+                entry.mainToggle.isOn = false;
         }
 
         public void SetAutosaveSelected()
         {
-
+            for (int i = 0; i < exportGSEntries.Length; i++)
+            {
+                LockStepExportGSEntry entry = exportGSEntries[i];
+                bool doAutosave = entry.mainToggle.isOn;
+                entry.doAutosave = doAutosave;
+                entry.autosaveText.gameObject.SetActive(doAutosave);
+                mainGSEntries[i].autosaveText.gameObject.SetActive(doAutosave);
+            }
         }
 
         public void OnAutosaveIntervalFieldChanged()

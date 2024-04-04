@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8137058554309315893
 RectTransform:
   m_ObjectHideFlags: 0
@@ -367,8 +367,9 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 4461208939069534714}
-  mainToggle: {fileID: 8137058554831430151}
   displayNameText: {fileID: 8137058555777278614}
+  gameStatesUI: {fileID: 0}
+  mainToggle: {fileID: 8137058554831430151}
   autosaveText: {fileID: 8137058554309315890}
 --- !u!114 &4461208939069534714
 MonoBehaviour:

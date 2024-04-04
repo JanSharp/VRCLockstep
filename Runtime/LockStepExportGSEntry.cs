@@ -14,6 +14,7 @@ namespace JanSharp
 
         public Toggle mainToggle;
         public TextMeshProUGUI autosaveText;
+        [System.NonSerialized] public bool doAutosave = false;
 
         public void OnToggleValueChanged()
         {
