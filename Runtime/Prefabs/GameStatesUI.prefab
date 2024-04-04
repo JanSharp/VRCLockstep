@@ -118,7 +118,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912740769856669}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: CloseOpenWindow
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912740802679610
 GameObject:
   m_ObjectHideFlags: 0
@@ -237,7 +248,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912740802679607}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: CloseOpenWindow
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912740808967986
 GameObject:
   m_ObjectHideFlags: 0
@@ -288,6 +310,8 @@ GameObject:
   - component: {fileID: 8315912740814126677}
   - component: {fileID: 8315912740814126678}
   - component: {fileID: 8315912740814126679}
+  - component: {fileID: 2420291585630583800}
+  - component: {fileID: 8823234522217046136}
   m_Layer: 17
   m_Name: GameStatesUI
   m_TagString: Untagged
@@ -403,6 +427,74 @@ MonoBehaviour:
   m_Script: {fileID: -1533785930, guid: 661092b4961be7145bfbe56e1e62337b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2420291585630583800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8315912740814126680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63fa6dd81a32804e6ba0086554df5af2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes: []
+  _udonSharpBackingUdonBehaviour: {fileID: 8823234522217046136}
+  mainGSEntryPrefab: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
+    type: 3}
+  importGSEntryPrefab: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
+    type: 3}
+  exportGSEntryPrefab: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
+    type: 3}
+  mainGSList: {fileID: 8315912742155832182}
+  dimBackground: {fileID: 8315912741354935664}
+  importWindow: {fileID: 8315912741185170229}
+  serializedInputField: {fileID: 8315912742567915866}
+  importInfoText: {fileID: 8315912740984491370}
+  importGSList: {fileID: 8315912742651624664}
+  confirmImportButton: {fileID: 8315912742696054417}
+  exportWindow: {fileID: 8315912741474953698}
+  exportSelectedText: {fileID: 8315912741336856138}
+  exportGSList: {fileID: 8315912741963473185}
+  autosaveIntervalField: {fileID: 8315912741740254005}
+  autosaveIntervalSlider: {fileID: 8315912741911625583}
+  serializedOutputField: {fileID: 8315912742630284375}
+  confirmExportButton: {fileID: 8315912742473667882}
+--- !u!114 &8823234522217046136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8315912740814126680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactTextPlacement: {fileID: 0}
+  interactText: Use
+  interactTextGO: {fileID: 0}
+  proximity: 2
+  SynchronizePosition: 0
+  AllowCollisionOwnershipTransfer: 0
+  Reliable: 0
+  _syncMethod: 0
+  serializedProgramAsset: {fileID: 11400000, guid: 7413ec6006908ae1b997a27a938f628c,
+    type: 2}
+  programSource: {fileID: 11400000, guid: 6ce901bccfe8f658ba1db24747e767a2, type: 2}
+  serializedPublicVariablesBytesString: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABgEAAAAAAAAAAi8CAAAAAUkAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAGAAMQBbAFsAUwB5AHMAdABlAG0ALgBJAG4AdAAzADIALAAgAG0AcwBjAG8AcgBsAGkAYgBdAF0ALAAgAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAAIAAAAGAgAAAAAAAAAnAQQAAAB0AHkAcABlAAEXAAAAUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwAsACAAbQBzAGMAbwByAGwAaQBiACcBCgAAAFMAeQBtAGIAbwBsAE4AYQBtAGUAAR8AAABfAF8AXwBVAGQAbwBuAFMAaABhAHIAcABCAGUAaABhAHYAaQBvAHUAcgBWAGUAcgBzAGkAbwBuAF8AXwBfACcBBAAAAHQAeQBwAGUAARYAAABTAHkAcwB0AGUAbQAuAEkAbgB0ADMAMgAsACAAbQBzAGMAbwByAGwAaQBiABcBBQAAAFYAYQBsAHUAZQACAAAABwUHBQcF
+  publicVariablesUnityEngineObjects: []
+  publicVariablesSerializationDataFormat: 0
 --- !u!1 &8315912740922906611
 GameObject:
   m_ObjectHideFlags: 0
@@ -876,7 +968,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912741082926725}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OpenImportWindow
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912741088124475
 GameObject:
   m_ObjectHideFlags: 0
@@ -1206,7 +1309,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912741104786436}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: CloseOpenWindow
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912741110725843
 GameObject:
   m_ObjectHideFlags: 0
@@ -1373,7 +1487,7 @@ RectTransform:
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 0.9999614}
+  m_AnchorMax: {x: 1, y: 0.9999734}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 30, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2266,7 +2380,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'selected: 1'
+  m_text: 'selected: 0'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2452,7 +2566,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912741354935629}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: CloseOpenWindow
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912741375165539
 GameObject:
   m_ObjectHideFlags: 0
@@ -2608,7 +2733,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 8315912741130475119}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999614
+  m_Size: 0.9999734
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -3172,7 +3297,7 @@ GameObject:
   - component: {fileID: 8315912741669760479}
   - component: {fileID: 8315912741669760448}
   m_Layer: 17
-  m_Name: BackText
+  m_Name: CloseText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3555,7 +3680,18 @@ MonoBehaviour:
   m_CharacterLimit: 0
   m_OnEndEdit:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OnAutosaveIntervalFieldChanged
+          m_BoolArgument: 0
+        m_CallState: 2
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -3723,7 +3859,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912741757726200}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: ExportSelectAll
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912741849158565
 GameObject:
   m_ObjectHideFlags: 0
@@ -3842,7 +3989,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742817842981}
   m_HandleRect: {fileID: 8315912742817842982}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 0.99998313
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -3936,7 +4083,18 @@ MonoBehaviour:
   m_Value: 5
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OnAutosaveIntervalSliderChanged
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912741949470375
 GameObject:
   m_ObjectHideFlags: 0
@@ -4082,7 +4240,7 @@ GameObject:
   - component: {fileID: 8315912741963473215}
   - component: {fileID: 8315912741963473184}
   m_Layer: 17
-  m_Name: GameStatesContent
+  m_Name: ExportGSList
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4104,7 +4262,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.0036621094}
+  m_AnchoredPosition: {x: 0, y: 0.0048828125}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8315912741963473215
@@ -4194,7 +4352,7 @@ GameObject:
   - component: {fileID: 8315912741998539949}
   - component: {fileID: 8315912741998539950}
   m_Layer: 17
-  m_Name: BackText
+  m_Name: CloseText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4574,7 +4732,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742144975319}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OpenExportWindow
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912742155832183
 GameObject:
   m_ObjectHideFlags: 0
@@ -4587,7 +4756,7 @@ GameObject:
   - component: {fileID: 8315912742155832180}
   - component: {fileID: 8315912742155832181}
   m_Layer: 17
-  m_Name: GameStatesContent
+  m_Name: MainGSList
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4609,7 +4778,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.006713867}
+  m_AnchoredPosition: {x: 0, y: -0.0021972656}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8315912742155832180
@@ -5377,7 +5546,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742345561637}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: SetAutosaveSelected
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912742372723625
 GameObject:
   m_ObjectHideFlags: 0
@@ -5391,7 +5571,7 @@ GameObject:
   - component: {fileID: 8315912742372723622}
   - component: {fileID: 8315912742372723623}
   m_Layer: 17
-  m_Name: CloseButton
+  m_Name: CancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5496,7 +5676,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742372723622}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: CloseOpenWindow
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912742375670349
 GameObject:
   m_ObjectHideFlags: 0
@@ -5588,7 +5779,7 @@ GameObject:
   - component: {fileID: 8315912742442097367}
   - component: {fileID: 8315912742442097368}
   m_Layer: 17
-  m_Name: CloseText
+  m_Name: CancelText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5640,7 +5831,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Close
+  m_text: Cancel
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -5823,11 +6014,22 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 8315912742473667881}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: ConfirmExport
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912742520565669
 GameObject:
   m_ObjectHideFlags: 0
@@ -6109,7 +6311,18 @@ MonoBehaviour:
   m_CharacterLimit: 0
   m_OnEndEdit:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OnImportSerializedTextChanged
+          m_BoolArgument: 0
+        m_CallState: 2
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -6443,7 +6656,7 @@ GameObject:
   - component: {fileID: 8315912742651624662}
   - component: {fileID: 8315912742651624663}
   m_Layer: 17
-  m_Name: GameStatesContent
+  m_Name: ImportGSList
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6465,7 +6678,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0056152344}
+  m_AnchoredPosition: {x: 0, y: -0.0010986328}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8315912742651624662
@@ -6621,11 +6834,22 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 8315912742696054416}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: ConfirmImport
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8315912742715783719
 GameObject:
   m_ObjectHideFlags: 0
@@ -6876,8 +7100,8 @@ RectTransform:
   m_Father: {fileID: 8315912741967265724}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 0.99998313}
+  m_AnchorMin: {x: 0, y: 0.000016868114}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 30, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -7310,4 +7534,15 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742889483374}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 8823234522217046136}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: ExportSelectNone
+          m_BoolArgument: 0
+        m_CallState: 2

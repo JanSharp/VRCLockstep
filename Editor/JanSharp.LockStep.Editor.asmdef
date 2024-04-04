@@ -8,7 +8,8 @@
         "UdonSharp.Editor",
         "VRC.SDK3",
         "VRC.SDKBase",
-        "VRC.Udon"
+        "VRC.Udon",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

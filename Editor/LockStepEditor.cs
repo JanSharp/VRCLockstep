@@ -5,6 +5,7 @@ using VRC.Udon;
 using UnityEditor;
 using UdonSharpEditor;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Linq;
 
@@ -26,6 +27,7 @@ namespace JanSharp
             { LockStepEventType.OnTick, new List<UdonSharpBehaviour>() },
         };
         private static List<LockStepGameState> allGameStates = new List<LockStepGameState>();
+        public static ReadOnlyCollection<LockStepGameState> AllGameStates => allGameStates.AsReadOnly();
 
         private static List<(UdonSharpBehaviour inst, string iaName)> allInputActions = new List<(UdonSharpBehaviour inst, string iaName)>();
 
@@ -85,6 +87,7 @@ namespace JanSharp
                 );
             }
 
+            allGameStates = allGameStates.OrderBy(gs => gs.GameStateDisplayName).ToList();
             EditorUtil.SetArrayProperty(
                 lockStepProxy.FindProperty("allGameStates"),
                 allGameStates,

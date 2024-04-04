@@ -349,3 +349,5 @@ These 2 aren't really events, but they are called by the Lock Step system.
 
 - SerializeState
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
+
+TODO: note that iaData no longer exists and binary "streams" are used for read and writes in input actions as well as game state de/serialization
