@@ -33,6 +33,10 @@ namespace JanSharp
         [SerializeField] private InputField serializedOutputField;
         [SerializeField] private Button confirmExportButton;
 
+        [SerializeField] [HideInInspector] private LockStepMainGSEntry[] mainGSEntries;
+        [SerializeField] [HideInInspector] private LockStepImportGSEntry[] importGSEntries;
+        [SerializeField] [HideInInspector] private LockStepExportGSEntry[] exportGSEntries;
+
         public void OpenImportWindow()
         {
             dimBackground.SetActive(true);

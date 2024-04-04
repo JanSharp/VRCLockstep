@@ -45,20 +45,29 @@ namespace JanSharp
                 return false;
             }
 
-            PopulateList<LockStepMainGSEntry>(mainGSList, mainGSEntryPrefab, null);
-            PopulateList<LockStepImportGSEntry>(importGSList, importGSEntryPrefab, null);
-            PopulateList<LockStepExportGSEntry>(exportGSList, exportGSEntryPrefab, (inst, gs) => {
+            PopulateList<LockStepMainGSEntry>(proxy, "mainGSEntries", " (MainGSEntry)", mainGSList, mainGSEntryPrefab, null);
+            PopulateList<LockStepImportGSEntry>(proxy, "importGSEntries", " (ImportGSEntry)", importGSList, importGSEntryPrefab, null);
+            PopulateList<LockStepExportGSEntry>(proxy, "exportGSEntries", " (ExportGSEntry)", exportGSList, exportGSEntryPrefab, (inst, gs) => {
                 SerializedObject instProxy = new SerializedObject(inst);
                 instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
                 instProxy.ApplyModifiedPropertiesWithoutUndo();
             });
 
+            proxy.ApplyModifiedPropertiesWithoutUndo();
+
             return true;
         }
 
-        private static void PopulateList<T>(Transform list, GameObject prefab, Action<T, LockStepGameState> callback)
+        private static void PopulateList<T>(
+            SerializedObject proxy,
+            string entriesArrayName,
+            string postfix,
+            Transform list,
+            GameObject prefab,
+            Action<T, LockStepGameState> callback)
             where T : LockStepGameStateEntryBase
         {
+            T[] entries = new T[AllGameStates.Count];
             for (int i = 0; i < AllGameStates.Count; i++)
             {
                 GameObject inst;
@@ -69,14 +78,17 @@ namespace JanSharp
                     inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
                     inst.transform.SetParent(list, false);
                 }
-                inst.name = AllGameStates[i].GameStateDisplayName + "Entry";
-                T entry = inst.GetComponent<T>();
-                entry.displayNameText.text = AllGameStates[i].GameStateDisplayName;
+                inst.name = AllGameStates[i].GameStateInternalName + postfix;
+                entries[i] = inst.GetComponent<T>();
+                entries[i].displayNameText.text = AllGameStates[i].GameStateDisplayName;
                 if (callback != null)
-                    callback(entry, AllGameStates[i]);
+                    callback(entries[i], AllGameStates[i]);
             }
+
             while (list.childCount > AllGameStates.Count)
                 GameObject.DestroyImmediate(list.GetChild(list.childCount - 1));
+
+            EditorUtil.SetArrayProperty(proxy.FindProperty(entriesArrayName), entries, (p, v) => p.objectReferenceValue = v);
         }
     }
 }

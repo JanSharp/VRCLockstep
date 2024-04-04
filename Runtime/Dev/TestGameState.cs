@@ -12,6 +12,7 @@ namespace JanSharp
         [SerializeField] private TestGameStateUI ui;
         [SerializeField] [HideInInspector] private LockStep lockStep; // Set by LockStep's OnBuild handler.
 
+        public override string GameStateInternalName => "jansharp.lock-step-test";
         public override string GameStateDisplayName => "Test Game State";
 
         /// <summary>int playerId => PlayerData</summary>

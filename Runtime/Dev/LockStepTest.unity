@@ -874,6 +874,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 369247211}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &381033432 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+    type: 3}
+  m_PrefabInstance: {fileID: 855323213}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a76a13a6d5ff7a4592fd021b549cf04, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &415015020
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -881,6 +893,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 8315912742390367729}
     m_Modifications:
+    - target: {fileID: 4461208939069534714, guid: f531163005ea3a8b1931819397bd0874,
+        type: 3}
+      propertyPath: _syncMethod
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4770751837885707019, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: gameStatesUI
@@ -1000,7 +1017,7 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: Test Game StateEntry
+      value: jansharp.lock-step-test (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -1210,6 +1227,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 493798976}
   m_CullTransparentMesh: 0
+--- !u!114 &495714466 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8958779144156792744, guid: 1bd594581ac1adfa7800b38830440a84,
+    type: 3}
+  m_PrefabInstance: {fileID: 1452075365}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe78f0c0f960f47f6a34a7f3606e7677, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &594476505
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1389,6 +1418,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 608923832}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &610572386 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4770751837885707019, guid: f531163005ea3a8b1931819397bd0874,
+    type: 3}
+  m_PrefabInstance: {fileID: 415015020}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 759130ff0f12b9f64be520572d0ab3e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &646529322
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1847,10 +1888,15 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+    - target: {fileID: 6582517089271207774, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
+      propertyPath: _syncMethod
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: Test Game StateEntry
+      value: jansharp.lock-step-test (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437367, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -3822,6 +3868,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 8315912742390367731}
     m_Modifications:
+    - target: {fileID: 2219877180274212555, guid: 1bd594581ac1adfa7800b38830440a84,
+        type: 3}
+      propertyPath: _syncMethod
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8496571412903997290, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3930,7 +3981,7 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: Test Game StateEntry
+      value: jansharp.lock-step-test (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -5772,10 +5823,40 @@ PrefabInstance:
       objectReference: {fileID: 171763846}
     - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}
+      propertyPath: mainGSEntries.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}
+    - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
+        type: 3}
+      propertyPath: exportGSEntries.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
+        type: 3}
+      propertyPath: importGSEntries.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
+        type: 3}
+      propertyPath: mainGSEntries.Array.data[0]
+      value: 
+      objectReference: {fileID: 495714466}
+    - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
+        type: 3}
+      propertyPath: exportGSEntries.Array.data[0]
+      value: 
+      objectReference: {fileID: 610572386}
+    - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
+        type: 3}
+      propertyPath: importGSEntries.Array.data[0]
+      value: 
+      objectReference: {fileID: 381033432}
     - target: {fileID: 8315912740769856671, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}
       propertyPath: m_AnchorMax.y

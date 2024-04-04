@@ -8,6 +8,7 @@ namespace JanSharp
 {
     public abstract class LockStepGameState : UdonSharpBehaviour
     {
+        public abstract string GameStateInternalName { get; }
         public abstract string GameStateDisplayName { get; }
         public abstract void SerializeGameState();
         public abstract string DeserializeGameState();
