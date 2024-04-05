@@ -18,7 +18,7 @@ namespace JanSharp
 
         public void OnToggleValueChanged()
         {
-
+            gameStatesUI.OnExportEntryToggled();
         }
     }
 }

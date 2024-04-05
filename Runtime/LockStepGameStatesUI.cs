@@ -129,6 +129,16 @@ namespace JanSharp
             autosaveIntervalField.text = autosaveInterval.ToString();
         }
 
+        public void OnExportEntryToggled()
+        {
+            int selected = 0;
+            foreach (LockStepExportGSEntry entry in exportGSEntries)
+                if (entry.mainToggle.isOn)
+                    selected++;
+            confirmExportButton.interactable = selected != 0;
+            exportSelectedText.text = $"selected: {selected}";
+        }
+
         public void ConfirmExport()
         {
 
