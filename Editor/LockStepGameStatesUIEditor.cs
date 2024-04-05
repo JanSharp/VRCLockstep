@@ -1,5 +1,6 @@
 using UdonSharp;
 using UnityEngine;
+using UnityEngine.UI;
 using VRC.SDKBase;
 using VRC.Udon;
 using UnityEditor;
@@ -52,6 +53,14 @@ namespace JanSharp
                 instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
                 instProxy.ApplyModifiedPropertiesWithoutUndo();
             });
+
+            Slider autosaveIntervalSlider = (Slider)proxy.FindProperty("autosaveIntervalSlider").objectReferenceValue;
+            int defaultAutosaveInterval = (int)autosaveIntervalSlider.value;
+            proxy.FindProperty("minAutosaveInterval").intValue = (int)autosaveIntervalSlider.minValue;
+            proxy.FindProperty("defaultAutosaveInterval").intValue = defaultAutosaveInterval;
+            proxy.FindProperty("autosaveInterval").intValue = defaultAutosaveInterval;
+            InputField autosaveIntervalField = (InputField)proxy.FindProperty("autosaveIntervalField").objectReferenceValue;
+            autosaveIntervalField.SetTextWithoutNotify(defaultAutosaveInterval.ToString());
 
             proxy.ApplyModifiedPropertiesWithoutUndo();
 

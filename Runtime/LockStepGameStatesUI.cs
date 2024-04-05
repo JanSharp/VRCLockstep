@@ -33,6 +33,10 @@ namespace JanSharp
         [SerializeField] private InputField serializedOutputField;
         [SerializeField] private Button confirmExportButton;
 
+        [SerializeField] [HideInInspector] private int minAutosaveInterval;
+        [SerializeField] [HideInInspector] private int defaultAutosaveInterval;
+        [SerializeField] [HideInInspector] private int autosaveInterval;
+
         [SerializeField] [HideInInspector] private LockStepMainGSEntry[] mainGSEntries;
         [SerializeField] [HideInInspector] private LockStepImportGSEntry[] importGSEntries;
         [SerializeField] [HideInInspector] private LockStepExportGSEntry[] exportGSEntries;
@@ -105,12 +109,24 @@ namespace JanSharp
 
         public void OnAutosaveIntervalFieldChanged()
         {
-
+            if (!int.TryParse(autosaveIntervalField.text, out autosaveInterval))
+                autosaveInterval = defaultAutosaveInterval;
+            if (autosaveInterval < minAutosaveInterval)
+            {
+                autosaveInterval = minAutosaveInterval;
+                // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but the setter for text doesn't
+                // seem to raise the changed event... Udon what is going on?
+                autosaveIntervalField.text = autosaveInterval.ToString();
+            }
+            autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
         }
 
         public void OnAutosaveIntervalSliderChanged()
         {
-
+            autosaveInterval = (int)autosaveIntervalSlider.value;
+                // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but the setter for text doesn't
+                // seem to raise the changed event... Udon what is going on?
+            autosaveIntervalField.text = autosaveInterval.ToString();
         }
 
         public void ConfirmExport()
