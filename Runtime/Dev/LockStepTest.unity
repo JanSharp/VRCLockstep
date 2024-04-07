@@ -4701,11 +4701,6 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 1056789338209860128, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
-      propertyPath: poolObjectsParent
-      value: 
-      objectReference: {fileID: 4265458607524601549}
-    - target: {fileID: 1056789338209860128, guid: 4f5050760fb932762b18e249c98c7afd,
-        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 1056789338209860128, guid: 4f5050760fb932762b18e249c98c7afd,
