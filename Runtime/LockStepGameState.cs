@@ -10,7 +10,10 @@ namespace JanSharp
     {
         public abstract string GameStateInternalName { get; }
         public abstract string GameStateDisplayName { get; }
-        public abstract void SerializeGameState();
-        public abstract string DeserializeGameState();
+        public abstract bool GameStateSupportsImportExport { get; }
+        public abstract uint GameStateDataVersion { get; }
+        public abstract uint GameStateLowestSupportedDataVersion { get; }
+        public abstract void SerializeGameState(bool isExport);
+        public abstract string DeserializeGameState(bool isImport);
     }
 }

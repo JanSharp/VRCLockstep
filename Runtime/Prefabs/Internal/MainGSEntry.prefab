@@ -172,7 +172,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 30}
+  m_SizeDelta: {x: 267, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8496571412903997288
 CanvasRenderer:
@@ -234,6 +234,9 @@ MonoBehaviour:
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 2219877180274212555}
   displayNameText: {fileID: 8496571412956490156}
+  toggledImage: {fileID: 0}
+  goodColor: {r: 0, g: 0, b: 0, a: 0}
+  badColor: {r: 0, g: 0, b: 0, a: 0}
   autosaveText: {fileID: 8496571411832335514}
 --- !u!114 &2219877180274212555
 MonoBehaviour:
@@ -352,7 +355,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 10
+  m_fontSize: 19.65
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

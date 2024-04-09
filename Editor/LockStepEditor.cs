@@ -87,7 +87,11 @@ namespace JanSharp
                 );
             }
 
-            allGameStates = allGameStates.OrderBy(gs => gs.GameStateDisplayName).ToList();
+            allGameStates = allGameStates
+                .OrderByDescending(gs => gs.GameStateSupportsImportExport)
+                .ThenBy(gs => gs.GameStateDisplayName)
+                .ThenBy(gs => gs.GameStateInternalName)
+                .ToList();
             EditorUtil.SetArrayProperty(
                 lockStepProxy.FindProperty("allGameStates"),
                 allGameStates,

@@ -10,10 +10,10 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockStepExportGSEntry : LockStepGameStateEntryBase
     {
-        [SerializeField] private LockStepGameStatesUI gameStatesUI;
+        [SerializeField] [HideInInspector] private LockStepGameStatesUI gameStatesUI;
+        [HideInInspector] public LockStepGameState gameState;
 
-        public Toggle mainToggle;
-        public TextMeshProUGUI autosaveText;
+        public TextMeshProUGUI infoLabel;
         [System.NonSerialized] public bool doAutosave = false;
 
         public void OnToggleValueChanged()

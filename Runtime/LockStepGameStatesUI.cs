@@ -41,6 +41,8 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private LockStepImportGSEntry[] importGSEntries;
         [SerializeField] [HideInInspector] private LockStepExportGSEntry[] exportGSEntries;
 
+        private int selectedCount = 0;
+
         public void OpenImportWindow()
         {
             dimBackground.SetActive(true);
@@ -86,13 +88,15 @@ namespace JanSharp
         public void ExportSelectAll()
         {
             foreach (LockStepExportGSEntry entry in exportGSEntries)
-                entry.mainToggle.isOn = true;
+                if (entry.gameState.GameStateSupportsImportExport)
+                    entry.mainToggle.isOn = true;
         }
 
         public void ExportSelectNone()
         {
             foreach (LockStepExportGSEntry entry in exportGSEntries)
-                entry.mainToggle.isOn = false;
+                if (entry.gameState.GameStateSupportsImportExport)
+                    entry.mainToggle.isOn = false;
         }
 
         public void SetAutosaveSelected()
@@ -100,9 +104,11 @@ namespace JanSharp
             for (int i = 0; i < exportGSEntries.Length; i++)
             {
                 LockStepExportGSEntry entry = exportGSEntries[i];
+                if (!entry.gameState.GameStateSupportsImportExport)
+                    continue;
                 bool doAutosave = entry.mainToggle.isOn;
                 entry.doAutosave = doAutosave;
-                entry.autosaveText.gameObject.SetActive(doAutosave);
+                entry.infoLabel.gameObject.SetActive(doAutosave);
                 mainGSEntries[i].autosaveText.gameObject.SetActive(doAutosave);
             }
         }
@@ -131,17 +137,22 @@ namespace JanSharp
 
         public void OnExportEntryToggled()
         {
-            int selected = 0;
+            selectedCount = 0;
             foreach (LockStepExportGSEntry entry in exportGSEntries)
-                if (entry.mainToggle.isOn)
-                    selected++;
-            confirmExportButton.interactable = selected != 0;
-            exportSelectedText.text = $"selected: {selected}";
+                if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
+                    selectedCount++;
+            confirmExportButton.interactable = selectedCount != 0;
+            exportSelectedText.text = $"selected: {selectedCount}";
         }
 
         public void ConfirmExport()
         {
-
+            LockStepGameState[] gameStates = new LockStepGameState[selectedCount];
+            int i = 0;
+            foreach (LockStepExportGSEntry entry in exportGSEntries)
+                if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
+                    gameStates[i++] = entry.gameState;
+            serializedOutputField.text = lockStep.Export(gameStates);
         }
     }
 }

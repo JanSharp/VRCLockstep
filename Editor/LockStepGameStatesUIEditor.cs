@@ -16,8 +16,6 @@ namespace JanSharp
     [InitializeOnLoad]
     public static class LockStepGameStatesUIEditorOnBuild
     {
-        private static ReadOnlyCollection<LockStepGameState> AllGameStates;
-
         static LockStepGameStatesUIEditorOnBuild() => JanSharp.OnBuildUtil.RegisterType<LockStepGameStatesUI>(OnBuild, 2);
 
         private static bool OnBuild(LockStepGameStatesUI gameStatesUI)
@@ -31,8 +29,6 @@ namespace JanSharp
                 return false;
             }
 
-            AllGameStates = LockStepOnBuild.AllGameStates;
-
             GameObject mainGSEntryPrefab = (GameObject)proxy.FindProperty("mainGSEntryPrefab").objectReferenceValue;
             GameObject importGSEntryPrefab = (GameObject)proxy.FindProperty("importGSEntryPrefab").objectReferenceValue;
             GameObject exportGSEntryPrefab = (GameObject)proxy.FindProperty("exportGSEntryPrefab").objectReferenceValue;
@@ -42,42 +38,76 @@ namespace JanSharp
             if (mainGSEntryPrefab == null || importGSEntryPrefab == null || exportGSEntryPrefab == null
                 || mainGSList == null || importGSList == null || exportGSList == null)
             {
-                Debug.LogError("[LockStep] The Lock Step Game State UI is missing internal references.");
+                Debug.LogError("[LockStep] The Lock Step Game State UI is missing internal references.", gameStatesUI);
                 return false;
             }
 
-            PopulateList<LockStepMainGSEntry>(proxy, "mainGSEntries", " (MainGSEntry)", mainGSList, mainGSEntryPrefab, null);
-            PopulateList<LockStepImportGSEntry>(proxy, "importGSEntries", " (ImportGSEntry)", importGSList, importGSEntryPrefab, null);
-            PopulateList<LockStepExportGSEntry>(proxy, "exportGSEntries", " (ExportGSEntry)", exportGSList, exportGSEntryPrefab, (inst, gs) => {
-                SerializedObject instProxy = new SerializedObject(inst);
-                instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
-                instProxy.ApplyModifiedPropertiesWithoutUndo();
-            });
+            var allGameStates = LockStepOnBuild.AllGameStates;
+            PopulateList<LockStepMainGSEntry>(
+                allGameStates: allGameStates,
+                proxy: proxy,
+                entriesArrayName: "mainGSEntries",
+                postfix: " (MainGSEntry)",
+                list: mainGSList,
+                prefab: mainGSEntryPrefab);
+            PopulateList<LockStepImportGSEntry>(
+                allGameStates: allGameStates,
+                proxy: proxy,
+                entriesArrayName: "importGSEntries",
+                postfix: " (ImportGSEntry)",
+                list: importGSList,
+                prefab: importGSEntryPrefab);
+            PopulateList<LockStepExportGSEntry>(
+                allGameStates: allGameStates,
+                proxy: proxy,
+                entriesArrayName: "exportGSEntries",
+                postfix: " (ExportGSEntry)",
+                list: exportGSList,
+                prefab: exportGSEntryPrefab,
+                callback: (inst, gs) => {
+                    SerializedObject instProxy = new SerializedObject(inst);
+                    instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
+                    instProxy.FindProperty("gameState").objectReferenceValue = gs;
+                    instProxy.ApplyModifiedProperties();
+
+                    SerializedObject infoLabelProxy = new SerializedObject(inst.infoLabel);
+                    infoLabelProxy.FindProperty("m_text").stringValue = gs.GameStateSupportsImportExport
+                        ? "autosave"
+                        : "does not support import/export";
+                    infoLabelProxy.ApplyModifiedProperties();
+
+                    SerializedObject infoObjProxy = new SerializedObject(inst.infoLabel.gameObject);
+                    infoObjProxy.FindProperty("m_IsActive").boolValue = !gs.GameStateSupportsImportExport;
+                    infoObjProxy.ApplyModifiedProperties();
+                });
 
             Slider autosaveIntervalSlider = (Slider)proxy.FindProperty("autosaveIntervalSlider").objectReferenceValue;
             int defaultAutosaveInterval = (int)autosaveIntervalSlider.value;
             proxy.FindProperty("minAutosaveInterval").intValue = (int)autosaveIntervalSlider.minValue;
             proxy.FindProperty("defaultAutosaveInterval").intValue = defaultAutosaveInterval;
             proxy.FindProperty("autosaveInterval").intValue = defaultAutosaveInterval;
-            InputField autosaveIntervalField = (InputField)proxy.FindProperty("autosaveIntervalField").objectReferenceValue;
-            autosaveIntervalField.SetTextWithoutNotify(defaultAutosaveInterval.ToString());
+            proxy.ApplyModifiedProperties();
 
-            proxy.ApplyModifiedPropertiesWithoutUndo();
+            InputField autosaveIntervalField = (InputField)proxy.FindProperty("autosaveIntervalField").objectReferenceValue;
+            SerializedObject fieldProxy = new SerializedObject(autosaveIntervalField);
+            fieldProxy.FindProperty("m_Text").stringValue = defaultAutosaveInterval.ToString();
+            fieldProxy.ApplyModifiedProperties();
 
             return true;
         }
 
         private static void PopulateList<T>(
+            ReadOnlyCollection<LockStepGameState> allGameStates,
             SerializedObject proxy,
             string entriesArrayName,
             string postfix,
             Transform list,
             GameObject prefab,
-            Action<T, LockStepGameState> callback)
+            Action<T, LockStepGameState> callback = null)
             where T : LockStepGameStateEntryBase
         {
-            T[] entries = new T[AllGameStates.Count];
-            for (int i = 0; i < AllGameStates.Count; i++)
+            T[] entries = new T[allGameStates.Count];
+            for (int i = 0; i < allGameStates.Count; i++)
             {
                 GameObject inst;
                 if (i < list.childCount)
@@ -86,16 +116,38 @@ namespace JanSharp
                 {
                     inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
                     inst.transform.SetParent(list, false);
+                    Undo.RegisterCreatedObjectUndo(inst, "LockStepGameStatesUI entry creation OnBuild");
                 }
-                inst.name = AllGameStates[i].GameStateInternalName + postfix;
-                entries[i] = inst.GetComponent<T>();
-                entries[i].displayNameText.text = AllGameStates[i].GameStateDisplayName;
+                SerializedObject instProxy = new SerializedObject(inst);
+                instProxy.FindProperty("m_Name").stringValue = allGameStates[i].GameStateInternalName + postfix;
+                instProxy.ApplyModifiedProperties();
+
+                T entry = inst.GetComponent<T>();
+                entries[i] = entry;
+
+                SerializedObject displayNameTextProxy = new SerializedObject(entry.displayNameText);
+                displayNameTextProxy.FindProperty("m_text").stringValue = allGameStates[i].GameStateDisplayName;
+                displayNameTextProxy.ApplyModifiedProperties();
+
+                if (entry.toggledImage != null)
+                {
+                    SerializedObject toggledImageProxy = new SerializedObject(entry.toggledImage);
+                    toggledImageProxy.FindProperty("m_Color").colorValue = allGameStates[i].GameStateSupportsImportExport
+                        ? entry.goodColor
+                        : entry.badColor;
+                    toggledImageProxy.ApplyModifiedProperties();
+
+                    SerializedObject mainToggleProxy = new SerializedObject(entry.mainToggle);
+                    mainToggleProxy.FindProperty("m_Interactable").boolValue = allGameStates[i].GameStateSupportsImportExport;
+                    mainToggleProxy.FindProperty("m_IsOn").boolValue = !allGameStates[i].GameStateSupportsImportExport;
+                    mainToggleProxy.ApplyModifiedProperties();
+                }
                 if (callback != null)
-                    callback(entries[i], AllGameStates[i]);
+                    callback(entry, allGameStates[i]);
             }
 
-            while (list.childCount > AllGameStates.Count)
-                GameObject.DestroyImmediate(list.GetChild(list.childCount - 1));
+            while (list.childCount > allGameStates.Count)
+                Undo.DestroyObjectImmediate(list.GetChild(list.childCount - 1).gameObject);
 
             EditorUtil.SetArrayProperty(proxy.FindProperty(entriesArrayName), entries, (p, v) => p.objectReferenceValue = v);
         }

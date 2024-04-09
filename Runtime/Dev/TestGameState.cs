@@ -14,6 +14,9 @@ namespace JanSharp
 
         public override string GameStateInternalName => "jansharp.lock-step-test";
         public override string GameStateDisplayName => "Test Game State";
+        public override bool GameStateSupportsImportExport => true;
+        public override uint GameStateDataVersion => 0u;
+        public override uint GameStateLowestSupportedDataVersion => 0u;
 
         /// <summary>int playerId => PlayerData</summary>
         [System.NonSerialized] public DataDictionary allPlayerData = new DataDictionary();
@@ -131,7 +134,7 @@ namespace JanSharp
             ui.UpdateUI();
         }
 
-        public override void SerializeGameState()
+        public override void SerializeGameState(bool isExport)
         {
             Debug.Log("<dlt> TestGameState  SerializeGameState");
 
@@ -141,15 +144,17 @@ namespace JanSharp
             for (int i = 0; i < count; i++)
             {
                 object[] playerData = (object[])allPlayerDataValues[i].Reference;
-                lockStep.Write((int)playerData[PlayerData_PlayerId]);
+                if (!isExport)
+                    lockStep.Write((int)playerData[PlayerData_PlayerId]);
                 lockStep.Write((string)playerData[PlayerData_DisplayName]);
                 lockStep.Write((string)playerData[PlayerData_Description]);
             }
         }
 
-        public override string DeserializeGameState()
+        public override string DeserializeGameState(bool isImport)
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
+            // TODO: impl import.
 
             int count = lockStep.ReadInt();
             for (int j = 0; j < count; j++)

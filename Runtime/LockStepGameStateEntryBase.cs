@@ -10,5 +10,9 @@ namespace JanSharp
     public abstract class LockStepGameStateEntryBase : UdonSharpBehaviour
     {
         public TextMeshProUGUI displayNameText;
+        public Toggle mainToggle;
+        public Image toggledImage;
+        public Color goodColor;
+        public Color badColor;
     }
 }

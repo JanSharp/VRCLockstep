@@ -913,7 +913,7 @@ namespace JanSharp
 
             for (int i = 0; i < allGameStates.Length; i++)
             {
-                allGameStates[i].SerializeGameState();
+                allGameStates[i].SerializeGameState(false);
                 #if LockStepDebug
                 Debug.Log($"[LockStepDebug] LockStep  SendLateJoinerData (inner) - writeStreamSize: {writeStreamSize}");
                 LogBinaryData(writeStream, writeStreamSize);
@@ -1033,7 +1033,7 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}");
             LogBinaryData(readStream, readStream.Length);
             #endif
-            allGameStates[gameStateIndex].DeserializeGameState(); // TODO: Use return error message.
+            allGameStates[gameStateIndex].DeserializeGameState(false); // TODO: Use return error message.
             TryMoveToNextLJSerializedGameState();
         }
 
@@ -1356,6 +1356,7 @@ namespace JanSharp
         public void Write(Quaternion value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public void Write(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public void Write(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
 
         ///<summary>Arrays assigned to this variable always have the exact length of the data that is actually
         ///available to be read, and once assigned to this variable they are immutable.</summary>
@@ -1379,5 +1380,41 @@ namespace JanSharp
         public Quaternion ReadQuaternion() => DataStream.ReadQuaternion(ref readStream, ref readStreamPosition);
         public char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
         public string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
+        public System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
+
+        private uint[] crc32LookupCache;
+
+        public string Export(LockStepGameState[] gameStates)
+        {
+            ResetWriteStream();
+
+            Write(System.DateTime.UtcNow);
+            Write(gameStates.Length);
+
+            foreach (LockStepGameState gameState in gameStates)
+            {
+                Write(gameState.GameStateInternalName);
+                Write(gameState.GameStateDataVersion);
+            }
+
+            foreach (LockStepGameState gameState in gameStates)
+            {
+                int sizePosition = writeStreamSize;
+                writeStreamSize += 4;
+                gameState.SerializeGameState(true);
+                int stopPosition = writeStreamSize;
+                writeStreamSize = sizePosition;
+                Write(stopPosition - sizePosition - 4);
+                writeStreamSize = stopPosition;
+            }
+
+            Write(CRC32.Compute(ref crc32LookupCache, writeStream, length: writeStreamSize));
+
+            byte[] package = new byte[writeStreamSize];
+            for (int i = 0; i < writeStreamSize; i++)
+                package[i] = writeStream[i];
+
+            return Base64.Encode(package);
+        }
     }
 }
