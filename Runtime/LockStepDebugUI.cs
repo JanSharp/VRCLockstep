@@ -22,7 +22,6 @@ namespace JanSharp
             "stillAllowLocalClientJoinedIA",
             "ignoreIncomingInputActions",
             "isWaitingToSendClientJoinedIA",
-            "isWaitingToSendClientJoinedIA",
             "sendLateJoinerDataAtEndOfTick",
             "isCatchingUp",
             "isSinglePlayer",
