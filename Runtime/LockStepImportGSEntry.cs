@@ -10,6 +10,8 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockStepImportGSEntry : LockStepGameStateEntryBase
     {
-        public TextMeshProUGUI infoText;
+        [HideInInspector] public LockStepGameState gameState;
+
+        public TextMeshProUGUI infoLabel;
     }
 }

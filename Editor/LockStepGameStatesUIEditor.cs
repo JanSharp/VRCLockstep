@@ -56,7 +56,19 @@ namespace JanSharp
                 entriesArrayName: "importGSEntries",
                 postfix: " (ImportGSEntry)",
                 list: importGSList,
-                prefab: importGSEntryPrefab);
+                prefab: importGSEntryPrefab,
+                leaveInteractableUnchanged: true,
+                callback: (inst, gs) => {
+                    SerializedObject instProxy = new SerializedObject(inst);
+                    instProxy.FindProperty("gameState").objectReferenceValue = gs;
+                    instProxy.ApplyModifiedProperties();
+
+                    SerializedObject infoLabelProxy = new SerializedObject(inst.infoLabel);
+                    infoLabelProxy.FindProperty("m_text").stringValue = gs.GameStateSupportsImportExport
+                        ? ""
+                        : "does not support import/export";
+                    infoLabelProxy.ApplyModifiedProperties();
+                });
             PopulateList<LockStepExportGSEntry>(
                 allGameStates: allGameStates,
                 proxy: proxy,
@@ -103,6 +115,7 @@ namespace JanSharp
             string postfix,
             Transform list,
             GameObject prefab,
+            bool leaveInteractableUnchanged = false,
             Action<T, LockStepGameState> callback = null)
             where T : LockStepGameStateEntryBase
         {
@@ -138,7 +151,8 @@ namespace JanSharp
                     toggledImageProxy.ApplyModifiedProperties();
 
                     SerializedObject mainToggleProxy = new SerializedObject(entry.mainToggle);
-                    mainToggleProxy.FindProperty("m_Interactable").boolValue = allGameStates[i].GameStateSupportsImportExport;
+                    if (!leaveInteractableUnchanged)
+                        mainToggleProxy.FindProperty("m_Interactable").boolValue = allGameStates[i].GameStateSupportsImportExport;
                     mainToggleProxy.FindProperty("m_IsOn").boolValue = !allGameStates[i].GameStateSupportsImportExport;
                     mainToggleProxy.ApplyModifiedProperties();
                 }

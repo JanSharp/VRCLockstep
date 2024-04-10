@@ -130,6 +130,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+      propertyPath: gameState
+      value: 
+      objectReference: {fileID: 1429749133}
+    - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
@@ -138,6 +143,11 @@ PrefabInstance:
         type: 3}
       propertyPath: _syncMethod
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6966933624479165297, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
+      propertyPath: m_text
+      value: does not support import/export
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -850,8 +860,8 @@ MonoBehaviour:
   gameStateInternalName: jansharp.lock-step-dummy-2
   gameStateDisplayName: Dummy Game State 2
   gameStateSupportsImportExport: 1
-  gameStateDataVersion: 0
-  gameStateLowestSupportedDataVersion: 0
+  gameStateDataVersion: 2
+  gameStateLowestSupportedDataVersion: 1
 --- !u!4 &256865523
 Transform:
   m_ObjectHideFlags: 0
@@ -2385,6 +2395,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+      propertyPath: gameState
+      value: 
+      objectReference: {fileID: 133639730}
+    - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
@@ -2403,11 +2418,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsOn
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
-        type: 3}
-      propertyPath: m_Interactable
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437367, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -2640,6 +2650,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+      propertyPath: gameState
+      value: 
+      objectReference: {fileID: 256865522}
+    - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
@@ -2653,11 +2668,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: jansharp.lock-step-dummy-2 (ImportGSEntry)
-      objectReference: {fileID: 0}
-    - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
-        type: 3}
-      propertyPath: m_Interactable
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437367, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -4956,6 +4966,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+      propertyPath: gameState
+      value: 
+      objectReference: {fileID: 683394800}
+    - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
@@ -4964,6 +4979,11 @@ PrefabInstance:
         type: 3}
       propertyPath: _syncMethod
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6966933624479165297, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
+      propertyPath: m_text
+      value: does not support import/export
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -5421,6 +5441,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+      propertyPath: gameState
+      value: 
+      objectReference: {fileID: 1766173404}
+    - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
@@ -5429,6 +5454,11 @@ PrefabInstance:
         type: 3}
       propertyPath: _syncMethod
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6966933624479165297, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
+      propertyPath: m_text
+      value: does not support import/export
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -5878,6 +5908,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+      propertyPath: gameState
+      value: 
+      objectReference: {fileID: 1385105837}
+    - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
@@ -5896,11 +5931,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsOn
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
-        type: 3}
-      propertyPath: m_Interactable
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437367, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -6050,6 +6080,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
+      propertyPath: gameState
+      value: 
+      objectReference: {fileID: 1862118089}
+    - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
@@ -6058,6 +6093,11 @@ PrefabInstance:
         type: 3}
       propertyPath: _syncMethod
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6966933624479165297, guid: 9424a074d8a00689f808a4c66aff0960,
+        type: 3}
+      propertyPath: m_text
+      value: does not support import/export
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}

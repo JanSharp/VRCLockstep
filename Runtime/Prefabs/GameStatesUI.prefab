@@ -655,7 +655,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 4 to import, 1 too old, 3 unknown
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2317,8 +2317,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742538806656}
   m_HandleRect: {fileID: 8315912742538806657}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.9999777
+  m_Value: 0
+  m_Size: 0.99997663
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -4785,7 +4785,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.0013427734}
+  m_AnchoredPosition: {x: 0, y: 0.0015869141}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8315912742155832180
@@ -6327,7 +6327,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: OnImportSerializedTextChanged
+          m_StringArgument: OnImportSerializedTextEndEdit
           m_BoolArgument: 0
         m_CallState: 2
   m_OnValueChanged:

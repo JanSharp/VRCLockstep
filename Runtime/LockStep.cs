@@ -81,6 +81,8 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onTickListeners;
 
         [SerializeField] [HideInInspector] private LockStepGameState[] allGameStates;
+        // string internalName => LockStepGameState gameState
+        private DataDictionary gameStatesByInternalName = new DataDictionary();
 
         // **Internal Game State**
         // int => byte
@@ -146,6 +148,9 @@ namespace JanSharp
             #endif
             localPlayer = Networking.LocalPlayer;
             lateJoinerInputActionSync.lockStep = this;
+
+            foreach (LockStepGameState gameState in allGameStates)
+                gameStatesByInternalName.Add(gameState.GameStateInternalName, gameState);
         }
 
         private void Update()
@@ -1386,6 +1391,10 @@ namespace JanSharp
 
         public string Export(LockStepGameState[] gameStates)
         {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] Export");
+            System.Diagnostics.Stopwatch exportStopWatch = new System.Diagnostics.Stopwatch();
+            #endif
             ResetWriteStream();
 
             Write(System.DateTime.UtcNow);
@@ -1394,11 +1403,9 @@ namespace JanSharp
             foreach (LockStepGameState gameState in gameStates)
             {
                 Write(gameState.GameStateInternalName);
+                Write(gameState.GameStateDisplayName);
                 Write(gameState.GameStateDataVersion);
-            }
 
-            foreach (LockStepGameState gameState in gameStates)
-            {
                 int sizePosition = writeStreamSize;
                 writeStreamSize += 4;
                 gameState.SerializeGameState(true);
@@ -1408,13 +1415,105 @@ namespace JanSharp
                 writeStreamSize = stopPosition;
             }
 
-            Write(CRC32.Compute(ref crc32LookupCache, writeStream, length: writeStreamSize));
+            #if LockStepDebug
+            long crcStartMs = exportStopWatch.ElapsedMilliseconds;
+            #endif
+            uint crc = CRC32.Compute(ref crc32LookupCache, writeStream, 0, writeStreamSize);
+            #if LockStepDebug
+            long crcMs = exportStopWatch.ElapsedMilliseconds - crcStartMs;
+            #endif
+            Write(crc);
 
-            byte[] package = new byte[writeStreamSize];
+            byte[] exportedData = new byte[writeStreamSize];
             for (int i = 0; i < writeStreamSize; i++)
-                package[i] = writeStream[i];
+                exportedData[i] = writeStream[i];
 
-            return Base64.Encode(package);
+            string encoded = Base64.Encode(exportedData);
+            #if LockStepDebug
+            exportStopWatch.Stop();
+            Debug.Log($"[LockStepDebug] LockStep  Export (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation time: {crcMs}ms, total time: {exportStopWatch.ElapsedMilliseconds}ms");
+            #endif
+            return encoded;
+        }
+
+        ///<summary>returns LockStepImportedGS[] importedGameStates</summary>
+        public object[][] ImportPreProcess(string exportedString)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  ImportPreProcess");
+            #endif
+            if (!Base64.TryDecode(exportedString, out readStream))
+            {
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] LockStep  ImportPreProcess (inner) - invalid base64 encoding:\n{exportedString}");
+                #endif
+                return null;
+            }
+            if (readStream.Length < 4)
+            {
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] LockStep  ImportPreProcess (inner) - exported data too short:\n{exportedString}");
+                #endif
+                return null;
+            }
+
+            #if LockStepDebug
+            System.Diagnostics.Stopwatch crcStopwatch = new System.Diagnostics.Stopwatch();
+            crcStopwatch.Start();
+            #endif
+            uint gotCrc = CRC32.Compute(ref crc32LookupCache, readStream, 0, readStream.Length - 4);
+            #if LockStepDebug
+            crcStopwatch.Stop();
+            #endif
+            readStreamPosition = readStream.Length - 4;
+            uint expectedCrc = ReadUInt();
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  ImportPreProcess (inner) - binary size: {readStream.Length}, expected crc: {expectedCrc}, got crc: {gotCrc}, crc calculation time: {crcStopwatch.ElapsedMilliseconds}ms");
+            #endif
+            if (gotCrc != expectedCrc)
+                return null;
+
+            ResetReadStream();
+
+            System.DateTime exportedDate = ReadDateTime();
+            int gameStatesCount = ReadInt();
+
+            object[][] importedGameStates = new object[gameStatesCount][];
+            for (int i = 0; i < gameStatesCount; i++)
+            {
+                object[] importedGS = LockStepImportedGS.New();
+                importedGameStates[i] = importedGS;
+                string internalName = ReadString();
+                LockStepImportedGS.SetInternalName(importedGS, internalName);
+                LockStepImportedGS.SetDisplayName(importedGS, ReadString());
+                uint dataVersion = ReadUInt();
+                LockStepImportedGS.SetDataVersion(importedGS, dataVersion);
+                int dataSize = ReadInt();
+                LockStepImportedGS.SetDataSize(importedGS, dataSize);
+                LockStepImportedGS.SetDataPosition(importedGS, readStreamPosition);
+                readStreamPosition += dataSize;
+                if (!gameStatesByInternalName.TryGetValue(internalName, out DataToken gameStateToken))
+                    LockStepImportedGS.SetErrorMsg(importedGS, "not in this world");
+                else
+                {
+                    LockStepGameState gameState = (LockStepGameState)gameStateToken.Reference;
+                    LockStepImportedGS.SetGameState(importedGS, gameState);
+                    if (dataVersion > gameState.GameStateDataVersion)
+                        LockStepImportedGS.SetErrorMsg(importedGS, "imported version too new");
+                    else if (dataVersion < gameState.GameStateLowestSupportedDataVersion)
+                        LockStepImportedGS.SetErrorMsg(importedGS, "imported version too old");
+                }
+            }
+
+            return importedGameStates;
+        }
+
+        ///<summary>LockStepImportedGS[] importedGameStates</summary>
+        public void Import(object[][] importedGameStates)
+        {
+            foreach(object[] importedGS in importedGameStates)
+            {
+            }
         }
     }
 }
