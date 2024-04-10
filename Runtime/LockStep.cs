@@ -1394,6 +1394,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] Export");
             System.Diagnostics.Stopwatch exportStopWatch = new System.Diagnostics.Stopwatch();
+            exportStopWatch.Start();
             #endif
             ResetWriteStream();
 
