@@ -1389,7 +1389,7 @@ namespace JanSharp
 
         private uint[] crc32LookupCache;
 
-        public string Export(LockStepGameState[] gameStates)
+        public string Export(LockStepGameState[] gameStates, string exportName)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] Export");
@@ -1399,6 +1399,7 @@ namespace JanSharp
             ResetWriteStream();
 
             Write(System.DateTime.UtcNow);
+            Write(exportName);
             Write(gameStates.Length);
 
             foreach (LockStepGameState gameState in gameStates)
@@ -1441,12 +1442,14 @@ namespace JanSharp
         ///<para>exportedDate is in UTC</para>
         ///<para>returns LockStepImportedGS[] importedGameStates</para>
         ///</summary>
-        public object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate)
+        public object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate, out string exportName)
         {
-            exportedDate = System.DateTime.MinValue;
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  ImportPreProcess");
             #endif
+            exportedDate = System.DateTime.MinValue;
+            exportName = null;
+
             if (!Base64.TryDecode(exportedString, out readStream))
             {
                 #if LockStepDebug
@@ -1481,6 +1484,7 @@ namespace JanSharp
             ResetReadStream();
 
             exportedDate = ReadDateTime();
+            exportName = ReadString();
             int gameStatesCount = ReadInt();
 
             object[][] importedGameStates = new object[gameStatesCount][];

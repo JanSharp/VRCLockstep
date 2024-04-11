@@ -33,6 +33,7 @@ namespace JanSharp
         [SerializeField] private InputField autosaveIntervalField;
         [SerializeField] private Slider autosaveIntervalSlider;
         [SerializeField] private InputField serializedOutputField;
+        [SerializeField] private InputField exportNameField;
         [SerializeField] private Button confirmExportButton;
 
         [SerializeField] [HideInInspector] private int minAutosaveInterval;
@@ -128,7 +129,10 @@ namespace JanSharp
             string importString = serializedInputField.text;
             if (importString == "")
                 return;
-            importedGameStates = lockStep.ImportPreProcess(importString, out System.DateTime exportedDate);
+            importedGameStates = lockStep.ImportPreProcess(
+                importString,
+                out System.DateTime exportedDate,
+                out string exportName);
             if (importedGameStates == null)
             {
                 importInfoText.text = "Malformed or invalid data.";
@@ -164,9 +168,10 @@ namespace JanSharp
                     entry.infoLabel.text = "not in imported data, unchanged";
 
             int cannotImportCount = importedGameStates.Length - canImportCount;
-            importInfoText.text = $"Can import " + (cannotImportCount == 0 ? "all " : "") + canImportCount.ToString()
+            importInfoText.text = $"Can import {(cannotImportCount == 0 ? "all " : "")}{canImportCount}"
                 + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}")
-                + $" <size=70%>(from {exportedDate.ToLocalTime():yyyy-MM-dd hh:mm})";
+                + $"\n<size=90%>{exportName ?? "<i>unnamed</i>"} "
+                + $"<nobr><size=70%>(from {exportedDate.ToLocalTime():yyyy-MM-dd hh:mm})</nobr>";
             importSelectedCount = canImportCount;
             UpdateImportSelectedCount();
         }
@@ -333,7 +338,10 @@ namespace JanSharp
             foreach (LockStepExportGSEntry entry in exportGSEntries)
                 if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
                     gameStates[i++] = entry.gameState;
-            serializedOutputField.text = lockStep.Export(gameStates);
+            string exportName = exportNameField.text.Trim();
+            if (exportName == "")
+                exportName = null;
+            serializedOutputField.text = lockStep.Export(gameStates, exportName);
         }
 
         private void ResetExport()
