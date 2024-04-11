@@ -1429,6 +1429,7 @@ namespace JanSharp
             byte[] exportedData = new byte[writeStreamSize];
             for (int i = 0; i < writeStreamSize; i++)
                 exportedData[i] = writeStream[i];
+            ResetWriteStream();
 
             string encoded = Base64.Encode(exportedData);
             #if LockStepDebug
