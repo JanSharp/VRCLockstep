@@ -124,7 +124,7 @@ namespace JanSharp
             string importString = serializedInputField.text;
             if (importString == "")
                 return;
-            importedGameStates = lockStep.ImportPreProcess(importString);
+            importedGameStates = lockStep.ImportPreProcess(importString, out System.DateTime exportedDate);
             if (importedGameStates == null)
             {
                 importInfoText.text = "Malformed or invalid data.";
@@ -158,7 +158,8 @@ namespace JanSharp
 
             int cannotImportCount = importedGameStates.Length - canImportCount;
             importInfoText.text = $"Can import " + (cannotImportCount == 0 ? "all " : "") + canImportCount.ToString()
-                + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}");
+                + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}")
+                + $" <size=70%>(from {exportedDate.ToLocalTime():yyyy-MM-dd hh:mm})";
             confirmImportButton.interactable = canImportCount != 0;
         }
 

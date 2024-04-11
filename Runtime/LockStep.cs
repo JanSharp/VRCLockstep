@@ -1437,9 +1437,13 @@ namespace JanSharp
             return encoded;
         }
 
-        ///<summary>returns LockStepImportedGS[] importedGameStates</summary>
-        public object[][] ImportPreProcess(string exportedString)
+        ///<summary>
+        ///<para>exportedDate is in UTC</para>
+        ///<para>returns LockStepImportedGS[] importedGameStates</para>
+        ///</summary>
+        public object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate)
         {
+            exportedDate = System.DateTime.MinValue;
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  ImportPreProcess");
             #endif
@@ -1476,7 +1480,7 @@ namespace JanSharp
 
             ResetReadStream();
 
-            System.DateTime exportedDate = ReadDateTime();
+            exportedDate = ReadDateTime();
             int gameStatesCount = ReadInt();
 
             object[][] importedGameStates = new object[gameStatesCount][];
