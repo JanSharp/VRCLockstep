@@ -22,8 +22,6 @@
       - If yes, run all input actions associated with this tick
       - If no, mark missing input actions for this tick as "waiting on" and pause ticks
 
-TODO: save the playerId of the client sending an IA and expose it on LockStep as a public readonly property SendingPlayerId.
-
 ## Input Action Sending in Single Player Mode
 
 When the send input action function is called and Lock Step is currently in single player mode, the action is simply instantly performed, without even touching the InputActionSync script. This is not only an optimization, it is a requirement because when only a single client is in an instance, one can mark an object for serialization using RequestSerialization, however it will never actually serialize, not until another client joins the instance. And the above system for sending input actions requires the OnPostSerialization event.

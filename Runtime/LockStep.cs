@@ -32,6 +32,7 @@ namespace JanSharp
         [System.NonSerialized] public uint waitTick; // The system will run this tick, but not past it.
 
         private VRCPlayerApi localPlayer;
+        private uint localPlayerId;
         private InputActionSync inputActionSyncForLocalPlayer;
         private uint startTick;
         private uint firstMutableTick; // Effectively 1 tick past the last immutable tick.
@@ -140,6 +141,7 @@ namespace JanSharp
         // an input action with IsMaster being true again, which would be incorrect behavior. But the only
         // way this should be possible to happen is if ticks get paused using the tick pase boolean, which is
         // currently not possible and should never be possible.
+        public uint SendingPlayerId { private set; get; }
 
         private void Start()
         {
@@ -147,6 +149,7 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  Start");
             #endif
             localPlayer = Networking.LocalPlayer;
+            localPlayerId = (uint)localPlayer.playerId;
             lateJoinerInputActionSync.lockStep = this;
 
             foreach (LockStepGameState gameState in allGameStates)
@@ -314,10 +317,10 @@ namespace JanSharp
             #endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
-            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1]);
+            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId >> PlayerIdKeyShift);
         }
 
-        private void RunInputAction(uint inputActionId, byte[] inputActionData)
+        private void RunInputAction(uint inputActionId, byte[] inputActionData, uint sendingPlayerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RunInputAction");
@@ -325,6 +328,7 @@ namespace JanSharp
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
             ResetReadStream();
             readStream = inputActionData;
+            SendingPlayerId = sendingPlayerId;
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
         }
 
@@ -1209,7 +1213,7 @@ namespace JanSharp
                 }
                 tickSync.AddInputActionToRun(currentTick, uniqueId);
             }
-            RunInputAction(inputActionId, inputActionData);
+            RunInputAction(inputActionId, inputActionData, isSinglePlayer ? localPlayerId : (uniqueId >> PlayerIdKeyShift));
         }
 
         private void ClearUniqueIdsByTick()
