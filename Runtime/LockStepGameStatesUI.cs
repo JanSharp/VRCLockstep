@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -200,16 +200,23 @@ namespace JanSharp
 
         public void ExportSelectAll()
         {
+            exportSelectedCount = 0;
             foreach (LockStepExportGSEntry entry in exportGSEntries)
                 if (entry.gameState.GameStateSupportsImportExport)
-                    entry.mainToggle.isOn = true;
+                {
+                    entry.mainToggle.SetIsOnWithoutNotify(true);
+                    exportSelectedCount++;
+                }
+            UpdateExportSelectedCount();
         }
 
         public void ExportSelectNone()
         {
             foreach (LockStepExportGSEntry entry in exportGSEntries)
                 if (entry.gameState.GameStateSupportsImportExport)
-                    entry.mainToggle.isOn = false;
+                    entry.mainToggle.SetIsOnWithoutNotify(false);
+            exportSelectedCount = 0;
+            UpdateExportSelectedCount();
         }
 
         public void SetAutosaveSelected()
@@ -254,6 +261,11 @@ namespace JanSharp
             foreach (LockStepExportGSEntry entry in exportGSEntries)
                 if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
                     selectedCount++;
+            UpdateExportSelectedCount();
+        }
+
+        private void UpdateExportSelectedCount()
+        {
             confirmExportButton.interactable = selectedCount != 0;
             exportSelectedText.text = $"selected: {selectedCount}";
         }
