@@ -15,6 +15,8 @@ namespace JanSharp
 
         public TextMeshProUGUI infoLabel;
         [System.NonSerialized] public bool canImport;
+        ///<summary>LockStepImportedGS</summary>
+        [System.NonSerialized] public object[] importedGS;
 
         public void OnToggleValueChanged()
         {

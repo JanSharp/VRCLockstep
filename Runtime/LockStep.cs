@@ -1517,10 +1517,17 @@ namespace JanSharp
         }
 
         ///<summary>LockStepImportedGS[] importedGameStates</summary>
-        public void Import(object[][] importedGameStates)
+        public void StartImport(object[][] importedGameStates)
         {
             foreach(object[] importedGS in importedGameStates)
             {
+                if (LockStepImportedGS.GetErrorMsg(importedGS) != null)
+                    continue;
+                // TODO: send input actions, don't do this locally.
+                readStream = LockStepImportedGS.GetBinaryData(importedGS);
+                ResetReadStream();
+                LockStepGameState gameState = LockStepImportedGS.GetGameState(importedGS);
+                gameState.DeserializeGameState(isImport: true);
             }
         }
     }

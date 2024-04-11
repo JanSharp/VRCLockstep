@@ -154,12 +154,11 @@ namespace JanSharp
         public override string DeserializeGameState(bool isImport)
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
-            // TODO: impl import.
 
             int count = lockStep.ReadInt();
             for (int j = 0; j < count; j++)
             {
-                int playerId = lockStep.ReadInt();
+                int playerId = isImport ? Networking.LocalPlayer.playerId + Random.Range(1, 10000) : lockStep.ReadInt();
                 object[] playerData = new object[PlayerData_Size];
                 playerData[PlayerData_PlayerId] = playerId;
                 playerData[PlayerData_DisplayName] = lockStep.ReadString();

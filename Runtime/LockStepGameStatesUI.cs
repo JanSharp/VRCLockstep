@@ -155,6 +155,7 @@ namespace JanSharp
                     entry.infoLabel.text = errorMsg;
                     entry.toggledImage.color = entry.badColor;
                 }
+                entry.importedGS = importedGS;
                 entry.mainToggle.SetIsOnWithoutNotify(true);
             }
 
@@ -208,7 +209,13 @@ namespace JanSharp
 
         public void ConfirmImport()
         {
-            // TODO: actually initiate import for importedGameStates
+            object[][] gameStatesToImport = new object[importSelectedCount][];
+            int i = 0;
+            foreach (LockStepImportGSEntry entry in importGSEntries)
+                if (entry.canImport && entry.mainToggle.isOn)
+                    gameStatesToImport[i++] = entry.importedGS;
+            lockStep.StartImport(gameStatesToImport);
+            CloseImportWindow();
         }
 
         private void ResetImport(bool leaveInputFieldUntouched = false)
@@ -230,6 +237,7 @@ namespace JanSharp
                 entry.mainToggle.SetIsOnWithoutNotify(false);
                 entry.mainToggle.interactable = false;
                 entry.canImport = false;
+                entry.importedGS = null;
             }
             for (int i = 0; i < extraImportGSEntriesUsedCount; i++)
             {
