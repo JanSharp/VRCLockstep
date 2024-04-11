@@ -84,6 +84,7 @@ namespace JanSharp
         {
             dimBackground.SetActive(false);
             exportWindow.SetActive(false);
+            ResetExport();
         }
 
         public void CloseOpenWindow()
@@ -314,6 +315,7 @@ namespace JanSharp
         {
             confirmExportButton.interactable = exportSelectedCount != 0;
             exportSelectedText.text = $"selected: {exportSelectedCount}";
+            ResetExport();
         }
 
         public void ConfirmExport()
@@ -324,6 +326,17 @@ namespace JanSharp
                 if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
                     gameStates[i++] = entry.gameState;
             serializedOutputField.text = lockStep.Export(gameStates);
+        }
+
+        private void ResetExport()
+        {
+            // Just clear the output field, leaving the selected state of all the export entries unchanged.
+            // This way closing and reopening the window doesn't actually change anything, however it does
+            // clear the output field as to not confuse the user what that data that's still in the output
+            // field actually contains.
+            // Also reset the output field whenever the selected state changes, for the same reason to not
+            // confuse the user.
+            serializedOutputField.text = "";
         }
     }
 }
