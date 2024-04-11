@@ -258,7 +258,18 @@ MonoBehaviour:
   m_Group: {fileID: 0}
   onValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 6582517089271207774}
+        m_MethodName: SendCustomEvent
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: OnToggleValueChanged
+          m_BoolArgument: 0
+        m_CallState: 2
   m_IsOn: 0
 --- !u!114 &5842175446758788776
 MonoBehaviour:
@@ -287,6 +298,7 @@ MonoBehaviour:
   toggledImage: {fileID: 6966933625728936192}
   goodColor: {r: 0.4, g: 1, b: 1, a: 0.5019608}
   badColor: {r: 1, g: 0.39999998, b: 0.39999998, a: 0.5019608}
+  gameStatesUI: {fileID: 0}
   gameState: {fileID: 0}
   infoLabel: {fileID: 6966933624479165297}
 --- !u!114 &6582517089271207774

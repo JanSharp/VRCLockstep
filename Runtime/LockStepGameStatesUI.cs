@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -21,6 +21,7 @@ namespace JanSharp
         [SerializeField] private GameObject dimBackground;
 
         [SerializeField] private GameObject importWindow;
+        [SerializeField] private TextMeshProUGUI importSelectedText;
         [SerializeField] private InputField serializedInputField;
         [SerializeField] private TextMeshProUGUI importInfoText;
         [SerializeField] private Transform importGSList;
@@ -51,7 +52,8 @@ namespace JanSharp
         ///<summary>LockStepImportedGS[]</summary>
         object[][] importedGameStates = null;
 
-        private int selectedCount = 0;
+        private int importSelectedCount = 0;
+        private int exportSelectedCount = 0;
 
         private void Start()
         {
@@ -107,6 +109,7 @@ namespace JanSharp
             GameObject entryObj = GameObject.Instantiate(importGSEntryPrefab);
             entryObj.transform.SetParent(importGSList, worldPositionStays: false);
             entry = entryObj.GetComponent<LockStepImportGSEntry>();
+            entry.gameStatesUI = this;
             entry.displayNameText.text = displayName;
             ArrList.Add(ref extraImportGSEntries, ref extraImportGSEntriesCount, entry);
             extraImportGSEntriesUsedCount++;
@@ -143,13 +146,15 @@ namespace JanSharp
                     canImportCount++;
                     entry.infoLabel.text = "can import";
                     entry.toggledImage.color = entry.goodColor;
+                    entry.mainToggle.interactable = true;
+                    entry.canImport = true;
                 }
                 else
                 {
                     entry.infoLabel.text = errorMsg;
                     entry.toggledImage.color = entry.badColor;
                 }
-                entry.mainToggle.isOn = true;
+                entry.mainToggle.SetIsOnWithoutNotify(true);
             }
 
             foreach (LockStepImportGSEntry entry in importGSEntries)
@@ -160,7 +165,44 @@ namespace JanSharp
             importInfoText.text = $"Can import " + (cannotImportCount == 0 ? "all " : "") + canImportCount.ToString()
                 + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}")
                 + $" <size=70%>(from {exportedDate.ToLocalTime():yyyy-MM-dd hh:mm})";
-            confirmImportButton.interactable = canImportCount != 0;
+            importSelectedCount = canImportCount;
+            UpdateImportSelectedCount();
+        }
+
+        public void ImportSelectAll()
+        {
+            importSelectedCount = 0;
+            foreach (LockStepImportGSEntry entry in importGSEntries)
+                if (entry.canImport)
+                {
+                    entry.mainToggle.SetIsOnWithoutNotify(true);
+                    importSelectedCount++;
+                }
+            UpdateImportSelectedCount();
+        }
+
+        public void ImportSelectNone()
+        {
+            foreach (LockStepImportGSEntry entry in importGSEntries)
+                if (entry.canImport)
+                    entry.mainToggle.SetIsOnWithoutNotify(false);
+            importSelectedCount = 0;
+            UpdateImportSelectedCount();
+        }
+
+        public void OnImportEntryToggled()
+        {
+            importSelectedCount = 0;
+            foreach (LockStepImportGSEntry entry in importGSEntries)
+                if (entry.canImport && entry.mainToggle.isOn)
+                    importSelectedCount++;
+            UpdateImportSelectedCount();
+        }
+
+        private void UpdateImportSelectedCount()
+        {
+            confirmImportButton.interactable = importSelectedCount != 0;
+            importSelectedText.text = $"selected: {importSelectedCount}";
         }
 
         public void ConfirmImport()
@@ -184,16 +226,20 @@ namespace JanSharp
                     continue;
                 }
                 entry.infoLabel.text = "";
-                entry.mainToggle.isOn = false;
+                entry.mainToggle.SetIsOnWithoutNotify(false);
+                entry.mainToggle.interactable = false;
+                entry.canImport = false;
             }
             for (int i = 0; i < extraImportGSEntriesUsedCount; i++)
             {
                 LockStepImportGSEntry entry = extraImportGSEntries[i];
                 entry.gameObject.SetActive(false);
-                entry.mainToggle.isOn = false;
+                entry.mainToggle.SetIsOnWithoutNotify(false);
                 entry.infoLabel.text = "";
             }
             extraImportGSEntriesUsedCount = 0;
+            importSelectedCount = 0;
+            importSelectedText.text = "";
             importInfoText.text = "";
             confirmImportButton.interactable = false;
         }
@@ -257,22 +303,22 @@ namespace JanSharp
 
         public void OnExportEntryToggled()
         {
-            selectedCount = 0;
+            exportSelectedCount = 0;
             foreach (LockStepExportGSEntry entry in exportGSEntries)
                 if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
-                    selectedCount++;
+                    exportSelectedCount++;
             UpdateExportSelectedCount();
         }
 
         private void UpdateExportSelectedCount()
         {
-            confirmExportButton.interactable = selectedCount != 0;
-            exportSelectedText.text = $"selected: {selectedCount}";
+            confirmExportButton.interactable = exportSelectedCount != 0;
+            exportSelectedText.text = $"selected: {exportSelectedCount}";
         }
 
         public void ConfirmExport()
         {
-            LockStepGameState[] gameStates = new LockStepGameState[selectedCount];
+            LockStepGameState[] gameStates = new LockStepGameState[exportSelectedCount];
             int i = 0;
             foreach (LockStepExportGSEntry entry in exportGSEntries)
                 if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)

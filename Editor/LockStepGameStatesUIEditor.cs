@@ -60,6 +60,7 @@ namespace JanSharp
                 leaveInteractableUnchanged: true,
                 callback: (inst, gs) => {
                     SerializedObject instProxy = new SerializedObject(inst);
+                    instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
                     instProxy.FindProperty("gameState").objectReferenceValue = gs;
                     instProxy.ApplyModifiedProperties();
 
