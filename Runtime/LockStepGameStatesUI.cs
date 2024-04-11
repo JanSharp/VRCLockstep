@@ -189,6 +189,7 @@ namespace JanSharp
                 entry.mainToggle.isOn = false;
                 entry.infoLabel.text = "";
             }
+            extraImportGSEntriesUsedCount = 0;
             importInfoText.text = "";
             confirmImportButton.interactable = false;
         }
