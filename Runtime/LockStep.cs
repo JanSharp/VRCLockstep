@@ -1499,7 +1499,9 @@ namespace JanSharp
                 {
                     LockStepGameState gameState = (LockStepGameState)gameStateToken.Reference;
                     LockStepImportedGS.SetGameState(importedGS, gameState);
-                    if (dataVersion > gameState.GameStateDataVersion)
+                    if (!gameState.GameStateSupportsImportExport)
+                        LockStepImportedGS.SetErrorMsg(importedGS, "no longer supports import");
+                    else if (dataVersion > gameState.GameStateDataVersion)
                         LockStepImportedGS.SetErrorMsg(importedGS, "imported version too new");
                     else if (dataVersion < gameState.GameStateLowestSupportedDataVersion)
                         LockStepImportedGS.SetErrorMsg(importedGS, "imported version too old");

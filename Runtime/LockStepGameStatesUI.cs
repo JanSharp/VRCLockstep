@@ -175,7 +175,10 @@ namespace JanSharp
             foreach (LockStepImportGSEntry entry in importGSEntries)
             {
                 if (!entry.gameState.GameStateSupportsImportExport)
+                {
+                    entry.infoLabel.text = "does not support import/export";
                     continue;
+                }
                 entry.infoLabel.text = "";
                 entry.mainToggle.isOn = false;
             }
