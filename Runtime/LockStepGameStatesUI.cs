@@ -92,7 +92,7 @@ namespace JanSharp
                 CloseExportWindow();
         }
 
-        private LockStepImportGSEntry GetImportGSEntry(string internalName)
+        private LockStepImportGSEntry GetImportGSEntry(string internalName, string displayName)
         {
             if (importEntriesByInternalName.TryGetValue(internalName, out DataToken entryToken))
                 return (LockStepImportGSEntry)entryToken.Reference;
@@ -100,12 +100,14 @@ namespace JanSharp
             if (extraImportGSEntriesUsedCount < extraImportGSEntriesCount)
             {
                 entry = extraImportGSEntries[extraImportGSEntriesUsedCount++];
+                entry.displayNameText.text = displayName;
                 entry.gameObject.SetActive(true);
                 return entry;
             }
             GameObject entryObj = GameObject.Instantiate(importGSEntryPrefab);
             entryObj.transform.SetParent(importGSList, worldPositionStays: false);
             entry = entryObj.GetComponent<LockStepImportGSEntry>();
+            entry.displayNameText.text = displayName;
             ArrList.Add(ref extraImportGSEntries, ref extraImportGSEntriesCount, entry);
             extraImportGSEntriesUsedCount++;
             return entry;
@@ -133,7 +135,9 @@ namespace JanSharp
             foreach (object[] importedGS in importedGameStates)
             {
                 string errorMsg = LockStepImportedGS.GetErrorMsg(importedGS);
-                LockStepImportGSEntry entry = GetImportGSEntry(LockStepImportedGS.GetInternalName(importedGS));
+                LockStepImportGSEntry entry = GetImportGSEntry(
+                    LockStepImportedGS.GetInternalName(importedGS),
+                    LockStepImportedGS.GetDisplayName(importedGS));
                 if (errorMsg == null)
                 {
                     canImportCount++;
