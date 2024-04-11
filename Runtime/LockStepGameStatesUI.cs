@@ -103,9 +103,8 @@ namespace JanSharp
                 entry.gameObject.SetActive(true);
                 return entry;
             }
-            GameObject entryObj = GameObject.Instantiate(importGSEntryPrefab, Vector3.zero, Quaternion.identity, importGSList);
-            entryObj.transform.localPosition = Vector3.zero;
-            entryObj.transform.localRotation = Quaternion.identity;
+            GameObject entryObj = GameObject.Instantiate(importGSEntryPrefab);
+            entryObj.transform.SetParent(importGSList, worldPositionStays: false);
             entry = entryObj.GetComponent<LockStepImportGSEntry>();
             ArrList.Add(ref extraImportGSEntries, ref extraImportGSEntriesCount, entry);
             extraImportGSEntriesUsedCount++;
