@@ -1494,9 +1494,10 @@ namespace JanSharp
                 uint dataVersion = ReadUInt();
                 LockStepImportedGS.SetDataVersion(importedGS, dataVersion);
                 int dataSize = ReadInt();
-                LockStepImportedGS.SetDataSize(importedGS, dataSize);
-                LockStepImportedGS.SetDataPosition(importedGS, readStreamPosition);
-                readStreamPosition += dataSize;
+                byte[] binaryData = new byte[dataSize];
+                for (int j = 0; j < dataSize; j++)
+                    binaryData[j] = readStream[readStreamPosition++];
+                LockStepImportedGS.SetBinaryData(importedGS, binaryData);
                 if (!gameStatesByInternalName.TryGetValue(internalName, out DataToken gameStateToken))
                     LockStepImportedGS.SetErrorMsg(importedGS, "not in this world");
                 else

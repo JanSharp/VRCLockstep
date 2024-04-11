@@ -16,63 +16,55 @@ namespace JanSharp
         public const int DisplayName = 1;
         ///<summary>uint</summary>
         public const int DataVersion = 2;
-        ///<summary>int</summary>
-        public const int DataSize = 3;
-        ///<summary>int</summary>
-        public const int DataPosition = 4;
+        ///<summary>byte[]</summary>
+        public const int BinaryData = 3;
         ///<summary>LockStepGameState</summary>
-        public const int GameState = 5;
+        public const int GameState = 4;
         ///<summary>string</summary>
-        public const int ErrorMsg = 6;
-        public const int ObjectSize = 7;
+        public const int ErrorMsg = 5;
+        public const int ObjectSize = 6;
 
         public static object[] New(
             string internalName = default,
             string displayName = default,
             uint dataVersion = default,
-            int dataSize = default,
-            int dataPosition = default,
+            byte[] binaryData = default,
             LockStepGameState gameState = default,
             string errorMsg = default)
         {
-            object[] lockStepExportedGS = new object[ObjectSize];
-            lockStepExportedGS[InternalName] = internalName;
-            lockStepExportedGS[DisplayName] = displayName;
-            lockStepExportedGS[DataVersion] = dataVersion;
-            lockStepExportedGS[DataSize] = dataSize;
-            lockStepExportedGS[DataPosition] = dataPosition;
-            lockStepExportedGS[GameState] = gameState;
-            lockStepExportedGS[ErrorMsg] = errorMsg;
-            return lockStepExportedGS;
+            object[] lockStepImportedGS = new object[ObjectSize];
+            lockStepImportedGS[InternalName] = internalName;
+            lockStepImportedGS[DisplayName] = displayName;
+            lockStepImportedGS[DataVersion] = dataVersion;
+            lockStepImportedGS[BinaryData] = binaryData;
+            lockStepImportedGS[GameState] = gameState;
+            lockStepImportedGS[ErrorMsg] = errorMsg;
+            return lockStepImportedGS;
         }
 
-        public static string GetInternalName(object[] lockStepExportedGS)
-            => (string)lockStepExportedGS[InternalName];
-        public static void SetInternalName(object[] lockStepExportedGS, string internalName)
-            => lockStepExportedGS[InternalName] = internalName;
-        public static string GetDisplayName(object[] lockStepExportedGS)
-            => (string)lockStepExportedGS[DisplayName];
-        public static void SetDisplayName(object[] lockStepExportedGS, string displayName)
-            => lockStepExportedGS[DisplayName] = displayName;
-        public static uint GetDataVersion(object[] lockStepExportedGS)
-            => (uint)lockStepExportedGS[DataVersion];
-        public static void SetDataVersion(object[] lockStepExportedGS, uint dataVersion)
-            => lockStepExportedGS[DataVersion] = dataVersion;
-        public static int GetDataSize(object[] lockStepExportedGS)
-            => (int)lockStepExportedGS[DataSize];
-        public static void SetDataSize(object[] lockStepExportedGS, int dataSize)
-            => lockStepExportedGS[DataSize] = dataSize;
-        public static int GetDataPosition(object[] lockStepExportedGS)
-            => (int)lockStepExportedGS[DataPosition];
-        public static void SetDataPosition(object[] lockStepExportedGS, int dataPosition)
-            => lockStepExportedGS[DataPosition] = dataPosition;
-        public static LockStepGameState GetGameState(object[] lockStepExportedGS)
-            => (LockStepGameState)lockStepExportedGS[GameState];
-        public static void SetGameState(object[] lockStepExportedGS, LockStepGameState gameState)
-            => lockStepExportedGS[GameState] = gameState;
-        public static string GetErrorMsg(object[] lockStepExportedGS)
-            => (string)lockStepExportedGS[ErrorMsg];
-        public static void SetErrorMsg(object[] lockStepExportedGS, string errorMsg)
-            => lockStepExportedGS[ErrorMsg] = errorMsg;
+        public static string GetInternalName(object[] lockStepImportedGS)
+            => (string)lockStepImportedGS[InternalName];
+        public static void SetInternalName(object[] lockStepImportedGS, string internalName)
+            => lockStepImportedGS[InternalName] = internalName;
+        public static string GetDisplayName(object[] lockStepImportedGS)
+            => (string)lockStepImportedGS[DisplayName];
+        public static void SetDisplayName(object[] lockStepImportedGS, string displayName)
+            => lockStepImportedGS[DisplayName] = displayName;
+        public static uint GetDataVersion(object[] lockStepImportedGS)
+            => (uint)lockStepImportedGS[DataVersion];
+        public static void SetDataVersion(object[] lockStepImportedGS, uint dataVersion)
+            => lockStepImportedGS[DataVersion] = dataVersion;
+        public static byte[] GetBinaryData(object[] lockStepImportedGS)
+            => (byte[])lockStepImportedGS[BinaryData];
+        public static void SetBinaryData(object[] lockStepImportedGS, byte[] binaryData)
+            => lockStepImportedGS[BinaryData] = binaryData;
+        public static LockStepGameState GetGameState(object[] lockStepImportedGS)
+            => (LockStepGameState)lockStepImportedGS[GameState];
+        public static void SetGameState(object[] lockStepImportedGS, LockStepGameState gameState)
+            => lockStepImportedGS[GameState] = gameState;
+        public static string GetErrorMsg(object[] lockStepImportedGS)
+            => (string)lockStepImportedGS[ErrorMsg];
+        public static void SetErrorMsg(object[] lockStepImportedGS, string errorMsg)
+            => lockStepImportedGS[ErrorMsg] = errorMsg;
     }
 }
