@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Linq;
 using System.Collections.ObjectModel;
 using System;
+using TMPro;
 
 namespace JanSharp
 {
@@ -35,8 +36,11 @@ namespace JanSharp
             Transform mainGSList = (Transform)proxy.FindProperty("mainGSList").objectReferenceValue;
             Transform importGSList = (Transform)proxy.FindProperty("importGSList").objectReferenceValue;
             Transform exportGSList = (Transform)proxy.FindProperty("exportGSList").objectReferenceValue;
+            TextMeshProUGUI exportSelectedText = (TextMeshProUGUI)proxy.FindProperty("exportSelectedText").objectReferenceValue;
+            Button confirmExportButton = (Button)proxy.FindProperty("confirmExportButton").objectReferenceValue;
             if (mainGSEntryPrefab == null || importGSEntryPrefab == null || exportGSEntryPrefab == null
-                || mainGSList == null || importGSList == null || exportGSList == null)
+                || mainGSList == null || importGSList == null || exportGSList == null
+                || exportSelectedText == null || confirmExportButton == null)
             {
                 Debug.LogError("[LockStep] The Lock Step Game State UI is missing internal references.", gameStatesUI);
                 return false;
@@ -77,6 +81,7 @@ namespace JanSharp
                 postfix: " (ExportGSEntry)",
                 list: exportGSList,
                 prefab: exportGSEntryPrefab,
+                leaveIsOnUnchanged: true,
                 callback: (inst, gs) => {
                     SerializedObject instProxy = new SerializedObject(inst);
                     instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
@@ -93,6 +98,15 @@ namespace JanSharp
                     infoObjProxy.FindProperty("m_IsActive").boolValue = !gs.GameStateSupportsImportExport;
                     infoObjProxy.ApplyModifiedProperties();
                 });
+
+            int supportedCount = allGameStates.Count(gs => gs.GameStateSupportsImportExport);
+            proxy.FindProperty("exportSelectedCount").intValue = supportedCount;
+            SerializedObject exportSelectedTextProxy = new SerializedObject(exportSelectedText);
+            exportSelectedTextProxy.FindProperty("m_text").stringValue = $"selected: {supportedCount}";
+            exportSelectedTextProxy.ApplyModifiedProperties();
+            SerializedObject confirmExportButtonProxy = new SerializedObject(confirmExportButton);
+            confirmExportButtonProxy.FindProperty("m_Interactable").boolValue = supportedCount != 0;
+            confirmExportButtonProxy.ApplyModifiedProperties();
 
             Slider autosaveIntervalSlider = (Slider)proxy.FindProperty("autosaveIntervalSlider").objectReferenceValue;
             int defaultAutosaveInterval = (int)autosaveIntervalSlider.value;
@@ -117,6 +131,7 @@ namespace JanSharp
             Transform list,
             GameObject prefab,
             bool leaveInteractableUnchanged = false,
+            bool leaveIsOnUnchanged = false,
             Action<T, LockStepGameState> callback = null)
             where T : LockStepGameStateEntryBase
         {
@@ -154,7 +169,8 @@ namespace JanSharp
                     SerializedObject mainToggleProxy = new SerializedObject(entry.mainToggle);
                     if (!leaveInteractableUnchanged)
                         mainToggleProxy.FindProperty("m_Interactable").boolValue = allGameStates[i].GameStateSupportsImportExport;
-                    mainToggleProxy.FindProperty("m_IsOn").boolValue = !allGameStates[i].GameStateSupportsImportExport;
+                    if (!leaveIsOnUnchanged)
+                        mainToggleProxy.FindProperty("m_IsOn").boolValue = !allGameStates[i].GameStateSupportsImportExport;
                     mainToggleProxy.ApplyModifiedProperties();
                 }
                 if (callback != null)

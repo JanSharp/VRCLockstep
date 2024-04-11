@@ -53,7 +53,7 @@ namespace JanSharp
         object[][] importedGameStates = null;
 
         private int importSelectedCount = 0;
-        private int exportSelectedCount = 0;
+        [SerializeField] [HideInInspector] private int exportSelectedCount;
 
         private void Start()
         {
