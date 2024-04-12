@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -171,7 +171,7 @@ namespace JanSharp
             importInfoText.text = $"Can import {(cannotImportCount == 0 ? "all " : "")}{canImportCount}"
                 + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}")
                 + $"\n<size=90%>{exportName ?? "<i>unnamed</i>"} "
-                + $"<nobr><size=70%>(from {exportedDate.ToLocalTime():yyyy-MM-dd hh:mm})</nobr>";
+                + $"<nobr><size=70%>(from {exportDate.ToLocalTime():yyyy-MM-dd HH:mm})</nobr>";
             importSelectedCount = canImportCount;
             UpdateImportSelectedCount();
         }
