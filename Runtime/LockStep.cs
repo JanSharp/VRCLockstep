@@ -1374,6 +1374,12 @@ namespace JanSharp
         public void Write(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public void Write(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public void Write(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
+        public void WriteSmall(short value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public void WriteSmall(ushort value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public void WriteSmall(int value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public void WriteSmall(uint value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public void WriteSmall(long value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public void WriteSmall(ulong value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
 
         ///<summary>Arrays assigned to this variable always have the exact length of the data that is actually
         ///available to be read, and once assigned to this variable they are immutable.</summary>
@@ -1399,6 +1405,12 @@ namespace JanSharp
         public string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
         public System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
         public byte[] ReadBytes(int byteCount) => DataStream.ReadBytes(ref readStream, ref readStreamPosition, byteCount);
+        public short ReadSmallShort() => DataStream.ReadSmallShort(ref readStream, ref readStreamPosition);
+        public ushort ReadSmallUShort() => DataStream.ReadSmallUShort(ref readStream, ref readStreamPosition);
+        public int ReadSmallInt() => DataStream.ReadSmallInt(ref readStream, ref readStreamPosition);
+        public uint ReadSmallUInt() => DataStream.ReadSmallUInt(ref readStream, ref readStreamPosition);
+        public long ReadSmallLong() => DataStream.ReadSmallLong(ref readStream, ref readStreamPosition);
+        public ulong ReadSmallULong() => DataStream.ReadSmallULong(ref readStream, ref readStreamPosition);
 
         private uint[] crc32LookupCache;
 
