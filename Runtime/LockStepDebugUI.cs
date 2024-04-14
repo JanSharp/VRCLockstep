@@ -83,7 +83,7 @@ namespace JanSharp
         public TextMeshProUGUI leftClientsCountText;
         public float leftClientsElemHeight;
         private object[] leftClientsListObj;
-        private int[] leftClients;
+        private uint[] leftClients;
         private const string LeftClientsFieldName = "leftClients";
         private const string LeftClientsCountFieldName = "leftClientsCount";
 
@@ -216,9 +216,9 @@ namespace JanSharp
                 numbersValues[i].text = $"<mspace=0.55em>{lockStep.GetProgramVariable(numbersFieldNames[i])}";
         }
 
-        private string FormatPlayerId(int playerId)
+        private string FormatPlayerId(uint playerId)
         {
-            VRCPlayerApi player = VRCPlayerApi.GetPlayerById(playerId);
+            VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)playerId);
             return player == null ? playerId.ToString() : $"{playerId} - {player.displayName}";
         }
 
@@ -256,7 +256,7 @@ namespace JanSharp
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text
                 = clientStateNameLut[clientStates[playerIdToken].Byte];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text
-                = FormatPlayerId(playerIdToken.Int);
+                = FormatPlayerId(playerIdToken.UInt);
         }
 
         private void InitializeLeftClients()
@@ -271,7 +271,7 @@ namespace JanSharp
 
         private void UpdateLeftClients()
         {
-            leftClients = (int[])lockStep.GetProgramVariable(LeftClientsFieldName);
+            leftClients = (uint[])lockStep.GetProgramVariable(LeftClientsFieldName);
             int count = (int)lockStep.GetProgramVariable(LeftClientsCountFieldName);
 
             UpdateList(
@@ -286,7 +286,7 @@ namespace JanSharp
         // (object[] listObj, object[] listElemObj, int elemIndex) => void;
         public void UpdateLeftClientsListElemObj()
         {
-            int playerId = leftClients[elemIndex];
+            uint playerId = leftClients[elemIndex];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = FormatPlayerId(playerId);
         }
 

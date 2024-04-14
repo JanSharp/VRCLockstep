@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -87,13 +87,11 @@ namespace JanSharp
         // string internalName => int indexInAllGameStates
         private DataDictionary gameStateIndexesByInternalName = new DataDictionary();
 
-        // **Internal Game State**
-        // int => byte
-        // int: playerId
-        // byte: ClientState
+        ///<summary><para>**Internal Game State**</para>
+        ///<para>uint playerId => byte: ClientState</para></summary>
         private DataDictionary clientStates = null;
         // non game state
-        private int[] leftClients = new int[ArrList.MinCapacity];
+        private uint[] leftClients = new uint[ArrList.MinCapacity];
         private int leftClientsCount = 0;
         // This flag ultimately indicates that there is no client with the Master state in the clientStates game state
         private bool currentlyNoMaster = true;
@@ -273,7 +271,7 @@ namespace JanSharp
                 foreach (uint uniqueId in uniqueIds)
                     if (!inputActionsByUniqueId.ContainsKey(uniqueId))
                     {
-                        int playerId = (int)(uniqueId >> PlayerIdKeyShift);
+                        uint playerId = uniqueId >> PlayerIdKeyShift;
                         if (uniqueId != unrecoverableStateDueToUniqueId && !clientStates.ContainsKey(playerId))
                         {
                             // This variable is purely used as to not spam the log file every frame with this error message.
@@ -444,7 +442,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnPlayerLeft - player is null: {player == null}");
             #endif
-            int playerId = player.playerId;
+            uint playerId = (uint)player.playerId;
 
             // inputActionSyncForLocalPlayer could still be null while this event is running,
             // but if that's the case, isMaster is false and clientStates is null,
@@ -556,7 +554,7 @@ namespace JanSharp
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = false;
             clientStates = new DataDictionary();
-            clientStates.Add(localPlayer.playerId, (byte)ClientState.Master);
+            clientStates.Add(localPlayerId, (byte)ClientState.Master);
             lateJoinerInputActionSync.lockStepIsMaster = true;
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
@@ -567,7 +565,7 @@ namespace JanSharp
             waitTick = uint.MaxValue;
             EnterSingePlayerMode();
             RaiseOnInit();
-            RaiseOnClientJoined(localPlayer.playerId);
+            RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
             tickStartTime = Time.time;
         }
@@ -610,8 +608,8 @@ namespace JanSharp
                 DataToken playerIdToken = allPlayerIds[i];
                 if ((ClientState)clientStates[playerIdToken].Byte == ClientState.WaitingForLateJoinerSync)
                     continue;
-                int playerId = playerIdToken.Int;
-                VRCPlayerApi player = VRCPlayerApi.GetPlayerById(playerId);
+                uint playerId = playerIdToken.UInt;
+                VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)playerId);
                 if (player == null)
                     continue;
                 Debug.Log("[LockStep] // TODO: Ask the given client to become master. Keep in mind that "
@@ -826,7 +824,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendMasterChangedIA");
             #endif
-            Write(localPlayer.playerId);
+            WriteSmall(localPlayerId);
             SendInputAction(masterChangedIAId);
         }
 
@@ -837,7 +835,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnMasterChangedIA");
             #endif
-            int playerId = ReadInt();
+            uint playerId = ReadSmallUInt();
             clientStates[playerId] = (byte)ClientState.Master;
             currentlyNoMaster = false;
             RaiseOnMasterChanged(playerId);
@@ -848,7 +846,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientJoinedIA");
             #endif
-            Write(localPlayer.playerId);
+            WriteSmall(localPlayerId);
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
@@ -862,7 +860,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientJoinedIA");
             #endif
-            int playerId = ReadInt();
+            uint playerId = ReadSmallUInt();
             // Using set value, because the given player may already have a state,
             // because it is valid for the client joined input action to be sent
             // multiple times. And whenever it is sent, it means the client is waiting
@@ -921,7 +919,7 @@ namespace JanSharp
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken keyToken = keys[i];
-                Write(keyToken.Int);
+                WriteSmall(keyToken.UInt);
                 Write(clientStates[keyToken].Byte);
             }
             lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, writeStream, writeStreamSize);
@@ -958,7 +956,7 @@ namespace JanSharp
             int stopBeforeIndex = 1 + 2 * (int)ReadSmallUInt();
             for (int i = 1; i < stopBeforeIndex; i += 2)
             {
-                int playerId = ReadInt();
+                uint playerId = ReadSmallUInt();
                 byte clientState = ReadByte();
                 clientStates.Add(playerId, clientState);
                 if ((ClientState)clientState == ClientState.Master)
@@ -1072,7 +1070,7 @@ namespace JanSharp
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
-            RaiseOnClientBeginCatchUp(localPlayer.playerId);
+            RaiseOnClientBeginCatchUp(localPlayerId);
             isTickPaused = false;
             isCatchingUp = true;
 
@@ -1097,7 +1095,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientGotLateJoinerDataIA");
             #endif
-            Write(localPlayer.playerId);
+            WriteSmall(localPlayerId);
             SendInputAction(clientGotLateJoinerDataIAId);
         }
 
@@ -1108,18 +1106,18 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientGotLateJoinerDataIA");
             #endif
-            int playerId = ReadInt();
+            uint playerId = ReadSmallUInt();
             clientStates[playerId] = (byte)ClientState.CatchingUp;
             CheckIfLateJoinerSyncShouldStop();
             RaiseOnClientJoined(playerId);
         }
 
-        private void SendClientLeftIA(int playerId)
+        private void SendClientLeftIA(uint playerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientLeftIA");
             #endif
-            Write(playerId);
+            WriteSmall(playerId);
             SendInputAction(clientLeftIAId);
         }
 
@@ -1130,7 +1128,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientLeftIA");
             #endif
-            int playerId = ReadInt();
+            uint playerId = ReadSmallUInt();
             clientStates.Remove(playerId);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
@@ -1144,7 +1142,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientCaughtUpIA");
             #endif
-            Write(localPlayer.playerId);
+            WriteSmall(localPlayerId);
             SendInputAction(clientCaughtUpIAId);
         }
 
@@ -1155,7 +1153,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnClientCaughtUpIA");
             #endif
-            int playerId = ReadInt();
+            uint playerId = ReadSmallUInt();
             clientStates[playerId] = (byte)ClientState.Normal;
             RaiseOnClientCaughtUp(playerId);
         }
@@ -1282,7 +1280,7 @@ namespace JanSharp
                 listener.SendCustomEvent(nameof(LockStepEventType.OnInit));
         }
 
-        private void RaiseOnClientJoined(int playerId)
+        private void RaiseOnClientJoined(uint playerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RaiseOnClientJoined");
@@ -1294,7 +1292,7 @@ namespace JanSharp
             }
         }
 
-        private void RaiseOnClientBeginCatchUp(int playerId)
+        private void RaiseOnClientBeginCatchUp(uint playerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RaiseOnClientBeginCatchUp");
@@ -1306,7 +1304,7 @@ namespace JanSharp
             }
         }
 
-        private void RaiseOnClientCaughtUp(int playerId)
+        private void RaiseOnClientCaughtUp(uint playerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RaiseOnClientCaughtUp");
@@ -1318,7 +1316,7 @@ namespace JanSharp
             }
         }
 
-        private void RaiseOnClientLeft(int playerId)
+        private void RaiseOnClientLeft(uint playerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RaiseOnClientLeft");
@@ -1330,7 +1328,7 @@ namespace JanSharp
             }
         }
 
-        private void RaiseOnMasterChanged(int newMasterPlayerId)
+        private void RaiseOnMasterChanged(uint newMasterPlayerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RaiseOnMasterChanged");

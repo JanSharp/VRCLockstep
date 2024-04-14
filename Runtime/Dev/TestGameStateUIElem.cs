@@ -11,7 +11,7 @@ namespace JanSharp
     public class TestGameStateUIElem : UdonSharpBehaviour
     {
         [System.NonSerialized] public TestGameState gameState;
-        [System.NonSerialized] public int playerId;
+        [System.NonSerialized] public uint playerId;
         public TextMeshProUGUI header;
         public InputField descriptionField;
 

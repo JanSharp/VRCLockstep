@@ -45,7 +45,7 @@ namespace JanSharp
             {
                 object[] playerData = (object[])values[i].Reference;
                 TestGameStateUIElem elem = elems[i];
-                int playerId = (int)playerData[TestGameState.PlayerData_PlayerId];
+                uint playerId = (uint)playerData[TestGameState.PlayerData_PlayerId];
                 elem.playerId = playerId;
                 elem.header.text = $"{playerId} - {(string)playerData[TestGameState.PlayerData_DisplayName]}";
                 elem.descriptionField.text = (string)playerData[TestGameState.PlayerData_Description];

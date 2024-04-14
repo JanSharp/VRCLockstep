@@ -4,15 +4,15 @@ namespace JanSharp {
     public enum LockStepEventType
     {
         OnInit = 1 << 0,
-        ///<summary>Before raising, an int 'lockStepPlayerId' program variable will be set to the joined player's id.</summary>
+        ///<summary>Before raising, an uint 'lockStepPlayerId' program variable will be set to the joined player's id.</summary>
         OnClientJoined = 1 << 1,
-        ///<summary>Before raising, an int 'lockStepPlayerId' program variable will be set to the player's id who is beginning catch up.</summary>
+        ///<summary>Before raising, an uint 'lockStepPlayerId' program variable will be set to the player's id who is beginning catch up.</summary>
         OnClientBeginCatchUp = 1 << 2,
-        ///<summary>Before raising, an int 'lockStepPlayerId' program variable will be set to the player's id who has caught up.</summary>
+        ///<summary>Before raising, an uint 'lockStepPlayerId' program variable will be set to the player's id who has caught up.</summary>
         OnClientCaughtUp = 1 << 3,
-        ///<summary>Before raising, an int 'lockStepPlayerId' program variable will be set to the left player's id.</summary>
+        ///<summary>Before raising, an uint 'lockStepPlayerId' program variable will be set to the left player's id.</summary>
         OnClientLeft = 1 << 4,
-        ///<summary>Before raising, an int 'lockStepPlayerId' program variable will be set to the new master's id.</summary>
+        ///<summary>Before raising, an uint 'lockStepPlayerId' program variable will be set to the new master's id.</summary>
         OnMasterChanged = 1 << 5,
         OnTick = 1 << 6,
     }

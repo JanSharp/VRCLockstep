@@ -18,16 +18,16 @@ namespace JanSharp
         public override uint GameStateDataVersion => 0u;
         public override uint GameStateLowestSupportedDataVersion => 0u;
 
-        /// <summary>int playerId => PlayerData</summary>
+        /// <summary>uint playerId => PlayerData</summary>
         [System.NonSerialized] public DataDictionary allPlayerData = new DataDictionary();
 
-        public const int PlayerData_PlayerId = 0; // int
+        public const int PlayerData_PlayerId = 0; // uint
         public const int PlayerData_DisplayName = 1; // string
         public const int PlayerData_Description = 2; // string
         public const int PlayerData_Size = 3;
 
         // These 2 are set by LockStep as parameters.
-        private int lockStepPlayerId;
+        private uint lockStepPlayerId;
 
         [LockStepEvent(LockStepEventType.OnInit)]
         public void OnInit()
@@ -47,7 +47,7 @@ namespace JanSharp
 
             allPlayerData.Add(lockStepPlayerId, new DataToken(playerData));
 
-            VRCPlayerApi player = VRCPlayerApi.GetPlayerById(lockStepPlayerId);
+            VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)lockStepPlayerId);
             if (player != null && player.isLocal)
                 SendSetDisplayNameIA(lockStepPlayerId, player.displayName);
 
@@ -82,10 +82,10 @@ namespace JanSharp
             // Debug.Log("<dlt> TestGameState  OnTick");
         }
 
-        private void SendSetDisplayNameIA(int playerId, string displayName)
+        private void SendSetDisplayNameIA(uint playerId, string displayName)
         {
             Debug.Log("<dlt> TestGameState  SendSetDisplayNameIA");
-            lockStep.Write(playerId);
+            lockStep.WriteSmall(playerId);
             lockStep.Write(displayName);
             lockStep.SendInputAction(setDisplayNameIAId);
         }
@@ -95,7 +95,7 @@ namespace JanSharp
         public void OnSetDisplayNameIA()
         {
             Debug.Log("<dlt> TestGameState  OnSetDisplayNameIA");
-            int playerId = lockStep.ReadInt();
+            uint playerId = lockStep.ReadSmallUInt();
             if (!allPlayerData.TryGetValue(playerId, out DataToken playerDataToken))
                 return; // Could hve left already.
             object[] playerData = (object[])playerDataToken.Reference;
@@ -104,7 +104,7 @@ namespace JanSharp
             ui.UpdateUI();
         }
 
-        public void SetDescription(int playerId, string description)
+        public void SetDescription(uint playerId, string description)
         {
             object[] playerData = (object[])allPlayerData[playerId].Reference;
             if ((string)playerData[TestGameState.PlayerData_Description] == description)
@@ -112,10 +112,10 @@ namespace JanSharp
             SendSetDescriptionIA(playerId, description);
         }
 
-        private void SendSetDescriptionIA(int playerId, string description)
+        private void SendSetDescriptionIA(uint playerId, string description)
         {
             Debug.Log("<dlt> TestGameState  SendSetDescriptionIA");
-            lockStep.Write(playerId);
+            lockStep.WriteSmall(playerId);
             lockStep.Write(description);
             lockStep.SendInputAction(setDescriptionNameIAId);
         }
@@ -125,7 +125,7 @@ namespace JanSharp
         public void OnSetDescriptionIA()
         {
             Debug.Log("<dlt> TestGameState  OnSetDescriptionIA");
-            int playerId = lockStep.ReadInt();
+            uint playerId = lockStep.ReadSmallUInt();
             if (!allPlayerData.TryGetValue(playerId, out DataToken playerDataToken))
                 return; // Could hve left already.
             object[] playerData = (object[])playerDataToken.Reference;
@@ -145,7 +145,7 @@ namespace JanSharp
             {
                 object[] playerData = (object[])allPlayerDataValues[i].Reference;
                 if (!isExport)
-                    lockStep.Write((int)playerData[PlayerData_PlayerId]);
+                    lockStep.WriteSmall((uint)playerData[PlayerData_PlayerId]);
                 lockStep.Write((string)playerData[PlayerData_DisplayName]);
                 lockStep.Write((string)playerData[PlayerData_Description]);
             }
@@ -158,7 +158,7 @@ namespace JanSharp
             int count = (int)lockStep.ReadSmallUInt();
             for (int j = 0; j < count; j++)
             {
-                int playerId = isImport ? Networking.LocalPlayer.playerId + Random.Range(1, 10000) : lockStep.ReadInt();
+                uint playerId = isImport ? (uint)Random.Range(1, 10000) : lockStep.ReadSmallUInt();
                 object[] playerData = new object[PlayerData_Size];
                 playerData[PlayerData_PlayerId] = playerId;
                 playerData[PlayerData_DisplayName] = lockStep.ReadString();
