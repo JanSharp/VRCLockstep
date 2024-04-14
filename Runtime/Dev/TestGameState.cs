@@ -139,7 +139,7 @@ namespace JanSharp
             Debug.Log("<dlt> TestGameState  SerializeGameState");
 
             int count = allPlayerData.Count;
-            lockStep.Write(count);
+            lockStep.WriteSmall((uint)count);
             DataList allPlayerDataValues = allPlayerData.GetValues();
             for (int i = 0; i < count; i++)
             {
@@ -155,7 +155,7 @@ namespace JanSharp
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
 
-            int count = lockStep.ReadInt();
+            int count = (int)lockStep.ReadSmallUInt();
             for (int j = 0; j < count; j++)
             {
                 int playerId = isImport ? Networking.LocalPlayer.playerId + Random.Range(1, 10000) : lockStep.ReadInt();

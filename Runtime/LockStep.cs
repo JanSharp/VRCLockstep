@@ -916,7 +916,7 @@ namespace JanSharp
             if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20))
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
-            Write(clientStates.Count);
+            WriteSmall((uint)clientStates.Count);
             DataList keys = clientStates.GetKeys();
             for (int i = 0; i < keys.Count; i++)
             {
@@ -955,7 +955,7 @@ namespace JanSharp
             ForgetAboutUnprocessedLJSerializedGameSates();
 
             clientStates = new DataDictionary();
-            int stopBeforeIndex = 1 + 2 * ReadInt();
+            int stopBeforeIndex = 1 + 2 * (int)ReadSmallUInt();
             for (int i = 1; i < stopBeforeIndex; i += 2)
             {
                 // Can't just reuse the tokens from iaData, because they're doubles, because of the json round trip.
@@ -1425,20 +1425,20 @@ namespace JanSharp
 
             Write(System.DateTime.UtcNow);
             Write(exportName);
-            Write(gameStates.Length);
+            WriteSmall((uint)gameStates.Length);
 
             foreach (LockStepGameState gameState in gameStates)
             {
                 Write(gameState.GameStateInternalName);
                 Write(gameState.GameStateDisplayName);
-                Write(gameState.GameStateDataVersion);
+                WriteSmall(gameState.GameStateDataVersion);
 
                 int sizePosition = writeStreamSize;
                 writeStreamSize += 4;
                 gameState.SerializeGameState(true);
                 int stopPosition = writeStreamSize;
                 writeStreamSize = sizePosition;
-                Write(stopPosition - sizePosition - 4);
+                Write(stopPosition - sizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
                 writeStreamSize = stopPosition;
             }
 
@@ -1511,7 +1511,7 @@ namespace JanSharp
 
             exportedDate = ReadDateTime();
             exportName = ReadString();
-            int gameStatesCount = ReadInt();
+            int gameStatesCount = (int)ReadSmallUInt();
 
             object[][] importedGameStates = new object[gameStatesCount][];
             for (int i = 0; i < gameStatesCount; i++)
@@ -1521,7 +1521,7 @@ namespace JanSharp
                 string internalName = ReadString();
                 LockStepImportedGS.SetInternalName(importedGS, internalName);
                 LockStepImportedGS.SetDisplayName(importedGS, ReadString());
-                uint dataVersion = ReadUInt();
+                uint dataVersion = ReadSmallUInt();
                 LockStepImportedGS.SetDataVersion(importedGS, dataVersion);
                 int dataSize = ReadInt();
                 byte[] binaryData = new byte[dataSize];
@@ -1584,9 +1584,9 @@ namespace JanSharp
             #endif
             Write(exportDate);
             Write(exportName);
-            Write(importedGSs.Length);
+            WriteSmall((uint)importedGSs.Length);
             foreach (object[] importedGS in importedGSs)
-                Write(LockStepImportedGS.GetGameStateIndex(importedGS));
+                WriteSmall((uint)LockStepImportedGS.GetGameStateIndex(importedGS));
             importedGSsToSend = importedGSs;
             SendInputAction(importStartIAId);
         }
@@ -1607,10 +1607,10 @@ namespace JanSharp
             importingPlayerId = SendingPlayerId;
             System.DateTime exportDate = ReadDateTime();
             string exportName = ReadString();
-            int importedGSsCount = ReadInt();
+            int importedGSsCount = (int)ReadSmallUInt();
             for (int i = 0; i < importedGSsCount; i++)
             {
-                int gameStateIndex = ReadInt();
+                int gameStateIndex = (int)ReadSmallUInt();
                 gameStatesWaitingForImport.Add(gameStateIndex, allGameStates[gameStateIndex]);
             }
 
@@ -1627,7 +1627,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendImportGameStateIA");
             #endif
-            Write(LockStepImportedGS.GetGameStateIndex(importedGS));
+            WriteSmall((uint)LockStepImportedGS.GetGameStateIndex(importedGS));
             Write(LockStepImportedGS.GetBinaryData(importedGS));
             SendInputAction(importGameStateIAId);
         }
@@ -1639,7 +1639,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnImportGameStateIA");
             #endif
-            int gameStateIndex = ReadInt();
+            int gameStateIndex = (int)ReadSmallUInt();
             LockStepGameState gameState = allGameStates[gameStateIndex];
             if (!gameStatesWaitingForImport.Remove(gameStateIndex))
             {
