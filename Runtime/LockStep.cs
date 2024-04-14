@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -958,7 +958,6 @@ namespace JanSharp
             int stopBeforeIndex = 1 + 2 * (int)ReadSmallUInt();
             for (int i = 1; i < stopBeforeIndex; i += 2)
             {
-                // Can't just reuse the tokens from iaData, because they're doubles, because of the json round trip.
                 int playerId = ReadInt();
                 byte clientState = ReadByte();
                 clientStates.Add(playerId, clientState);
