@@ -16,6 +16,7 @@ return {
     {type = "uint", name = "dataVersion"},
     {type = "byte[]", name = "binaryData"},
     {type = "LockStepGameState", name = "gameState"},
+    {type = "int", name = "gameStateIndex"},
     {type = "string", name = "errorMsg"},
   },
 }

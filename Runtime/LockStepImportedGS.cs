@@ -20,9 +20,11 @@ namespace JanSharp
         public const int BinaryData = 3;
         ///<summary>LockStepGameState</summary>
         public const int GameState = 4;
+        ///<summary>int</summary>
+        public const int GameStateIndex = 5;
         ///<summary>string</summary>
-        public const int ErrorMsg = 5;
-        public const int ObjectSize = 6;
+        public const int ErrorMsg = 6;
+        public const int ObjectSize = 7;
 
         public static object[] New(
             string internalName = default,
@@ -30,6 +32,7 @@ namespace JanSharp
             uint dataVersion = default,
             byte[] binaryData = default,
             LockStepGameState gameState = default,
+            int gameStateIndex = default,
             string errorMsg = default)
         {
             object[] lockStepImportedGS = new object[ObjectSize];
@@ -38,6 +41,7 @@ namespace JanSharp
             lockStepImportedGS[DataVersion] = dataVersion;
             lockStepImportedGS[BinaryData] = binaryData;
             lockStepImportedGS[GameState] = gameState;
+            lockStepImportedGS[GameStateIndex] = gameStateIndex;
             lockStepImportedGS[ErrorMsg] = errorMsg;
             return lockStepImportedGS;
         }
@@ -62,6 +66,10 @@ namespace JanSharp
             => (LockStepGameState)lockStepImportedGS[GameState];
         public static void SetGameState(object[] lockStepImportedGS, LockStepGameState gameState)
             => lockStepImportedGS[GameState] = gameState;
+        public static int GetGameStateIndex(object[] lockStepImportedGS)
+            => (int)lockStepImportedGS[GameStateIndex];
+        public static void SetGameStateIndex(object[] lockStepImportedGS, int gameStateIndex)
+            => lockStepImportedGS[GameStateIndex] = gameStateIndex;
         public static string GetErrorMsg(object[] lockStepImportedGS)
             => (string)lockStepImportedGS[ErrorMsg];
         public static void SetErrorMsg(object[] lockStepImportedGS, string errorMsg)

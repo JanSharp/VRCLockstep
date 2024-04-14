@@ -84,6 +84,8 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private LockStepGameState[] allGameStates;
         // string internalName => LockStepGameState gameState
         private DataDictionary gameStatesByInternalName = new DataDictionary();
+        // string internalName => int indexInAllGameStates
+        private DataDictionary gameStateIndexesByInternalName = new DataDictionary();
 
         // **Internal Game State**
         // int => byte
@@ -152,8 +154,13 @@ namespace JanSharp
             localPlayerId = (uint)localPlayer.playerId;
             lateJoinerInputActionSync.lockStep = this;
 
+            int i = 0;
             foreach (LockStepGameState gameState in allGameStates)
-                gameStatesByInternalName.Add(gameState.GameStateInternalName, gameState);
+            {
+                DataToken key = gameState.GameStateInternalName;
+                gameStatesByInternalName.Add(key, gameState);
+                gameStateIndexesByInternalName.Add(key, i++);
+            }
         }
 
         private void Update()
@@ -1366,6 +1373,7 @@ namespace JanSharp
         public void Write(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public void Write(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public void Write(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public void Write(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
 
         ///<summary>Arrays assigned to this variable always have the exact length of the data that is actually
         ///available to be read, and once assigned to this variable they are immutable.</summary>
@@ -1390,6 +1398,7 @@ namespace JanSharp
         public char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
         public string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
         public System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
+        public byte[] ReadBytes(int byteCount) => DataStream.ReadBytes(ref readStream, ref readStreamPosition, byteCount);
 
         private uint[] crc32LookupCache;
 
@@ -1507,12 +1516,14 @@ namespace JanSharp
                 for (int j = 0; j < dataSize; j++)
                     binaryData[j] = readStream[readStreamPosition++];
                 LockStepImportedGS.SetBinaryData(importedGS, binaryData);
-                if (!gameStatesByInternalName.TryGetValue(internalName, out DataToken gameStateToken))
+                DataToken internalNameToken = internalName;
+                if (!gameStatesByInternalName.TryGetValue(internalNameToken, out DataToken gameStateToken))
                     LockStepImportedGS.SetErrorMsg(importedGS, "not in this world");
                 else
                 {
                     LockStepGameState gameState = (LockStepGameState)gameStateToken.Reference;
                     LockStepImportedGS.SetGameState(importedGS, gameState);
+                    LockStepImportedGS.SetGameStateIndex(importedGS, gameStateIndexesByInternalName[internalNameToken].Int);
                     if (!gameState.GameStateSupportsImportExport)
                         LockStepImportedGS.SetErrorMsg(importedGS, "no longer supports import");
                     else if (dataVersion > gameState.GameStateDataVersion)
@@ -1526,18 +1537,111 @@ namespace JanSharp
         }
 
         ///<summary>LockStepImportedGS[] importedGameStates</summary>
-        public void StartImport(object[][] importedGameStates)
+        public void StartImport(System.DateTime exportDate, string exportName, object[][] importedGameStates)
         {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  StartImport");
+            #endif
+            if (isImporting)
+                return;
+
+            int count = 0;
             foreach(object[] importedGS in importedGameStates)
-            {
-                if (LockStepImportedGS.GetErrorMsg(importedGS) != null)
-                    continue;
-                // TODO: send input actions, don't do this locally.
-                readStream = LockStepImportedGS.GetBinaryData(importedGS);
-                ResetReadStream();
-                LockStepGameState gameState = LockStepImportedGS.GetGameState(importedGS);
-                gameState.DeserializeGameState(isImport: true);
-            }
+                if (LockStepImportedGS.GetErrorMsg(importedGS) == null)
+                    count++;
+            object[][] validImportedGSs = new object[count][];
+            count = 0;
+            foreach(object[] importedGS in importedGameStates)
+                if (LockStepImportedGS.GetErrorMsg(importedGS) == null)
+                    validImportedGSs[count++] = importedGS;
+            SendImportStartIA(exportDate, exportName, validImportedGSs);
         }
+
+        private object[][] importedGSsToSend;
+
+        // TODO: or instead of this being part of the game state, do not do late joiner syncing while importing. That seems like the much more reasonable approach
+        private bool isImporting = false; // TODO: must be part of a game state
+        private uint importingPlayerId; // TODO: must be part of a game state
+        ///<summary>int gameStateIndex => LockStepGameState gameState</summary>
+        private DataDictionary gameStatesWaitingForImport = new DataDictionary();
+
+        private void SendImportStartIA(System.DateTime exportDate, string exportName, object[][] importedGSs)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  SendImportStartIA");
+            #endif
+            Write(exportDate);
+            Write(exportName);
+            Write(importedGSs.Length);
+            foreach (object[] importedGS in importedGSs)
+                Write(LockStepImportedGS.GetGameStateIndex(importedGS));
+            importedGSsToSend = importedGSs;
+            SendInputAction(importStartIAId);
+        }
+
+        [SerializeField] [HideInInspector] private uint importStartIAId;
+        [LockStepInputAction(nameof(importStartIAId))]
+        public void OnImportStartIA()
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  OnImportStartIA");
+            #endif
+            if (isImporting)
+            {
+                importedGSsToSend = null;
+                return;
+            }
+            isImporting = true;
+            importingPlayerId = SendingPlayerId;
+            System.DateTime exportDate = ReadDateTime();
+            string exportName = ReadString();
+            int importedGSsCount = ReadInt();
+            for (int i = 0; i < importedGSsCount; i++)
+            {
+                int gameStateIndex = ReadInt();
+                gameStatesWaitingForImport.Add(gameStateIndex, allGameStates[gameStateIndex]);
+            }
+
+            if (SendingPlayerId != localPlayerId)
+                return;
+
+            foreach (object[] importedGS in importedGSsToSend)
+                SendImportGameStateIA(importedGS);
+            importedGSsToSend = null;
+        }
+
+        private void SendImportGameStateIA(object[] importedGS)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  SendImportGameStateIA");
+            #endif
+            Write(LockStepImportedGS.GetGameStateIndex(importedGS));
+            Write(LockStepImportedGS.GetBinaryData(importedGS));
+            SendInputAction(importGameStateIAId);
+        }
+
+        [SerializeField] [HideInInspector] private uint importGameStateIAId;
+        [LockStepInputAction(nameof(importGameStateIAId))]
+        public void OnImportGameStateIA()
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  OnImportGameStateIA");
+            #endif
+            int gameStateIndex = ReadInt();
+            LockStepGameState gameState = allGameStates[gameStateIndex];
+            if (!gameStatesWaitingForImport.Remove(gameStateIndex))
+            {
+                Debug.LogError($"[LockStep] Impossible: A game state received import data even though it was "
+                    + $"Not marked as waiting for import. Ignoring incoming data.");
+                return;
+            }
+            // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
+            gameState.DeserializeGameState(isImport: true);
+            if (gameStatesWaitingForImport.Count == 0)
+                isImporting = false;
+        }
+
+        // TODO: if the importing player leaves, wait a little bit and if it is still waiting on import IAs
+        // then stop the import process.
     }
 }

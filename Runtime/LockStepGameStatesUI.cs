@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -52,6 +52,8 @@ namespace JanSharp
         private DataDictionary importEntriesByInternalName = new DataDictionary();
         ///<summary>LockStepImportedGS[]</summary>
         object[][] importedGameStates = null;
+        System.DateTime exportDate;
+        string exportName;
 
         private int importSelectedCount = 0;
         [SerializeField] [HideInInspector] private int exportSelectedCount;
@@ -131,8 +133,8 @@ namespace JanSharp
                 return;
             importedGameStates = lockStep.ImportPreProcess(
                 importString,
-                out System.DateTime exportedDate,
-                out string exportName);
+                out exportDate,
+                out exportName);
             if (importedGameStates == null)
             {
                 importInfoText.text = "Malformed or invalid data.";
@@ -219,7 +221,7 @@ namespace JanSharp
             foreach (LockStepImportGSEntry entry in importGSEntries)
                 if (entry.canImport && entry.mainToggle.isOn)
                     gameStatesToImport[i++] = entry.importedGS;
-            lockStep.StartImport(gameStatesToImport);
+            lockStep.StartImport(exportDate, exportName, gameStatesToImport);
             CloseImportWindow();
         }
 
@@ -354,5 +356,8 @@ namespace JanSharp
             // confuse the user.
             serializedOutputField.text = "";
         }
+
+        // TODO: show import state in game states UI
+        // TODO: disable game states UI import/export while importing or while still initializing/waiting for late joiner sync
     }
 }
