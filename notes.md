@@ -349,3 +349,7 @@ These 2 aren't really events, but they are called by the Lock Step system.
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
 TODO: note that iaData no longer exists and binary "streams" are used for read and writes in input actions as well as game state de/serialization
+TODO: the ability to take master from another master in lock step
+TODO: send singleton/server input action (from within a game state safe event) which is guaranteed to be sent and be run exactly once, even if the responsible player leaves while it is sent
+TODO: bundle input actions together and optimize for that instead of just sending single input actions at a time
+TODO: change max sync package size to like 2048
