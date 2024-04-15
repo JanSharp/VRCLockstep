@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -34,6 +34,7 @@ namespace JanSharp
         private uint localPlayerId;
         private string localPlayerDisplayName;
         private InputActionSync inputActionSyncForLocalPlayer;
+        private uint masterPlayerId;
         private uint startTick;
         private uint firstMutableTick; // Effectively 1 tick past the last immutable tick.
         private float tickStartTime;
@@ -149,6 +150,11 @@ namespace JanSharp
         // an input action with IsMaster being true again, which would be incorrect behavior. But the only
         // way this should be possible to happen is if ticks get paused using the tick pase boolean, which is
         // currently not possible and should never be possible.
+        ///<summary>This is part of the game state. Can be used any time from OnInit or OnClientBeginCatchUp
+        ///onwards.</summary>
+        public uint MasterPlayerId => masterPlayerId;
+        ///<summary>This is game state safe, only usable inside of input action events, not all game state
+        ///safe events.</summary>
         public uint SendingPlayerId { private set; get; }
 
         private void Start()
@@ -583,6 +589,7 @@ namespace JanSharp
             DataToken keyToken = localPlayerId;
             clientStates.Add(keyToken, (byte)ClientState.Master);
             clientNames.Add(keyToken, localPlayerDisplayName);
+            masterPlayerId = localPlayerId;
             lateJoinerInputActionSync.lockStepIsMaster = true;
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
@@ -870,6 +877,7 @@ namespace JanSharp
             #endif
             uint playerId = ReadSmallUInt();
             clientStates[playerId] = (byte)ClientState.Master;
+            masterPlayerId = playerId;
             currentlyNoMaster = false;
             RaiseOnMasterChanged(playerId);
         }
@@ -1018,7 +1026,10 @@ namespace JanSharp
                 clientStates.Add(keyToken, clientState);
                 clientNames.Add(keyToken, clientName);
                 if ((ClientState)clientState == ClientState.Master)
+                {
+                    masterPlayerId = playerId;
                     currentlyNoMaster = false;
+                }
             }
         }
 
