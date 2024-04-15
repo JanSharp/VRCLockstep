@@ -6898,6 +6898,16 @@ PrefabInstance:
       objectReference: {fileID: 171763846}
     - target: {fileID: 476066323447479662, guid: 390fe6d092732ae17bddcb5e4175d7df,
         type: 3}
+      propertyPath: setDisplayNameIAId
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 476066323447479662, guid: 390fe6d092732ae17bddcb5e4175d7df,
+        type: 3}
+      propertyPath: setDescriptionNameIAId
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 476066323447479662, guid: 390fe6d092732ae17bddcb5e4175d7df,
+        type: 3}
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 476066323447479662, guid: 390fe6d092732ae17bddcb5e4175d7df,
@@ -7263,6 +7273,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
+      propertyPath: importStartIAId
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
       propertyPath: clientJoinedIAId
       value: 1
       objectReference: {fileID: 0}
@@ -7270,6 +7285,11 @@ PrefabInstance:
         type: 3}
       propertyPath: clientCaughtUpIAId
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: importGameStateIAId
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
@@ -7445,12 +7465,12 @@ PrefabInstance:
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: inputActionHandlerInstances.Array.size
-      value: 7
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: inputActionHandlerEventNames.Array.size
-      value: 7
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
@@ -7491,10 +7511,20 @@ PrefabInstance:
         type: 3}
       propertyPath: inputActionHandlerInstances.Array.data[5]
       value: 
-      objectReference: {fileID: 1385105837}
+      objectReference: {fileID: 171763846}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: inputActionHandlerInstances.Array.data[6]
+      value: 
+      objectReference: {fileID: 171763846}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: inputActionHandlerInstances.Array.data[7]
+      value: 
+      objectReference: {fileID: 1385105837}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: inputActionHandlerInstances.Array.data[8]
       value: 
       objectReference: {fileID: 1385105837}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
@@ -7525,11 +7555,21 @@ PrefabInstance:
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: inputActionHandlerEventNames.Array.data[5]
-      value: OnSetDisplayNameIA
+      value: OnImportStartIA
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: inputActionHandlerEventNames.Array.data[6]
+      value: OnImportGameStateIA
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: inputActionHandlerEventNames.Array.data[7]
+      value: OnSetDescriptionIA
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: inputActionHandlerEventNames.Array.data[8]
       value: OnSetDescriptionIA
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
