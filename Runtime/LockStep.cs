@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -69,6 +69,10 @@ namespace JanSharp
         // uint: tick to run in
         // uint[]: unique ids (same as for inputActionsByUniqueId)
         private DataDictionary uniqueIdsByTick = new DataDictionary();
+
+        ///cSpell:ignore iatrn
+        private object[][] inputActionsToRunNextFrame = new object[ArrList.MinCapacity][];
+        private int iatrnCount = 0;
 
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] inputActionHandlerInstances;
         [SerializeField] [HideInInspector] private string[] inputActionHandlerEventNames;
@@ -184,6 +188,9 @@ namespace JanSharp
                 lastUpdateSW.Stop();
                 return;
             }
+
+            if (iatrnCount != 0)
+                RunInputActionsForThisFrame();
 
             float timePassed = Time.time - tickStartTime;
             uint runUntilTick = System.Math.Min(waitTick, startTick + (uint)(timePassed * TickRate));
@@ -332,6 +339,17 @@ namespace JanSharp
             RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId >> PlayerIdKeyShift);
         }
 
+        private void RunInputActionsForThisFrame()
+        {
+            for (int i = 0; i < iatrnCount; i++)
+            {
+                object[] inputActionData = inputActionsToRunNextFrame[i];
+                RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], localPlayerId);
+                inputActionsToRunNextFrame[i] = null;
+            }
+            iatrnCount = 0;
+        }
+
         private void RunInputAction(uint inputActionId, byte[] inputActionData, uint sendingPlayerId)
         {
             #if LockStepDebug
@@ -359,7 +377,7 @@ namespace JanSharp
 
             if (isSinglePlayer) // Guaranteed to be master while in single player.
             {
-                TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData);
+                TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData, runInNextFrame: true);
                 return;
             }
 
@@ -1229,7 +1247,7 @@ namespace JanSharp
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
         }
 
-        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, uint uniqueId, byte[] inputActionData)
+        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, uint uniqueId, byte[] inputActionData, bool runInNextFrame = false)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  TryToInstantlyRunInputActionOnMaster");
@@ -1243,7 +1261,7 @@ namespace JanSharp
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
-                AssociateInputActionWithTick(firstMutableTick, uniqueId, allowOnMaster: true);
+                AssociateInputActionWithTickInternal(firstMutableTick, uniqueId);
                 return;
             }
 
@@ -1259,7 +1277,11 @@ namespace JanSharp
                 }
                 tickSync.AddInputActionToRun(currentTick, uniqueId);
             }
-            RunInputAction(inputActionId, inputActionData, isSinglePlayer ? localPlayerId : (uniqueId >> PlayerIdKeyShift));
+
+            if (runInNextFrame)
+                ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData });
+            else
+                RunInputAction(inputActionId, inputActionData, isSinglePlayer ? localPlayerId : (uniqueId >> PlayerIdKeyShift));
         }
 
         private void ClearUniqueIdsByTick()
@@ -1298,6 +1320,14 @@ namespace JanSharp
                     + "not be receiving data about running an input action at a tick...");
             }
 
+            AssociateInputActionWithTickInternal(tickToRunIn, uniqueId);
+        }
+
+        private void AssociateInputActionWithTickInternal(uint tickToRunIn, uint uniqueId)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  AssociateInputActionWithTickInternal - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x8}");
+            #endif
             // Mark the input action to run at the given tick.
             DataToken tickToRunInToken = new DataToken(tickToRunIn);
             if (uniqueIdsByTick.TryGetValue(tickToRunInToken, out DataToken uniqueIdsToken))
