@@ -238,11 +238,9 @@ namespace JanSharp
 
         private void UpdateClientStates()
         {
-            if (clientStates == null)
-            {
-                clientStates = (DataDictionary)lockStep.GetProgramVariable(ClientStatesFieldName);
-                clientNames = (DataDictionary)lockStep.GetProgramVariable(ClientNamesFieldName);
-            }
+            // Always fetch new because it can be reset in some special cases.
+            clientStates = (DataDictionary)lockStep.GetProgramVariable(ClientStatesFieldName);
+            clientNames = (DataDictionary)lockStep.GetProgramVariable(ClientNamesFieldName);
 
             if (clientStates != null)
                 clientStatesKeys = clientStates.GetKeys();
