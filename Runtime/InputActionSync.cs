@@ -10,7 +10,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class InputActionSync : CyanPlayerObjectPoolObject
     {
-        private const int MaxSyncedDataSize = 512;
+        private const int MaxSyncedDataSize = 4096;
         private const int InputActionIndexShift = 16;
         private const uint SplitDataFlag = 0x8000u;
         private const uint InputActionIdBits = 0x7fff;
