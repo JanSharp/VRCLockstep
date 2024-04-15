@@ -10,7 +10,7 @@ namespace JanSharp
     public class LockStepTickSync : UdonSharpBehaviour
     {
         private const int TickToRunInShift = 32;
-        private const uint UniqueIdBits = 0xffffffffu;
+        private const ulong UniqueIdBits = 0x00000000ffffffffuL;
 
         public LockStep lockStep;
         [UdonSynced] public uint syncedTick;
