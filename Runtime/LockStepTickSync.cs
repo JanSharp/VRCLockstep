@@ -60,7 +60,7 @@ namespace JanSharp
             if (!result.success)
             {
                 retrying = true;
-                SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), 2f);
+                SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), 1f);
                 return;
             }
 
