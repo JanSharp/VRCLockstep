@@ -77,7 +77,7 @@ Non game state flags:
   - On Every client, except sending (because the sending client will never run it)
     - Mark the given player id as "waiting for late joiner sync" in an internal "client states" game state
   - On master
-    - Wait 5 seconds (-- TODO: keep track of how many players have joined recently and increase the delay if there's a lot of players joining)
+    - Wait 3 seconds * the amount of player joined in the last 5 minutes, capped at 30 seconds
       - Reset timer if another `ClientJoinIA` is received
     - [Initiate late joiner sync](#initiate-late-joiner-sync)
 - On newly joined client

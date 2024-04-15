@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -99,6 +99,7 @@ namespace JanSharp
         // This flag ultimately indicates that there is no client with the Master state in the clientStates game state
         private bool currentlyNoMaster = true;
 
+        private int clientsJoinedInTheLastFiveMinutes = 0;
         private byte[][] unprocessedLJSerializedGameStates = new byte[ArrList.MinCapacity][];
         private int unprocessedLJSerializedGSCount = 0;
         private int nextLJGameStateToProcess = -1;
@@ -472,7 +473,7 @@ namespace JanSharp
                 // maybe this client will become the new master.
                 someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
                 SendCustomEventDelayedSeconds(nameof(SomeoneLeftWhileWeWereWaitingForLJSync), 2.5f);
-                // Note that the delay should be > then the delay for the call to OnLocalInputActionSyncPlayerAssignedDelayed.
+                // Note that the delay should be > than the delay for the call to OnLocalInputActionSyncPlayerAssignedDelayed.
                 return;
             }
 
@@ -896,9 +897,17 @@ namespace JanSharp
             if (isMaster)
             {
                 CheckSingePlayerModeChange();
+                clientsJoinedInTheLastFiveMinutes++;
+                SendCustomEventDelayedSeconds(nameof(PlayerJoinedFiveMinutesAgo), 300f);
                 flagForLateJoinerSyncSentCount++;
-                SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), 5f);
+                float lateJoinerSyncDelay = Mathf.Min(30f, 3f * (float)clientsJoinedInTheLastFiveMinutes);
+                SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), lateJoinerSyncDelay);
             }
+        }
+
+        public void PlayerJoinedFiveMinutesAgo()
+        {
+            clientsJoinedInTheLastFiveMinutes--;
         }
 
         public void FlagForLateJoinerSync()
