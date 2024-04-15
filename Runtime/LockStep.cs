@@ -1644,7 +1644,7 @@ namespace JanSharp
                 return;
             }
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
-            gameState.DeserializeGameState(isImport: true);
+            gameState.DeserializeGameState(isImport: true); // TODO: Use return error message.
             if (gameStatesWaitingForImport.Count == 0)
                 isImporting = false;
         }
