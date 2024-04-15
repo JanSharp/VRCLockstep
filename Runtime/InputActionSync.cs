@@ -35,6 +35,7 @@ namespace JanSharp
         [UdonSynced] private uint syncedInt = 0u; // Initial values for first sync, which gets ignored.
         [UdonSynced] private byte[] syncedData = new byte[0];
         private bool retrying = false;
+        private float retryBackoff = 1f;
 
         private uint[] syncedIntQueue = new uint[ArrQueue.MinCapacity];
         private int siqStartIndex = 0;
@@ -203,9 +204,11 @@ namespace JanSharp
             if (!result.success)
             {
                 retrying = true;
-                SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), 5f); // TODO: Impl exponential back off.
+                SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), retryBackoff);
+                retryBackoff = Mathf.Min(16f, retryBackoff * 2f);
                 return;
             }
+            retryBackoff = 1f;
 
             uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
             if (!isLateJoinerSyncInst && uniqueId != 0u)
