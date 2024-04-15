@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -187,24 +187,8 @@ namespace JanSharp
             float timePassed = Time.time - tickStartTime;
             uint runUntilTick = System.Math.Min(waitTick, startTick + (uint)(timePassed * TickRate));
             for (uint tick = currentTick + 1; tick <= runUntilTick; tick++)
-            {
-                if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick)
-                {
-                    // Waiting until the first mutable tick, because if the master was catching up and
-                    // associating new input actions with ticks while doing so, those would be enqueued at
-                    // the current first mutable tick at that time. Incoming player joined actions would also
-                    // be enqueued at the end just the same. This means if late joiner sync data was to be
-                    // sent before all these input actions that were added during catch up have run, then
-                    // there could be a case where a client receives late joiner sync data at a tick before
-                    // it knows which input actions were associated with ticks right after receiving LJ data.
-                    // It would think that there are no actions there, so it would desync. This edge case
-                    // requires multiple players to join while the master is still catching up.
-                    sendLateJoinerDataAtEndOfTick = false;
-                    SendLateJoinerData();
-                }
                 if (!TryRunNextTick())
                     break;
-            }
 
             if (isMaster)
             {
@@ -294,6 +278,7 @@ namespace JanSharp
                 uniqueIdsByTick.Remove(nextTickToken);
             }
 
+            OnEndOfTick();
             currentTick = nextTick;
             // Slowly increase the immutable tick. This prevents potential lag spikes when many input actions
             // were sent while catching up. This approach also prevents being caught catching up forever by
@@ -307,6 +292,24 @@ namespace JanSharp
             if (uniqueIds != null)
                 RunInputActionsForUniqueIds(uniqueIds);
             return true;
+        }
+
+        private void OnEndOfTick()
+        {
+            if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick)
+            {
+                // Waiting until the first mutable tick, because if the master was catching up and
+                // associating new input actions with ticks while doing so, those would be enqueued at
+                // the current first mutable tick at that time. Incoming player joined actions would also
+                // be enqueued at the end just the same. This means if late joiner sync data was to be
+                // sent before all these input actions that were added during catch up have run, then
+                // there could be a case where a client receives late joiner sync data at a tick before
+                // it knows which input actions were associated with ticks right after receiving LJ data.
+                // It would think that there are no actions there, so it would desync. This edge case
+                // requires multiple players to join while the master is still catching up.
+                sendLateJoinerDataAtEndOfTick = false;
+                SendLateJoinerData();
+            }
         }
 
         private void RunInputActionsForUniqueIds(uint[] uniqueIds)
