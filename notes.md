@@ -221,23 +221,31 @@ In order to make your life easier, when supporting import/export, it is recommen
 
 # Serialization Rules
 
-<!-- cSpell:ignore sbyte, ushort, ulong -->
+<!-- cSpell:ignore structs -->
 
-For any kind of serialization in the Lock Step system, DataLists taking a certain form are used:
+For any kind of serialization in the Lock Step system, binary "streams" are used.
 
-- The list must be flat (no other lists or dictionaries contained within)
-- Only the following types may be in the ist:
-  - double
-  - string (null strings are allowed) <!-- TODO: Unless Udon and VRC Json are truly stupid, need to test it. -->
-  - bool
+The LockStep API contains Read and Write functions for all primitive data structures as well as some structs such as vectors and quaternions, or DateTimes.
 
-If serialization of lists, dictionaries or similar is required, simply have a sequence of values starting with the a length integer and then all values proceeding said length value.
+In any serialization context it is expected to simply call Write functions on LockStep to write data to an internal stream inside of LockStep.
 
-If serialization of other data structures like vectors or quaternions is required, simply unroll them into a set of floats. In the case of quaternions make sure to use the x,y,z,w representation, 4 floats.
+In any deserialization context it is expected to call Read* functions on LockStep in the exact same order as the Write functions to read from an internal stream inside of LockStep.
+
+So basically to send an `int value` in an input action, `lockStep.Write(value)` in the send function, call `lockStep.SendInputAction(...)`, and `int value = lockStep.ReadInt()` in the input action event.
+
+The Write and Read functions and their data types must match up perfectly.
+
+The de/serialization contexts are input actions send/receive and game state de/serialization.
+
+Since both the write and read functions are interacting with internal streams inside of the LockStep instance, **only 1 stream can be written concurrently**. Same for reading, but that's effectively enforced by LockStep anyway.
+
+If serialization of lists, dictionaries or similar is required, simply Write the length of the given list/data structure and then Write each value or key value pair or similar n times afterwards. Then deserialization can be achieved by reading the length and having a for loop looping n times reading the contained values of the list/dictionary or otherwise.
+
+(For optimization I would recommend to `WriteSmall(uint)` for lengths of arrays/lists/dictionaries, but `WriteSmall(int)` would also work.)
+
+If serialization of other/custom data structures is required, simply unroll them into primitives.
 
 Every form of data is possible to be represented using a flat list of primitives... Well, unless Udon doesn't expose the internal values, which may apply to VRCUrl objects, not sure. If that's the case, well you're screwed, you simply won't be able to sync that data using this system. I know that sucks, but I'm not going to add _a ton_ of extra complexity just for those few special values.
-
-Note about internals: The system is currently using json for syncing, which has a stupid amount of overhead. Not that synced variables also have a stupid amount of overhead (4 bytes per variable or so for normal variables, 20 bytes for arrays... But it doesn't seem to be linear. Maybe (hopefully) there's compression involved). It would very much preferable if the system were to serialize the data into a byte array, however there's currently no way to get the internal bytes for floating point numbers. I do want to check if it's possible to abuse shaders to serialize the data into bytes though, but that's for much later, when the system is actually functional and useful, and if I really feel like it.
 
 # Data Lifecycle
 
@@ -252,9 +260,13 @@ There's 2 parts to this:
 
 Defining games states is done using an abstract class as a base class. Said abstract class will require you to implement a few methods and properties:
 
-- bool CanImportExport { get; } // When false, the isExport and isImport parameters will naturally never be true.
-- DataList SerializeState(bool isExport); // Game states must be able to successfully be serialized at every point in time. Must create a new instance of a DataList, not reuse an existing one.
-- string DeserializeState(DataList data, bool isImport); // A non null return value indicates failure and the string value is an error message.
+- string GameStateInternalName { get; } // Must be a completely unique name for this game state. Use whatever you like, but I'd recommend `author-name.package-name` (or just some descriptive name of your system as the `package-name`.). (If you're making a package it's effectively the internal package name without the `com.` prefix.)
+- string GameStateDisplayName { get; } // A user readable and identifiable name of this system/game state.
+- bool GameStateSupportsImportExport { get; } // When false, the isExport and isImport parameters will naturally never be true.
+- uint GameStateDataVersion { get; } // Current version used by SerializeState and DeserializeState. Can start at 0, but doesn't really matter.
+- uint GameStateLowestSupportedDataVersion { get; } // Lowest version of exported data DeserializeState is capable of importing.
+- void SerializeState(bool isExport); // Game states must be able to successfully be serialized at every point in time. Uses `LockStep.Write` calls to serialize data.
+- string DeserializeState(bool isImport); // A non null return value indicates failure and the string value is an error message. Uses `LockStep.Read` calls to serialize data.
 
 Registration of Lock Step events at initialization is done using attributes on methods which can be on any UdonSharpBehaviour. The system will find all instances of UdonSharpBehaviours with such methods in the scene at build time (entering play mode or before uploading), and save them as registered. This means instantiating a new instance of such scripts at runtime will not cause them to get registered automatically, in that case the new instance and the methods would have to get registered manually. More on registration of events during runtime later.
 
@@ -348,7 +360,6 @@ These 2 aren't really events, but they are called by the Lock Step system.
 - SerializeState
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
-TODO: note that iaData no longer exists and binary "streams" are used for read and writes in input actions as well as game state de/serialization
 TODO: the ability to take master from another master in lock step
 TODO: send singleton/server input action (from within a game state safe event) which is guaranteed to be sent and be run exactly once, even if the responsible player leaves while it is sent
 TODO: bundle input actions together and optimize for that instead of just sending single input actions at a time
