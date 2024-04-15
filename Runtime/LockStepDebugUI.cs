@@ -69,8 +69,10 @@ namespace JanSharp
         public float clientStatesElemHeight;
         private object[] clientStatesListObj;
         private DataDictionary clientStates;
+        private DataDictionary clientNames;
         private DataList clientStatesKeys;
         private const string ClientStatesFieldName = "clientStates";
+        private const string ClientNamesFieldName = "clientNames";
         private string[] clientStateNameLut = new string[]
         {
             "Master",
@@ -216,8 +218,10 @@ namespace JanSharp
                 numbersValues[i].text = $"<mspace=0.55em>{lockStep.GetProgramVariable(numbersFieldNames[i])}";
         }
 
-        private string FormatPlayerId(uint playerId)
+        private string FormatPlayerId(uint playerId, string displayName = null)
         {
+            if (displayName != null)
+                return $"{playerId} - {displayName}";
             VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)playerId);
             return player == null ? playerId.ToString() : $"{playerId} - {player.displayName}";
         }
@@ -235,7 +239,10 @@ namespace JanSharp
         private void UpdateClientStates()
         {
             if (clientStates == null)
+            {
                 clientStates = (DataDictionary)lockStep.GetProgramVariable(ClientStatesFieldName);
+                clientNames = (DataDictionary)lockStep.GetProgramVariable(ClientNamesFieldName);
+            }
 
             if (clientStates != null)
                 clientStatesKeys = clientStates.GetKeys();
@@ -256,7 +263,7 @@ namespace JanSharp
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text
                 = clientStateNameLut[clientStates[playerIdToken].Byte];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text
-                = FormatPlayerId(playerIdToken.UInt);
+                = FormatPlayerId(playerIdToken.UInt, clientNames[playerIdToken].String);
         }
 
         private void InitializeLeftClients()

@@ -32,6 +32,7 @@ namespace JanSharp
 
         private VRCPlayerApi localPlayer;
         private uint localPlayerId;
+        private string localPlayerDisplayName;
         private InputActionSync inputActionSyncForLocalPlayer;
         private uint startTick;
         private uint firstMutableTick; // Effectively 1 tick past the last immutable tick.
@@ -87,8 +88,11 @@ namespace JanSharp
         private DataDictionary gameStateIndexesByInternalName = new DataDictionary();
 
         ///<summary><para>**Internal Game State**</para>
-        ///<para>uint playerId => byte: ClientState</para></summary>
+        ///<para>uint playerId => byte ClientState</para></summary>
         private DataDictionary clientStates = null;
+        ///<summary><para>**Internal Game State**</para>
+        ///<para>uint playerId => string playerDisplayName</para></summary>
+        private DataDictionary clientNames = null;
         // non game state
         private uint[] leftClients = new uint[ArrList.MinCapacity];
         private int leftClientsCount = 0;
@@ -406,7 +410,7 @@ namespace JanSharp
             if (!player.isLocal)
                 return;
 
-            // TODO: maybe save static data about players in lock step and expose them as a game state safe api. Things like the display name.
+            localPlayerDisplayName = player.displayName;
 
             inputActionSyncForLocalPlayer = inputActionSync;
             SendCustomEventDelayedSeconds(nameof(OnLocalInputActionSyncPlayerAssignedDelayed), 2f);
@@ -553,7 +557,10 @@ namespace JanSharp
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = false;
             clientStates = new DataDictionary();
-            clientStates.Add(localPlayerId, (byte)ClientState.Master);
+            clientNames = new DataDictionary();
+            DataToken keyToken = localPlayerId;
+            clientStates.Add(keyToken, (byte)ClientState.Master);
+            clientNames.Add(keyToken, localPlayerDisplayName);
             lateJoinerInputActionSync.lockStepIsMaster = true;
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
@@ -622,6 +629,7 @@ namespace JanSharp
             }
             // Nope, no other play may become master, so we take it and completely reset.
             clientStates = null;
+            clientNames = null;
             CheckMasterChange();
         }
 
@@ -637,6 +645,7 @@ namespace JanSharp
             ForgetAboutLeftPlayers();
             ForgetAboutInputActionsWaitingToBeSent();
             clientStates = null;
+            clientNames = null;
             currentlyNoMaster = true;
             isWaitingToSendClientJoinedIA = true;
             isWaitingForLateJoinerSync = false;
@@ -845,10 +854,19 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendClientJoinedIA");
             #endif
+            if (inputActionSyncForLocalPlayer == null)
+            {
+                Debug.LogError("[LockStep] Impossible, the inputActionSyncForLocalPlayer is null inside of "
+                    + "SendClientJoinedIA. All code paths leading to SendClientJoinedIA are supposed to "
+                    + "prevent this from happening.");
+                return;
+            }
             WriteSmall(localPlayerId);
+            Write(localPlayerDisplayName);
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
+            clientNames = null;
             SendInputAction(clientJoinedIAId);
         }
 
@@ -860,11 +878,14 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  OnClientJoinedIA");
             #endif
             uint playerId = ReadSmallUInt();
+            string playerName = ReadString();
             // Using set value, because the given player may already have a state,
             // because it is valid for the client joined input action to be sent
             // multiple times. And whenever it is sent, it means the client is waiting
             // for late joiner sync.
-            clientStates.SetValue(playerId, (byte)ClientState.WaitingForLateJoinerSync);
+            DataToken keyToken = playerId;
+            clientStates.SetValue(keyToken, (byte)ClientState.WaitingForLateJoinerSync);
+            clientNames.SetValue(keyToken, playerName);
 
             if (isMaster)
             {
@@ -920,6 +941,7 @@ namespace JanSharp
                 DataToken keyToken = keys[i];
                 WriteSmall(keyToken.UInt);
                 Write(clientStates[keyToken].Byte);
+                Write(clientNames[keyToken].String);
             }
             lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, writeStream, writeStreamSize);
             ResetWriteStream();
@@ -952,12 +974,16 @@ namespace JanSharp
             ForgetAboutUnprocessedLJSerializedGameSates();
 
             clientStates = new DataDictionary();
+            clientNames = new DataDictionary();
             int stopBeforeIndex = 1 + 2 * (int)ReadSmallUInt();
             for (int i = 1; i < stopBeforeIndex; i += 2)
             {
                 uint playerId = ReadSmallUInt();
                 byte clientState = ReadByte();
-                clientStates.Add(playerId, clientState);
+                string clientName = ReadString();
+                DataToken keyToken = playerId;
+                clientStates.Add(keyToken, clientState);
+                clientNames.Add(keyToken, clientName);
                 if ((ClientState)clientState == ClientState.Master)
                     currentlyNoMaster = false;
             }
@@ -1128,7 +1154,9 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  OnClientLeftIA");
             #endif
             uint playerId = ReadSmallUInt();
-            clientStates.Remove(playerId);
+            DataToken keyToken = playerId;
+            clientStates.Remove(keyToken);
+            clientNames.Remove(keyToken);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
 
@@ -1346,6 +1374,24 @@ namespace JanSharp
             #endif
             foreach (UdonSharpBehaviour listener in onTickListeners)
                 listener.SendCustomEvent(nameof(LockStepEventType.OnTick));
+        }
+
+        ///<summary>Get the display name for a given player who is part of the game state. This is safe to
+        ///call whenever and so long as the given playerId is part of the game state, even if the actual player
+        ///instance is no longer valid (the player no longer being in the world). It is also guaranteed to
+        ///return the exact same string on all clients even if the VRChat API would have returned different
+        ///strings on different clients (aka if it was broken). No idea if that is possible - I hope it isn't -
+        ///but just in case it is possible, this function is still guaranteed to return the exact same string.
+        ///Similarly if the player display name changes throughout them being in the world, through whatever
+        ///means (if it's even possible), this will continue to return the old name so long as the player is
+        ///in the world.</summary>
+        public string GetDisplayName(uint playerId)
+        {
+            if (clientNames.TryGetValue(playerId, out DataToken nameToken))
+                return nameToken.String;
+            Debug.LogError("[LockStep] Attempt to call GetDisplayName with a playerId which is not currently "
+                + "part of the game state. This is indication of misuse of the API, make sure to fix this.");
+            return null;
         }
 
         private byte[] writeStream = new byte[64];
