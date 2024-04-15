@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -72,8 +72,13 @@ namespace JanSharp
         private DataDictionary uniqueIdsByTick = new DataDictionary();
 
         ///cSpell:ignore iatrn
+        ///<summary>(objet[] { uint inputActionId, byte[] inputActionData })[]</summary>
         private object[][] inputActionsToRunNextFrame = new object[ArrList.MinCapacity][];
         private int iatrnCount = 0;
+
+        private uint nextSingletonId = 0;
+        ///<summary>uint singletonId => objet[] { uint responsiblePlayerId, byte[] singletonInputActionData }</summary>
+        private DataDictionary singletonInputActions = new DataDictionary();
 
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] inputActionHandlerInstances;
         [SerializeField] [HideInInspector] private string[] inputActionHandlerEventNames;
@@ -364,9 +369,17 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RunInputAction");
             #endif
-            UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
             ResetReadStream();
             readStream = inputActionData;
+            RunInputActionWithCurrentReadStream(inputActionId, sendingPlayerId);
+        }
+
+        private void RunInputActionWithCurrentReadStream(uint inputActionId, uint sendingPlayerId)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  RunInputActionWithCurrentReadStream");
+            #endif
+            UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
             SendingPlayerId = sendingPlayerId;
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
         }
@@ -384,6 +397,14 @@ namespace JanSharp
                 inputActionData[i] = writeStream[i];
             ResetWriteStream();
 
+            SendInputActionInternal(inputActionId, inputActionData);
+        }
+
+        private void SendInputActionInternal(uint inputActionId, byte[] inputActionData)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  SendInputActionInternal - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
+            #endif
             if (isSinglePlayer) // Guaranteed to be master while in single player.
             {
                 TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData, runInNextFrame: true);
@@ -392,7 +413,7 @@ namespace JanSharp
 
             uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStep  SendInputAction (inner) - uniqueId: 0x{uniqueId:x8}");
+            Debug.Log($"[LockStepDebug] LockStep  SendInputActionInternal (inner) - uniqueId: 0x{uniqueId:x8}");
             #endif
 
             if (stillAllowLocalClientJoinedIA)
@@ -410,6 +431,75 @@ namespace JanSharp
             }
 
             inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
+        }
+
+        ///<summary>Unlike SendInputAction, SendSingletonInputAction must only be called from within a game
+        ///state safe event.</summary>
+        public void SendSingletonInputAction(uint inputActionId)
+        {
+            SendSingletonInputAction(inputActionId, masterPlayerId);
+        }
+
+        ///<summary>Unlike SendInputAction, SendSingletonInputAction must only be called from within a game
+        ///state safe event.</summary>
+        public void SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  SendSingletonInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
+            #endif
+
+            uint singletonId = nextSingletonId++;
+
+            // Write 2 more values to the stream, then shuffle the data around when copying to the
+            // singletonInputActionData such that those 2 new values come first, not last.
+            int actualInputActionDataSize = writeStreamSize;
+            WriteSmall(singletonId);
+            WriteSmall(inputActionId);
+            byte[] singletonInputActionData = new byte[writeStreamSize];
+            int idsSize = writeStreamSize - actualInputActionDataSize;
+            for (int i = 0; i < idsSize; i++)
+                singletonInputActionData[i] = writeStream[actualInputActionDataSize + i];
+            for (int i = 0; i < actualInputActionDataSize; i++)
+                singletonInputActionData[idsSize + i] = writeStream[i];
+            ResetWriteStream();
+
+            singletonInputActions.Add(singletonId, new DataToken(new object[] { responsiblePlayerId, singletonInputActionData }));
+
+            if (localPlayerId != responsiblePlayerId)
+                return;
+
+            SendInputActionInternal(singletonInputActionIAId, singletonInputActionData);
+        }
+
+        [SerializeField] [HideInInspector] private uint singletonInputActionIAId;
+        [LockStepInputAction(nameof(singletonInputActionIAId))]
+        public void OnSingletonInputActionIA()
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  OnSingletonInputActionIA");
+            #endif
+            uint singletonId = ReadSmallUInt();
+            uint inputActionId = ReadSmallUInt();
+            singletonInputActions.Remove(singletonId);
+            RunInputActionWithCurrentReadStream(inputActionId, SendingPlayerId);
+        }
+
+        private void CheckIfSingletonInputActionGotDropped(uint leftPlayerId)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  CheckIfSingletonInputActionGotDropped");
+            #endif
+            DataList values = singletonInputActions.GetValues();
+            for (int i = 0; i < values.Count; i++)
+            {
+                object[] singletonInputAction = (object[])values[i].Reference;
+                uint responsiblePlayerId = (uint)singletonInputAction[0];
+                if (leftPlayerId != responsiblePlayerId)
+                    continue;
+                singletonInputAction[0] = masterPlayerId; // Update responsible player.
+                if (isMaster)
+                    SendInputActionInternal(singletonInputActionIAId, (byte[])singletonInputAction[1]);
+            }
         }
 
         public void InputActionSent(uint uniqueId)
@@ -987,6 +1077,21 @@ namespace JanSharp
                 Write(clientStates[keyToken].Byte);
                 Write(clientNames[keyToken].String);
             }
+
+            WriteSmall(nextSingletonId);
+            WriteSmall((uint)singletonInputActions.Count);
+            keys = singletonInputActions.GetKeys();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                DataToken keyToken = keys[i];
+                WriteSmall(keyToken.UInt);
+                object[] inputActionData = (object[])singletonInputActions[keyToken].Reference;
+                WriteSmall((uint)inputActionData[0]);
+                byte[] singletonInputActionData = (byte[])inputActionData[1];
+                WriteSmall((uint)singletonInputActionData.Length);
+                Write(singletonInputActionData);
+            }
+
             lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, writeStream, writeStreamSize);
             ResetWriteStream();
 
@@ -1019,8 +1124,8 @@ namespace JanSharp
 
             clientStates = new DataDictionary();
             clientNames = new DataDictionary();
-            int stopBeforeIndex = 1 + 2 * (int)ReadSmallUInt();
-            for (int i = 1; i < stopBeforeIndex; i += 2)
+            int count = (int)ReadSmallUInt();
+            for (int i = 0; i < count; i++)
             {
                 uint playerId = ReadSmallUInt();
                 byte clientState = ReadByte();
@@ -1033,6 +1138,17 @@ namespace JanSharp
                     masterPlayerId = playerId;
                     currentlyNoMaster = false;
                 }
+            }
+
+            singletonInputActions.Clear();
+            nextSingletonId = ReadSmallUInt();
+            count = (int)ReadSmallUInt();
+            for (int i = 0; i < count; i++)
+            {
+                uint singletonId = ReadSmallUInt();
+                uint inputActionId = ReadSmallUInt();
+                byte[] singletonInputActionData = ReadBytes((int)ReadSmallUInt());
+                singletonInputActions.Add(singletonId, new DataToken(new object[] { inputActionId, singletonInputActionData }));
             }
         }
 
@@ -1208,6 +1324,7 @@ namespace JanSharp
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
 
             CheckIfLateJoinerSyncShouldStop();
+            CheckIfSingletonInputActionGotDropped(playerId);
             RaiseOnClientLeft(playerId);
         }
 

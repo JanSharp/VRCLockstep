@@ -75,6 +75,20 @@ namespace JanSharp
         public void OnTick()
         {
             // Debug.Log("<dlt> TestGameState  OnTick");
+
+            // Reactivate the code below for SendSingletonInputAction testing.
+            // if (((int)lockStep.currentTick % 50) == 0)
+            // {
+            //     lockStep.WriteSmall(lockStep.currentTick);
+            //     lockStep.SendSingletonInputAction(singletonTestIAId);
+            // }
+        }
+
+        [SerializeField] [HideInInspector] private uint singletonTestIAId;
+        [LockStepInputAction(nameof(singletonTestIAId))]
+        public void OnSingletonTestIA()
+        {
+            Debug.Log($"<dlt> TestGameState  OnSingletonTestIA - sendTick: {lockStep.ReadSmallUInt()}, SendingPlayerId: {lockStep.SendingPlayerId}");
         }
 
         public void SetDescription(uint playerId, string description)
