@@ -17,7 +17,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockStep : UdonSharpBehaviour
     {
-        private const float TickRate = 10f;
+        public const float TickRate = 10f;
 
         // LJ = late joiner, IA = input action
         private const uint LJCurrentTickIAId = 0;

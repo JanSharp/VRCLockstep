@@ -17,6 +17,8 @@ namespace JanSharp
         [UdonSynced] public uint syncedTick;
         [UdonSynced] private ulong[] syncedInputActionsToRun = new ulong[0];
         private bool retrying = false;
+        private float tickLoopDelay = 1f / LockStep.TickRate;
+        private uint lastSyncedTick = 0u; // Default value really doesn't matter.
 
         ///cSpell:ignore iatr
 
@@ -63,9 +65,18 @@ namespace JanSharp
             }
 
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
-            if (!isSinglePlayer)
-                SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1); // TODO: reduce frequency.
-            // TODO: Count how many times this runs per second.
+            if (isSinglePlayer)
+                return;
+
+            if (syncedTick == lastSyncedTick) // Synced the same tick twice, slow down the frequency.
+                tickLoopDelay += 0.001f;
+            else if (syncedTick > lastSyncedTick + 1u) // Synced 2 or more ticks at once, make it faster.
+                tickLoopDelay = Mathf.Max(0.01f, tickLoopDelay - 0.001f);
+            SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), tickLoopDelay);
+            lastSyncedTick = syncedTick;
+            #if LockStepDebug
+            syncCount++;
+            #endif
         }
 
         public void RequestSerializationDelayed() => RequestSerialization();
@@ -91,6 +102,23 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStepTickSync  OnOwnershipTransferred");
             #endif
             lockStep.SendCustomEventDelayedFrames(nameof(LockStep.CheckMasterChange), 1);
+        }
+
+
+
+        private void Start()
+        {
+            #if LockStepDebug
+            SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
+            #endif
+        }
+
+        private int syncCount = 0;
+        public void SyncCountTestLoop()
+        {
+            Debug.Log($"[LockStepDebug] tick sync count in the last 10 seconds: {syncCount}, {((float)syncCount) / 10f}/s, current tickLoopDelay: {tickLoopDelay}");
+            syncCount = 0;
+            SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
         }
     }
 }
