@@ -13,6 +13,7 @@ namespace JanSharp
         private const ulong UniqueIdBits = 0x00000000ffffffffuL;
 
         public LockStep lockStep;
+        public bool isSinglePlayer = false; // Default value must match the one in LockStep.
         [UdonSynced] public uint syncedTick;
         [UdonSynced] private ulong[] syncedInputActionsToRun = new ulong[0];
         private bool retrying = false;
@@ -62,7 +63,8 @@ namespace JanSharp
             }
 
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
-            SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1); // TODO: reduce frequency.
+            if (!isSinglePlayer)
+                SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1); // TODO: reduce frequency.
             // TODO: Count how many times this runs per second.
         }
 

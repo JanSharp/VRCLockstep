@@ -802,6 +802,7 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  EnterSingePlayerMode");
             #endif
             isSinglePlayer = true;
+            tickSync.isSinglePlayer = true;
             lateJoinerInputActionSync.DequeueEverything(doCallback: false);
             InstantlyRunInputActionsWaitingToBeSent();
             tickSync.ClearInputActionsToRun();
@@ -813,6 +814,7 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  ExitSinglePlayerMode");
             #endif
             isSinglePlayer = false;
+            tickSync.isSinglePlayer = false;
             // (0u, 0u) Indicate that any input actions associated with ticks
             // before this client became master should be dropped. This isn't
             // useful for the true initial master, but if a client reset the instance
@@ -825,6 +827,7 @@ namespace JanSharp
             // action, in order to avoid race conditions, because those would
             // absolutely happen when using an input action to clear tick associations.
             tickSync.AddInputActionToRun(0u, 0u);
+            tickSync.RequestSerialization(); // Restart the tick sync loop.
         }
 
         private void SendMasterChangedIA()
