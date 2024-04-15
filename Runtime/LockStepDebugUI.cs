@@ -110,7 +110,6 @@ namespace JanSharp
         private const string UniqueIdsByTickFieldName = "uniqueIdsByTick";
 
         // NOTE: Probably also list of registered input actions, but that's for later
-        // NOTE: Probably also some visualization of game states, but that's for later
 
         void Start()
         {
