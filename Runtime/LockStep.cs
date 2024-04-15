@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -313,6 +313,7 @@ namespace JanSharp
                 uniqueIdsByTick.Remove(nextTickToken);
             }
 
+            RaiseOnTick(); // At the end of a tick.
             currentTick = nextTick;
             // Slowly increase the immutable tick. This prevents potential lag spikes when many input actions
             // were sent while catching up. This approach also prevents being caught catching up forever by
@@ -1425,11 +1426,11 @@ namespace JanSharp
             }
         }
 
-        private void RaiseOnTick() // TODO: actually raise this somewhere
+        private void RaiseOnTick()
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStep  RaiseOnTick");
-            #endif
+            // #if LockStepDebug
+            // Debug.Log($"[LockStepDebug] LockStep  RaiseOnTick");
+            // #endif
             foreach (UdonSharpBehaviour listener in onTickListeners)
                 listener.SendCustomEvent(nameof(LockStepEventType.OnTick));
         }
