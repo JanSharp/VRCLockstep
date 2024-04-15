@@ -202,6 +202,11 @@ namespace JanSharp
             uint runUntilTick = System.Math.Min(waitTick, startTick + (uint)(timePassed * TickRate));
             for (uint tick = currentTick + 1; tick <= runUntilTick; tick++)
             {
+                // This is the correct place for this logic because:
+                // This logic must not run while catching up, so moving it into TryRunNextTick would be wrong.
+                // But what about TryRunNextTick returning false? It won't be, because:
+                // sendLateJoinerDataAtEndOfTick is only going to be true on the master.
+                // For the master client, TryRunNextTick is guaranteed to return true - actually run the tick.
                 if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick)
                 {
                     // Waiting until the first mutable tick, because if the master was catching up and
