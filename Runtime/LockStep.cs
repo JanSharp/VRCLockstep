@@ -823,7 +823,7 @@ namespace JanSharp
                 return;
             }
 
-            isMaster = true; // currentlyNoMaster will be set to false in SendMasterChangedIA later.
+            isMaster = true; // currentlyNoMaster will be set to false in OnMasterChangedIA later.
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = false;
