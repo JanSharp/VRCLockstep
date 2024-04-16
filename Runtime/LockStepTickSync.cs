@@ -9,28 +9,32 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class LockStepTickSync : UdonSharpBehaviour
     {
-        private const int TickToRunInShift = 32;
-        private const ulong UniqueIdBits = 0x00000000ffffffffuL;
-
         public LockStep lockStep;
         public bool isSinglePlayer = false; // Default value must match the one in LockStep.
-        [UdonSynced] public uint syncedTick;
-        [UdonSynced] private ulong[] syncedInputActionsToRun = new ulong[0];
-        private bool retrying = false;
+        public uint currentTick;
+        private uint tickInSyncedData;
+        [UdonSynced] private byte[] syncedData = new byte[0];
+        private int readPosition = 0;
         private float tickLoopDelay = 1f / LockStep.TickRate;
         private uint lastSyncedTick = 0u; // Default value really doesn't matter.
 
-        ///cSpell:ignore iatr
+        private byte[] buffer = new byte[ArrList.MinCapacity];
+        private int bufferSize = 0;
+        private int bufferSizeToClear = 0;
 
-        private ulong[] inputActionsToRun = new ulong[ArrList.MinCapacity];
-        private int iatrCount = 0;
+        private byte[] tickBuffer = new byte[5];
+        private int tickBufferSize = 0;
 
         public void AddInputActionToRun(uint tickToRunIn, uint uniqueId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStepTickSync  AddInputActionToRun");
             #endif
-            ArrList.Add(ref inputActionsToRun, ref iatrCount, (((ulong)tickToRunIn) << TickToRunInShift) | (ulong)uniqueId);
+            uint playerId = uniqueId >> LockStep.PlayerIdKeyShift;
+            uint inputActionIndex = uniqueId & 0x0000ffffu;
+            DataStream.WriteSmall(ref buffer, ref bufferSize, tickToRunIn);
+            DataStream.WriteSmall(ref buffer, ref bufferSize, playerId);
+            DataStream.WriteSmall(ref buffer, ref bufferSize, inputActionIndex);
         }
 
         public void ClearInputActionsToRun()
@@ -38,23 +42,23 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStepTickSync  ClearInputActionsToRun");
             #endif
-            ArrList.Clear(ref inputActionsToRun, ref iatrCount);
-            syncedInputActionsToRun = new ulong[0];
-            retrying = false;
+            bufferSize = 0;
+            bufferSizeToClear = 0;
         }
 
         public override void OnPreSerialization()
         {
-            if (retrying)
-            {
-                retrying = false;
-                return;
-            }
-
-            if (syncedInputActionsToRun.Length != iatrCount)
-                syncedInputActionsToRun = new ulong[iatrCount];
-            for (int i = 0; i < iatrCount; i++)
-                syncedInputActionsToRun[i] = inputActionsToRun[i];
+            tickBufferSize = 0;
+            DataStream.WriteSmall(ref tickBuffer, ref tickBufferSize, currentTick);
+            int totalSize = tickBufferSize + bufferSize;
+            if (syncedData.Length != totalSize)
+                syncedData = new byte[totalSize];
+            for (int i = 0; i < tickBufferSize; i++)
+                syncedData[i] = tickBuffer[i];
+            for (int i = 0; i < bufferSize; i++)
+                syncedData[tickBufferSize + i] = buffer[i];
+            tickInSyncedData = currentTick;
+            bufferSizeToClear = bufferSize;
         }
 
         public override void OnPostSerialization(SerializationResult result)
@@ -64,19 +68,20 @@ namespace JanSharp
 
             if (!result.success)
             {
-                retrying = true;
                 SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), 1f);
                 return;
             }
 
-            ArrList.Clear(ref inputActionsToRun, ref iatrCount);
+            bufferSize -= bufferSizeToClear;
+            for (int i = 0; i < bufferSize; i++)
+                buffer[i] = buffer[bufferSizeToClear + i];
 
-            if (syncedTick == lastSyncedTick) // Synced the same tick twice, slow down the frequency.
+            if (tickInSyncedData == lastSyncedTick) // Synced the same tick twice, slow down the frequency.
                 tickLoopDelay += 0.001f;
-            else if (syncedTick > lastSyncedTick + 1u) // Synced 2 or more ticks at once, make it faster.
+            else if (tickInSyncedData > lastSyncedTick + 1u) // Synced 2 or more ticks at once, make it faster.
                 tickLoopDelay = Mathf.Max(0.01f, tickLoopDelay - 0.001f);
             SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), tickLoopDelay);
-            lastSyncedTick = syncedTick;
+            lastSyncedTick = tickInSyncedData;
             #if LockStepDebug
             syncCount++;
             #endif
@@ -86,15 +91,17 @@ namespace JanSharp
 
         public override void OnDeserialization()
         {
-            lockStep.waitTick = syncedTick;
-            foreach (ulong inputActionToRun in syncedInputActionsToRun)
+            readPosition = 0;
+            lockStep.waitTick = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
+            int length = syncedData.Length;
+            while (readPosition < length)
             {
+                uint tickToRunIn = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
+                uint playerId = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
+                uint inputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
                 lockStep.AssociateInputActionWithTick(
-                    (uint)(inputActionToRun >> TickToRunInShift),
-                    // Since casting in Udon isn't actually casting, it's a call to Convert.ToX
-                    // I'm quite certain we first have to truncate the top bits manually, otherwise
-                    // it would convert it to some wrong, large number. I believe.
-                    (uint)(inputActionToRun & UniqueIdBits)
+                    tickToRunIn,
+                    (playerId << LockStep.PlayerIdKeyShift) | inputActionIndex
                 );
             }
         }

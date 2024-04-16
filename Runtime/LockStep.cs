@@ -234,7 +234,7 @@ namespace JanSharp
             {
                 // Synced tick is always 1 behind, that way new input actions can be run in
                 // the current tick on the master without having to queue them for the next tick.
-                tickSync.syncedTick = currentTick - 1u;
+                tickSync.currentTick = currentTick - 1u;
             }
 
             lastUpdateSW.Stop();
