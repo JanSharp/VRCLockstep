@@ -1821,6 +1821,8 @@ namespace JanSharp
             foreach(object[] importedGS in importedGameStates)
                 if (LockStepImportedGS.GetErrorMsg(importedGS) == null)
                     count++;
+            if (count == 0)
+                return;
             object[][] validImportedGSs = new object[count][];
             count = 0;
             foreach(object[] importedGS in importedGameStates)
@@ -1864,14 +1866,12 @@ namespace JanSharp
         public string ImportingFromName { private set; get; }
         ///<summary>Game State safe. Only ever non null while inside OnImportedGameState.</summary>
         public LockStepGameState ImportedGameState { private set; get; }
-        ///<summary><para>Game State safe. Null when IsImporting is false.</para>
+        ///<summary><para>Game State safe. Empty when IsImporting is false, never null.</para>
         ///<para>Can still have entries when RaiseOnImportFinished runs which indicates that the importing
         ///player left nearly instantly after starting the import, causing not all game states to actually
         ///get imported.</para></summary>
         public LockStepGameState[] GetGameStatesWaitingForImport()
         {
-            if (!isImporting)
-                return null;
             int count = gameStatesWaitingForImport.Count;
             LockStepGameState[] result = new LockStepGameState[count];
             DataList values = gameStatesWaitingForImport.GetValues();
@@ -1879,12 +1879,12 @@ namespace JanSharp
                 result[i] = (LockStepGameState)values[i].Reference;
             return result;
         }
-        ///<summary><para>Game State safe. -1 when IsImporting is false.</para>
+        ///<summary><para>Game State safe. 0 when IsImporting is false.</para>
         ///<para>Can be non 0 when RaiseOnImportFinished runs, see GetGameStatesWaitingForImport description.
         ///</para></summary>
         public int GetGameStatesWaitingForImportCount()
         {
-            return isImporting ? gameStatesWaitingForImport.Count : -1;
+            return gameStatesWaitingForImport.Count;
         }
         ///<summary>int gameStateIndex => LockStepGameState gameState</summary>
         private DataDictionary gameStatesWaitingForImport = new DataDictionary();
@@ -1894,6 +1894,11 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendImportStartIA");
             #endif
+            if (importedGSs.Length == 0)
+            {
+                Debug.LogError("[LockStep] Attempt to SendImportStartIA with 0 game states to import, ignoring.");
+                return;
+            }
             Write(exportDate);
             Write(exportName);
             WriteSmall((uint)importedGSs.Length);
