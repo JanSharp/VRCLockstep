@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -1815,7 +1815,10 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStep  StartImport");
             #endif
             if (isImporting)
+            {
+                Debug.LogError("[LockStep] Attempt to call StartImport while IsImporting is true, ignoring.");
                 return;
+            }
 
             int count = 0;
             foreach(object[] importedGS in importedGameStates)
