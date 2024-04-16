@@ -1831,6 +1831,7 @@ namespace JanSharp
             SendImportStartIA(exportDate, exportName, validImportedGSs);
         }
 
+        ///<summary>LockStepImportedGS[]</summary>
         private object[][] importedGSsToSend;
 
         // None of this is part of an internal game state, which is fine because late joiner sync will not be
@@ -1889,6 +1890,7 @@ namespace JanSharp
         ///<summary>int gameStateIndex => LockStepGameState gameState</summary>
         private DataDictionary gameStatesWaitingForImport = new DataDictionary();
 
+        ///<summary>LockStepImportedGS[] importedGSs</summary>
         private void SendImportStartIA(System.DateTime exportDate, string exportName, object[][] importedGSs)
         {
             #if LockStepDebug
@@ -1939,6 +1941,7 @@ namespace JanSharp
             importedGSsToSend = null;
         }
 
+        ///<summary>LockStepImportedGS importedGS</summary>
         private void SendImportGameStateIA(object[] importedGS)
         {
             #if LockStepDebug
