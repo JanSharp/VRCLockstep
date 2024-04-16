@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -697,6 +697,7 @@ namespace JanSharp
             currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
             waitTick = uint.MaxValue;
             EnterSingePlayerMode();
+            initializedEnoughForImportExport = true;
             RaiseOnInit();
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
@@ -1272,6 +1273,7 @@ namespace JanSharp
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
+            initializedEnoughForImportExport = true;
             RaiseOnClientBeginCatchUp(localPlayerId);
             isTickPaused = false;
             isCatchingUp = true;
@@ -1674,6 +1676,8 @@ namespace JanSharp
 
         private uint[] crc32LookupCache;
 
+        ///<summary>Usable from OnInit or OnClientBeginCatchUp (for the local player of course) onwards.
+        ///</summary>
         public string Export(LockStepGameState[] gameStates, string exportName)
         {
             #if LockStepDebug
@@ -1681,6 +1685,11 @@ namespace JanSharp
             System.Diagnostics.Stopwatch exportStopWatch = new System.Diagnostics.Stopwatch();
             exportStopWatch.Start();
             #endif
+            if (!initializedEnoughForImportExport)
+            {
+                Debug.LogError("[LockStep] Attempt to call Export before OnInit or OnClientBeginCatchUp, ignoring.");
+                return null;
+            }
             ResetWriteStream();
 
             Write(System.DateTime.UtcNow);
@@ -1808,12 +1817,19 @@ namespace JanSharp
             return importedGameStates;
         }
 
-        ///<summary>LockStepImportedGS[] importedGameStates</summary>
+        ///<summary><para>LockStepImportedGS[] importedGameStates</para>
+        ///<para>Usable from OnInit or OnClientBeginCatchUp (for the local player of course) onwards.</para>
+        ///</summary>
         public void StartImport(System.DateTime exportDate, string exportName, object[][] importedGameStates)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  StartImport");
             #endif
+            if (!initializedEnoughForImportExport)
+            {
+                Debug.LogError("[LockStep] Attempt to call StartImport before OnInit or OnClientBeginCatchUp, ignoring.");
+                return;
+            }
             if (isImporting)
             {
                 Debug.LogError("[LockStep] Attempt to call StartImport while IsImporting is true, ignoring.");
@@ -1837,6 +1853,7 @@ namespace JanSharp
         ///<summary>LockStepImportedGS[]</summary>
         private object[][] importedGSsToSend;
 
+        private bool initializedEnoughForImportExport = false;
         // None of this is part of an internal game state, which is fine because late joiner sync will not be
         // performed while isImporting is true.
         private bool isImporting = false;
