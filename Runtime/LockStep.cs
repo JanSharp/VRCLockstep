@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -214,7 +214,7 @@ namespace JanSharp
                 // But what about TryRunNextTick returning false? It won't be, because:
                 // sendLateJoinerDataAtEndOfTick is only going to be true on the master.
                 // For the master client, TryRunNextTick is guaranteed to return true - actually run the tick.
-                if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick)
+                if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick && !isImporting)
                 {
                     // Waiting until the first mutable tick, because if the master was catching up and
                     // associating new input actions with ticks while doing so, those would be enqueued at
@@ -1067,6 +1067,13 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendLateJoinerData");
             #endif
+            if (isImporting)
+            {
+                Debug.LogError("[LockStep] Attempt to SendLateJoinerData while and import is still going on "
+                    + "which if it was supported would be complete waste of networking bandwidth. So it isn't "
+                    + "supported, and this call to SendLateJoinerData is ignored.");
+                return;
+            }
             if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20))
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
@@ -1793,9 +1800,10 @@ namespace JanSharp
 
         private object[][] importedGSsToSend;
 
-        // TODO: or instead of this being part of the game state, do not do late joiner syncing while importing. That seems like the much more reasonable approach
-        private bool isImporting = false; // TODO: must be part of a game state
-        private uint importingPlayerId; // TODO: must be part of a game state
+        // None of this is part of an internal game state, which is fine because late joiner sync will not be
+        // performed while isImporting is true.
+        private bool isImporting = false;
+        private uint importingPlayerId;
         ///<summary>int gameStateIndex => LockStepGameState gameState</summary>
         private DataDictionary gameStatesWaitingForImport = new DataDictionary();
 
