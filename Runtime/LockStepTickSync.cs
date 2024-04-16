@@ -106,11 +106,10 @@ namespace JanSharp
 
 
 
+        #if LockStepDebug
         private void Start()
         {
-            #if LockStepDebug
             SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
-            #endif
         }
 
         private int syncCount = 0;
@@ -120,5 +119,6 @@ namespace JanSharp
             syncCount = 0;
             SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
         }
+        #endif
     }
 }
