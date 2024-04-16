@@ -39,6 +39,8 @@ namespace JanSharp
             Debug.Log($"[LockStepDebug] LockStepTickSync  ClearInputActionsToRun");
             #endif
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
+            syncedInputActionsToRun = new ulong[0];
+            retrying = false;
         }
 
         public override void OnPreSerialization()
@@ -57,6 +59,9 @@ namespace JanSharp
 
         public override void OnPostSerialization(SerializationResult result)
         {
+            if (isSinglePlayer)
+                return;
+
             if (!result.success)
             {
                 retrying = true;
@@ -65,8 +70,6 @@ namespace JanSharp
             }
 
             ArrList.Clear(ref inputActionsToRun, ref iatrCount);
-            if (isSinglePlayer)
-                return;
 
             if (syncedTick == lastSyncedTick) // Synced the same tick twice, slow down the frequency.
                 tickLoopDelay += 0.001f;
