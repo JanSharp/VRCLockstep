@@ -21,7 +21,7 @@ namespace JanSharp
 
         // LJ = late joiner, IA = input action
         private const uint LJCurrentTickIAId = 0;
-        private const uint LJClientStatesIAId = 1;
+        private const uint LJInternalGameStatesIAId = 1;
         // custom game states will have ids starting at this, ascending
         private const uint LJFirstCustomGameStateIAId = 2;
 
@@ -76,8 +76,10 @@ namespace JanSharp
         private object[][] inputActionsToRunNextFrame = new object[ArrList.MinCapacity][];
         private int iatrnCount = 0;
 
+        ///<summary>**Internal Game State**</summary>
         private uint nextSingletonId = 0;
-        ///<summary>uint singletonId => objet[] { uint responsiblePlayerId, byte[] singletonInputActionData }</summary>
+        ///<summary><para>**Internal Game State**</para>
+        ///<para>uint singletonId => objet[] { uint responsiblePlayerId, byte[] singletonInputActionData }</para></summary>
         private DataDictionary singletonInputActions = new DataDictionary();
 
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] inputActionHandlerInstances;
@@ -1068,6 +1070,7 @@ namespace JanSharp
             if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20))
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
+            // Client states game state.
             WriteSmall((uint)clientStates.Count);
             DataList keys = clientStates.GetKeys();
             for (int i = 0; i < keys.Count; i++)
@@ -1078,6 +1081,7 @@ namespace JanSharp
                 Write(clientNames[keyToken].String);
             }
 
+            // Singleton input actions game state.
             WriteSmall(nextSingletonId);
             WriteSmall((uint)singletonInputActions.Count);
             keys = singletonInputActions.GetKeys();
@@ -1092,7 +1096,7 @@ namespace JanSharp
                 Write(singletonInputActionData);
             }
 
-            lateJoinerInputActionSync.SendInputAction(LJClientStatesIAId, writeStream, writeStreamSize);
+            lateJoinerInputActionSync.SendInputAction(LJInternalGameStatesIAId, writeStream, writeStreamSize);
             ResetWriteStream();
 
             for (int i = 0; i < allGameStates.Length; i++)
@@ -1113,7 +1117,7 @@ namespace JanSharp
             syncCountForLatestLJSync = lateJoinerInputActionSync.QueuedSyncsCount;
         }
 
-        private void OnLJClientStatesIA()
+        private void OnLJInternalGameStatesIA()
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  OnLJClientStatesIA");
@@ -1360,8 +1364,8 @@ namespace JanSharp
                     return;
                 ResetReadStream();
                 readStream = inputActionData;
-                if (inputActionId == LJClientStatesIAId)
-                    OnLJClientStatesIA();
+                if (inputActionId == LJInternalGameStatesIAId)
+                    OnLJInternalGameStatesIA();
                 else if (inputActionId == LJCurrentTickIAId)
                     OnLJCurrentTickIA();
                 else
