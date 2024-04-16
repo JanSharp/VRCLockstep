@@ -15,6 +15,9 @@ namespace JanSharp {
         ///<summary>Before raising, an uint 'lockStepPlayerId' program variable will be set to the new master's id.</summary>
         OnMasterChanged = 1 << 5,
         OnTick = 1 << 6,
+        OnImportStart = 1 << 7,
+        OnImportedGameState = 1 << 8,
+        OnImportFinished = 1 << 9,
     }
 
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]

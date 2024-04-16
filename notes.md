@@ -342,6 +342,9 @@ Only inside of these events, modification of game states and changing Lock Step 
 - `OnClientCaughtUp(int playerId)`
 - `OnClientLeft(int playerId)`
 - `OnTick()`
+- `OnImportStart()` Use import related properties on LockStep inside this event to know more about the import process.
+- `OnImportedGameState()` Use import related properties on LockStep inside this event to know more about the import process.
+- `OnImportFinished()` Use import related properties on LockStep inside this event to know more about the import process.
 - Every custom input action handler
 
 ## Non Game State Events

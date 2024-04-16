@@ -84,6 +84,24 @@ namespace JanSharp
             // }
         }
 
+        [LockStepEvent(LockStepEventType.OnImportStart)]
+        public void OnImportStart()
+        {
+            Debug.Log($"<dlt> TestGameState  OnImportStart - ImportingPlayerId: {lockStep.ImportingPlayerId}, ImportingFromName: {lockStep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockStep.ImportingFromDate:yyyy-MM-dd HH:mm}, GetGameStatesWaitingForImportCount(): {lockStep.GetGameStatesWaitingForImportCount()}");
+        }
+
+        [LockStepEvent(LockStepEventType.OnImportedGameState)]
+        public void OnImportedGameState()
+        {
+            Debug.Log($"<dlt> TestGameState  OnImportedGameState - ImportedGameState.GameStateInternalName: {lockStep.ImportedGameState.GameStateInternalName}");
+        }
+
+        [LockStepEvent(LockStepEventType.OnImportFinished)]
+        public void OnImportFinished()
+        {
+            Debug.Log($"<dlt> TestGameState  OnImportFinished - GetGameStatesWaitingForImportCount(): {lockStep.GetGameStatesWaitingForImportCount()}");
+        }
+
         [SerializeField] [HideInInspector] private uint singletonTestIAId;
         [LockStepInputAction(nameof(singletonTestIAId))]
         public void OnSingletonTestIA()

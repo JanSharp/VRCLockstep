@@ -92,6 +92,9 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientLeftListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onMasterChangedListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onTickListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportStartListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportedGameStateListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportFinishedListeners;
 
         [SerializeField] [HideInInspector] private LockStepGameState[] allGameStates;
         // string internalName => LockStepGameState gameState
@@ -1564,6 +1567,33 @@ namespace JanSharp
                 listener.SendCustomEvent(nameof(LockStepEventType.OnTick));
         }
 
+        private void RaiseOnImportStart()
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  RaiseOnImportStart");
+            #endif
+            foreach (UdonSharpBehaviour listener in onImportStartListeners)
+                listener.SendCustomEvent(nameof(LockStepEventType.OnImportStart));
+        }
+
+        private void RaiseOnImportedGameState()
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  RaiseOnImportedGameState");
+            #endif
+            foreach (UdonSharpBehaviour listener in onImportedGameStateListeners)
+                listener.SendCustomEvent(nameof(LockStepEventType.OnImportedGameState));
+        }
+
+        private void RaiseOnImportFinished()
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  RaiseOnImportFinished");
+            #endif
+            foreach (UdonSharpBehaviour listener in onImportFinishedListeners)
+                listener.SendCustomEvent(nameof(LockStepEventType.OnImportFinished));
+        }
+
         ///<summary>Get the display name for a given player who is part of the game state. This is safe to
         ///call whenever and so long as the given playerId is part of the game state, even if the actual player
         ///instance is no longer valid (the player no longer being in the world). It is also guaranteed to
@@ -1804,7 +1834,58 @@ namespace JanSharp
         // None of this is part of an internal game state, which is fine because late joiner sync will not be
         // performed while isImporting is true.
         private bool isImporting = false;
-        private uint importingPlayerId;
+        ///<summary>Game State safe.</summary>
+        public bool IsImporting
+        {
+            private set
+            {
+                if (isImporting == value)
+                    return;
+                isImporting = value;
+                if (value)
+                    RaiseOnImportStart();
+                else
+                {
+                    RaiseOnImportFinished();
+                    // To make these properties game state safe.
+                    ImportingPlayerId = 0u;
+                    ImportingFromDate = new System.DateTime();
+                    ImportingFromName = null;
+                    gameStatesWaitingForImport.Clear(); // And to clean up.
+                }
+            }
+            get => isImporting;
+        }
+        ///<summary>Game State safe.</summary>
+        public uint ImportingPlayerId { private set; get; }
+        ///<summary>Game State safe.</summary>
+        public System.DateTime ImportingFromDate { private set; get; }
+        ///<summary>Game State safe.</summary>
+        public string ImportingFromName { private set; get; }
+        ///<summary>Game State safe. Only ever non null while inside OnImportedGameState.</summary>
+        public LockStepGameState ImportedGameState { private set; get; }
+        ///<summary><para>Game State safe. Null when IsImporting is false.</para>
+        ///<para>Can still have entries when RaiseOnImportFinished runs which indicates that the importing
+        ///player left nearly instantly after starting the import, causing not all game states to actually
+        ///get imported.</para></summary>
+        public LockStepGameState[] GetGameStatesWaitingForImport()
+        {
+            if (!isImporting)
+                return null;
+            int count = gameStatesWaitingForImport.Count;
+            LockStepGameState[] result = new LockStepGameState[count];
+            DataList values = gameStatesWaitingForImport.GetValues();
+            for (int i = 0; i < count; i++)
+                result[i] = (LockStepGameState)values[i].Reference;
+            return result;
+        }
+        ///<summary><para>Game State safe. -1 when IsImporting is false.</para>
+        ///<para>Can be non 0 when RaiseOnImportFinished runs, see GetGameStatesWaitingForImport description.
+        ///</para></summary>
+        public int GetGameStatesWaitingForImportCount()
+        {
+            return isImporting ? gameStatesWaitingForImport.Count : -1;
+        }
         ///<summary>int gameStateIndex => LockStepGameState gameState</summary>
         private DataDictionary gameStatesWaitingForImport = new DataDictionary();
 
@@ -1834,16 +1915,16 @@ namespace JanSharp
                 importedGSsToSend = null;
                 return;
             }
-            isImporting = true;
-            importingPlayerId = SendingPlayerId;
-            System.DateTime exportDate = ReadDateTime();
-            string exportName = ReadString();
+            ImportingPlayerId = SendingPlayerId;
+            ImportingFromDate = ReadDateTime();
+            ImportingFromName = ReadString();
             int importedGSsCount = (int)ReadSmallUInt();
             for (int i = 0; i < importedGSsCount; i++)
             {
                 int gameStateIndex = (int)ReadSmallUInt();
                 gameStatesWaitingForImport.Add(gameStateIndex, allGameStates[gameStateIndex]);
             }
+            IsImporting = true; // Raises an event, do it last so all the fields are populated.
 
             if (SendingPlayerId != localPlayerId)
                 return;
@@ -1881,8 +1962,11 @@ namespace JanSharp
             }
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             gameState.DeserializeGameState(isImport: true); // TODO: Use return error message.
+            ImportedGameState = gameState;
+            RaiseOnImportedGameState();
+            ImportedGameState = null;
             if (gameStatesWaitingForImport.Count == 0)
-                isImporting = false;
+                IsImporting = false;
         }
 
         private void CheckIfImportingPlayerLeft(uint leftPlayerId)
@@ -1890,10 +1974,9 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  CheckIfImportingPlayerLeft");
             #endif
-            if (!isImporting || leftPlayerId != importingPlayerId)
+            if (!isImporting || leftPlayerId != ImportingPlayerId)
                 return;
-            isImporting = false;
-            gameStatesWaitingForImport.Clear();
+            IsImporting = false;
         }
     }
 }

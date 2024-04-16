@@ -25,6 +25,9 @@ namespace JanSharp
             { LockStepEventType.OnClientLeft, new List<UdonSharpBehaviour>() },
             { LockStepEventType.OnMasterChanged, new List<UdonSharpBehaviour>() },
             { LockStepEventType.OnTick, new List<UdonSharpBehaviour>() },
+            { LockStepEventType.OnImportStart, new List<UdonSharpBehaviour>() },
+            { LockStepEventType.OnImportedGameState, new List<UdonSharpBehaviour>() },
+            { LockStepEventType.OnImportFinished, new List<UdonSharpBehaviour>() },
         };
         private static List<LockStepGameState> allGameStates = new List<LockStepGameState>();
         public static ReadOnlyCollection<LockStepGameState> AllGameStates => allGameStates.AsReadOnly();
@@ -47,6 +50,9 @@ namespace JanSharp
             LockStepEventType.OnClientLeft,
             LockStepEventType.OnMasterChanged,
             LockStepEventType.OnTick,
+            LockStepEventType.OnImportStart,
+            LockStepEventType.OnImportedGameState,
+            LockStepEventType.OnImportFinished,
         };
 
         static LockStepOnBuild()
