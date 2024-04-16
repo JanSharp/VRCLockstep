@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -1336,6 +1336,7 @@ namespace JanSharp
 
             CheckIfLateJoinerSyncShouldStop();
             CheckIfSingletonInputActionGotDropped(playerId);
+            CheckIfImportingPlayerLeft(playerId);
             RaiseOnClientLeft(playerId);
         }
 
@@ -1874,7 +1875,8 @@ namespace JanSharp
             if (!gameStatesWaitingForImport.Remove(gameStateIndex))
             {
                 Debug.LogError($"[LockStep] Impossible: A game state received import data even though it was "
-                    + $"Not marked as waiting for import. Ignoring incoming data.");
+                    + $"Not marked as waiting for import. Ignoring incoming data. (Unless we received an "
+                    + "input action from a player for whom we got the player left event over 1 second ago...)");
                 return;
             }
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
@@ -1883,7 +1885,15 @@ namespace JanSharp
                 isImporting = false;
         }
 
-        // TODO: if the importing player leaves, wait a little bit and if it is still waiting on import IAs
-        // then stop the import process.
+        private void CheckIfImportingPlayerLeft(uint leftPlayerId)
+        {
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] LockStep  CheckIfImportingPlayerLeft");
+            #endif
+            if (!isImporting || leftPlayerId != importingPlayerId)
+                return;
+            isImporting = false;
+            gameStatesWaitingForImport.Clear();
+        }
     }
 }
