@@ -134,7 +134,7 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  DequeueEverything");
             #endif
-            if (siqCount == 0)
+            if (uiqCount == 0) // Logically equivalent to `siqCount == 0 && !retrying`.
                 return;
 
             ArrQueue.Clear(ref syncedIntQueue, ref siqStartIndex, ref siqCount);
@@ -146,6 +146,7 @@ namespace JanSharp
             {
                 while (uiqCount != 0)
                 {
+                    // When retrying is true, the unique id is still in this queue.
                     ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
                     if (uniqueId != 0uL)
                         lockStep.InputActionSent(uniqueId);
@@ -161,6 +162,7 @@ namespace JanSharp
             // Not only does it prevent this weird case from causing issues, it also prevents this script
             // here from erroring when PreSerialization does eventually run, because that function
             // expects at least 1 element to be in the queue.
+            retrying = false; // Drop whatever input action it was retrying to send.
             ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, 0u);
             ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, new byte[0]);
             ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, 0u);
