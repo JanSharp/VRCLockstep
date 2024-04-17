@@ -26,6 +26,7 @@ namespace JanSharp
         [SerializeField] private TextMeshProUGUI importInfoText;
         [SerializeField] private Transform importGSList;
         [SerializeField] private Button confirmImportButton;
+        [SerializeField] private TextMeshProUGUI confirmImportButtonText;
 
         [SerializeField] private GameObject exportWindow;
         [SerializeField] private TextMeshProUGUI exportSelectedText;
@@ -35,6 +36,7 @@ namespace JanSharp
         [SerializeField] private InputField serializedOutputField;
         [SerializeField] private InputField exportNameField;
         [SerializeField] private Button confirmExportButton;
+        [SerializeField] private TextMeshProUGUI confirmExportButtonText;
 
         [SerializeField] [HideInInspector] private int minAutosaveInterval;
         [SerializeField] [HideInInspector] private int defaultAutosaveInterval;
@@ -43,6 +45,9 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private LockStepMainGSEntry[] mainGSEntries;
         [SerializeField] [HideInInspector] private LockStepImportGSEntry[] importGSEntries;
         [SerializeField] [HideInInspector] private LockStepExportGSEntry[] exportGSEntries;
+
+        private bool isImportInitialized = false;
+        private bool isExportInitialized = false;
 
         private LockStepImportGSEntry[] extraImportGSEntries = new LockStepImportGSEntry[ArrList.MinCapacity];
         private int extraImportGSEntriesCount = 0;
@@ -210,12 +215,28 @@ namespace JanSharp
 
         private void UpdateImportSelectedCount()
         {
-            confirmImportButton.interactable = importSelectedCount != 0;
+            UpdateImportButton();
             importSelectedText.text = $"selected: {importSelectedCount}";
+        }
+
+        private bool CanImport() => isImportInitialized && importSelectedCount != 0 && !lockStep.IsImporting;
+
+        private void UpdateImportButton()
+        {
+            confirmImportButton.interactable = CanImport();
+            confirmImportButtonText.text = !isImportInitialized ? "Loading..."
+                : lockStep.IsImporting ? "Importing..."
+                : "Import";
         }
 
         public void ConfirmImport()
         {
+            if (!CanImport())
+            {
+                Debug.LogError("[LockStep] Through means meant to be impossible the import button has been "
+                    + "pressed when it cannot actually import. Someone messed with something.");
+                return;
+            }
             object[][] gameStatesToImport = new object[importSelectedCount][];
             int i = 0;
             foreach (LockStepImportGSEntry entry in importGSEntries)
@@ -257,7 +278,7 @@ namespace JanSharp
             importSelectedCount = 0;
             importSelectedText.text = "";
             importInfoText.text = "";
-            confirmImportButton.interactable = false;
+            UpdateImportButton();
         }
 
         public void ExportSelectAll()
@@ -328,13 +349,29 @@ namespace JanSharp
 
         private void UpdateExportSelectedCount()
         {
-            confirmExportButton.interactable = exportSelectedCount != 0;
+            UpdateExportButton();
             exportSelectedText.text = $"selected: {exportSelectedCount}";
             ResetExport();
         }
 
+        private bool CanExport() => isExportInitialized && exportSelectedCount != 0 && !lockStep.IsImporting;
+
+        private void UpdateExportButton()
+        {
+            confirmExportButton.interactable = CanExport();
+            confirmExportButtonText.text = !isExportInitialized ? "Loading..."
+                : lockStep.IsImporting ? "Importing..."
+                : "Export";
+        }
+
         public void ConfirmExport()
         {
+            if (!CanExport())
+            {
+                Debug.LogError("[LockStep] Through means meant to be impossible the export button has been "
+                    + "pressed when it cannot actually export. Someone messed with something.");
+                return;
+            }
             LockStepGameState[] gameStates = new LockStepGameState[exportSelectedCount];
             int i = 0;
             foreach (LockStepExportGSEntry entry in exportGSEntries)
@@ -357,7 +394,34 @@ namespace JanSharp
             serializedOutputField.text = "";
         }
 
+        private void OnInitialized()
+        {
+            isImportInitialized = true;
+            isExportInitialized = true;
+            UpdateImportButton();
+            UpdateExportButton();
+        }
+
+        [LockStepEvent(LockStepEventType.OnInit)]
+        public void OnInit() => OnInitialized();
+
+        [LockStepEvent(LockStepEventType.OnClientBeginCatchUp)]
+        public void OnClientBeginCatchUp() => OnInitialized();
+
+        [LockStepEvent(LockStepEventType.OnImportStart)]
+        public void OnImportStart()
+        {
+            UpdateImportButton();
+            UpdateExportButton();
+        }
+
+        [LockStepEvent(LockStepEventType.OnImportFinished)]
+        public void OnImportFinished()
+        {
+            UpdateImportButton();
+            UpdateExportButton();
+        }
+
         // TODO: show import state in game states UI
-        // TODO: disable game states UI import/export while importing or while still initializing/waiting for late joiner sync
     }
 }

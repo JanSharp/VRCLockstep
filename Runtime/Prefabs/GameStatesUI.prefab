@@ -1295,6 +1295,7 @@ MonoBehaviour:
   importInfoText: {fileID: 8315912740984491370}
   importGSList: {fileID: 8315912742651624664}
   confirmImportButton: {fileID: 8315912742696054417}
+  confirmImportButtonText: {fileID: 8315912742193930586}
   exportWindow: {fileID: 8315912741474953698}
   exportSelectedText: {fileID: 8315912741336856138}
   exportGSList: {fileID: 8315912741963473185}
@@ -1303,6 +1304,7 @@ MonoBehaviour:
   serializedOutputField: {fileID: 8315912742630284375}
   exportNameField: {fileID: 2871884128677178060}
   confirmExportButton: {fileID: 8315912742473667882}
+  confirmExportButtonText: {fileID: 8315912741110725841}
   minAutosaveInterval: 1
   defaultAutosaveInterval: 5
   autosaveInterval: 5
@@ -2226,7 +2228,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Export
+  m_text: Loading...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -3151,8 +3153,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742538806656}
   m_HandleRect: {fileID: 8315912742538806657}
   m_Direction: 2
-  m_Value: 0
-  m_Size: 0.99997663
+  m_Value: 1
+  m_Size: 0.9999777
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -5619,7 +5621,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.004272461}
+  m_AnchoredPosition: {x: 0, y: -0.005126953}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8315912742155832180
@@ -5803,7 +5805,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Import
+  m_text: Loading...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
