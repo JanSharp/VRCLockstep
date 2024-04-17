@@ -53,22 +53,23 @@ namespace JanSharp
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
 
-        private uint unrecoverableStateDueToUniqueId = 0u;
+        private ulong unrecoverableStateDueToUniqueId = 0uL;
 
         ///cSpell:ignore xxpppppp
 
-        public const int PlayerIdKeyShift = 16;
-        // uint uniqueId => objet[] { uint inputActionId, byte[] inputActionData }
-        // uniqueId: pppppppp pppppppp iiiiiiii iiiiiiii (p = player id, i = input action index)
+        public const int PlayerIdKeyShift = 32;
+        // ulong uniqueId => objet[] { uint inputActionId, byte[] inputActionData }
+        // uniqueId: pppppppp pppppppp pppppppp pppppppp iiiiiiii iiiiiiii iiiiiiii iiiiiiii
+        // (p = player id, i = input action index)
         //
         // Unique ids associated with their input actions, all of which are input actions
         // which have not been run yet and are either waiting for the tick in which they will be run,
         // or waiting for tick sync to inform this client of which tick to run them in.
         private DataDictionary inputActionsByUniqueId = new DataDictionary();
 
-        // uint => uint[]
+        // uint => ulong[]
         // uint: tick to run in
-        // uint[]: unique ids (same as for inputActionsByUniqueId)
+        // ulong[]: unique ids (same as for inputActionsByUniqueId)
         private DataDictionary uniqueIdsByTick = new DataDictionary();
 
         ///cSpell:ignore iatrn
@@ -287,7 +288,7 @@ namespace JanSharp
                     continue;
 
                 uniqueIdsByTick.Remove(tickToRunToken, out DataToken uniqueIdsToken);
-                foreach (uint uniqueId in (uint[])uniqueIdsToken.Reference)
+                foreach (ulong uniqueId in (ulong[])uniqueIdsToken.Reference)
                     inputActionsByUniqueId.Remove(uniqueId); // Remove simply does nothing if it already doesn't exist.
             }
         }
@@ -296,14 +297,14 @@ namespace JanSharp
         {
             uint nextTick = currentTick + 1u;
             DataToken nextTickToken = nextTick;
-            uint[] uniqueIds = null;
+            ulong[] uniqueIds = null;
             if (uniqueIdsByTick.TryGetValue(nextTickToken, out DataToken uniqueIdsToken))
             {
-                uniqueIds = (uint[])uniqueIdsToken.Reference;
-                foreach (uint uniqueId in uniqueIds)
+                uniqueIds = (ulong[])uniqueIdsToken.Reference;
+                foreach (ulong uniqueId in uniqueIds)
                     if (!inputActionsByUniqueId.ContainsKey(uniqueId))
                     {
-                        uint playerId = uniqueId >> PlayerIdKeyShift;
+                        uint playerId = (uint)(uniqueId >> PlayerIdKeyShift);
                         if (uniqueId != unrecoverableStateDueToUniqueId && !clientStates.ContainsKey(playerId))
                         {
                             // This variable is purely used as to not spam the log file every frame with this error message.
@@ -339,23 +340,23 @@ namespace JanSharp
             return true;
         }
 
-        private void RunInputActionsForUniqueIds(uint[] uniqueIds)
+        private void RunInputActionsForUniqueIds(ulong[] uniqueIds)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RunInputActionsForUniqueIds");
             #endif
-            foreach (uint uniqueId in uniqueIds)
+            foreach (ulong uniqueId in uniqueIds)
                 RunInputActionForUniqueId(uniqueId);
         }
 
-        private void RunInputActionForUniqueId(uint uniqueId)
+        private void RunInputActionForUniqueId(ulong uniqueId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RunInputActionForUniqueId");
             #endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
-            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId >> PlayerIdKeyShift);
+            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], (uint)(uniqueId >> PlayerIdKeyShift));
         }
 
         private void RunInputActionsForThisFrame()
@@ -416,9 +417,9 @@ namespace JanSharp
                 return;
             }
 
-            uint uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
+            ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStep  SendInputActionInternal (inner) - uniqueId: 0x{uniqueId:x8}");
+            Debug.Log($"[LockStepDebug] LockStep  SendInputActionInternal (inner) - uniqueId: 0x{uniqueId:x16}");
             #endif
 
             if (stillAllowLocalClientJoinedIA)
@@ -507,7 +508,7 @@ namespace JanSharp
             }
         }
 
-        public void InputActionSent(uint uniqueId)
+        public void InputActionSent(ulong uniqueId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  InputActionSent");
@@ -1366,10 +1367,10 @@ namespace JanSharp
             RaiseOnClientCaughtUp(playerId);
         }
 
-        public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, uint uniqueId, byte[] inputActionData)
+        public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, ulong uniqueId, byte[] inputActionData)
         {
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x8}{(isLateJoinerSync ? "" : $", event name {inputActionHandlerEventNames[inputActionId]}")}");
+            Debug.Log($"[LockStepDebug] LockStep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x16}{(isLateJoinerSync ? "" : $", event name {inputActionHandlerEventNames[inputActionId]}")}");
             #endif
             if (isLateJoinerSync)
             {
@@ -1395,14 +1396,14 @@ namespace JanSharp
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
         }
 
-        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, uint uniqueId, byte[] inputActionData, bool runInNextFrame = false)
+        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, byte[] inputActionData, bool runInNextFrame = false)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  TryToInstantlyRunInputActionOnMaster");
             #endif
             if (currentTick < firstMutableTick) // Can't run it in the current tick. A check for isCatchingUp
             { // is not needed, because the condition above will always be true when isCatchingUp is true.
-                if (uniqueId == 0u)
+                if (uniqueId == 0uL)
                 {
                     // It'll only be 0 if the local player is the one trying to instantly run it.
                     // Received data always has a unique id.
@@ -1415,7 +1416,7 @@ namespace JanSharp
 
             if (!isSinglePlayer)
             {
-                if (uniqueId == 0u)
+                if (uniqueId == 0uL)
                 {
                     Debug.LogError("[LockStep] Impossible, the uniqueId when instantly running an input action "
                         + "on master cannot be 0 while not in single player, because every input action "
@@ -1429,7 +1430,7 @@ namespace JanSharp
             if (runInNextFrame)
                 ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData });
             else
-                RunInputAction(inputActionId, inputActionData, isSinglePlayer ? localPlayerId : (uniqueId >> PlayerIdKeyShift));
+                RunInputAction(inputActionId, inputActionData, isSinglePlayer ? localPlayerId : (uint)(uniqueId >> PlayerIdKeyShift));
         }
 
         private void ClearUniqueIdsByTick()
@@ -1444,17 +1445,17 @@ namespace JanSharp
             // they can be removed, just to free up some memory.
             DataList allValues = uniqueIdsByTick.GetValues();
             for (int i = 0; i < allValues.Count; i++)
-                foreach (uint uniqueId in (uint[])allValues[i].Reference)
+                foreach (ulong uniqueId in (ulong[])allValues[i].Reference)
                     inputActionsByUniqueId.Remove(uniqueId);
             uniqueIdsByTick.Clear();
         }
 
-        public void AssociateInputActionWithTick(uint tickToRunIn, uint uniqueId, bool allowOnMaster = false)
+        public void AssociateInputActionWithTick(uint tickToRunIn, ulong uniqueId, bool allowOnMaster = false)
         {
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStep  AssociateInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x8}");
+            Debug.Log($"[LockStepDebug] LockStep  AssociateInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
             #endif
-            if (tickToRunIn == 0u && uniqueId == 0u)
+            if (tickToRunIn == 0u && uniqueId == 0uL)
             {
                 ClearUniqueIdsByTick();
                 return;
@@ -1471,24 +1472,24 @@ namespace JanSharp
             AssociateInputActionWithTickInternal(tickToRunIn, uniqueId);
         }
 
-        private void AssociateInputActionWithTickInternal(uint tickToRunIn, uint uniqueId)
+        private void AssociateInputActionWithTickInternal(uint tickToRunIn, ulong uniqueId)
         {
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStep  AssociateInputActionWithTickInternal - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x8}");
+            Debug.Log($"[LockStepDebug] LockStep  AssociateInputActionWithTickInternal - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
             #endif
             // Mark the input action to run at the given tick.
             DataToken tickToRunInToken = new DataToken(tickToRunIn);
             if (uniqueIdsByTick.TryGetValue(tickToRunInToken, out DataToken uniqueIdsToken))
             {
-                uint[] uniqueIds = (uint[])uniqueIdsToken.Reference;
+                ulong[] uniqueIds = (ulong[])uniqueIdsToken.Reference;
                 int oldLength = uniqueIds.Length;
-                uint[] newUniqueIds = new uint[oldLength + 1];
+                ulong[] newUniqueIds = new ulong[oldLength + 1];
                 uniqueIds.CopyTo(newUniqueIds, 0);
                 newUniqueIds[oldLength] = uniqueId;
                 uniqueIdsByTick.SetValue(tickToRunInToken, new DataToken(newUniqueIds));
                 return;
             }
-            uniqueIdsByTick.Add(tickToRunInToken, new DataToken(new uint[] { uniqueId }));
+            uniqueIdsByTick.Add(tickToRunInToken, new DataToken(new ulong[] { uniqueId }));
         }
 
         private void RaiseOnInit()

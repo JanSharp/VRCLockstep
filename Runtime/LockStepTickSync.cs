@@ -25,13 +25,13 @@ namespace JanSharp
         private byte[] tickBuffer = new byte[5];
         private int tickBufferSize = 0;
 
-        public void AddInputActionToRun(uint tickToRunIn, uint uniqueId)
+        public void AddInputActionToRun(uint tickToRunIn, ulong uniqueId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStepTickSync  AddInputActionToRun");
             #endif
-            uint playerId = uniqueId >> LockStep.PlayerIdKeyShift;
-            uint inputActionIndex = uniqueId & 0x0000ffffu;
+            uint playerId = (uint)(uniqueId >> LockStep.PlayerIdKeyShift);
+            uint inputActionIndex = (uint)(uniqueId & 0x00000000ffffffffuL);
             DataStream.WriteSmall(ref buffer, ref bufferSize, tickToRunIn);
             DataStream.WriteSmall(ref buffer, ref bufferSize, playerId);
             DataStream.WriteSmall(ref buffer, ref bufferSize, inputActionIndex);
@@ -101,7 +101,7 @@ namespace JanSharp
                 uint inputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
                 lockStep.AssociateInputActionWithTick(
                     tickToRunIn,
-                    (playerId << LockStep.PlayerIdKeyShift) | inputActionIndex
+                    ((ulong)playerId << LockStep.PlayerIdKeyShift) | (ulong)inputActionIndex
                 );
             }
         }

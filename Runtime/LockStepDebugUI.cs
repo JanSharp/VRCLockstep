@@ -104,7 +104,7 @@ namespace JanSharp
         public float uniqueIdsByTickElemHeight;
         private object[] uniqueIdsByTickListObj;
         private DataDictionary uniqueIdsByTick;
-        private uint[][] uniqueIdsByTickUnrolled = new uint[ArrList.MinCapacity][];
+        private ulong[][] uniqueIdsByTickUnrolled = new ulong[ArrList.MinCapacity][];
         ///cSpell:ignore uibtu
         private int uibtuCount = 0;
         private const string UniqueIdsByTickFieldName = "uniqueIdsByTick";
@@ -329,7 +329,7 @@ namespace JanSharp
             object[] iaData = (object[])inputActionsByUniqueId[uniqueIdToken].Reference;
             uint inputActionId = (uint)iaData[0];
             string inputActionEventName = inputActionHandlerEventNames[inputActionId];
-            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = $"<mspace=0.55em>0x{uniqueIdToken.UInt:x8}";
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = $"<mspace=0.55em>0x{uniqueIdToken.ULong:x16}";
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>{inputActionId}</mspace> {inputActionEventName}";
         }
 
@@ -356,8 +356,8 @@ namespace JanSharp
                 {
                     DataToken keyToken = keys[i];
                     uint tick = keyToken.UInt;
-                    foreach (uint uniqueId in (uint[])uniqueIdsByTick[keyToken].Reference)
-                        ArrList.Add(ref uniqueIdsByTickUnrolled, ref uibtuCount, new uint[] { tick, uniqueId });
+                    foreach (ulong uniqueId in (ulong[])uniqueIdsByTick[keyToken].Reference)
+                        ArrList.Add(ref uniqueIdsByTickUnrolled, ref uibtuCount, new ulong[] { tick, uniqueId });
                 }
             }
 
@@ -373,9 +373,9 @@ namespace JanSharp
         // (object[] listObj, object[] listElemObj, int elemIndex) => void;
         public void UpdateUniqueIdsByTickListElemObj()
         {
-            uint[] pair = uniqueIdsByTickUnrolled[elemIndex];
+            ulong[] pair = uniqueIdsByTickUnrolled[elemIndex];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text = pair[0].ToString();
-            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>0x{pair[1]:x8}";
+            ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text = $"<mspace=0.55em>0x{pair[1]:x16}";
         }
 
         // (GameObject elemGameObj) => object[] listElemObj;

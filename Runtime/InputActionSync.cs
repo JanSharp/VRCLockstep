@@ -11,33 +11,33 @@ namespace JanSharp
     public class InputActionSync : CyanPlayerObjectPoolObject
     {
         private const int MaxSyncedDataSize = 4096;
-        private const int InputActionIndexShift = 16;
-        private const uint SplitDataFlag = 0x8000u;
-        private const uint InputActionIdBits = 0x7fff;
+        private const int InputActionIndexShift = 32;
+        private const ulong SplitDataFlag = 0x80000000uL;
+        private const ulong InputActionIdBits = 0x7fffffffuL;
 
         [System.NonSerialized] public LockStep lockStep;
         [System.NonSerialized] public bool lockStepIsMaster;
-        [System.NonSerialized] public uint shiftedPlayerId;
+        [System.NonSerialized] public ulong shiftedPlayerId;
 
         // Who is the current owner of this object. Null if object is not currently in use.
         // [System.NonSerialized] public VRCPlayerApi Owner; // In the base class.
 
         public bool isLateJoinerSyncInst = false;
 
-        // It is actually a ushort, but to reduce the amount of casts the variable is uint.
+        // It is actually a uint, but to reduce the amount of casts the variable is ulong.
         // First one is 1, making 0 an indication of an invalid index.
         // Since the input action index 0 is invalid, the unique id 0 is also invalid.
         // Unique id is the shifted player index plus the input action index.
-        private uint nextInputActionIndex = 1u;
+        private ulong nextInputActionIndex = 1uL;
 
         // sending
 
-        [UdonSynced] private uint syncedInt = 0u; // Initial values for first sync, which gets ignored.
+        [UdonSynced] private ulong syncedInt = 0uL; // Initial values for first sync, which gets ignored.
         [UdonSynced] private byte[] syncedData = new byte[0];
         private bool retrying = false;
         private float retryBackoff = 1f;
 
-        private uint[] syncedIntQueue = new uint[ArrQueue.MinCapacity];
+        private ulong[] syncedIntQueue = new ulong[ArrQueue.MinCapacity];
         private int siqStartIndex = 0;
         private int siqCount = 0;
 
@@ -45,7 +45,7 @@ namespace JanSharp
         private int sdqStartIndex = 0;
         private int sdqCount = 0;
 
-        private uint[] uniqueIdQueue = new uint[ArrQueue.MinCapacity];
+        private ulong[] uniqueIdQueue = new ulong[ArrQueue.MinCapacity];
         private int uiqStartIndex = 0;
         private int uiqCount = 0;
 
@@ -71,7 +71,7 @@ namespace JanSharp
             #endif
         }
 
-        public uint MakeUniqueId()
+        public ulong MakeUniqueId()
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  MakeUniqueId");
@@ -82,15 +82,15 @@ namespace JanSharp
         ///<summary>
         ///Returns the uniqueId for the send input action, or 0 in case of error.
         ///</summary>
-        public uint SendInputAction(uint inputActionId, byte[] inputActionData, int inputActionDataSize)
+        public ulong SendInputAction(uint inputActionId, byte[] inputActionData, int inputActionDataSize)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction");
             #endif
-            uint index = (nextInputActionIndex++);
+            ulong index = (nextInputActionIndex++);
 
-            uint prepSyncedInt = (index << InputActionIndexShift) | SplitDataFlag | inputActionId;
-            uint uniqueId = 0u;
+            ulong prepSyncedInt = (index << InputActionIndexShift) | SplitDataFlag | (ulong)inputActionId;
+            ulong uniqueId = 0u;
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - inputActionDataSize: {inputActionDataSize}");
             #endif
@@ -146,8 +146,8 @@ namespace JanSharp
             {
                 while (uiqCount != 0)
                 {
-                    uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
-                    if (uniqueId != 0u)
+                    ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
+                    if (uniqueId != 0uL)
                         lockStep.InputActionSent(uniqueId);
                 }
             }
@@ -210,8 +210,8 @@ namespace JanSharp
             }
             retryBackoff = 1f;
 
-            uint uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
-            if (!isLateJoinerSyncInst && uniqueId != 0u)
+            ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
+            if (!isLateJoinerSyncInst && uniqueId != 0uL)
                 lockStep.InputActionSent(uniqueId);
 
             if (siqCount != 0)
@@ -247,19 +247,19 @@ namespace JanSharp
                 return;
             }
 
-            if (syncedInt == 0u)
+            if (syncedInt == 0uL)
             {
                 syncedDataBuffer = null;
                 return;
             }
 
             AppendToSyncedDataBuffer();
-            if ((syncedInt & SplitDataFlag) != 0u)
+            if ((syncedInt & SplitDataFlag) != 0uL)
                 return;
 
-            uint id = syncedInt & InputActionIdBits;
+            uint id = (uint)(syncedInt & InputActionIdBits);
             // Can just right shift because index uses all the highest bits;
-            uint index = syncedInt >> InputActionIndexShift;
+            ulong index = syncedInt >> InputActionIndexShift;
             lockStep.ReceivedInputAction(isLateJoinerSyncInst, id, shiftedPlayerId | index, syncedDataBuffer);
             syncedDataBuffer = null;
         }
