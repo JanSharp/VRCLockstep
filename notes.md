@@ -364,3 +364,4 @@ These 2 aren't really events, but they are called by the Lockstep system.
 TODO: the ability to take master from another master in Lockstep
 TODO: actually implement autosaving (auto exporting)
 TODO: remove talk about conditional/runtime event registration in the notes file. It's not a thing and it won't happen
+TODO: add lockstep info UI with basic information and notifications/log
