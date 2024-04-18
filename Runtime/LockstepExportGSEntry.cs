@@ -8,10 +8,10 @@ using TMPro;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class LockStepExportGSEntry : LockStepGameStateEntryBase
+    public class LockstepExportGSEntry : LockstepGameStateEntryBase
     {
-        [SerializeField] [HideInInspector] private LockStepGameStatesUI gameStatesUI;
-        [HideInInspector] public LockStepGameState gameState;
+        [SerializeField] [HideInInspector] private LockstepGameStatesUI gameStatesUI;
+        [HideInInspector] public LockstepGameState gameState;
 
         public TextMeshProUGUI infoLabel;
         [System.NonSerialized] public bool doAutosave = false;

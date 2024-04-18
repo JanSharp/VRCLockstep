@@ -6,7 +6,7 @@ using VRC.SDK3.Data;
 
 namespace JanSharp
 {
-    public abstract class LockStepGameState : UdonSharpBehaviour
+    public abstract class LockstepGameState : UdonSharpBehaviour
     {
         public abstract string GameStateInternalName { get; }
         public abstract string GameStateDisplayName { get; }

@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 3|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.TestGameState, JanSharp.LockStep
+      Data: JanSharp.TestGameState, JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 
@@ -248,7 +248,7 @@ MonoBehaviour:
       Data: 16|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.TestGameStateUIElem[], JanSharp.LockStep
+      Data: JanSharp.TestGameStateUIElem[], JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 

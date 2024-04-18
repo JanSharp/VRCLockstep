@@ -9,9 +9,9 @@ using VRC.SDK3.Data;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class LockStepDebugUI : UdonSharpBehaviour
+    public class LockstepDebugUI : UdonSharpBehaviour
     {
-        [SerializeField] [HideInInspector] private LockStep lockStep;
+        [SerializeField] [HideInInspector] private Lockstep lockstep;
 
         public Transform flagsParent;
         private string[] flagFieldNames = new string[]
@@ -34,8 +34,8 @@ namespace JanSharp
         private const float MinMaxTimeFrame = 5f;
         private int lastFullSecond = int.MinValue;
 
-        public TextMeshProUGUI lockStepPerformanceText;
-        private const string lockStepLastUpdateSWFieldName = "lastUpdateSW";
+        public TextMeshProUGUI lockstepPerformanceText;
+        private const string lockstepLastUpdateSWFieldName = "lastUpdateSW";
         private double averageUpdateMS;
         private double minUpdateMS = double.MaxValue;
         private double maxUpdateMS = double.MinValue;
@@ -114,7 +114,7 @@ namespace JanSharp
         void Start()
         {
             long freq = System.Diagnostics.Stopwatch.Frequency;
-            Debug.Log($"[LockStepDebug] StopWatch IsHighResolution: {System.Diagnostics.Stopwatch.IsHighResolution}, "
+            Debug.Log($"[LockstepDebug] StopWatch IsHighResolution: {System.Diagnostics.Stopwatch.IsHighResolution}, "
                 + $"ticks per second: {freq}, "
                 + $"nano seconds per tick: {1_000_000_000L / freq}.");
 
@@ -158,13 +158,13 @@ namespace JanSharp
         private void UpdateFlags()
         {
             for (int i = 0; i < flagFieldNames.Length; i++)
-                flagToggles[i].SetIsOnWithoutNotify((bool)lockStep.GetProgramVariable(flagFieldNames[i]));
+                flagToggles[i].SetIsOnWithoutNotify((bool)lockstep.GetProgramVariable(flagFieldNames[i]));
         }
 
         private void UpdatePerformance()
         {
             System.Diagnostics.Stopwatch lastUpdateSW
-                = (System.Diagnostics.Stopwatch)lockStep.GetProgramVariable(lockStepLastUpdateSWFieldName);
+                = (System.Diagnostics.Stopwatch)lockstep.GetProgramVariable(lockstepLastUpdateSWFieldName);
             double lastUpdateMS = lastUpdateSW.Elapsed.TotalMilliseconds;
             double debugLastUpdateMS = debugLastUpdateSW.Elapsed.TotalMilliseconds;
 
@@ -188,7 +188,7 @@ namespace JanSharp
             }
 
             averageUpdateMS = averageUpdateMS * 0.9375 + lastUpdateMS * 0.0625; // 1/16
-            lockStepPerformanceText.text = averageUpdateMS.ToString("f3") + formattedMaxAndMax;
+            lockstepPerformanceText.text = averageUpdateMS.ToString("f3") + formattedMaxAndMax;
 
             debugAverageUpdateMS = debugAverageUpdateMS * 0.9375 + debugLastUpdateMS * 0.0625; // 1/16
             debugUIPerformanceText.text = debugAverageUpdateMS.ToString("f3") + debugFormattedMaxAndMax;
@@ -214,7 +214,7 @@ namespace JanSharp
         private void UpdateNumbers()
         {
             for (int i = 0; i < numbersFieldNames.Length; i++)
-                numbersValues[i].text = $"<mspace=0.55em>{lockStep.GetProgramVariable(numbersFieldNames[i])}";
+                numbersValues[i].text = $"<mspace=0.55em>{lockstep.GetProgramVariable(numbersFieldNames[i])}";
         }
 
         private string FormatPlayerId(uint playerId, string displayName = null)
@@ -238,8 +238,8 @@ namespace JanSharp
         private void UpdateClientStates()
         {
             // Always fetch new because it can be reset in some special cases.
-            clientStates = (DataDictionary)lockStep.GetProgramVariable(ClientStatesFieldName);
-            clientNames = (DataDictionary)lockStep.GetProgramVariable(ClientNamesFieldName);
+            clientStates = (DataDictionary)lockstep.GetProgramVariable(ClientStatesFieldName);
+            clientNames = (DataDictionary)lockstep.GetProgramVariable(ClientNamesFieldName);
 
             if (clientStates != null)
                 clientStatesKeys = clientStates.GetKeys();
@@ -275,8 +275,8 @@ namespace JanSharp
 
         private void UpdateLeftClients()
         {
-            leftClients = (uint[])lockStep.GetProgramVariable(LeftClientsFieldName);
-            int count = (int)lockStep.GetProgramVariable(LeftClientsCountFieldName);
+            leftClients = (uint[])lockstep.GetProgramVariable(LeftClientsFieldName);
+            int count = (int)lockstep.GetProgramVariable(LeftClientsCountFieldName);
 
             UpdateList(
                 leftClientsListObj,
@@ -307,8 +307,8 @@ namespace JanSharp
         private void UpdateInputActionsByUniqueIds()
         {
             if (inputActionsByUniqueId == null)
-                inputActionsByUniqueId = (DataDictionary)lockStep.GetProgramVariable(InputActionsByUniqueIdsFieldName);
-            inputActionHandlerEventNames = (string[])lockStep.GetProgramVariable(InputActionHandlerEventNamesFieldName);
+                inputActionsByUniqueId = (DataDictionary)lockstep.GetProgramVariable(InputActionsByUniqueIdsFieldName);
+            inputActionHandlerEventNames = (string[])lockstep.GetProgramVariable(InputActionHandlerEventNamesFieldName);
 
             if (inputActionsByUniqueId != null)
                 inputActionsByUniqueIdKeys = inputActionsByUniqueId.GetKeys();
@@ -346,7 +346,7 @@ namespace JanSharp
         private void UpdateUniqueIdsByTick()
         {
             if (uniqueIdsByTick == null)
-                uniqueIdsByTick = (DataDictionary)lockStep.GetProgramVariable(UniqueIdsByTickFieldName);
+                uniqueIdsByTick = (DataDictionary)lockstep.GetProgramVariable(UniqueIdsByTickFieldName);
 
             if (uniqueIdsByTick != null)
             {

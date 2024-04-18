@@ -7,15 +7,15 @@ using VRC.Udon.Common;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
-    public class LockStepTickSync : UdonSharpBehaviour
+    public class LockstepTickSync : UdonSharpBehaviour
     {
-        public LockStep lockStep;
-        public bool isSinglePlayer = false; // Default value must match the one in LockStep.
+        public Lockstep lockstep;
+        public bool isSinglePlayer = false; // Default value must match the one in Lockstep.
         public uint currentTick;
         private uint tickInSyncedData;
         [UdonSynced] private byte[] syncedData = new byte[0];
         private int readPosition = 0;
-        private float tickLoopDelay = 1f / LockStep.TickRate;
+        private float tickLoopDelay = 1f / Lockstep.TickRate;
         private uint lastSyncedTick = 0u; // Default value really doesn't matter.
 
         private byte[] buffer = new byte[ArrList.MinCapacity];
@@ -27,10 +27,10 @@ namespace JanSharp
 
         public void AddInputActionToRun(uint tickToRunIn, ulong uniqueId)
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStepTickSync  AddInputActionToRun");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] LockstepTickSync  AddInputActionToRun");
             #endif
-            uint playerId = (uint)(uniqueId >> LockStep.PlayerIdKeyShift);
+            uint playerId = (uint)(uniqueId >> Lockstep.PlayerIdKeyShift);
             uint inputActionIndex = (uint)(uniqueId & 0x00000000ffffffffuL);
             DataStream.WriteSmall(ref buffer, ref bufferSize, tickToRunIn);
             DataStream.WriteSmall(ref buffer, ref bufferSize, playerId);
@@ -39,8 +39,8 @@ namespace JanSharp
 
         public void ClearInputActionsToRun()
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStepTickSync  ClearInputActionsToRun");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] LockstepTickSync  ClearInputActionsToRun");
             #endif
             bufferSize = 0;
             bufferSizeToClear = 0;
@@ -82,7 +82,7 @@ namespace JanSharp
                 tickLoopDelay = Mathf.Max(0.01f, tickLoopDelay - 0.001f);
             SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), tickLoopDelay);
             lastSyncedTick = tickInSyncedData;
-            #if LockStepDebug
+            #if LockstepDebug
             syncCount++;
             #endif
         }
@@ -92,31 +92,31 @@ namespace JanSharp
         public override void OnDeserialization()
         {
             readPosition = 0;
-            lockStep.waitTick = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
+            lockstep.waitTick = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
             int length = syncedData.Length;
             while (readPosition < length)
             {
                 uint tickToRunIn = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
                 uint playerId = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
                 uint inputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
-                lockStep.AssociateInputActionWithTick(
+                lockstep.AssociateInputActionWithTick(
                     tickToRunIn,
-                    ((ulong)playerId << LockStep.PlayerIdKeyShift) | (ulong)inputActionIndex
+                    ((ulong)playerId << Lockstep.PlayerIdKeyShift) | (ulong)inputActionIndex
                 );
             }
         }
 
         public override void OnOwnershipTransferred(VRCPlayerApi player)
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStepTickSync  OnOwnershipTransferred");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] LockstepTickSync  OnOwnershipTransferred");
             #endif
-            lockStep.SendCustomEventDelayedFrames(nameof(LockStep.CheckMasterChange), 1);
+            lockstep.SendCustomEventDelayedFrames(nameof(Lockstep.CheckMasterChange), 1);
         }
 
 
 
-        #if LockStepDebug
+        #if LockstepDebug
         private void Start()
         {
             SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
@@ -125,7 +125,7 @@ namespace JanSharp
         private int syncCount = 0;
         public void SyncCountTestLoop()
         {
-            Debug.Log($"[LockStepDebug] tick sync count in the last 10 seconds: {syncCount}, {((float)syncCount) / 10f}/s, current tickLoopDelay: {tickLoopDelay}");
+            Debug.Log($"[LockstepDebug] tick sync count in the last 10 seconds: {syncCount}, {((float)syncCount) / 10f}/s, current tickLoopDelay: {tickLoopDelay}");
             syncCount = 0;
             SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
         }

@@ -15,18 +15,18 @@ using TMPro;
 namespace JanSharp
 {
     [InitializeOnLoad]
-    public static class LockStepGameStatesUIEditorOnBuild
+    public static class LockstepGameStatesUIEditorOnBuild
     {
-        static LockStepGameStatesUIEditorOnBuild() => JanSharp.OnBuildUtil.RegisterType<LockStepGameStatesUI>(OnBuild, 2);
+        static LockstepGameStatesUIEditorOnBuild() => JanSharp.OnBuildUtil.RegisterType<LockstepGameStatesUI>(OnBuild, 2);
 
-        private static bool OnBuild(LockStepGameStatesUI gameStatesUI)
+        private static bool OnBuild(LockstepGameStatesUI gameStatesUI)
         {
             SerializedObject proxy = new SerializedObject(gameStatesUI);
-            LockStep lockStep = (LockStep)proxy.FindProperty("lockStep").objectReferenceValue;
-            if (lockStep == null)
+            Lockstep lockstep = (Lockstep)proxy.FindProperty("lockstep").objectReferenceValue;
+            if (lockstep == null)
             {
-                Debug.LogError("[LockStep] The Lock Step Game State UI requires an instance of the "
-                    + "Lock Step script in the scene.", gameStatesUI);
+                Debug.LogError("[Lockstep] The Lockstep Game State UI requires an instance of the "
+                    + "Lockstep script in the scene.", gameStatesUI);
                 return false;
             }
 
@@ -42,19 +42,19 @@ namespace JanSharp
                 || mainGSList == null || importGSList == null || exportGSList == null
                 || exportSelectedText == null || confirmExportButton == null)
             {
-                Debug.LogError("[LockStep] The Lock Step Game State UI is missing internal references.", gameStatesUI);
+                Debug.LogError("[Lockstep] The Lockstep Game State UI is missing internal references.", gameStatesUI);
                 return false;
             }
 
-            var allGameStates = LockStepOnBuild.AllGameStates;
-            PopulateList<LockStepMainGSEntry>(
+            var allGameStates = LockstepOnBuild.AllGameStates;
+            PopulateList<LockstepMainGSEntry>(
                 allGameStates: allGameStates,
                 proxy: proxy,
                 entriesArrayName: "mainGSEntries",
                 postfix: " (MainGSEntry)",
                 list: mainGSList,
                 prefab: mainGSEntryPrefab);
-            PopulateList<LockStepImportGSEntry>(
+            PopulateList<LockstepImportGSEntry>(
                 allGameStates: allGameStates,
                 proxy: proxy,
                 entriesArrayName: "importGSEntries",
@@ -74,7 +74,7 @@ namespace JanSharp
                         : "does not support import/export";
                     infoLabelProxy.ApplyModifiedProperties();
                 });
-            PopulateList<LockStepExportGSEntry>(
+            PopulateList<LockstepExportGSEntry>(
                 allGameStates: allGameStates,
                 proxy: proxy,
                 entriesArrayName: "exportGSEntries",
@@ -124,7 +124,7 @@ namespace JanSharp
         }
 
         private static void PopulateList<T>(
-            ReadOnlyCollection<LockStepGameState> allGameStates,
+            ReadOnlyCollection<LockstepGameState> allGameStates,
             SerializedObject proxy,
             string entriesArrayName,
             string postfix,
@@ -132,8 +132,8 @@ namespace JanSharp
             GameObject prefab,
             bool leaveInteractableUnchanged = false,
             bool leaveIsOnUnchanged = false,
-            Action<T, LockStepGameState> callback = null)
-            where T : LockStepGameStateEntryBase
+            Action<T, LockstepGameState> callback = null)
+            where T : LockstepGameStateEntryBase
         {
             T[] entries = new T[allGameStates.Count];
             for (int i = 0; i < allGameStates.Count; i++)
@@ -145,7 +145,7 @@ namespace JanSharp
                 {
                     inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
                     inst.transform.SetParent(list, false);
-                    Undo.RegisterCreatedObjectUndo(inst, "LockStepGameStatesUI entry creation OnBuild");
+                    Undo.RegisterCreatedObjectUndo(inst, "LockstepGameStatesUI entry creation OnBuild");
                 }
                 SerializedObject instProxy = new SerializedObject(inst);
                 instProxy.FindProperty("m_Name").stringValue = allGameStates[i].GameStateInternalName + postfix;

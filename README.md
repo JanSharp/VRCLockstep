@@ -1,5 +1,5 @@
 
-# Lock Step
+# Lockstep
 
 Common files and scripts are, well, commonly used across multiple other scripts. It's like the core.
 

@@ -7,11 +7,11 @@ using VRC.Udon;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class DummyTestGameState : LockStepGameState
+    public class DummyTestGameState : LockstepGameState
     {
-        [SerializeField] [HideInInspector] private LockStep lockStep; // Set by LockStep's OnBuild handler.
+        [SerializeField] [HideInInspector] private Lockstep lockstep; // Set by Lockstep's OnBuild handler.
 
-        [SerializeField] private string gameStateInternalName = "jansharp.lock-step-dummy";
+        [SerializeField] private string gameStateInternalName = "jansharp.lockstep-dummy";
         [SerializeField] private string gameStateDisplayName = "Dummy Game State What?";
         [SerializeField] private bool gameStateSupportsImportExport = false;
         [SerializeField] private uint gameStateDataVersion = 0u;

@@ -19,8 +19,8 @@ namespace JanSharp
         ///<summary>WriteSmall((uint)index) never writes 0xff as the first byte, making this distinguishable.</summary>
         private const byte IgnoreRestOfDataMarker = 0xff;
 
-        [System.NonSerialized] public LockStep lockStep;
-        [System.NonSerialized] public bool lockStepIsMaster;
+        [System.NonSerialized] public Lockstep lockstep;
+        [System.NonSerialized] public bool lockstepIsMaster;
         [System.NonSerialized] public ulong shiftedPlayerId;
         [System.NonSerialized] public uint ownerPlayerId;
 
@@ -79,23 +79,23 @@ namespace JanSharp
         // This method will be called on all clients when the object is enabled and the Owner has been assigned.
         public override void _OnOwnerSet()
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  _OnOwnerSet");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  _OnOwnerSet");
             #endif
         }
 
         // This method will be called on all clients when the original owner has left and the object is about to be disabled.
         public override void _OnCleanup()
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  _OnCleanup");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  _OnCleanup");
             #endif
         }
 
         public ulong MakeUniqueId()
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  MakeUniqueId");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  MakeUniqueId");
             #endif
             return shiftedPlayerId | (ulong)(nextInputActionIndex++);
         }
@@ -115,8 +115,8 @@ namespace JanSharp
         ///</summary>
         public ulong SendInputAction(uint inputActionId, byte[] inputActionData, int inputActionDataSize)
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction - inputActionId: {inputActionId}, inputActionDataSize: {inputActionDataSize}");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction - inputActionId: {inputActionId}, inputActionDataSize: {inputActionDataSize}");
             #endif
             if (stage == null)
                 stage = new byte[MaxSyncedDataSize];
@@ -138,8 +138,8 @@ namespace JanSharp
 
             uint index = (nextInputActionIndex++);
             ulong uniqueId = shiftedPlayerId | index;
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - uniqueId: 0x{uniqueId:x16}");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - uniqueId: 0x{uniqueId:x16}");
             #endif
 
             // Write IA header.
@@ -154,8 +154,8 @@ namespace JanSharp
             while (remainingLength > freeSpace)
             {
                 int stopIndex = baseIndex + freeSpace;
-                #if LockStepDebug
-                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}, stopIndex: {stopIndex}");
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}, stopIndex: {stopIndex}");
                 #endif
                 for (int i = baseIndex; i < stopIndex; i++)
                     stage[i + indexDiff] = inputActionData[i];
@@ -167,8 +167,8 @@ namespace JanSharp
                 remainingLength -= freeSpace;
                 freeSpace = MaxSyncedDataSize - stageSize;
             }
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
             #endif
             for (int i = baseIndex; i < inputActionDataSize; i++)
                 stage[i + indexDiff] = inputActionData[i];
@@ -183,8 +183,8 @@ namespace JanSharp
 
         public void DequeueEverything(bool doCallback)
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  DequeueEverything");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  DequeueEverything");
             #endif
             if (uiqCount == 0) // Absolutely nothing is being sent out right now, nothing to do.
                 return;
@@ -198,7 +198,7 @@ namespace JanSharp
                     // When retrying is true, the unique id is still in this queue.
                     ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
                     if (uniqueId != 0uL)
-                        lockStep.InputActionSent(uniqueId);
+                        lockstep.InputActionSent(uniqueId);
                 }
             }
 
@@ -224,12 +224,12 @@ namespace JanSharp
 
         private void CheckSyncStart()
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  CheckSyncStart");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  CheckSyncStart");
             #endif
             if (!isLateJoinerSyncInst && Owner == null)
             {
-                Debug.LogError("[LockStep] Attempt to send input actions when there is no player assigned with the sync script.");
+                Debug.LogError("[Lockstep] Attempt to send input actions when there is no player assigned with the sync script.");
                 return;
             }
             RequestSerialization();
@@ -239,8 +239,8 @@ namespace JanSharp
 
         public override void OnPreSerialization()
         {
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnPreSerialization");
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnPreSerialization");
             #endif
             if (retrying)
             {
@@ -273,9 +273,9 @@ namespace JanSharp
 
         public override void OnPostSerialization(SerializationResult result)
         {
-            #if LockStepDebug
+            #if LockstepDebug
             // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}, syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}, syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
             #endif
             if (!result.success)
             {
@@ -290,7 +290,7 @@ namespace JanSharp
             {
                 ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
                 if (!isLateJoinerSyncInst)
-                    lockStep.InputActionSent(uniqueId);
+                    lockstep.InputActionSent(uniqueId);
             }
 
             if (uiqCount != 0)
@@ -299,22 +299,22 @@ namespace JanSharp
 
         public override void OnDeserialization(DeserializationResult result)
         {
-            #if LockStepDebug
+            #if LockstepDebug
             // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization - syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization - syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
             #endif
-            if ((isLateJoinerSyncInst && lockStepIsMaster) || lockStep == null)
+            if ((isLateJoinerSyncInst && lockstepIsMaster) || lockstep == null)
             {
-                // When lockStep is still null, this can safely ignore any incoming data,
-                // because this script can handle broken partial actions and LockStep
+                // When lockstep is still null, this can safely ignore any incoming data,
+                // because this script can handle broken partial actions and Lockstep
                 // doesn't except to get input actions instantly after joining.
                 return;
             }
 
             byte firstByte = syncedData[0];
-            #if LockStepDebug
+            #if LockstepDebug
             // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - firstByte: 0x{firstByte:x2} or {firstByte}");
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - firstByte: 0x{firstByte:x2} or {firstByte}");
             #endif
             if (firstByte == ClearedDataMarker)
             {
@@ -338,20 +338,20 @@ namespace JanSharp
                 i = stopIndex;
                 partialContinueIndex += bytesToRead;
                 partialMissingSize -= bytesToRead;
-                #if LockStepDebug
-                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
                 #endif
                 if (partialMissingSize == 0)
                 {
                     hasPartialInputAction = false;
-                    lockStep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
+                    lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
                 }
             }
             else
             {
                 if (hasPartialInputAction)
                 {
-                    Debug.LogError("[LockStep] Expected continuation of split up partial input action data, "
+                    Debug.LogError("[Lockstep] Expected continuation of split up partial input action data, "
                         + "but didn't receive as such. This is very most likely an unrecoverable state for "
                         + "the system, but just in case someone just tried sending data through malicious "
                         + "means this data gets ignored.");
@@ -369,15 +369,15 @@ namespace JanSharp
 
             while (i < syncedDataLength && syncedData[i] != IgnoreRestOfDataMarker)
             {
-                #if LockStepDebug
-                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - bytes left (syncedDataLength - i): {syncedDataLength - i}");
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - bytes left (syncedDataLength - i): {syncedDataLength - i}");
                 #endif
                 // Read IA header.
                 receivedUniqueId = shiftedSendingPlayerId | DataStream.ReadSmallUInt(ref syncedData, ref i);
                 receivedInputActionId = DataStream.ReadSmallUInt(ref syncedData, ref i);
                 int dataLength = (int)DataStream.ReadSmallUInt(ref syncedData, ref i);
-                #if LockStepDebug
-                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - receivedUniqueId: 0x{receivedUniqueId:x16}, receivedInputActionId: {receivedInputActionId}, dataLength: {dataLength}");
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - receivedUniqueId: 0x{receivedUniqueId:x16}, receivedInputActionId: {receivedInputActionId}, dataLength: {dataLength}");
                 #endif
                 receivedData = new byte[dataLength];
                 if (i + dataLength > syncedDataLength)
@@ -388,15 +388,15 @@ namespace JanSharp
                         receivedData[j] = syncedData[i + j];
                     partialContinueIndex = rest;
                     partialMissingSize = dataLength - rest;
-                    #if LockStepDebug
-                    Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
+                    #if LockstepDebug
+                    Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
                     #endif
                     break;
                 }
                 for (int j = 0; j < dataLength; j++)
                     receivedData[j] = syncedData[i + j];
                 i += dataLength;
-                lockStep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
+                lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
             }
         }
     }

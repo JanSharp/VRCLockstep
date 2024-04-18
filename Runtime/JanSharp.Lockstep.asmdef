@@ -1,5 +1,5 @@
 {
-    "name": "JanSharp.LockStep",
+    "name": "JanSharp.Lockstep",
     "references": [
         "JanSharp.Common",
         "UdonSharp.Runtime",

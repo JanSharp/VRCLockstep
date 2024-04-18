@@ -1,7 +1,7 @@
 {
-    "name": "JanSharp.LockStep.Editor",
+    "name": "JanSharp.Lockstep.Editor",
     "references": [
-        "JanSharp.LockStep",
+        "JanSharp.Lockstep",
         "JanSharp.Common",
         "JanSharp.Common.Editor",
         "UdonSharp.Runtime",

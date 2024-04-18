@@ -7,7 +7,7 @@ using TMPro;
 
 namespace JanSharp
 {
-    public abstract class LockStepGameStateEntryBase : UdonSharpBehaviour
+    public abstract class LockstepGameStateEntryBase : UdonSharpBehaviour
     {
         public TextMeshProUGUI displayNameText;
         public Toggle mainToggle;

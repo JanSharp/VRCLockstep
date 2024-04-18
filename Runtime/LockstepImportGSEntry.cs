@@ -8,14 +8,14 @@ using TMPro;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class LockStepImportGSEntry : LockStepGameStateEntryBase
+    public class LockstepImportGSEntry : LockstepGameStateEntryBase
     {
-        [HideInInspector] public LockStepGameStatesUI gameStatesUI;
-        [HideInInspector] public LockStepGameState gameState;
+        [HideInInspector] public LockstepGameStatesUI gameStatesUI;
+        [HideInInspector] public LockstepGameState gameState;
 
         public TextMeshProUGUI infoLabel;
         [System.NonSerialized] public bool canImport;
-        ///<summary>LockStepImportedGS</summary>
+        ///<summary>LockstepImportedGS</summary>
         [System.NonSerialized] public object[] importedGS;
 
         public void OnToggleValueChanged()

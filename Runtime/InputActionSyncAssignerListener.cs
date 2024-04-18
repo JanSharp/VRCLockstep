@@ -9,7 +9,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class InputActionSyncAssignerListener : CyanPlayerObjectPoolEventListener
     {
-        public LockStep lockStep;
+        public Lockstep lockstep;
 
         // This event is called when the local player's pool object has been assigned.
         public override void _OnLocalPlayerAssigned() { }
@@ -18,11 +18,11 @@ namespace JanSharp
         public override void _OnPlayerAssigned(VRCPlayerApi player, int poolIndex, UdonBehaviour poolObject)
         {
             InputActionSync inputActionSync = (InputActionSync)(Component)poolObject;
-            inputActionSync.lockStep = lockStep;
-            inputActionSync.shiftedPlayerId = ((ulong)player.playerId) << LockStep.PlayerIdKeyShift;
+            inputActionSync.lockstep = lockstep;
+            inputActionSync.shiftedPlayerId = ((ulong)player.playerId) << Lockstep.PlayerIdKeyShift;
             inputActionSync.ownerPlayerId = (uint)player.playerId;
 
-            lockStep.OnInputActionSyncPlayerAssigned(player, inputActionSync);
+            lockstep.OnInputActionSyncPlayerAssigned(player, inputActionSync);
         }
 
         // This event is called when any player's object has been unassigned.

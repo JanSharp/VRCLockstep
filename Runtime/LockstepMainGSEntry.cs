@@ -7,7 +7,7 @@ using TMPro;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class LockStepMainGSEntry : LockStepGameStateEntryBase
+    public class LockstepMainGSEntry : LockstepGameStateEntryBase
     {
         public TextMeshProUGUI autosaveText;
     }

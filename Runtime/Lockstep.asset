@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
-  m_Name: LockStep
+  m_Name: Lockstep
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: a9204f38cda51fae6b5007cbb4298dcb,
     type: 2}
@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 1
   hasInteractEvent: 0
-  scriptID: -797104217380790355
+  scriptID: -3451797448924097381
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 3|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.InputActionSync, JanSharp.LockStep
+      Data: JanSharp.InputActionSync, JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 
@@ -122,7 +122,7 @@ MonoBehaviour:
       Data: 7|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.LockStepTickSync, JanSharp.LockStep
+      Data: JanSharp.LockstepTickSync, JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 
@@ -2385,7 +2385,7 @@ MonoBehaviour:
       Data: 131|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.LockStepGameState[], JanSharp.LockStep
+      Data: JanSharp.LockstepGameState[], JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 
@@ -4318,7 +4318,7 @@ MonoBehaviour:
       Data: 225|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.LockStepGameState, JanSharp.LockStep
+      Data: JanSharp.LockstepGameState, JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 

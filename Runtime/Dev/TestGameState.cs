@@ -7,12 +7,12 @@ using VRC.Udon;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class TestGameState : LockStepGameState
+    public class TestGameState : LockstepGameState
     {
         [SerializeField] private TestGameStateUI ui;
-        [SerializeField] [HideInInspector] private LockStep lockStep; // Set by LockStep's OnBuild handler.
+        [SerializeField] [HideInInspector] private Lockstep lockstep; // Set by Lockstep's OnBuild handler.
 
-        public override string GameStateInternalName => "jansharp.lock-step-test";
+        public override string GameStateInternalName => "jansharp.lockstep-test";
         public override string GameStateDisplayName => "Test Game State";
         public override bool GameStateSupportsImportExport => true;
         public override uint GameStateDataVersion => 0u;
@@ -26,87 +26,87 @@ namespace JanSharp
         public const int PlayerData_Description = 2; // string
         public const int PlayerData_Size = 3;
 
-        // These 2 are set by LockStep as parameters.
-        private uint lockStepPlayerId;
+        // These 2 are set by Lockstep as parameters.
+        private uint lockstepPlayerId;
 
-        [LockStepEvent(LockStepEventType.OnInit)]
+        [LockstepEvent(LockstepEventType.OnInit)]
         public void OnInit()
         {
             Debug.Log($"<dlt> TestGameState  OnInit");
         }
 
-        [LockStepEvent(LockStepEventType.OnClientJoined)]
+        [LockstepEvent(LockstepEventType.OnClientJoined)]
         public void OnClientJoined()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientJoined - {lockStepPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnClientJoined - {lockstepPlayerId}");
 
             object[] playerData = new object[PlayerData_Size];
-            playerData[PlayerData_PlayerId] = lockStepPlayerId;
-            playerData[PlayerData_DisplayName] = lockStep.GetDisplayName(lockStepPlayerId);
+            playerData[PlayerData_PlayerId] = lockstepPlayerId;
+            playerData[PlayerData_DisplayName] = lockstep.GetDisplayName(lockstepPlayerId);
             playerData[PlayerData_Description] = "";
 
-            allPlayerData.Add(lockStepPlayerId, new DataToken(playerData));
+            allPlayerData.Add(lockstepPlayerId, new DataToken(playerData));
             ui.UpdateUI();
         }
 
-        [LockStepEvent(LockStepEventType.OnClientBeginCatchUp)]
+        [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientBeginCatchUp - {lockStepPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnClientBeginCatchUp - {lockstepPlayerId}");
         }
 
-        [LockStepEvent(LockStepEventType.OnClientCaughtUp)]
+        [LockstepEvent(LockstepEventType.OnClientCaughtUp)]
         public void OnClientCaughtUp()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientCaughtUp - {lockStepPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnClientCaughtUp - {lockstepPlayerId}");
         }
 
-        [LockStepEvent(LockStepEventType.OnClientLeft)]
+        [LockstepEvent(LockstepEventType.OnClientLeft)]
         public void OnClientLeft()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientLeft - {lockStepPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnClientLeft - {lockstepPlayerId}");
 
-            allPlayerData.Remove(lockStepPlayerId);
+            allPlayerData.Remove(lockstepPlayerId);
 
             ui.UpdateUI();
         }
 
-        [LockStepEvent(LockStepEventType.OnTick)]
+        [LockstepEvent(LockstepEventType.OnTick)]
         public void OnTick()
         {
             // Debug.Log("<dlt> TestGameState  OnTick");
 
             // Reactivate the code below for SendSingletonInputAction testing.
-            // if (((int)lockStep.currentTick % 50) == 0)
+            // if (((int)lockstep.currentTick % 50) == 0)
             // {
-            //     lockStep.WriteSmall(lockStep.currentTick);
-            //     lockStep.SendSingletonInputAction(singletonTestIAId);
+            //     lockstep.WriteSmall(lockstep.currentTick);
+            //     lockstep.SendSingletonInputAction(singletonTestIAId);
             // }
         }
 
-        [LockStepEvent(LockStepEventType.OnImportStart)]
+        [LockstepEvent(LockstepEventType.OnImportStart)]
         public void OnImportStart()
         {
-            Debug.Log($"<dlt> TestGameState  OnImportStart - ImportingPlayerId: {lockStep.ImportingPlayerId}, ImportingFromName: {lockStep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockStep.ImportingFromDate:yyyy-MM-dd HH:mm}, GetGameStatesWaitingForImportCount(): {lockStep.GetGameStatesWaitingForImportCount()}");
+            Debug.Log($"<dlt> TestGameState  OnImportStart - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GetGameStatesWaitingForImportCount(): {lockstep.GetGameStatesWaitingForImportCount()}");
         }
 
-        [LockStepEvent(LockStepEventType.OnImportedGameState)]
+        [LockstepEvent(LockstepEventType.OnImportedGameState)]
         public void OnImportedGameState()
         {
-            Debug.Log($"<dlt> TestGameState  OnImportedGameState - ImportedGameState.GameStateInternalName: {lockStep.ImportedGameState.GameStateInternalName}");
+            Debug.Log($"<dlt> TestGameState  OnImportedGameState - ImportedGameState.GameStateInternalName: {lockstep.ImportedGameState.GameStateInternalName}");
         }
 
-        [LockStepEvent(LockStepEventType.OnImportFinished)]
+        [LockstepEvent(LockstepEventType.OnImportFinished)]
         public void OnImportFinished()
         {
-            Debug.Log($"<dlt> TestGameState  OnImportFinished - GetGameStatesWaitingForImportCount(): {lockStep.GetGameStatesWaitingForImportCount()}");
+            Debug.Log($"<dlt> TestGameState  OnImportFinished - GetGameStatesWaitingForImportCount(): {lockstep.GetGameStatesWaitingForImportCount()}");
         }
 
         [SerializeField] [HideInInspector] private uint singletonTestIAId;
-        [LockStepInputAction(nameof(singletonTestIAId))]
+        [LockstepInputAction(nameof(singletonTestIAId))]
         public void OnSingletonTestIA()
         {
-            Debug.Log($"<dlt> TestGameState  OnSingletonTestIA - sendTick: {lockStep.ReadSmallUInt()}, SendingPlayerId: {lockStep.SendingPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnSingletonTestIA - sendTick: {lockstep.ReadSmallUInt()}, SendingPlayerId: {lockstep.SendingPlayerId}");
         }
 
         public void SetDescription(uint playerId, string description)
@@ -120,21 +120,21 @@ namespace JanSharp
         private void SendSetDescriptionIA(uint playerId, string description)
         {
             Debug.Log("<dlt> TestGameState  SendSetDescriptionIA");
-            lockStep.WriteSmall(playerId);
-            lockStep.Write(description);
-            lockStep.SendInputAction(setDescriptionNameIAId);
+            lockstep.WriteSmall(playerId);
+            lockstep.Write(description);
+            lockstep.SendInputAction(setDescriptionNameIAId);
         }
 
         [SerializeField] [HideInInspector] private uint setDescriptionNameIAId;
-        [LockStepInputAction(nameof(setDescriptionNameIAId))]
+        [LockstepInputAction(nameof(setDescriptionNameIAId))]
         public void OnSetDescriptionIA()
         {
             Debug.Log("<dlt> TestGameState  OnSetDescriptionIA");
-            uint playerId = lockStep.ReadSmallUInt();
+            uint playerId = lockstep.ReadSmallUInt();
             if (!allPlayerData.TryGetValue(playerId, out DataToken playerDataToken))
                 return; // Could hve left already.
             object[] playerData = (object[])playerDataToken.Reference;
-            playerData[PlayerData_Description] = lockStep.ReadString();
+            playerData[PlayerData_Description] = lockstep.ReadString();
 
             ui.UpdateUI();
         }
@@ -144,14 +144,14 @@ namespace JanSharp
             Debug.Log("<dlt> TestGameState  SerializeGameState");
 
             int count = allPlayerData.Count;
-            lockStep.WriteSmall((uint)count);
+            lockstep.WriteSmall((uint)count);
             DataList allPlayerDataValues = allPlayerData.GetValues();
             for (int i = 0; i < count; i++)
             {
                 object[] playerData = (object[])allPlayerDataValues[i].Reference;
                 if (!isExport)
-                    lockStep.WriteSmall((uint)playerData[PlayerData_PlayerId]);
-                lockStep.Write((string)playerData[PlayerData_Description]);
+                    lockstep.WriteSmall((uint)playerData[PlayerData_PlayerId]);
+                lockstep.Write((string)playerData[PlayerData_Description]);
             }
         }
 
@@ -159,14 +159,14 @@ namespace JanSharp
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
 
-            int count = (int)lockStep.ReadSmallUInt();
+            int count = (int)lockstep.ReadSmallUInt();
             for (int j = 0; j < count; j++)
             {
-                uint playerId = isImport ? (uint)Random.Range(1, 10000) : lockStep.ReadSmallUInt();
+                uint playerId = isImport ? (uint)Random.Range(1, 10000) : lockstep.ReadSmallUInt();
                 object[] playerData = new object[PlayerData_Size];
                 playerData[PlayerData_PlayerId] = playerId;
-                playerData[PlayerData_DisplayName] = lockStep.GetDisplayName(playerId);
-                playerData[PlayerData_Description] = lockStep.ReadString();
+                playerData[PlayerData_DisplayName] = lockstep.GetDisplayName(playerId);
+                playerData[PlayerData_Description] = lockstep.ReadString();
                 allPlayerData.Add(playerId, new DataToken(playerData));
             }
 

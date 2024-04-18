@@ -1,8 +1,8 @@
 {
-  "name": "com.jansharp.lock-step",
+  "name": "com.jansharp.lockstep",
   "version": "0.1.0",
-  "description": "Lock step networking (at least similar) infrastructure for UdonSharp.",
-  "displayName": "Lock Step",
+  "description": "Lockstep networking (at least similar) infrastructure for UdonSharp.",
+  "displayName": "Lockstep",
   "unity": "2019.4",
   "author": {
     "name": "JanSharp",
@@ -18,6 +18,6 @@
     "com.cyan.playerobjectpool": "^1.1.2",
     "com.jansharp.common": ">=0.3.1"
   },
-  "url": "https://github.com/JanSharp/VRCLockStep/releases/download/v0.1.0/com.jansharp.lock-step.zip",
-  "changelogUrl": "https://github.com/JanSharp/VRCLockStep/blob/v0.1.0/CHANGELOG.md"
+  "url": "https://github.com/JanSharp/VRCLockstep/releases/download/v0.1.0/com.jansharp.lockstep.zip",
+  "changelogUrl": "https://github.com/JanSharp/VRCLockstep/blob/v0.1.0/CHANGELOG.md"
 }

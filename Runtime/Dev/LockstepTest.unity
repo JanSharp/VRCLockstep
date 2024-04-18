@@ -157,7 +157,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-1 (ImportGSEntry)
+      value: jansharp.lockstep-dummy-1 (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -628,8 +628,8 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 133639729}
-  lockStep: {fileID: 171763846}
-  gameStateInternalName: jansharp.lock-step-dummy-5
+  lockstep: {fileID: 171763846}
+  gameStateInternalName: jansharp.lockstep-dummy-5
   gameStateDisplayName: Dummy Game State 5
   gameStateSupportsImportExport: 1
   gameStateDataVersion: 0
@@ -726,8 +726,8 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 256865521}
-  lockStep: {fileID: 171763846}
-  gameStateInternalName: jansharp.lock-step-dummy-2
+  lockstep: {fileID: 171763846}
+  gameStateInternalName: jansharp.lockstep-dummy-2
   gameStateDisplayName: Dummy Game State 2
   gameStateSupportsImportExport: 1
   gameStateDataVersion: 2
@@ -1108,7 +1108,7 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-2 (ExportGSEntry)
+      value: jansharp.lockstep-dummy-2 (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -1608,7 +1608,7 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-5 (ExportGSEntry)
+      value: jansharp.lockstep-dummy-5 (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -2387,7 +2387,7 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-test (ExportGSEntry)
+      value: jansharp.lockstep-test (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -2450,7 +2450,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-4 (ImportGSEntry)
+      value: jansharp.lockstep-dummy-4 (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -2727,7 +2727,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-2 (ImportGSEntry)
+      value: jansharp.lockstep-dummy-2 (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437367, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -2971,7 +2971,7 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-1 (MainGSEntry)
+      value: jansharp.lockstep-dummy-1 (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -3228,7 +3228,7 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-3 (MainGSEntry)
+      value: jansharp.lockstep-dummy-3 (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -3425,7 +3425,7 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-3 (ExportGSEntry)
+      value: jansharp.lockstep-dummy-3 (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -4644,7 +4644,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7942439298499248378, guid: 8e5fd8ff5c24a4ac592d87ae5841b799,
         type: 3}
-      propertyPath: lockStep
+      propertyPath: lockstep
       value: 
       objectReference: {fileID: 171763846}
     - target: {fileID: 7942439298499248378, guid: 8e5fd8ff5c24a4ac592d87ae5841b799,
@@ -4656,7 +4656,7 @@ PrefabInstance:
     - target: {fileID: 7942439298499248380, guid: 8e5fd8ff5c24a4ac592d87ae5841b799,
         type: 3}
       propertyPath: m_Name
-      value: LockStepDebugUI
+      value: LockstepDebugUI
       objectReference: {fileID: 0}
     - target: {fileID: 7942439298769263694, guid: 8e5fd8ff5c24a4ac592d87ae5841b799,
         type: 3}
@@ -4996,7 +4996,7 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-5 (MainGSEntry)
+      value: jansharp.lockstep-dummy-5 (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -5070,7 +5070,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-test (ImportGSEntry)
+      value: jansharp.lockstep-test (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -5377,7 +5377,7 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-4 (ExportGSEntry)
+      value: jansharp.lockstep-dummy-4 (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -5493,8 +5493,8 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 1429749132}
-  lockStep: {fileID: 171763846}
-  gameStateInternalName: jansharp.lock-step-dummy-1
+  lockstep: {fileID: 171763846}
+  gameStateInternalName: jansharp.lockstep-dummy-1
   gameStateDisplayName: Dummy Game State 1
   gameStateSupportsImportExport: 0
   gameStateDataVersion: 0
@@ -5633,7 +5633,7 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-2 (MainGSEntry)
+      value: jansharp.lockstep-dummy-2 (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -5858,7 +5858,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-5 (ImportGSEntry)
+      value: jansharp.lockstep-dummy-5 (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -6045,7 +6045,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-3 (ImportGSEntry)
+      value: jansharp.lockstep-dummy-3 (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -6385,7 +6385,7 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-test (MainGSEntry)
+      value: jansharp.lockstep-test (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -6483,8 +6483,8 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 1766173403}
-  lockStep: {fileID: 171763846}
-  gameStateInternalName: jansharp.lock-step-dummy-4
+  lockstep: {fileID: 171763846}
+  gameStateInternalName: jansharp.lockstep-dummy-4
   gameStateDisplayName: Dummy Game State 4
   gameStateSupportsImportExport: 1
   gameStateDataVersion: 0
@@ -6673,8 +6673,8 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 1862118088}
-  lockStep: {fileID: 171763846}
-  gameStateInternalName: jansharp.lock-step-dummy-3
+  lockstep: {fileID: 171763846}
+  gameStateInternalName: jansharp.lockstep-dummy-3
   gameStateDisplayName: Dummy Game State 3
   gameStateSupportsImportExport: 0
   gameStateDataVersion: 0
@@ -6963,7 +6963,7 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-1 (ExportGSEntry)
+      value: jansharp.lockstep-dummy-1 (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -7115,7 +7115,7 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lock-step-dummy-4 (MainGSEntry)
+      value: jansharp.lockstep-dummy-4 (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -7227,7 +7227,7 @@ PrefabInstance:
       objectReference: {fileID: 300832991}
     - target: {fileID: 476066323447479662, guid: 390fe6d092732ae17bddcb5e4175d7df,
         type: 3}
-      propertyPath: lockStep
+      propertyPath: lockstep
       value: 
       objectReference: {fileID: 171763846}
     - target: {fileID: 476066323447479662, guid: 390fe6d092732ae17bddcb5e4175d7df,
@@ -7579,7 +7579,7 @@ PrefabInstance:
     - target: {fileID: 4165720563120614137, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: m_Name
-      value: LockStep
+      value: Lockstep
       objectReference: {fileID: 0}
     - target: {fileID: 4268144112038362776, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
@@ -8744,7 +8744,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}
-      propertyPath: lockStep
+      propertyPath: lockstep
       value: 
       objectReference: {fileID: 171763846}
     - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
