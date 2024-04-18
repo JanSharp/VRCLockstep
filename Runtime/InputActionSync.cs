@@ -11,49 +11,70 @@ namespace JanSharp
     public class InputActionSync : CyanPlayerObjectPoolObject
     {
         private const int MaxSyncedDataSize = 4096;
-        private const int InputActionIndexShift = 32;
-        private const ulong SplitDataFlag = 0x80000000uL;
-        private const ulong InputActionIdBits = 0x7fffffffuL;
+        private const int PlayerIdShift = 32;
+        ///<summary>WriteSmall((uint)playerId) never writes 0xfe as the first byte, making this distinguishable.</summary>
+        private const byte SplitDataMarker = 0xfe;
+        ///<summary>WriteSmall((uint)playerId) never writes 0xff as the first byte, making this distinguishable.</summary>
+        private const byte ClearedDataMarker = 0xff;
+        ///<summary>WriteSmall((uint)index) never writes 0xff as the first byte, making this distinguishable.</summary>
+        private const byte IgnoreRestOfDataMarker = 0xff;
 
         [System.NonSerialized] public LockStep lockStep;
         [System.NonSerialized] public bool lockStepIsMaster;
         [System.NonSerialized] public ulong shiftedPlayerId;
+        [System.NonSerialized] public uint ownerPlayerId;
 
         // Who is the current owner of this object. Null if object is not currently in use.
         // [System.NonSerialized] public VRCPlayerApi Owner; // In the base class.
 
         public bool isLateJoinerSyncInst = false;
 
-        // It is actually a uint, but to reduce the amount of casts the variable is ulong.
         // First one is 1, making 0 an indication of an invalid index.
         // Since the input action index 0 is invalid, the unique id 0 is also invalid.
         // Unique id is the shifted player index plus the input action index.
-        private ulong nextInputActionIndex = 1uL;
+        private uint nextInputActionIndex = 1u;
 
         // sending
 
-        [UdonSynced] private ulong syncedInt = 0uL; // Initial values for first sync, which gets ignored.
-        [UdonSynced] private byte[] syncedData = new byte[0];
         private bool retrying = false;
         private float retryBackoff = 1f;
 
-        private ulong[] syncedIntQueue = new ulong[ArrQueue.MinCapacity];
-        private int siqStartIndex = 0;
-        private int siqCount = 0;
+        [UdonSynced] private byte[] syncedData = new byte[1] { ClearedDataMarker }; // Initial value for first sync, which gets ignored.
+        private int sendingUniqueIdsCount = 0;
 
-        private byte[][] syncedDataQueue = new byte[ArrQueue.MinCapacity][];
-        private int sdqStartIndex = 0;
-        private int sdqCount = 0;
+        private byte[][] dataQueue = new byte[ArrQueue.MinCapacity][];
+        private int dqStartIndex = 0;
+        private int dqCount = 0;
 
-        private ulong[] uniqueIdQueue = new ulong[ArrQueue.MinCapacity];
+        ///cSpell:ignore uicq
+        private int[] uniqueIdsCountQueue = new int[ArrQueue.MinCapacity];
+        private int uicqStartIndex = 0;
+        private int uicqCount = 0;
+
+        private byte[] stage = null;
+        private int stageSize = 0;
+        private int stagedUniqueIdCount = 0;
+
+        private const int MaxHeaderSize = 3 * 5; // 3 * small uint
+        private const int PotentialStageSizeOverflowThreshold = MaxSyncedDataSize - MaxHeaderSize;
+
+        private ulong[] uniqueIdQueue = new ulong[ArrList.MinCapacity];
         private int uiqStartIndex = 0;
         private int uiqCount = 0;
 
-        public int QueuedSyncsCount => siqCount;
+        public int QueuedSyncsCount => dqCount;
 
         // receiving
 
-        private byte[] syncedDataBuffer = null;
+        private uint sendingPlayerId = 0u; // Initial value does not matter, so long as they match.
+        private ulong shiftedSendingPlayerId = 0uL; // Initial value does not matter, so long as they match.
+
+        private bool hasPartialInputAction = false;
+        private uint receivedInputActionId;
+        private ulong receivedUniqueId;
+        private byte[] receivedData;
+        private int partialContinueIndex;
+        private int partialMissingSize;
 
         // This method will be called on all clients when the object is enabled and the Owner has been assigned.
         public override void _OnOwnerSet()
@@ -76,56 +97,87 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  MakeUniqueId");
             #endif
-            return shiftedPlayerId | (nextInputActionIndex++);
+            return shiftedPlayerId | (ulong)(nextInputActionIndex++);
+        }
+
+        private void MoveStageToQueue()
+        {
+            byte[] stageCopy = new byte[MaxSyncedDataSize];
+            stage.CopyTo(stageCopy, 0);
+            ArrQueue.Enqueue(ref dataQueue, ref dqStartIndex, ref dqCount, stageCopy);
+            ArrQueue.Enqueue(ref uniqueIdsCountQueue, ref uicqStartIndex, ref uicqCount, stagedUniqueIdCount);
+            stageSize = 0;
+            stagedUniqueIdCount = 0;
         }
 
         ///<summary>
-        ///Returns the uniqueId for the send input action, or 0 in case of error.
+        ///Returns the uniqueId for the sent input action.
         ///</summary>
         public ulong SendInputAction(uint inputActionId, byte[] inputActionData, int inputActionDataSize)
         {
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction");
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction - inputActionId: {inputActionId}, inputActionDataSize: {inputActionDataSize}");
             #endif
-            ulong index = (nextInputActionIndex++);
+            if (stage == null)
+                stage = new byte[MaxSyncedDataSize];
 
-            ulong prepSyncedInt = (index << InputActionIndexShift) | SplitDataFlag | (ulong)inputActionId;
-            ulong uniqueId = 0u;
-            #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - inputActionDataSize: {inputActionDataSize}");
-            #endif
-            for (int startIndex = 0;
-                startIndex < inputActionDataSize || (inputActionDataSize == 0 && startIndex == 0);
-                startIndex += MaxSyncedDataSize)
+            if (stageSize > PotentialStageSizeOverflowThreshold)
             {
-                int remainingLength = inputActionDataSize - startIndex;
-                int prepSize;
-                if (remainingLength > MaxSyncedDataSize)
-                    prepSize = MaxSyncedDataSize;
-                else
-                {
-                    prepSize = remainingLength;
-                    prepSyncedInt ^= SplitDataFlag;
-                    uniqueId = shiftedPlayerId | index;
-                }
-
-                byte[] prepSyncedData = new byte[prepSize];
-                for (int i = 0; i < prepSize; i++) // I can see the Udon performance crumble in front of my eyes.
-                    prepSyncedData[i] = inputActionData[startIndex + i];
-
-                #if LockStepDebug
-                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - enqueueing "
-                    + $"syncedInt: 0x{prepSyncedInt:X8}, syncedData length: {prepSize}, uniqueId: 0x{uniqueId:X8}");
-                #endif
-                ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, prepSyncedInt);
-                ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, prepSyncedData);
-                ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, uniqueId);
+                if (stageSize < MaxSyncedDataSize)
+                    DataStream.Write(ref stage, ref stageSize, IgnoreRestOfDataMarker);
+                // Move the whole MaxSyncedDataSize regardless of if there are a few bytes at the end that are
+                // unused, because that allows using Array.CopyTo which is way faster than doing a loop in Udon.
+                MoveStageToQueue();
             }
-            CheckSyncStart();
 
+            // Always send the player id to prevent race conditions around players joining and leaving, because
+            // I cannot trust VRChat and the player object pool to ensure that the owner (assigned by the
+            // player object pool) to be the same for every client at the time of deserialization.
+            if (stageSize == 0)
+                DataStream.WriteSmall(ref stage, ref stageSize, ownerPlayerId);
+
+            uint index = (nextInputActionIndex++);
+            ulong uniqueId = shiftedPlayerId | index;
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction - uniqueId: 0x{uniqueId:x8}");
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - uniqueId: 0x{uniqueId:x16}");
             #endif
+
+            // Write IA header.
+            DataStream.WriteSmall(ref stage, ref stageSize, index);
+            DataStream.WriteSmall(ref stage, ref stageSize, inputActionId);
+            DataStream.WriteSmall(ref stage, ref stageSize, (uint)inputActionDataSize);
+
+            int baseIndex = 0;
+            int indexDiff = stageSize; // And minus baseIndex, but baseIndex is always 0 here.
+            int remainingLength = inputActionDataSize;
+            int freeSpace = MaxSyncedDataSize - stageSize;
+            while (remainingLength > freeSpace)
+            {
+                int stopIndex = baseIndex + freeSpace;
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}, stopIndex: {stopIndex}");
+                #endif
+                for (int i = baseIndex; i < stopIndex; i++)
+                    stage[i + indexDiff] = inputActionData[i];
+                MoveStageToQueue();
+                // Instead of starting with WriteSmall((uint)playerId), write SplitDataMarker.
+                DataStream.Write(ref stage, ref stageSize, SplitDataMarker);
+                baseIndex = stopIndex;
+                indexDiff = stageSize - baseIndex;
+                remainingLength -= freeSpace;
+                freeSpace = MaxSyncedDataSize - stageSize;
+            }
+            #if LockStepDebug
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
+            #endif
+            for (int i = baseIndex; i < inputActionDataSize; i++)
+                stage[i + indexDiff] = inputActionData[i];
+            stageSize += remainingLength;
+
+            ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, uniqueId);
+            stagedUniqueIdCount++;
+
+            CheckSyncStart();
             return uniqueId;
         }
 
@@ -134,11 +186,8 @@ namespace JanSharp
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  DequeueEverything");
             #endif
-            if (uiqCount == 0) // Logically equivalent to `siqCount == 0 && !retrying`.
+            if (uiqCount == 0) // Absolutely nothing is being sent out right now, nothing to do.
                 return;
-
-            ArrQueue.Clear(ref syncedIntQueue, ref siqStartIndex, ref siqCount);
-            ArrQueue.Clear(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount);
 
             if (!doCallback || isLateJoinerSyncInst)
                 ArrQueue.Clear(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
@@ -153,19 +202,24 @@ namespace JanSharp
                 }
             }
 
+            stageSize = 0;
+            stagedUniqueIdCount = 0;
+            ArrQueue.Clear(ref dataQueue, ref dqStartIndex, ref dqCount);
+            ArrQueue.Clear(ref uniqueIdsCountQueue, ref uicqStartIndex, ref uicqCount);
+
             // Since there was something already in the process of sending, potentially a split input action
             // do still send one set of data indicating that syncing has been aborted, in case any other
             // client is still receiving data from this script.
             // In most cases, if not all, the DequeueEverything function will be called when there aren't
             // any player's receiving data anymore, that's kind of the purpose of this function, however
             // just in case something weird happens with VRChat, this here exists.
-            // Not only does it prevent this weird case from causing issues, it also prevents this script
-            // here from erroring when PreSerialization does eventually run, because that function
-            // expects at least 1 element to be in the queue.
-            retrying = false; // Drop whatever input action it was retrying to send.
-            ArrQueue.Enqueue(ref syncedIntQueue, ref siqStartIndex, ref siqCount, 0u);
-            ArrQueue.Enqueue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount, new byte[0]);
-            ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, 0u);
+            // This is using 0xfe as a special value
+            syncedData = new byte[1] { ClearedDataMarker };
+            sendingUniqueIdsCount = 0;
+            // Abuse retrying because it causes serialization to just send whatever is currently set in the
+            // syncedData variable without touching the stage or queue or anything.
+            // And by setting sendingUniqueIdCount it also doesn't touch the unique id queue.
+            retrying = true;
         }
 
         private void CheckSyncStart()
@@ -194,14 +248,34 @@ namespace JanSharp
                 return;
             }
 
-            syncedInt = ArrQueue.Dequeue(ref syncedIntQueue, ref siqStartIndex, ref siqCount);
-            syncedData = ArrQueue.Dequeue(ref syncedDataQueue, ref sdqStartIndex, ref sdqCount);
+            if (stage == null) // No input actions have been sent yet.
+            {
+                syncedData = new byte[1] { ClearedDataMarker };
+                return;
+            }
+
+            if (dqCount != 0)
+            {
+                // Take from the queue.
+                syncedData = ArrQueue.Dequeue(ref dataQueue, ref dqStartIndex, ref dqCount);
+                sendingUniqueIdsCount = ArrQueue.Dequeue(ref uniqueIdsCountQueue, ref uicqStartIndex, ref uicqCount);
+                return;
+            }
+
+            // Take the current stage and then clear the stage.
+            syncedData = new byte[stageSize];
+            for (int i = 0; i < stageSize; i++)
+                syncedData[i] = stage[i];
+            sendingUniqueIdsCount = stagedUniqueIdCount;
+            stageSize = 0;
+            stagedUniqueIdCount = 0;
         }
 
         public override void OnPostSerialization(SerializationResult result)
         {
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}");
+            // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}, syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
             #endif
             if (!result.success)
             {
@@ -212,34 +286,22 @@ namespace JanSharp
             }
             retryBackoff = 1f;
 
-            ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
-            if (!isLateJoinerSyncInst && uniqueId != 0uL)
-                lockStep.InputActionSent(uniqueId);
-
-            if (siqCount != 0)
-                SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
-        }
-
-        private void AppendToSyncedDataBuffer()
-        {
-            if (syncedDataBuffer == null)
+            for (int i = 0; i < sendingUniqueIdsCount; i++)
             {
-                // syncedData gets modified by Udon during the next deserialization if the data size is the same.
-                syncedDataBuffer = new byte[syncedData.Length];
-                syncedData.CopyTo(syncedDataBuffer, 0);
-                return;
+                ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
+                if (!isLateJoinerSyncInst)
+                    lockStep.InputActionSent(uniqueId);
             }
-            int oldLength = syncedDataBuffer.Length;
-            byte[] biggerBuffer = new byte[oldLength + syncedData.Length];
-            syncedDataBuffer.CopyTo(biggerBuffer , 0);
-            syncedData.CopyTo(biggerBuffer, oldLength);
-            syncedDataBuffer = biggerBuffer;
+
+            if (uiqCount != 0)
+                SendCustomEventDelayedFrames(nameof(RequestSerializationDelayed), 1);
         }
 
         public override void OnDeserialization(DeserializationResult result)
         {
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization");
+            // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization - syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
             #endif
             if ((isLateJoinerSyncInst && lockStepIsMaster) || lockStep == null)
             {
@@ -249,21 +311,93 @@ namespace JanSharp
                 return;
             }
 
-            if (syncedInt == 0uL)
+            byte firstByte = syncedData[0];
+            #if LockStepDebug
+            // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
+            Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - firstByte: 0x{firstByte:x2} or {firstByte}");
+            #endif
+            if (firstByte == ClearedDataMarker)
             {
-                syncedDataBuffer = null;
+                hasPartialInputAction = false;
+                receivedData = null;
                 return;
             }
 
-            AppendToSyncedDataBuffer();
-            if ((syncedInt & SplitDataFlag) != 0uL)
-                return;
+            int i = 0;
+            int syncedDataLength = syncedData.Length;
+            if (firstByte == SplitDataMarker)
+            {
+                if (!hasPartialInputAction)
+                    return; // We just joined, this data is not for us.
+                i++;
+                int bytesToRead = System.Math.Min(syncedDataLength - i, partialMissingSize);
+                int stopIndex = i + bytesToRead;
+                int offset = partialContinueIndex - i;
+                for (int j = i; j < stopIndex; j++)
+                    receivedData[j + offset] = syncedData[j];
+                i = stopIndex;
+                partialContinueIndex += bytesToRead;
+                partialMissingSize -= bytesToRead;
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
+                #endif
+                if (partialMissingSize == 0)
+                {
+                    hasPartialInputAction = false;
+                    lockStep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
+                }
+            }
+            else
+            {
+                if (hasPartialInputAction)
+                {
+                    Debug.LogError("[LockStep] Expected continuation of split up partial input action data, "
+                        + "but didn't receive as such. This is very most likely an unrecoverable state for "
+                        + "the system, but just in case someone just tried sending data through malicious "
+                        + "means this data gets ignored.");
+                    return;
+                }
+                uint playerId = DataStream.ReadSmallUInt(ref syncedData, ref i);
+                if (playerId != sendingPlayerId)
+                {
+                    sendingPlayerId = playerId;
+                    shiftedSendingPlayerId = (ulong)playerId << PlayerIdShift;
+                    hasPartialInputAction = false;
+                    receivedData = null;
+                }
+            }
 
-            uint id = (uint)(syncedInt & InputActionIdBits);
-            // Can just right shift because index uses all the highest bits;
-            ulong index = syncedInt >> InputActionIndexShift;
-            lockStep.ReceivedInputAction(isLateJoinerSyncInst, id, shiftedPlayerId | index, syncedDataBuffer);
-            syncedDataBuffer = null;
+            while (i < syncedDataLength && syncedData[i] != IgnoreRestOfDataMarker)
+            {
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - bytes left (syncedDataLength - i): {syncedDataLength - i}");
+                #endif
+                // Read IA header.
+                receivedUniqueId = shiftedSendingPlayerId | DataStream.ReadSmallUInt(ref syncedData, ref i);
+                receivedInputActionId = DataStream.ReadSmallUInt(ref syncedData, ref i);
+                int dataLength = (int)DataStream.ReadSmallUInt(ref syncedData, ref i);
+                #if LockStepDebug
+                Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - receivedUniqueId: 0x{receivedUniqueId:x16}, receivedInputActionId: {receivedInputActionId}, dataLength: {dataLength}");
+                #endif
+                receivedData = new byte[dataLength];
+                if (i + dataLength > syncedDataLength)
+                {
+                    hasPartialInputAction = true;
+                    int rest = syncedDataLength - i;
+                    for (int j = 0; j < rest; j++)
+                        receivedData[j] = syncedData[i + j];
+                    partialContinueIndex = rest;
+                    partialMissingSize = dataLength - rest;
+                    #if LockStepDebug
+                    Debug.Log($"[LockStepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
+                    #endif
+                    break;
+                }
+                for (int j = 0; j < dataLength; j++)
+                    receivedData[j] = syncedData[i + j];
+                i += dataLength;
+                lockStep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
+            }
         }
     }
 }

@@ -1079,7 +1079,7 @@ namespace JanSharp
                     + "supported, and this call to SendLateJoinerData is ignored.");
                 return;
             }
-            if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20))
+            if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20)) // TODO: change this, maybe to total byte count?
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
             // Client states game state.
@@ -1370,7 +1370,7 @@ namespace JanSharp
         public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, ulong uniqueId, byte[] inputActionData)
         {
             #if LockStepDebug
-            Debug.Log($"[LockStepDebug] LockStep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x16}{(isLateJoinerSync ? "" : $", event name {inputActionHandlerEventNames[inputActionId]}")}");
+            Debug.Log($"[LockStepDebug] LockStep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x16}{(isLateJoinerSync ? "" : $", event name {(inputActionId < inputActionHandlerEventNames.Length ? inputActionHandlerEventNames[inputActionId] : "<id/index out of bounds>")}")}");
             #endif
             if (isLateJoinerSync)
             {

@@ -20,6 +20,7 @@ namespace JanSharp
             InputActionSync inputActionSync = (InputActionSync)(Component)poolObject;
             inputActionSync.lockStep = lockStep;
             inputActionSync.shiftedPlayerId = ((ulong)player.playerId) << LockStep.PlayerIdKeyShift;
+            inputActionSync.ownerPlayerId = (uint)player.playerId;
 
             lockStep.OnInputActionSyncPlayerAssigned(player, inputActionSync);
         }

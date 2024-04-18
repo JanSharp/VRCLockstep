@@ -362,7 +362,6 @@ These 2 aren't really events, but they are called by the Lock Step system.
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
 TODO: the ability to take master from another master in lock step
-TODO: bundle input actions together and optimize for that instead of just sending single input actions at a time
 TODO: actually implement autosaving (auto exporting)
 TODO: return unique id from SendInputAction and expose the unique id when running input actions to make latency state implementations much easier
 TODO: remove talk about conditional/runtime event registration in the notes file. It's not a thing and it won't happen
