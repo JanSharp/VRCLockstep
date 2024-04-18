@@ -363,6 +363,5 @@ These 2 aren't really events, but they are called by the Lock Step system.
 
 TODO: the ability to take master from another master in lock step
 TODO: actually implement autosaving (auto exporting)
-TODO: return unique id from SendInputAction and expose the unique id when running input actions to make latency state implementations much easier
 TODO: remove talk about conditional/runtime event registration in the notes file. It's not a thing and it won't happen
 TODO: rename LockStep to Lockstep. I didn't know it was just 1 word, and tbh that is easier to type so I want it

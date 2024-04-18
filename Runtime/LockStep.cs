@@ -167,6 +167,12 @@ namespace JanSharp
         ///<summary>This is game state safe, only usable inside of input action events, not all game state
         ///safe events.</summary>
         public uint SendingPlayerId { private set; get; }
+        ///<summary>This is game state safe, only usable inside of input action events, not all game state
+        ///safe events. It is the unique id of the input action that is currently running, which is the same
+        ///value as the one return by RunInputAction, except that RunInputAction of course only returned that
+        ///value initially on a single client - the one calling RunInputAction. The intended purpose of this
+        ///is making latency state implementations easier.</summary>
+        public ulong SendingUniqueId { private set; get; }
 
         private void Start()
         {
@@ -356,7 +362,7 @@ namespace JanSharp
             #endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
-            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], (uint)(uniqueId >> PlayerIdKeyShift));
+            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId);
         }
 
         private void RunInputActionsForThisFrame()
@@ -364,58 +370,57 @@ namespace JanSharp
             for (int i = 0; i < iatrnCount; i++)
             {
                 object[] inputActionData = inputActionsToRunNextFrame[i];
-                RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], localPlayerId);
+                RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], (ulong)inputActionData[2]);
                 inputActionsToRunNextFrame[i] = null;
             }
             iatrnCount = 0;
         }
 
-        private void RunInputAction(uint inputActionId, byte[] inputActionData, uint sendingPlayerId)
+        private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RunInputAction");
             #endif
             ResetReadStream();
             readStream = inputActionData;
-            RunInputActionWithCurrentReadStream(inputActionId, sendingPlayerId);
+            RunInputActionWithCurrentReadStream(inputActionId, uniqueId);
         }
 
-        private void RunInputActionWithCurrentReadStream(uint inputActionId, uint sendingPlayerId)
+        private void RunInputActionWithCurrentReadStream(uint inputActionId, ulong uniqueId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  RunInputActionWithCurrentReadStream");
             #endif
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
-            SendingPlayerId = sendingPlayerId;
+            SendingPlayerId = (uint)(uniqueId >> PlayerIdKeyShift);
+            SendingUniqueId = uniqueId;
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
         }
 
-        public void SendInputAction(uint inputActionId)
+        ///<summary>Returns the unique id of the input action that got sent, or 0 if it did not get sent.</summary>
+        public ulong SendInputAction(uint inputActionId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
             if (ignoreLocalInputActions && !(stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId))
-                return;
+                return 0uL;
 
             byte[] inputActionData = new byte[writeStreamSize];
             for (int i = 0; i < writeStreamSize; i++)
                 inputActionData[i] = writeStream[i];
             ResetWriteStream();
 
-            SendInputActionInternal(inputActionId, inputActionData);
+            return SendInputActionInternal(inputActionId, inputActionData);
         }
 
-        private void SendInputActionInternal(uint inputActionId, byte[] inputActionData)
+        private ulong SendInputActionInternal(uint inputActionId, byte[] inputActionData)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendInputActionInternal - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
             if (isSinglePlayer) // Guaranteed to be master while in single player.
-            {
-                TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData, runInNextFrame: true);
-                return;
-            }
+                return TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData, runInNextFrame: true);
 
             ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             #if LockStepDebug
@@ -429,7 +434,7 @@ namespace JanSharp
                     #if LockStepDebug
                     Debug.Log($"[LockStepDebug] LockStep  SendInputAction (inner) - ignoreLocalInputActions is true, returning");
                     #endif
-                    return; // Do not save client joined IA because it will never be executed locally.
+                    return 0uL; // Do not save client joined IA because it will never be executed locally.
                 }
                 Debug.LogError("[LockStep] stillAllowLocalClientJoinedIA is true while ignoreLocalInputActions is false. "
                     + "This is an invalid state, stillAllowLocalClientJoinedIA should only ever be true if "
@@ -437,18 +442,23 @@ namespace JanSharp
             }
 
             inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
+            return uniqueId;
         }
 
-        ///<summary>Unlike SendInputAction, SendSingletonInputAction must only be called from within a game
-        ///state safe event.</summary>
-        public void SendSingletonInputAction(uint inputActionId)
+        ///<summary><para>Unlike SendInputAction, SendSingletonInputAction must only be called from within a
+        ///game state safe event.</para>
+        ///<para>Returns the unique id of the input action that got sent, or 0 if it did not get sent. Which
+        ///means this only returns non zero on the responsible client.</para></summary>
+        public ulong SendSingletonInputAction(uint inputActionId)
         {
-            SendSingletonInputAction(inputActionId, masterPlayerId);
+            return SendSingletonInputAction(inputActionId, masterPlayerId);
         }
 
-        ///<summary>Unlike SendInputAction, SendSingletonInputAction must only be called from within a game
-        ///state safe event.</summary>
-        public void SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId)
+        ///<summary><para>Unlike SendInputAction, SendSingletonInputAction must only be called from within a
+        ///game state safe event.</para>
+        ///<para>Returns the unique id of the input action that got sent, or 0 if it did not get sent. Which
+        ///means this only returns non zero on the responsible client.</para></summary>
+        public ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  SendSingletonInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
@@ -472,9 +482,9 @@ namespace JanSharp
             singletonInputActions.Add(singletonId, new DataToken(new object[] { responsiblePlayerId, singletonInputActionData }));
 
             if (localPlayerId != responsiblePlayerId)
-                return;
+                return 0uL;
 
-            SendInputActionInternal(singletonInputActionIAId, singletonInputActionData);
+            return SendInputActionInternal(singletonInputActionIAId, singletonInputActionData);
         }
 
         [SerializeField] [HideInInspector] private uint singletonInputActionIAId;
@@ -487,7 +497,7 @@ namespace JanSharp
             uint singletonId = ReadSmallUInt();
             uint inputActionId = ReadSmallUInt();
             singletonInputActions.Remove(singletonId);
-            RunInputActionWithCurrentReadStream(inputActionId, SendingPlayerId);
+            RunInputActionWithCurrentReadStream(inputActionId, SendingUniqueId);
         }
 
         private void CheckIfSingletonInputActionGotDropped(uint leftPlayerId)
@@ -1396,7 +1406,7 @@ namespace JanSharp
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
         }
 
-        private void TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, byte[] inputActionData, bool runInNextFrame = false)
+        private ulong TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, byte[] inputActionData, bool runInNextFrame = false)
         {
             #if LockStepDebug
             Debug.Log($"[LockStepDebug] LockStep  TryToInstantlyRunInputActionOnMaster");
@@ -1411,7 +1421,7 @@ namespace JanSharp
                 }
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
                 AssociateInputActionWithTickInternal(firstMutableTick, uniqueId);
-                return;
+                return uniqueId;
             }
 
             if (!isSinglePlayer)
@@ -1422,15 +1432,18 @@ namespace JanSharp
                         + "on master cannot be 0 while not in single player, because every input action "
                         + "get sent over the network and gets a unique id assigned in the process. "
                         + "Something is very wrong in the code. Ignoring this action.");
-                    return;
+                    return 0uL;
                 }
                 tickSync.AddInputActionToRun(currentTick, uniqueId);
             }
+            else if (uniqueId == 0uL) // In single player, do make a unique id.
+                uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
 
             if (runInNextFrame)
-                ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData });
+                ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData, uniqueId });
             else
-                RunInputAction(inputActionId, inputActionData, isSinglePlayer ? localPlayerId : (uint)(uniqueId >> PlayerIdKeyShift));
+                RunInputAction(inputActionId, inputActionData, uniqueId);
+            return uniqueId;
         }
 
         private void ClearUniqueIdsByTick()
