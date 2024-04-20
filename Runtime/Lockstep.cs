@@ -170,8 +170,9 @@ namespace JanSharp
         ///<summary>This is game state safe, only usable inside of input action events, not all game state
         ///safe events. It is the unique id of the input action that is currently running, which is the same
         ///value as the one return by RunInputAction, except that RunInputAction of course only returned that
-        ///value initially on a single client - the one calling RunInputAction. The intended purpose of this
-        ///is making latency state implementations easier.</summary>
+        ///value initially on a single client - the one calling RunInputAction. SendSingletonInputAction is
+        ///similar. The intended purpose of this is making latency state implementations with latency hiding
+        ///easier.</summary>
         public ulong SendingUniqueId { private set; get; }
 
         private void Start()
@@ -402,7 +403,11 @@ namespace JanSharp
             return !ignoreLocalInputActions || (stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId);
         }
 
-        ///<summary>Returns the unique id of the input action that got sent, or 0 if it did not get sent.</summary>
+        ///<summary><para>Returns the unique id of the input action that got sent. If OnInit or
+        ///OnClientBeginCatchUp have not run yet then it will return 0uL - an invalid id - indicating that it
+        ///did not get sent.</para>
+        ///<para>The intended purpose of this return value in combination with SendingUniqueId is making
+        ///latency state implementations with latency hiding easier.</para></summary>
         public ulong SendInputAction(uint inputActionId)
         {
             #if LockstepDebug
@@ -428,7 +433,7 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  SendInputActionInternal - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
             if (isSinglePlayer) // Guaranteed to be master while in single player.
-                return TryToInstantlyRunInputActionOnMaster(inputActionId, 0u, inputActionData, runInNextFrame: true);
+                return TryToInstantlyRunInputActionOnMaster(inputActionId, 0uL, inputActionData, runInNextFrame: true);
 
             ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             #if LockstepDebug
@@ -455,8 +460,12 @@ namespace JanSharp
 
         ///<summary><para>Unlike SendInputAction, SendSingletonInputAction must only be called from within a
         ///game state safe event.</para>
-        ///<para>Returns the unique id of the input action that got sent, or 0 if it did not get sent. Which
-        ///means this only returns non zero on the responsible client.</para></summary>
+        ///<para>Returns the unique id of the input action that got sent. If OnInit or OnClientBeginCatchUp
+        ///have not run yet then it will return 0uL - an invalid id - indicating that it did not get sent.
+        ///It'll also return 0uL on all clients except for the responsible player, since all those clients
+        ///inherently do not send any action.</para>
+        ///<para>The intended purpose of this return value in combination with SendingUniqueId is making
+        ///latency state implementations with latency hiding easier.</para></summary>
         public ulong SendSingletonInputAction(uint inputActionId)
         {
             return SendSingletonInputAction(inputActionId, masterPlayerId);
@@ -464,8 +473,12 @@ namespace JanSharp
 
         ///<summary><para>Unlike SendInputAction, SendSingletonInputAction must only be called from within a
         ///game state safe event.</para>
-        ///<para>Returns the unique id of the input action that got sent, or 0 if it did not get sent. Which
-        ///means this only returns non zero on the responsible client.</para></summary>
+        ///<para>Returns the unique id of the input action that got sent. If OnInit or OnClientBeginCatchUp
+        ///have not run yet then it will return 0uL - an invalid id - indicating that it did not get sent.
+        ///It'll also return 0uL on all clients except for the responsible player, since all those clients
+        ///inherently do not send any action.</para>
+        ///<para>The intended purpose of this return value in combination with SendingUniqueId is making
+        ///latency state implementations with latency hiding easier.</para></summary>
         public ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId)
         {
             #if LockstepDebug
