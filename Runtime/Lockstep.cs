@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -404,7 +404,10 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
             if (ignoreLocalInputActions && !(stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId))
+            {
+                ResetWriteStream();
                 return 0uL;
+            }
 
             byte[] inputActionData = new byte[writeStreamSize];
             for (int i = 0; i < writeStreamSize; i++)
