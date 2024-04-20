@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -397,13 +397,18 @@ namespace JanSharp
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
         }
 
+        private bool IsAllowedToSendInputActionId(uint inputActionId)
+        {
+            return !ignoreLocalInputActions || (stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId);
+        }
+
         ///<summary>Returns the unique id of the input action that got sent, or 0 if it did not get sent.</summary>
         public ulong SendInputAction(uint inputActionId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
-            if (ignoreLocalInputActions && !(stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId))
+            if (!IsAllowedToSendInputActionId(inputActionId))
             {
                 ResetWriteStream();
                 return 0uL;
@@ -466,6 +471,11 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendSingletonInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
+            if (!IsAllowedToSendInputActionId(inputActionId))
+            {
+                ResetWriteStream();
+                return 0uL;
+            }
 
             uint singletonId = nextSingletonId++;
 
