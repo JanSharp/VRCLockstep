@@ -16,18 +16,18 @@ namespace JanSharp
     {
         private static Lockstep lockstep = null;
 
-        private static Dictionary<LockstepEventType, List<UdonSharpBehaviour>> allListeners = new Dictionary<LockstepEventType, List<UdonSharpBehaviour>>()
+        private static Dictionary<LockstepEventType, List<(int order, UdonSharpBehaviour ub)>> allListeners = new Dictionary<LockstepEventType, List<(int order, UdonSharpBehaviour ub)>>()
         {
-            { LockstepEventType.OnInit, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnClientJoined, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnClientBeginCatchUp, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnClientCaughtUp, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnClientLeft, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnMasterChanged, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnTick, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnImportStart, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnImportedGameState, new List<UdonSharpBehaviour>() },
-            { LockstepEventType.OnImportFinished, new List<UdonSharpBehaviour>() },
+            { LockstepEventType.OnInit, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnClientJoined, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnClientBeginCatchUp, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnClientCaughtUp, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnClientLeft, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnMasterChanged, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnTick, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnImportStart, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnImportedGameState, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnImportFinished, new List<(int order, UdonSharpBehaviour ub)>() },
         };
         private static List<LockstepGameState> allGameStates = new List<LockstepGameState>();
         public static ReadOnlyCollection<LockstepGameState> AllGameStates => allGameStates.AsReadOnly();
@@ -37,7 +37,7 @@ namespace JanSharp
         private static Dictionary<System.Type, TypeCache> cache = new Dictionary<System.Type, TypeCache>();
         private class TypeCache
         {
-            public LockstepEventType events;
+            public Dictionary<LockstepEventType, int> eventOrderLut = new Dictionary<LockstepEventType, int>();
             public List<(string iaName, string fieldName)> inputActions = new List<(string iaName, string fieldName)>();
             public List<string> lockstepFieldNames = new List<string>();
         }
@@ -73,7 +73,7 @@ namespace JanSharp
             }
             LockstepOnBuild.lockstep = lockstep;
 
-            foreach (List<UdonSharpBehaviour> listeners in allListeners.Values)
+            foreach (List<(int order, UdonSharpBehaviour ub)> listeners in allListeners.Values)
                 listeners.Clear();
             allGameStates.Clear();
             allInputActions.Clear();
@@ -88,8 +88,8 @@ namespace JanSharp
             {
                 EditorUtil.SetArrayProperty(
                     lockstepProxy.FindProperty($"o{kvp.Key.ToString().Substring(1)}Listeners"),
-                    kvp.Value,
-                    (p, v) => p.objectReferenceValue = v
+                    kvp.Value.OrderBy(v => v.order).ToList(),
+                    (p, v) => p.objectReferenceValue = v.ub
                 );
             }
 
@@ -141,7 +141,7 @@ namespace JanSharp
                     result = false;
                     return;
                 }
-                typeCache.events |= attr.EventType;
+                typeCache.eventOrderLut.Add(attr.EventType, attr.Order);
             }
 
             void CheckInputActionAttribute(MethodInfo method)
@@ -179,8 +179,8 @@ namespace JanSharp
                 return false;
 
             foreach (LockstepEventType eventType in allEventTypes)
-                if ((cached.events & eventType) != 0)
-                    allListeners[eventType].Add(ub);
+                if (cached.eventOrderLut.TryGetValue(eventType, out int order))
+                    allListeners[eventType].Add((order, ub));
 
             SerializedObject ubProxy = null;
 
