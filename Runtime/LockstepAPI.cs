@@ -17,7 +17,10 @@ namespace JanSharp
         /// <summary>
         /// <para>While this is <see langword="true"/> this client is rapidly running input actions in order
         /// to catch up to real time.</para>
-        /// <para>//TODO: The exact time frame where this property is <see langword="true"/> is undefined.
+        /// <para><see langword="true"/> only for the initial catch up period, and stops being true a notable
+        /// amount of time before receiving the <see cref="LockstepEventType.OnClientCaughtUp"/> event, since
+        /// the client finishes catching up and then sends an internal input action to actually update the
+        /// internal game state as well as raise the <see cref="LockstepEventType.OnClientCaughtUp"/> event.
         /// </para>
         /// <para>Usable any time.</para>
         /// <para>Not game state safe.</para>

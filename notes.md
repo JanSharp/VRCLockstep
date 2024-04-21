@@ -367,7 +367,6 @@ TODO: remove talk about conditional/runtime event registration in the notes file
 TODO: add xml docs to lock step event type enum fields
 TODO: add lockstep info UI with basic information and notifications/log
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
-TODO: when a client had already caught up previously however then it becomes master through CheckMasterChange then the SendClientCaughtUpIA would get run again, which raises OnClientCaughtUp, which isn't good. That event should only ever be raised once for each client
 TODO: think about exposing player display name inside of client left event
 TODO: guarantee that every input action sent from a player is run before we get the client left input action
 TODO: guarantee that every input action sent from a player is run after client joined input action

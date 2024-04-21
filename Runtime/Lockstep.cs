@@ -51,9 +51,13 @@ namespace JanSharp
         private bool isWaitingForLateJoinerSync = false;
         private bool sendLateJoinerDataAtEndOfTick = false;
         private bool isCatchingUp = false;
+        private bool isInitialCatchUp = true;
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
-        public override bool IsCatchingUp => isCatchingUp;
+        // Only true for the initial catch up to avoid it being true for just a few ticks seemingly randomly
+        // (Caused by the master changing which requires catching up to what the previous master had already
+        // processed. See IsMaster property.)
+        public override bool IsCatchingUp => isCatchingUp && isInitialCatchUp;
         public override bool IsSinglePlayer => isSinglePlayer;
         public override bool CanSendInputActions => !ignoreLocalInputActions;
 
@@ -165,7 +169,7 @@ namespace JanSharp
         // an input action with IsMaster being true again, which would be incorrect behavior. But the only
         // way this should be possible to happen is if ticks get paused using the tick pase boolean, which is
         // currently not possible and should never be possible.
-        public override bool IsMaster => isMaster && !isCatchingUp;
+        public override bool IsMaster => isMaster && !isCatchingUp; // Even for non initial catch ups.
         public override uint MasterPlayerId => masterPlayerId;
         private uint sendingPlayerId;
         public override uint SendingPlayerId => sendingPlayerId;
@@ -271,7 +275,8 @@ namespace JanSharp
             {
                 RemoveOutdatedUniqueIdsByTick();
                 isCatchingUp = false;
-                SendClientCaughtUpIA();
+                SendClientCaughtUpIA(); // Uses isInitialCatchUp.
+                isInitialCatchUp = false;
                 startTick = currentTick;
                 tickStartTime = Time.time;
                 if (isMaster)
@@ -851,6 +856,7 @@ namespace JanSharp
                 // game state may happen before OnInit, which is invalid behaviour for this system.
                 stillAllowLocalClientJoinedIA = false;
                 isCatchingUp = false;
+                isInitialCatchUp = false;
                 FactoryReset();
                 BecomeInitialMaster();
                 return;
@@ -864,6 +870,8 @@ namespace JanSharp
             isCatchingUp = true; // Catch up as quickly as possible to the waitTick. Unless it was already
             // catching up, this should usually only quickly advance by 1 or 2 ticks, which is fine. The real
             // reason this is required is for the public IsMaster property to behave correctly.
+            // Leave isInitialCatchUp untouched, as this may in fact still be the initial catch up, if
+            // isCatchingUp was already true.
 
             // The immutable tick prevents any newly enqueued input actions from being enqueued too early,
             // to prevent desyncs when not in single player as wells as poor IA ordering in general.
@@ -1308,6 +1316,7 @@ namespace JanSharp
             RaiseOnClientBeginCatchUp(localPlayerId);
             isTickPaused = false;
             isCatchingUp = true;
+            isInitialCatchUp = true;
 
             if (doCheckMasterChange)
                 CheckMasterChange();
@@ -1382,6 +1391,7 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  SendClientCaughtUpIA");
             #endif
             WriteSmall(localPlayerId);
+            Write(isInitialCatchUp ? 1 : 0); // `doRaise`.
             SendInputAction(clientCaughtUpIAId);
         }
 
@@ -1393,8 +1403,10 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  OnClientCaughtUpIA");
             #endif
             uint playerId = ReadSmallUInt();
+            byte doRaise = ReadByte();
             clientStates[playerId] = (byte)ClientState.Normal;
-            RaiseOnClientCaughtUp(playerId);
+            if (doRaise != 0)
+                RaiseOnClientCaughtUp(playerId);
         }
 
         public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, ulong uniqueId, byte[] inputActionData)

@@ -24,6 +24,7 @@ namespace JanSharp
             "isWaitingToSendClientJoinedIA",
             "sendLateJoinerDataAtEndOfTick",
             "isCatchingUp",
+            "isInitialCatchUp",
             "isSinglePlayer",
             "currentlyNoMaster",
             "checkMasterChangeAfterProcessingLJGameStates",
