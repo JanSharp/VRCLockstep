@@ -1715,14 +1715,28 @@ namespace JanSharp
             }
             ResetWriteStream();
 
-            // TODO: ignore gameStates which do not support exporting
+            uint validCount = 0;
+            foreach (LockstepGameState gameState in gameStates)
+            {
+                if (gameState == null)
+                {
+                    Debug.LogError("[Lockstep] Attempt to call Export where the gameStates array contains null, ignoring.");
+                    return null;
+                }
+                if (gameState.GameStateSupportsImportExport)
+                    validCount++;
+            }
+            if (validCount == 0) // No error log here, because this is the only sensible and by definition
+                return null; // acceptable error case in which again by definition null is returned.
 
             Write(System.DateTime.UtcNow);
             Write(exportName);
-            WriteSmall((uint)gameStates.Length);
+            WriteSmall(validCount);
 
             foreach (LockstepGameState gameState in gameStates)
             {
+                if (!gameState.GameStateSupportsImportExport)
+                    continue;
                 Write(gameState.GameStateInternalName);
                 Write(gameState.GameStateDisplayName);
                 WriteSmall(gameState.GameStateDataVersion);

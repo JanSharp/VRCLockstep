@@ -168,12 +168,15 @@ namespace JanSharp
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
         /// <param name="gameStates">The list of game states to export. Ignores any game states given where
-        /// <see cref="LockstepGameState.GameStateSupportsImportExport"/> is <see langword="false"/>.</param>
+        /// <see cref="LockstepGameState.GameStateSupportsImportExport"/> is <see langword="false"/>. If the
+        /// total amount of given game states (which also support exporting) is 0, the function returns
+        /// <see langword="null"/>. Must not contain <see langword="null"/>.</param>
         /// <param name="exportName">The name to save inside of the exported string which can be read back
         /// when importing in the future. <see langword="null"/> is a valid value.</param>
         /// <returns>A base 64 encoded string containing a bit of metadata such as which game states have been
         /// exported, their version, the current UTC date and time and then of course exported data retrieved
-        /// from <see cref="LockstepGameState.SerializeGameState(bool)"/>.</returns>
+        /// from <see cref="LockstepGameState.SerializeGameState(bool)"/>. Returns <see langword="null"/> if
+        /// called at an invalid time or with invalid <paramref name="gameStates"/>.</returns>
         public abstract string Export(LockstepGameState[] gameStates, string exportName);
         /// <summary>
         /// <para>Load and validate a given base 64 exported string, converting it into an array of objects
