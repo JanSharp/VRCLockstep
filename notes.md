@@ -371,5 +371,4 @@ TODO: think about exposing player display name inside of client left event
 TODO: guarantee that every input action sent from a player is run before we get the client left input action
 TODO: guarantee that every input action sent from a player is run after client joined input action
 TODO: add game state safe prng
-TODO: run internal input actions instantly, only delay ones sent or triggered by external calls by 1 frame
 TODO: expose list of clients in the game state in the api

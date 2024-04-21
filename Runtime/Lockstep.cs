@@ -407,6 +407,11 @@ namespace JanSharp
 
         public override ulong SendInputAction(uint inputActionId)
         {
+            return SendInputAction(inputActionId, forceOneFrameDelay: true);
+        }
+
+        private ulong SendInputAction(uint inputActionId, bool forceOneFrameDelay)
+        {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
@@ -421,16 +426,16 @@ namespace JanSharp
                 inputActionData[i] = writeStream[i];
             ResetWriteStream();
 
-            return SendInputActionInternal(inputActionId, inputActionData);
+            return SendInputActionInternal(inputActionId, inputActionData, forceOneFrameDelay);
         }
 
-        private ulong SendInputActionInternal(uint inputActionId, byte[] inputActionData)
+        private ulong SendInputActionInternal(uint inputActionId, byte[] inputActionData, bool forceOneFrameDelay)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputActionInternal - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
             if (isSinglePlayer) // Guaranteed to be master while in single player.
-                return TryToInstantlyRunInputActionOnMaster(inputActionId, 0uL, inputActionData, runInNextFrame: true);
+                return TryToInstantlyRunInputActionOnMaster(inputActionId, 0uL, inputActionData, forceOneFrameDelay);
 
             ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             #if LockstepDebug
@@ -507,7 +512,7 @@ namespace JanSharp
             if (localPlayerId != responsiblePlayerId)
                 return 0uL;
 
-            return SendInputActionInternal(singletonInputActionIAId, singletonInputActionData);
+            return SendInputActionInternal(singletonInputActionIAId, singletonInputActionData, forceOneFrameDelay: true);
         }
 
         [SerializeField] [HideInInspector] private uint singletonInputActionIAId;
@@ -537,7 +542,8 @@ namespace JanSharp
                     continue;
                 singletonInputAction[0] = masterPlayerId; // Update responsible player.
                 if (isMaster)
-                    SendInputActionInternal(singletonInputActionIAId, (byte[])singletonInputAction[1]);
+                    SendInputActionInternal(singletonInputActionIAId, (byte[])singletonInputAction[1], forceOneFrameDelay: true);
+                    // forceOneFrameDelay is true to have consistent order in relation to the OnClientLeft event.
             }
         }
 
@@ -1003,7 +1009,7 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  SendMasterChangedIA");
             #endif
             WriteSmall(localPlayerId);
-            SendInputAction(masterChangedIAId);
+            SendInputAction(masterChangedIAId, forceOneFrameDelay: false);
         }
 
         [SerializeField] [HideInInspector] private uint masterChangedIAId;
@@ -1038,7 +1044,7 @@ namespace JanSharp
             isWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
             clientNames = null;
-            SendInputAction(clientJoinedIAId);
+            SendInputAction(clientJoinedIAId, forceOneFrameDelay: false);
         }
 
         [SerializeField] [HideInInspector] private uint clientJoinedIAId;
@@ -1340,7 +1346,7 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  SendClientGotLateJoinerDataIA");
             #endif
             WriteSmall(localPlayerId);
-            SendInputAction(clientGotLateJoinerDataIAId);
+            SendInputAction(clientGotLateJoinerDataIAId, forceOneFrameDelay: false);
         }
 
         [SerializeField] [HideInInspector] private uint clientGotLateJoinerDataIAId;
@@ -1362,7 +1368,7 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  SendClientLeftIA");
             #endif
             WriteSmall(playerId);
-            SendInputAction(clientLeftIAId);
+            SendInputAction(clientLeftIAId, forceOneFrameDelay: false);
         }
 
         [SerializeField] [HideInInspector] private uint clientLeftIAId;
@@ -1392,7 +1398,7 @@ namespace JanSharp
             #endif
             WriteSmall(localPlayerId);
             Write(isInitialCatchUp ? 1 : 0); // `doRaise`.
-            SendInputAction(clientCaughtUpIAId);
+            SendInputAction(clientCaughtUpIAId, forceOneFrameDelay: false);
         }
 
         [SerializeField] [HideInInspector] private uint clientCaughtUpIAId;
@@ -1438,7 +1444,7 @@ namespace JanSharp
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
         }
 
-        private ulong TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, byte[] inputActionData, bool runInNextFrame = false)
+        private ulong TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, byte[] inputActionData, bool forceOneFrameDelay = false)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryToInstantlyRunInputActionOnMaster");
@@ -1471,7 +1477,7 @@ namespace JanSharp
             else if (uniqueId == 0uL) // In single player, do make a unique id.
                 uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
 
-            if (runInNextFrame)
+            if (forceOneFrameDelay)
                 ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData, uniqueId });
             else
                 RunInputAction(inputActionId, inputActionData, uniqueId);
