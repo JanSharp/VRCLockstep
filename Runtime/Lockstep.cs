@@ -39,7 +39,7 @@ namespace JanSharp
         private uint startTick;
         private uint firstMutableTick; // Effectively 1 tick past the last immutable tick.
         private float tickStartTime;
-        private int syncCountForLatestLJSync = -1;
+        private int byteCountForLatestLJSync = -1;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
         // private float currentTickRate = TickRate;
         private bool isTickPaused = true;
@@ -1109,7 +1109,7 @@ namespace JanSharp
                     + "supported, and this call to SendLateJoinerData is ignored.");
                 return;
             }
-            if (lateJoinerInputActionSync.QueuedSyncsCount >= Clamp(syncCountForLatestLJSync / 2, 5, 20)) // TODO: change this, maybe to total byte count?
+            if (lateJoinerInputActionSync.QueuedBytesCount >= Clamp(byteCountForLatestLJSync / 2, 2048, 2048 * 5))
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
             // Client states game state.
@@ -1156,7 +1156,7 @@ namespace JanSharp
             lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, writeStream, writeStreamSize);
             ResetWriteStream();
 
-            syncCountForLatestLJSync = lateJoinerInputActionSync.QueuedSyncsCount;
+            byteCountForLatestLJSync = lateJoinerInputActionSync.QueuedBytesCount;
         }
 
         private void OnLJInternalGameStatesIA()

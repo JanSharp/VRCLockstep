@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -56,7 +56,7 @@ namespace JanSharp
             "firstMutableTick",
             "startTick",
             "tickStartTime",
-            "syncCountForLatestLJSync",
+            "byteCountForLatestLJSync",
             "unprocessedLJSerializedGSCount",
             "nextLJGameStateToProcess",
             "unrecoverableStateDueToUniqueId",

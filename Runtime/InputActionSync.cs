@@ -62,7 +62,7 @@ namespace JanSharp
         private int uiqStartIndex = 0;
         private int uiqCount = 0;
 
-        public int QueuedSyncsCount => dqCount;
+        public int QueuedBytesCount => dqCount * MaxSyncedDataSize + stageSize;
 
         // receiving
 
