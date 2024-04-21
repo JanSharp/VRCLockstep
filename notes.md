@@ -365,6 +365,7 @@ TODO: the ability to take master from another master in Lockstep
 TODO: actually implement autosaving (auto exporting)
 TODO: remove talk about conditional/runtime event registration in the notes file. It's not a thing and it won't happen
 TODO: add xml docs to lock step event type enum fields
+TODO: add xml docs to LockstepGameState abstract base class
 TODO: add lockstep info UI with basic information and notifications/log
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
 TODO: think about exposing player display name inside of client left event
