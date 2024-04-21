@@ -10,7 +10,7 @@ namespace JanSharp
     public class TestGameState : LockstepGameState
     {
         [SerializeField] private TestGameStateUI ui;
-        [SerializeField] [HideInInspector] private Lockstep lockstep; // Set by Lockstep's OnBuild handler.
+        [SerializeField] [HideInInspector] private LockstepAPI lockstep; // Set by Lockstep's OnBuild handler.
 
         public override string GameStateInternalName => "jansharp.lockstep-test";
         public override string GameStateDisplayName => "Test Game State";
@@ -87,7 +87,7 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnImportStart)]
         public void OnImportStart()
         {
-            Debug.Log($"<dlt> TestGameState  OnImportStart - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GetGameStatesWaitingForImportCount(): {lockstep.GetGameStatesWaitingForImportCount()}");
+            Debug.Log($"<dlt> TestGameState  OnImportStart - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GameStatesWaitingForImportCount: {lockstep.GameStatesWaitingForImportCount}");
         }
 
         [LockstepEvent(LockstepEventType.OnImportedGameState)]
@@ -99,7 +99,7 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnImportFinished)]
         public void OnImportFinished()
         {
-            Debug.Log($"<dlt> TestGameState  OnImportFinished - GetGameStatesWaitingForImportCount(): {lockstep.GetGameStatesWaitingForImportCount()}");
+            Debug.Log($"<dlt> TestGameState  OnImportFinished - GameStatesWaitingForImportCount: {lockstep.GameStatesWaitingForImportCount}");
         }
 
         [SerializeField] [HideInInspector] private uint singletonTestIAId;

@@ -9,7 +9,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class DummyTestGameState : LockstepGameState
     {
-        [SerializeField] [HideInInspector] private Lockstep lockstep; // Set by Lockstep's OnBuild handler.
+        [SerializeField] [HideInInspector] private LockstepAPI lockstep; // Set by Lockstep's OnBuild handler.
 
         [SerializeField] private string gameStateInternalName = "jansharp.lockstep-dummy";
         [SerializeField] private string gameStateDisplayName = "Dummy Game State What?";

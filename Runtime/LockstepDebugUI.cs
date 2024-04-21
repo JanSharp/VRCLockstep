@@ -11,7 +11,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepDebugUI : UdonSharpBehaviour
     {
-        [SerializeField] [HideInInspector] private Lockstep lockstep;
+        [SerializeField] [HideInInspector] private LockstepAPI lockstep;
 
         public Transform flagsParent;
         private string[] flagFieldNames = new string[]

@@ -15,7 +15,7 @@ namespace JanSharp
     }
 
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class Lockstep : UdonSharpBehaviour
+    public class Lockstep : LockstepAPI
     {
         public const float TickRate = 10f;
 
@@ -29,6 +29,7 @@ namespace JanSharp
         public LockstepTickSync tickSync;
         [System.NonSerialized] public uint currentTick;
         [System.NonSerialized] public uint waitTick; // The system will run this tick, but not past it.
+        public override uint CurrentTick => currentTick;
 
         private VRCPlayerApi localPlayer;
         private uint localPlayerId;
@@ -52,6 +53,9 @@ namespace JanSharp
         private bool isCatchingUp = false;
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
+        public override bool IsCatchingUp => isCatchingUp;
+        public override bool IsSinglePlayer => isSinglePlayer;
+        public override bool CanSendInputActions => !ignoreLocalInputActions;
 
         private ulong unrecoverableStateDueToUniqueId = 0uL;
 
@@ -102,6 +106,18 @@ namespace JanSharp
         private DataDictionary gameStatesByInternalName = new DataDictionary();
         // string internalName => int indexInAllGameStates
         private DataDictionary gameStateIndexesByInternalName = new DataDictionary();
+        public override LockstepGameState[] AllGameStates
+        {
+            get
+            {
+                int length = allGameStates.Length;
+                LockstepGameState[] result = new LockstepGameState[length];
+                for (int i = 0; i < length; i++)
+                    result[i] = allGameStates[i];
+                return result;
+            }
+        }
+        public override int AllGameStatesCount => allGameStates.Length;
 
         ///<summary><para>**Internal Game State**</para>
         ///<para>uint playerId => byte ClientState</para></summary>
@@ -131,19 +147,7 @@ namespace JanSharp
         // Used by the debug UI.
         private System.Diagnostics.Stopwatch lastUpdateSW = new System.Diagnostics.Stopwatch();
 
-        ///<summary>
-        ///<para>This is NOT part of the game state.</para>
-        ///<para>Guaranteed to be true on exactly 1 client during the execution of any Lockstep event or input
-        ///action. Outside of those functions it is possible for this to be true for 0 clients at some point
-        ///in time. This is generally useful to only send an input action once - that is from the current
-        ///master client.</para>
-        ///<para>However unfortunately it is possible for input actions sent by the master to get dropped if
-        ///the master leaves the instance shortly after sending input actions. Therefore it may be required to
-        ///handle the master changed event and validate the current state, resending input actions that got
-        ///dropped in there. It is guaranteed that any input actions sent by the previous master will have
-        ///run before the master changed event.</para>
-        ///</summary>
-        public bool IsMaster => isMaster && !isCatchingUp; // The actions run during catch up are actions that
+        // The actions run during catch up are actions that
         // have already been run by the previous master. Therefore this must return false, otherwise this
         // IsMaster property would return true on 2 clients when running the same input action.
         // I _think_ that this covers all edge cases, since if those input actions were to use this IsMaster
@@ -161,19 +165,12 @@ namespace JanSharp
         // an input action with IsMaster being true again, which would be incorrect behavior. But the only
         // way this should be possible to happen is if ticks get paused using the tick pase boolean, which is
         // currently not possible and should never be possible.
-        ///<summary>This is part of the game state. Can be used any time from OnInit or OnClientBeginCatchUp
-        ///onwards.</summary>
-        public uint MasterPlayerId => masterPlayerId;
-        ///<summary>This is game state safe, only usable inside of input action events, not all game state
-        ///safe events.</summary>
-        public uint SendingPlayerId { private set; get; }
-        ///<summary>This is game state safe, only usable inside of input action events, not all game state
-        ///safe events. It is the unique id of the input action that is currently running, which is the same
-        ///value as the one return by RunInputAction, except that RunInputAction of course only returned that
-        ///value initially on a single client - the one calling RunInputAction. SendSingletonInputAction is
-        ///similar. The intended purpose of this is making latency state implementations with latency hiding
-        ///easier.</summary>
-        public ulong SendingUniqueId { private set; get; }
+        public override bool IsMaster => isMaster && !isCatchingUp;
+        public override uint MasterPlayerId => masterPlayerId;
+        private uint sendingPlayerId;
+        public override uint SendingPlayerId => sendingPlayerId;
+        private ulong sendingUniqueId;
+        public override ulong SendingUniqueId => sendingUniqueId;
 
         private void Start()
         {
@@ -393,8 +390,8 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionWithCurrentReadStream");
             #endif
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
-            SendingPlayerId = (uint)(uniqueId >> PlayerIdKeyShift);
-            SendingUniqueId = uniqueId;
+            sendingPlayerId = (uint)(uniqueId >> PlayerIdKeyShift);
+            sendingUniqueId = uniqueId;
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
         }
 
@@ -403,12 +400,7 @@ namespace JanSharp
             return !ignoreLocalInputActions || (stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId);
         }
 
-        ///<summary><para>Returns the unique id of the input action that got sent. If OnInit or
-        ///OnClientBeginCatchUp have not run yet then it will return 0uL - an invalid id - indicating that it
-        ///did not get sent.</para>
-        ///<para>The intended purpose of this return value in combination with SendingUniqueId is making
-        ///latency state implementations with latency hiding easier.</para></summary>
-        public ulong SendInputAction(uint inputActionId)
+        public override ulong SendInputAction(uint inputActionId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
@@ -466,7 +458,7 @@ namespace JanSharp
         ///inherently do not send any action.</para>
         ///<para>The intended purpose of this return value in combination with SendingUniqueId is making
         ///latency state implementations with latency hiding easier.</para></summary>
-        public ulong SendSingletonInputAction(uint inputActionId)
+        public override ulong SendSingletonInputAction(uint inputActionId)
         {
             return SendSingletonInputAction(inputActionId, masterPlayerId);
         }
@@ -479,7 +471,7 @@ namespace JanSharp
         ///inherently do not send any action.</para>
         ///<para>The intended purpose of this return value in combination with SendingUniqueId is making
         ///latency state implementations with latency hiding easier.</para></summary>
-        public ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId)
+        public override ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendSingletonInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
@@ -909,6 +901,7 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  InstantlyRunInputActionsWaitingToBeSent");
             #endif
+            // TODO: instantly run input actions marked as to be run in the next frame!
             inputActionSyncForLocalPlayer.DequeueEverything(doCallback: true);
         }
 
@@ -917,6 +910,7 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutInputActionsWaitingToBeSent");
             #endif
+            // TODO: should input actions to be run in the next frame be forgotten about?
             inputActionSyncForLocalPlayer.DequeueEverything(doCallback: false);
         }
 
@@ -1636,16 +1630,7 @@ namespace JanSharp
                 listener.SendCustomEvent(nameof(LockstepEventType.OnImportFinished));
         }
 
-        ///<summary>Get the display name for a given player who is part of the game state. This is safe to
-        ///call whenever and so long as the given playerId is part of the game state, even if the actual player
-        ///instance is no longer valid (the player no longer being in the world). It is also guaranteed to
-        ///return the exact same string on all clients even if the VRChat API would have returned different
-        ///strings on different clients (aka if it was broken). No idea if that is possible - I hope it isn't -
-        ///but just in case it is possible, this function is still guaranteed to return the exact same string.
-        ///Similarly if the player display name changes throughout them being in the world, through whatever
-        ///means (if it's even possible), this will continue to return the old name so long as the player is
-        ///in the world.</summary>
-        public string GetDisplayName(uint playerId)
+        public override string GetDisplayName(uint playerId)
         {
             if (clientNames.TryGetValue(playerId, out DataToken nameToken))
                 return nameToken.String;
@@ -1657,68 +1642,66 @@ namespace JanSharp
         private byte[] writeStream = new byte[64];
         private int writeStreamSize = 0;
 
-        public void ResetWriteStream() => writeStreamSize = 0;
-        public void Write(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(byte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(ushort value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(int value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(uint value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(long value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(ulong value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(float value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(double value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(Vector2 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(Vector3 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(Vector4 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(Quaternion value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public void Write(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
-        public void WriteSmall(short value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public void WriteSmall(ushort value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public void WriteSmall(int value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public void WriteSmall(uint value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public void WriteSmall(long value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public void WriteSmall(ulong value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void ResetWriteStream() => writeStreamSize = 0;
+        public override void Write(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(byte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(ushort value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(int value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(uint value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(long value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(ulong value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(float value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(double value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(Vector2 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(Vector3 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(Vector4 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(Quaternion value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void Write(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
+        public override void WriteSmall(short value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmall(ushort value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmall(int value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmall(uint value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmall(long value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmall(ulong value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
 
         ///<summary>Arrays assigned to this variable always have the exact length of the data that is actually
         ///available to be read, and once assigned to this variable they are immutable.</summary>
         private byte[] readStream = new byte[0];
         private int readStreamPosition = 0;
 
-        public void ResetReadStream() => readStreamPosition = 0;
-        public sbyte ReadSByte() => DataStream.ReadSByte(ref readStream, ref readStreamPosition);
-        public byte ReadByte() => DataStream.ReadByte(ref readStream, ref readStreamPosition);
-        public short ReadShort() => DataStream.ReadShort(ref readStream, ref readStreamPosition);
-        public ushort ReadUShort() => DataStream.ReadUShort(ref readStream, ref readStreamPosition);
-        public int ReadInt() => DataStream.ReadInt(ref readStream, ref readStreamPosition);
-        public uint ReadUInt() => DataStream.ReadUInt(ref readStream, ref readStreamPosition);
-        public long ReadLong() => DataStream.ReadLong(ref readStream, ref readStreamPosition);
-        public ulong ReadULong() => DataStream.ReadULong(ref readStream, ref readStreamPosition);
-        public float ReadFloat() => DataStream.ReadFloat(ref readStream, ref readStreamPosition);
-        public double ReadDouble() => DataStream.ReadDouble(ref readStream, ref readStreamPosition);
-        public Vector2 ReadVector2() => DataStream.ReadVector2(ref readStream, ref readStreamPosition);
-        public Vector3 ReadVector3() => DataStream.ReadVector3(ref readStream, ref readStreamPosition);
-        public Vector4 ReadVector4() => DataStream.ReadVector4(ref readStream, ref readStreamPosition);
-        public Quaternion ReadQuaternion() => DataStream.ReadQuaternion(ref readStream, ref readStreamPosition);
-        public char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
-        public string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
-        public System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
-        public byte[] ReadBytes(int byteCount) => DataStream.ReadBytes(ref readStream, ref readStreamPosition, byteCount);
-        public short ReadSmallShort() => DataStream.ReadSmallShort(ref readStream, ref readStreamPosition);
-        public ushort ReadSmallUShort() => DataStream.ReadSmallUShort(ref readStream, ref readStreamPosition);
-        public int ReadSmallInt() => DataStream.ReadSmallInt(ref readStream, ref readStreamPosition);
-        public uint ReadSmallUInt() => DataStream.ReadSmallUInt(ref readStream, ref readStreamPosition);
-        public long ReadSmallLong() => DataStream.ReadSmallLong(ref readStream, ref readStreamPosition);
-        public ulong ReadSmallULong() => DataStream.ReadSmallULong(ref readStream, ref readStreamPosition);
+        private void ResetReadStream() => readStreamPosition = 0;
+        public override sbyte ReadSByte() => DataStream.ReadSByte(ref readStream, ref readStreamPosition);
+        public override byte ReadByte() => DataStream.ReadByte(ref readStream, ref readStreamPosition);
+        public override short ReadShort() => DataStream.ReadShort(ref readStream, ref readStreamPosition);
+        public override ushort ReadUShort() => DataStream.ReadUShort(ref readStream, ref readStreamPosition);
+        public override int ReadInt() => DataStream.ReadInt(ref readStream, ref readStreamPosition);
+        public override uint ReadUInt() => DataStream.ReadUInt(ref readStream, ref readStreamPosition);
+        public override long ReadLong() => DataStream.ReadLong(ref readStream, ref readStreamPosition);
+        public override ulong ReadULong() => DataStream.ReadULong(ref readStream, ref readStreamPosition);
+        public override float ReadFloat() => DataStream.ReadFloat(ref readStream, ref readStreamPosition);
+        public override double ReadDouble() => DataStream.ReadDouble(ref readStream, ref readStreamPosition);
+        public override Vector2 ReadVector2() => DataStream.ReadVector2(ref readStream, ref readStreamPosition);
+        public override Vector3 ReadVector3() => DataStream.ReadVector3(ref readStream, ref readStreamPosition);
+        public override Vector4 ReadVector4() => DataStream.ReadVector4(ref readStream, ref readStreamPosition);
+        public override Quaternion ReadQuaternion() => DataStream.ReadQuaternion(ref readStream, ref readStreamPosition);
+        public override char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
+        public override string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
+        public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
+        public override byte[] ReadBytes(int byteCount) => DataStream.ReadBytes(ref readStream, ref readStreamPosition, byteCount);
+        public override short ReadSmallShort() => DataStream.ReadSmallShort(ref readStream, ref readStreamPosition);
+        public override ushort ReadSmallUShort() => DataStream.ReadSmallUShort(ref readStream, ref readStreamPosition);
+        public override int ReadSmallInt() => DataStream.ReadSmallInt(ref readStream, ref readStreamPosition);
+        public override uint ReadSmallUInt() => DataStream.ReadSmallUInt(ref readStream, ref readStreamPosition);
+        public override long ReadSmallLong() => DataStream.ReadSmallLong(ref readStream, ref readStreamPosition);
+        public override ulong ReadSmallULong() => DataStream.ReadSmallULong(ref readStream, ref readStreamPosition);
 
         private uint[] crc32LookupCache;
 
-        ///<summary>Usable from OnInit or OnClientBeginCatchUp (for the local player of course) onwards.
-        ///</summary>
-        public string Export(LockstepGameState[] gameStates, string exportName)
+        public override string Export(LockstepGameState[] gameStates, string exportName)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Export");
@@ -1731,6 +1714,8 @@ namespace JanSharp
                 return null;
             }
             ResetWriteStream();
+
+            // TODO: ignore gameStates which do not support exporting
 
             Write(System.DateTime.UtcNow);
             Write(exportName);
@@ -1773,11 +1758,7 @@ namespace JanSharp
             return encoded;
         }
 
-        ///<summary>
-        ///<para>exportedDate is in UTC</para>
-        ///<para>returns LockstepImportedGS[] importedGameStates</para>
-        ///</summary>
-        public object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate, out string exportName)
+        public override object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate, out string exportName)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess");
@@ -1857,10 +1838,7 @@ namespace JanSharp
             return importedGameStates;
         }
 
-        ///<summary><para>LockstepImportedGS[] importedGameStates</para>
-        ///<para>Usable from OnInit or OnClientBeginCatchUp (for the local player of course) onwards.</para>
-        ///</summary>
-        public void StartImport(System.DateTime exportDate, string exportName, object[][] importedGameStates)
+        public override void StartImport(System.DateTime exportDate, string exportName, object[][] importedGameStates)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartImport");
@@ -1897,56 +1875,46 @@ namespace JanSharp
         // None of this is part of an internal game state, which is fine because late joiner sync will not be
         // performed while isImporting is true.
         private bool isImporting = false;
-        ///<summary>Game State safe.</summary>
-        public bool IsImporting
+        private void SetIsImporting(bool value)
         {
-            private set
+            if (isImporting == value)
+                return;
+            isImporting = value;
+            if (value)
+                RaiseOnImportStart();
+            else
             {
-                if (isImporting == value)
-                    return;
-                isImporting = value;
-                if (value)
-                    RaiseOnImportStart();
-                else
-                {
-                    RaiseOnImportFinished();
-                    // To make these properties game state safe.
-                    ImportingPlayerId = 0u;
-                    ImportingFromDate = new System.DateTime();
-                    ImportingFromName = null;
-                    gameStatesWaitingForImport.Clear(); // And to clean up.
-                }
+                RaiseOnImportFinished();
+                // To make these properties game state safe.
+                importingPlayerId = 0u;
+                importingFromDate = new System.DateTime();
+                importingFromName = null;
+                gameStatesWaitingForImport.Clear(); // And to clean up.
             }
-            get => isImporting;
         }
-        ///<summary>Game State safe.</summary>
-        public uint ImportingPlayerId { private set; get; }
-        ///<summary>Game State safe.</summary>
-        public System.DateTime ImportingFromDate { private set; get; }
-        ///<summary>Game State safe.</summary>
-        public string ImportingFromName { private set; get; }
-        ///<summary>Game State safe. Only ever non null while inside OnImportedGameState.</summary>
-        public LockstepGameState ImportedGameState { private set; get; }
-        ///<summary><para>Game State safe. Empty when IsImporting is false, never null.</para>
-        ///<para>Can still have entries when RaiseOnImportFinished runs which indicates that the importing
-        ///player left nearly instantly after starting the import, causing not all game states to actually
-        ///get imported.</para></summary>
-        public LockstepGameState[] GetGameStatesWaitingForImport()
+        private uint importingPlayerId;
+        private System.DateTime importingFromDate;
+        private string importingFromName;
+        private LockstepGameState importedGameState;
+        public override bool IsImporting => isImporting;
+        public override uint ImportingPlayerId => importingPlayerId;
+
+        public override System.DateTime ImportingFromDate => importingFromDate;
+        public override string ImportingFromName => importingFromName;
+        public override LockstepGameState ImportedGameState => importedGameState;
+        public override LockstepGameState[] GameStatesWaitingForImport
         {
-            int count = gameStatesWaitingForImport.Count;
-            LockstepGameState[] result = new LockstepGameState[count];
-            DataList values = gameStatesWaitingForImport.GetValues();
-            for (int i = 0; i < count; i++)
-                result[i] = (LockstepGameState)values[i].Reference;
-            return result;
+            get
+            {
+                int count = gameStatesWaitingForImport.Count;
+                LockstepGameState[] result = new LockstepGameState[count];
+                DataList values = gameStatesWaitingForImport.GetValues();
+                for (int i = 0; i < count; i++)
+                    result[i] = (LockstepGameState)values[i].Reference;
+                return result;
+            }
         }
-        ///<summary><para>Game State safe. 0 when IsImporting is false.</para>
-        ///<para>Can be non 0 when RaiseOnImportFinished runs, see GetGameStatesWaitingForImport description.
-        ///</para></summary>
-        public int GetGameStatesWaitingForImportCount()
-        {
-            return gameStatesWaitingForImport.Count;
-        }
+        public override int GameStatesWaitingForImportCount => gameStatesWaitingForImport.Count;
         ///<summary>int gameStateIndex => LockstepGameState gameState</summary>
         private DataDictionary gameStatesWaitingForImport = new DataDictionary();
 
@@ -1982,16 +1950,16 @@ namespace JanSharp
                 importedGSsToSend = null;
                 return;
             }
-            ImportingPlayerId = SendingPlayerId;
-            ImportingFromDate = ReadDateTime();
-            ImportingFromName = ReadString();
+            importingPlayerId = SendingPlayerId;
+            importingFromDate = ReadDateTime();
+            importingFromName = ReadString();
             int importedGSsCount = (int)ReadSmallUInt();
             for (int i = 0; i < importedGSsCount; i++)
             {
                 int gameStateIndex = (int)ReadSmallUInt();
                 gameStatesWaitingForImport.Add(gameStateIndex, allGameStates[gameStateIndex]);
             }
-            IsImporting = true; // Raises an event, do it last so all the fields are populated.
+            SetIsImporting(true); // Raises an event, do it last so all the fields are populated.
 
             if (SendingPlayerId != localPlayerId)
                 return;
@@ -2030,11 +1998,11 @@ namespace JanSharp
             }
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             gameState.DeserializeGameState(isImport: true); // TODO: Use return error message.
-            ImportedGameState = gameState;
+            importedGameState = gameState;
             RaiseOnImportedGameState();
-            ImportedGameState = null;
+            importedGameState = null;
             if (gameStatesWaitingForImport.Count == 0)
-                IsImporting = false;
+                SetIsImporting(false);
         }
 
         private void CheckIfImportingPlayerLeft(uint leftPlayerId)
@@ -2044,7 +2012,7 @@ namespace JanSharp
             #endif
             if (!isImporting || leftPlayerId != ImportingPlayerId)
                 return;
-            IsImporting = false;
+            SetIsImporting(false);
         }
     }
 }

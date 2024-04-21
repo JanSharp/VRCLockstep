@@ -160,7 +160,7 @@ namespace JanSharp
 
             foreach (FieldInfo field in ubType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                if (field.FieldType == typeof(Lockstep))
+                if (field.FieldType == typeof(LockstepAPI))
                 {
                     SerializedObject ubProxy = new SerializedObject(ub);
                     if (ubProxy.FindProperty(field.Name) != null)
