@@ -14,6 +14,6 @@ namespace JanSharp
         public abstract uint GameStateDataVersion { get; }
         public abstract uint GameStateLowestSupportedDataVersion { get; }
         public abstract void SerializeGameState(bool isExport);
-        public abstract string DeserializeGameState(bool isImport);
+        public abstract string DeserializeGameState(bool isImport, uint importedDataVersion);
     }
 }

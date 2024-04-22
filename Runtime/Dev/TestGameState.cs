@@ -153,7 +153,7 @@ namespace JanSharp
             }
         }
 
-        public override string DeserializeGameState(bool isImport)
+        public override string DeserializeGameState(bool isImport, uint importedDataVersion)
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
 

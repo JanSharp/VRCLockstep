@@ -1312,7 +1312,7 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}");
             LogBinaryData(readStream, readStream.Length);
             #endif
-            allGameStates[gameStateIndex].DeserializeGameState(false); // TODO: Use return error message.
+            allGameStates[gameStateIndex].DeserializeGameState(false, 0u); // TODO: Use return error message.
             TryMoveToNextLJSerializedGameState();
         }
 
@@ -1948,12 +1948,14 @@ namespace JanSharp
         private System.DateTime importingFromDate;
         private string importingFromName;
         private LockstepGameState importedGameState;
+        private uint importedDataVersion;
         public override bool IsImporting => isImporting;
         public override uint ImportingPlayerId => importingPlayerId;
 
         public override System.DateTime ImportingFromDate => importingFromDate;
         public override string ImportingFromName => importingFromName;
         public override LockstepGameState ImportedGameState => importedGameState;
+        public override uint ImportedDataVersion => importedDataVersion;
         public override LockstepGameState[] GameStatesWaitingForImport
         {
             get
@@ -2028,6 +2030,7 @@ namespace JanSharp
             Debug.Log($"[LockstepDebug] Lockstep  SendImportGameStateIA");
             #endif
             WriteSmall((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
+            WriteSmall(LockstepImportedGS.GetDataVersion(importedGS));
             Write(LockstepImportedGS.GetBinaryData(importedGS));
             SendInputAction(importGameStateIAId);
         }
@@ -2048,11 +2051,13 @@ namespace JanSharp
                     + "input action from a player for whom we got the player left event over 1 second ago...)");
                 return;
             }
+            importedDataVersion = ReadSmallUInt();
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
-            gameState.DeserializeGameState(isImport: true); // TODO: Use return error message.
+            gameState.DeserializeGameState(isImport: true, importedDataVersion); // TODO: Use return error message.
             importedGameState = gameState;
             RaiseOnImportedGameState();
             importedGameState = null;
+            importedDataVersion = 0u;
             if (gameStatesWaitingForImport.Count == 0)
                 SetIsImporting(false);
         }

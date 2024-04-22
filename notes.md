@@ -215,8 +215,6 @@ Additionally there must be a serialize and deserialize function defined for the 
 
 Optionally a game state can be flagged as supporting import/export. When flagged as such, the serialization and deserialization events must have extra handling for import/export. When serializing or deserializing, a bool parameter is set to true indicating that this is an import/export call. The serialize function should then serialize extra data, if needed, in order for the state to be fully restored when importing the serialized data into another - potentially future version - of the world. The deserialize function should read that extra data to restore the state correctly, including handling old versions of the data since it might be exported data from on old version of the system. Backwards compatibility may be dropped at any point in time, up to the programmers discretion, however note that with how VRChat works, there's no way to load an older version of the map to migrate an exported data set to a newer version, so by dropping backwards compatibility, there may be exported data someone has stored on their machine that is now no longer usable.
 
-In order to make your life easier, when supporting import/export, it is recommended to use an integer as the first value in the serialized data which is a simple incrementing version number of the data structure version. This makes it easy when deserializing to know what data format to expect in the serialized data stream, plus it allows for easy detection for old - no longer supported - versions of exported data, which therefore allows for graceful early aborting.
-
 # Serialization Rules
 
 <!-- cSpell:ignore structs -->
@@ -363,4 +361,3 @@ TODO: make tick rate on non master clients a bit more variable such that it trie
 TODO: guarantee that every input action sent from a player is run before we get the client left input action
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
-TODO: add uint importDataVersion to deserialize params and update notes

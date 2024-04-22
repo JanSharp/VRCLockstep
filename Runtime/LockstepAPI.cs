@@ -295,6 +295,14 @@ namespace JanSharp
         /// </summary>
         public abstract LockstepGameState ImportedGameState { get; }
         /// <summary>
+        /// <para>The version of the data that has just been imported.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/> and
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> even though that gets this value
+        /// through the parameter anyway, but why not.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract uint ImportedDataVersion { get; }
+        /// <summary>
         /// <para>This returns a new copy of the array every time it is accessed.</para>
         /// <para>The game stats which are about to be imported, but have not been imported yet.</para>
         /// <para>Inside of <see cref="LockstepEventType.OnImportedGameState"/>, the
@@ -329,7 +337,7 @@ namespace JanSharp
         /// <summary>
         /// <para>When using <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
         /// or its overload or <see cref="LockstepGameState.SerializeGameState(bool)"/>, in order to pass data
-        /// to the input action or <see cref="LockstepGameState.DeserializeGameState(bool)"/> use this
+        /// to the input action or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> use this
         /// function to write data to an internal binary stream which is used by lockstep to perform syncing.
         /// </para>
         /// <para>On the note of <see cref="LockstepGameState.SerializeGameState(bool)"/> when exporting the
@@ -377,7 +385,7 @@ namespace JanSharp
         /// <summary>
         /// <para>When using <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
         /// or its overload or <see cref="LockstepGameState.SerializeGameState(bool)"/>, in order to pass data
-        /// to the input action or <see cref="LockstepGameState.DeserializeGameState(bool)"/> use this
+        /// to the input action or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> use this
         /// function to write data to an internal binary stream which is used by lockstep to perform syncing.
         /// </para>
         /// <para>On the note of <see cref="LockstepGameState.SerializeGameState(bool)"/> when exporting the
@@ -402,8 +410,8 @@ namespace JanSharp
         public abstract void WriteSmall(ulong value);
 
         /// <summary>
-        /// <para>Inside of input actions or <see cref="LockstepGameState.DeserializeGameState(bool)"/> in
-        /// order to retrieve the data that was initially written to an internal binary stream, these
+        /// <para>Inside of input actions or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>
+        /// in order to retrieve the data that was initially written to an internal binary stream, these
         /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
         /// the write stream).</para>
         /// <para>The calls to the <c>Read</c> functions must match the data type and the order in which the
