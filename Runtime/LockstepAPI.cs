@@ -178,8 +178,10 @@ namespace JanSharp
         public abstract ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId);
         /// <summary>
         /// <para>The display names are saved in an internal lockstep game state. They are available starting
-        /// from within <see cref="LockstepEventType.OnClientJoined"/>, and no longer available in
-        /// <see cref="LockstepEventType.OnClientLeft"/>.</para>
+        /// from within <see cref="LockstepEventType.OnClientJoined"/> all the way until the end of
+        /// <see cref="LockstepEventType.OnClientLeft"/> - even though by the time
+        /// <see cref="LockstepEventType.OnClientLeft"/> runs the client is no longer in the internal game
+        /// state. This is a special case with special handling to make the name still available there.</para>
         /// <para>Since they are saved and handled as an internal game state, the display names are the same
         /// on all clients and unchanging.</para>
         /// <para>Usable any time.</para>

@@ -368,7 +368,6 @@ TODO: add xml docs to lock step event type enum fields
 TODO: add xml docs to LockstepGameState abstract base class
 TODO: add lockstep info UI with basic information and notifications/log
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
-TODO: think about exposing player display name inside of client left event
 TODO: guarantee that every input action sent from a player is run before we get the client left input action
 TODO: guarantee that every input action sent from a player is run after client joined input action
 TODO: add game state safe prng

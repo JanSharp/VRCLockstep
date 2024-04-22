@@ -132,6 +132,10 @@ namespace JanSharp
         ///<summary><para>**Internal Game State**</para>
         ///<para>uint playerId => string playerDisplayName</para></summary>
         private DataDictionary clientNames = null;
+        /// <summary>
+        /// <para>Game state safe inside of <see cref="GetDisplayName(uint)"/>.</para>
+        /// </summary>
+        private string leftClientName = null;
         // non game state
         private uint[] leftClients = new uint[ArrList.MinCapacity];
         private int leftClientsCount = 0;
@@ -1395,14 +1399,16 @@ namespace JanSharp
             uint playerId = ReadSmallUInt();
             DataToken keyToken = playerId;
             clientStates.Remove(keyToken);
-            clientNames.Remove(keyToken);
+            clientNames.Remove(keyToken, out DataToken displayNameToken);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
 
             CheckIfLateJoinerSyncShouldStop();
             CheckIfSingletonInputActionGotDropped(playerId);
             CheckIfImportingPlayerLeft(playerId);
+            leftClientName = displayNameToken.String;
             RaiseOnClientLeft(playerId);
+            leftClientName = null;
         }
 
         private void SendClientCaughtUpIA()
@@ -1664,6 +1670,8 @@ namespace JanSharp
         {
             if (clientNames.TryGetValue(playerId, out DataToken nameToken))
                 return nameToken.String;
+            if (leftClientName != null && playerId == leftPlayerId)
+                return leftClientName; // We are inside of the OnClientLeft event.
             Debug.LogError("[Lockstep] Attempt to call GetDisplayName with a playerId which is not currently "
                 + "part of the game state. This is indication of misuse of the API, make sure to fix this.");
             return null;
