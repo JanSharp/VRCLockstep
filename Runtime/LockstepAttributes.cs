@@ -3,15 +3,30 @@ namespace JanSharp {
     public enum LockstepEventType
     {
         OnInit,
-        ///<summary>Before raising, an uint 'lockstepPlayerId' program variable will be set to the joined player's id.</summary>
+        /// <summary>
+        /// <para></para> Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.
+        /// </summary>
         OnClientJoined,
-        ///<summary>Before raising, an uint 'lockstepPlayerId' program variable will be set to the player's id who is beginning catch up.</summary>
+        /// <summary>
+        /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which is
+        /// beginning to catch up.</para>
+        /// </summary>
         OnClientBeginCatchUp,
-        ///<summary>Before raising, an uint 'lockstepPlayerId' program variable will be set to the player's id who has caught up.</summary>
+        /// <summary>
+        /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which has
+        /// caught up.</para>
+        /// </summary>
         OnClientCaughtUp,
-        ///<summary>Before raising, an uint 'lockstepPlayerId' program variable will be set to the left player's id.</summary>
+        /// <summary>
+        /// <para>Use <see cref="LockstepAPI.LeftPlayerId"/> to get the id of the left client.</para>
+        /// </summary>
         OnClientLeft,
-        ///<summary>Before raising, an uint 'lockstepPlayerId' program variable will be set to the new master's id.</summary>
+        /// <summary>
+        /// <para>Use <see cref="LockstepAPI.OldMasterPlayerId"/> to get the id of the old master client.
+        /// </para>
+        /// <para>Use <see cref="LockstepAPI.MasterPlayerId"/> to get the id of the new master client.
+        /// (<see cref="LockstepAPI.MasterPlayerId"/> is not limited to the scope of this event.)</para>
+        /// </summary>
         OnMasterChanged,
         OnTick,
         OnImportStart,

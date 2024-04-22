@@ -74,11 +74,39 @@ namespace JanSharp
         /// <para>The player id of the lockstep master, which differs from VRChat's master. The lockstep
         /// master is effectively the acting server for the networking system. By default it is quite likely
         /// for lockstep's master to be the same as VRChat's master.</para>
+        /// <para>If the master leaves, this id remains unchanged until the
+        /// <see cref="LockstepEventType.OnMasterChanged"/> event is raised.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint MasterPlayerId { get; }
+        /// <summary>
+        /// <para>The id of the client which was the master right before the new master client.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnMasterChanged"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract uint OldMasterPlayerId { get; }
+        /// <summary>
+        /// <para>The id of the joined client.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnClientJoined"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract uint JoinedPlayerId { get; }
+        /// <summary>
+        /// <para>The id of the left client.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnClientLeft"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract uint LeftPlayerId { get; }
+        /// <summary>
+        /// <para>The id of the client which is beginning to catch up or has caught up.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
+        /// <see cref="LockstepEventType.OnClientCaughtUp"/>.</para>
+        /// <para>Game state safe (but keep in mind that <see cref="LockstepEventType.OnClientBeginCatchUp"/>
+        /// is a game state safe event. <see cref="LockstepEventType.OnClientCaughtUp"/> Is however).</para>
+        /// </summary>
+        public abstract uint CatchingUpPlayerId { get; }
         /// <summary>
         /// <para>The player id of client which sent the input action. It is guaranteed to be an id for which
         /// the <see cref="LockstepEventType.OnClientJoined"/> event has been raised, and the

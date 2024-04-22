@@ -26,9 +26,6 @@ namespace JanSharp
         public const int PlayerData_Description = 2; // string
         public const int PlayerData_Size = 3;
 
-        // These 2 are set by Lockstep as parameters.
-        private uint lockstepPlayerId;
-
         [LockstepEvent(LockstepEventType.OnInit)]
         public void OnInit()
         {
@@ -38,35 +35,36 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnClientJoined)]
         public void OnClientJoined()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientJoined - {lockstepPlayerId}");
+            uint joinedPlayerId = lockstep.JoinedPlayerId;
+            Debug.Log($"<dlt> TestGameState  OnClientJoined - {joinedPlayerId}");
 
             object[] playerData = new object[PlayerData_Size];
-            playerData[PlayerData_PlayerId] = lockstepPlayerId;
-            playerData[PlayerData_DisplayName] = lockstep.GetDisplayName(lockstepPlayerId);
+            playerData[PlayerData_PlayerId] = joinedPlayerId;
+            playerData[PlayerData_DisplayName] = lockstep.GetDisplayName(joinedPlayerId);
             playerData[PlayerData_Description] = "";
 
-            allPlayerData.Add(lockstepPlayerId, new DataToken(playerData));
+            allPlayerData.Add(joinedPlayerId, new DataToken(playerData));
             ui.UpdateUI();
         }
 
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientBeginCatchUp - {lockstepPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnClientBeginCatchUp - {lockstep.CatchingUpPlayerId}");
         }
 
         [LockstepEvent(LockstepEventType.OnClientCaughtUp)]
         public void OnClientCaughtUp()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientCaughtUp - {lockstepPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnClientCaughtUp - {lockstep.CatchingUpPlayerId}");
         }
 
         [LockstepEvent(LockstepEventType.OnClientLeft)]
         public void OnClientLeft()
         {
-            Debug.Log($"<dlt> TestGameState  OnClientLeft - {lockstepPlayerId}");
+            Debug.Log($"<dlt> TestGameState  OnClientLeft - {lockstep.LeftPlayerId}");
 
-            allPlayerData.Remove(lockstepPlayerId);
+            allPlayerData.Remove(lockstep.LeftPlayerId);
 
             ui.UpdateUI();
         }

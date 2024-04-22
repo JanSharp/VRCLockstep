@@ -35,6 +35,9 @@ namespace JanSharp
         private uint localPlayerId;
         private string localPlayerDisplayName;
         private InputActionSync inputActionSyncForLocalPlayer;
+        /// <summary>
+        /// <para>**Internal Game State**</para>
+        /// </summary>
         private uint masterPlayerId;
         private uint startTick;
         private uint firstMutableTick; // Effectively 1 tick past the last immutable tick.
@@ -171,7 +174,15 @@ namespace JanSharp
         // currently not possible and should never be possible.
         public override bool IsMaster => isMaster && !isCatchingUp; // Even for non initial catch ups.
         public override uint MasterPlayerId => masterPlayerId;
+        private uint oldMasterPlayerId;
+        private uint joinedPlayerId;
+        private uint leftPlayerId;
+        private uint catchingUpPlayerId;
         private uint sendingPlayerId;
+        public override uint OldMasterPlayerId => oldMasterPlayerId;
+        public override uint JoinedPlayerId => joinedPlayerId;
+        public override uint LeftPlayerId => leftPlayerId;
+        public override uint CatchingUpPlayerId => catchingUpPlayerId;
         public override uint SendingPlayerId => sendingPlayerId;
         private ulong sendingUniqueId;
         public override ulong SendingUniqueId => sendingUniqueId;
@@ -1021,9 +1032,10 @@ namespace JanSharp
             #endif
             uint playerId = ReadSmallUInt();
             clientStates[playerId] = (byte)ClientState.Master;
+            uint oldId = masterPlayerId;
             masterPlayerId = playerId;
             currentlyNoMaster = false;
-            RaiseOnMasterChanged(playerId);
+            RaiseOnMasterChanged(oldId);
         }
 
         private void SendClientJoinedIA()
@@ -1195,6 +1207,8 @@ namespace JanSharp
                 clientNames.Add(keyToken, clientName);
                 if ((ClientState)clientState == ClientState.Master)
                 {
+                    // In order for late joiner data to be sent it must come from a master, which means this
+                    // if statement is guaranteed to run (naturally exactly once. There's only 1 master.)
                     masterPlayerId = playerId;
                     currentlyNoMaster = false;
                 }
@@ -1552,64 +1566,62 @@ namespace JanSharp
                 listener.SendCustomEvent(nameof(LockstepEventType.OnInit));
         }
 
-        private void RaiseOnClientJoined(uint playerId)
+        private void RaiseOnClientJoined(uint joinedPlayerId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientJoined");
             #endif
+            this.joinedPlayerId = joinedPlayerId;
             foreach (UdonSharpBehaviour listener in onClientJoinedListeners)
-            {
-                listener.SetProgramVariable("lockstepPlayerId", playerId);
                 listener.SendCustomEvent(nameof(LockstepEventType.OnClientJoined));
-            }
+            this.joinedPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
-        private void RaiseOnClientBeginCatchUp(uint playerId)
+        private void RaiseOnClientBeginCatchUp(uint catchingUpPlayerId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientBeginCatchUp");
             #endif
+            this.catchingUpPlayerId = catchingUpPlayerId;
             foreach (UdonSharpBehaviour listener in onClientBeginCatchUpListeners)
-            {
-                listener.SetProgramVariable("lockstepPlayerId", playerId);
                 listener.SendCustomEvent(nameof(LockstepEventType.OnClientBeginCatchUp));
-            }
+            this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
-        private void RaiseOnClientCaughtUp(uint playerId)
+        private void RaiseOnClientCaughtUp(uint catchingUpPlayerId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientCaughtUp");
             #endif
+            this.catchingUpPlayerId = catchingUpPlayerId;
             foreach (UdonSharpBehaviour listener in onClientCaughtUpListeners)
-            {
-                listener.SetProgramVariable("lockstepPlayerId", playerId);
                 listener.SendCustomEvent(nameof(LockstepEventType.OnClientCaughtUp));
-            }
+            this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
-        private void RaiseOnClientLeft(uint playerId)
+        private void RaiseOnClientLeft(uint leftPlayerId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientLeft");
             #endif
+            this.leftPlayerId = leftPlayerId;
             foreach (UdonSharpBehaviour listener in onClientLeftListeners)
-            {
-                listener.SetProgramVariable("lockstepPlayerId", playerId);
                 listener.SendCustomEvent(nameof(LockstepEventType.OnClientLeft));
-            }
+            this.leftPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
-        private void RaiseOnMasterChanged(uint newMasterPlayerId)
+        /// <summary>
+        /// <para>Make sure to set <see cref="masterPlayerId"/> before raising this event.</para>
+        /// </summary>
+        private void RaiseOnMasterChanged(uint oldMasterPlayerId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnMasterChanged");
             #endif
+            this.oldMasterPlayerId = oldMasterPlayerId;
             foreach (UdonSharpBehaviour listener in onMasterChangedListeners)
-            {
-                listener.SetProgramVariable("lockstepPlayerId", newMasterPlayerId);
                 listener.SendCustomEvent(nameof(LockstepEventType.OnMasterChanged));
-            }
+            this.oldMasterPlayerId = 0; // To prevent misuse of the API which would cause desyncs.
         }
 
         private void RaiseOnTick()
