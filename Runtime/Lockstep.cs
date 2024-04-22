@@ -394,6 +394,13 @@ namespace JanSharp
             iatrnCount = 0;
         }
 
+        private void ForgetAboutInputActionsForThisFrame()
+        {
+            for (int i = 0; i < iatrnCount; i++)
+                inputActionsToRunNextFrame[i] = null; // Just to ensure that memory can be freed.
+            iatrnCount = 0;
+        }
+
         private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId)
         {
             #if LockstepDebug
@@ -950,7 +957,7 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  InstantlyRunInputActionsWaitingToBeSent");
             #endif
-            // TODO: instantly run input actions marked as to be run in the next frame!
+            RunInputActionsForThisFrame();
             inputActionSyncForLocalPlayer.DequeueEverything(doCallback: true);
         }
 
@@ -959,7 +966,7 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutInputActionsWaitingToBeSent");
             #endif
-            // TODO: should input actions to be run in the next frame be forgotten about?
+            ForgetAboutInputActionsForThisFrame();
             inputActionSyncForLocalPlayer.DequeueEverything(doCallback: false);
         }
 
