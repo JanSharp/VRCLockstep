@@ -412,6 +412,26 @@ namespace JanSharp
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
             sendingPlayerId = (uint)(uniqueId >> PlayerIdKeyShift);
             sendingUniqueId = uniqueId;
+            // This provides the guarantee that input actions sent by clients which have left the instance and
+            // for which the OnClientLeft event has already been raised will not be run. This is only an
+            // incredibly unlikely edge case since the system waits 1 second after the player left until the
+            // client left input action gets sent, however since we cannot trust and rely on timing of
+            // serialized data received from VRChat's networking system, I cannot be sure that there won't be
+            // some input action(s) received even after 1 second after the player left event from VRChat.
+            // It sucks because this is overhead for every single input action that gets run, however I
+            // couldn't think of another solution that wouldn't introduce other issues.
+            // The clientJoinedIAId is of course allowed regardless, since that's how a client gets added to
+            // clientStates in the first place.
+            if (inputActionId != clientJoinedIAId && !clientStates.ContainsKey(sendingPlayerId))
+            {
+                #if LockstepDebug
+                Debug.Log($"[LockStepDebug] The player id {sendingPlayerId} is not in the client states game"
+                    + $"state and therefore running input actions sent by this player id is invalid. This "
+                    + $"input action is ignored. This is supposed to be an incredibly rare edge case, so "
+                    + $"so that it should effectively never happen.");
+                #endif
+                return;
+            }
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
         }
 
