@@ -92,7 +92,7 @@ Non game state flags:
     - The client knows the tick at which all of the game states where captured
     - The client knows the current game tick all other clients are already at, thanks to LockstepTickSync
     - Raise the `OnClientBeginCatchUp(int playerId)` event
-      - Allows systems to initialize non game states or register conditional event handlers, based on the current game states
+      - Allows systems to initialize non game states based on the current game states
       - Note that this event must not modify any game states. If you know Factorio, think about on_load. This is the only event with this exception
 - Receive `ClientGotLateJoinerDataIA`
   - On every client (though sending client will run it a bit later, while catching up)
@@ -128,7 +128,7 @@ Any systems using this should disable functionality that would require sending i
 What if there were input actions that were supposed to run but we never received them? Like when the master sent and ran an action, but the action itself was never received, but the tick sync for it was?\
 It's supposed to be impossible. An input action only get enqueued to run on a specific tick if it has already been successfully sent, making it incredibly unlikely for the tick sync with the input action enqueued in some tick to arrive before the input action itself. If it does happen though, then the system cannot recover, as it doesn't know if it is only the local client missing the input action, so it cannot drop the input action. Even when the local client became master, it cannot make that decision, because other clients may have already run past this tick because they did receive the input action. If this can actually happen, I don't know. But since I don't know, I can't make any assumptions, so again, it is unrecoverable if it does happen.
 
-When the world converts from multiplayer to single player, the system must remove all queued data from the InputActionSync scripts (both the local player's one and the late joiner one), and instantly raise their associated actions (though there's no thing to do for the late joiner ones, just drop them).
+When the world converts from multiplayer to single player, the system must remove all queued data from the InputActionSync scripts (both the local player's one and the late joiner one), and instantly raise their associated actions (though there's nothing to do for the late joiner ones, just drop them).
 
 - Ignore OnPlayerLeave (for now? So long as I can trust the player object pool I suppose)
 - When an InputActionSync get unassigned
@@ -204,8 +204,8 @@ A game state can look however it wants, the data structure truly does not matter
 In order for some data structure to qualify as a game state, interaction with that data must follow a set of rules:
 
 - Reading from it can happen any time
-- Writing to it must only happen inside of input actions, or otherwise "game state" declared events raised by the Lockstep system itself, like the on tick event
-- Writing to it must only use data that is apart of the game state, or passed in as parameters to the input action/event that got raised
+- Writing to it must only happen inside of input actions, or otherwise game state safe events raised and declared as such by the Lockstep system itself, like the on tick event
+- Writing to it must only use data that is apart of the game state, or passed in as arguments to the input action/event that got raised
 
 When the rules for writing to it are not followed it results in a desync.
 
@@ -249,12 +249,10 @@ Every form of data is possible to be represented using a flat list of primitives
 
 ## Initialization
 
-There's 2 parts to this:
+There's 2 parts to this, both can only be done at initialization - in other words it must all exist in the scene at build time and cannot be changed at runtime:
 
 - Definition of game states
-  - These can only be done at initialization, cannot be defined during runtime
 - Registration of Lockstep events
-  - These can both be registered during initialization as well as registered or deregistered at runtime
 
 Defining games states is done using an abstract class as a base class. Said abstract class will require you to implement a few methods and properties:
 
@@ -266,18 +264,15 @@ Defining games states is done using an abstract class as a base class. Said abst
 - void SerializeState(bool isExport); // Game states must be able to successfully be serialized at every point in time. Uses `Lockstep.Write` calls to serialize data.
 - string DeserializeState(bool isImport); // A non null return value indicates failure and the string value is an error message. Uses `Lockstep.Read` calls to serialize data.
 
-Registration of Lockstep events at initialization is done using attributes on methods which can be on any UdonSharpBehaviour. The system will find all instances of UdonSharpBehaviours with such methods in the scene at build time (entering play mode or before uploading), and save them as registered. This means instantiating a new instance of such scripts at runtime will not cause them to get registered automatically, in that case the new instance and the methods would have to get registered manually. More on registration of events during runtime later.
-
-**Important:** Registration of events must **not** happen in `Start()`. The order in which events get registered must be deterministic and to my knowledge the order in which Start gets called on each behaviour in the scene is undefined.
+Registration of Lockstep events at initialization is done using attributes on methods which can be on any UdonSharpBehaviour. The system will find all instances of UdonSharpBehaviours with such methods in the scene at build time (entering play mode or before uploading), and save them as registered. This means instantiating a new instance of such scripts at runtime will not register these event listeners and there's no way to register them at runtime. If this is required, use a manager script which has the event listener and have it have a list of other listening scripts. When using that kind of setup however make sure to keep order of execution in mind when modifying the game state. A different order or amount of the listeners in the manager could cause a desync if those listeners are modifying the game state.
 
 ## First Client
 
 The first client joining a world is special, it is the one which is going to initialize all systems that are using Lockstep.
 
-After a bit of time, `OnInit()` will get raised, any handlers listening to `OnInit` have certain jobs:
+After a bit of time, `OnInit()` will get raised, any handlers listening to `OnInit` have just one job:
 
 - Initialize game states, using any source data they wish
-- Conditionally register event handlers that weren't registered in the initialization process (so ones that aren't using attributes)
 
 Input actions can be sent as soon as `OnInit` is running, before then they are invalid and ignored. While sending input actions inside of `OnInit` is possible, there's little reason to, as `OnInit` is allowed to modify game states already anyway. However if it's easier to send some input actions, that's perfectly fine, they'll run _very_ shortly after OnInit, if not in the same game tick.
 
@@ -285,19 +280,16 @@ Input actions can be sent as soon as `OnInit` is running, before then they are i
 
 Every other client does not run `OnInit`. Instead, all game states will be sent to new clients. Once all data has been received and deserialized, `OnClientBeginCatchUp(int playerId)` is raised **only on the new client**. This means `OnClientBeginCatchUp` is rather limited:
 
-- Can conditionally register event handlers that weren't registered in the initialization process (so ones that aren't using attributes, or were instantiated), using game states to determine which ones to register. After `OnClientBeginCatchUp` has run, the set of registered events must match the ones on every other client at that game tick. Even the order in which events got registered must match. This is the only non game state event allowed to change event registration.
 - **Must not** modify any game state. It is the only event raised by Lockstep with this restriction
-- Can, however, be used to save some non game state values. Just remember than when using said non game state values in order to modify the game state, you must send an input action and only modify the game state from within the input action handler
+- Can, however, be used to save some non game state values. Just remember that when using said non game state values in order to modify the game state, you must send an input action and only modify the game state from within the input action handler
 
 Speaking of input actions, similar to `OnInit`, as soon as `OnClientBeginCatchUp` is running, sending input actions is allowed, before then they are invalid and ignored. Therefore if you'd like to modify the game state in `OnClientBeginCatchUp` you must send an input action first. Note however that this input action has a very high likely hood of running many many game ticks after it was sent, since as the name of the event suggests, the client is just starting to catch up with all other clients.
 
-**Important:** Since even the order in which conditionally registered event handlers get registered must match on all clients, conditional event handlers are probably the most prone to desyncs. So while it is possible to do use them, and may potentially help with organization in some rare cases (involving instantiation, most likely), the vast majority of the time they only add a lot of complexity and risk for desyncs with little gain.
-
 After `OnClientBeginCatchUp` the Lockstep system begins rapidly running game ticks and raising events as well as input action handlers in those game ticks in order to catch up with every other client in the world. The reason why this client is behind in the first place is because sending all the game states to it may take some time, depending on the size of game states, so the client then has to run all actions performed after the game states were captured and sent over the network.
 
-Note that during this process, it is good to keep in mind that any input action sent will run many many game ticks in the future, after the clint is fully caught up. Depending on what the input action is for it may make more sense not to send it at all. To do so, remember that the system is currently catching up using some variable set in `OnClientBeginCatchUp`. The given variable can then be unset in `OnClientCaughtUp`, see below.
+Note that during this process, it is good to keep in mind that any input action sent will run many many game ticks in the future, after the clint is fully caught up. Depending on what the input action is for it may make more sense not to send it at all. To do so check the `IsCatchingUp` flag on Lockstep.
 
-Once the client has fully caught up and is now running at the game tick every other client is at, the `OnClientCaughtUp(int playerId)` event will be raised on _every client_. This is a Lockstep event like any other, which means modification to game states or changing event registration is allowed within this event handler.
+Once the client has fully caught up and is now running at the game tick every other client is at, the `OnClientCaughtUp(int playerId)` event will be raised on _every client_. This is a Lockstep event like any other, which means modification to game states is allowed within this event handler.
 
 ## Joining and Leaving Clients
 
@@ -310,7 +302,7 @@ There are events for players joining and leaving:
     - To input player specific data into the game state:
       - Send an input action in `OnClientBeginCatchUp`
       - Send an input action in `OnClientCaughtUp`, but only on the joining client (by checking if the playerId is the local player's id)
-  - Also runs for the first client, shortly after `OnInit`
+  - `OnClientJoined` also gets raised for the first client, shortly after `OnInit`
 - `OnClientLeft(int playerId)`
   - The VRCPlayerApi for the given playerId does not exist anymore
 
@@ -322,10 +314,10 @@ So when to send an input action from within another input action?
 
 When every client must input some non game state data **that exists only on their client** (or is player specific data, like the local player's VRCPlayerApi) at the same time.
 
-In every other scenario only a single, or a select few, clients should send an input action, not every single one.
+In every other scenario only a single, or a select few, clients should send an input action, not every single one. `SendSingletonInputAction` may be usable in some of these scenarios.
 
 A good example is a player joining the instance and you'd like to make their avatar size apart of the game state:\
-The simple way to do this would be to send an input action in `OnClientBeginCatchUp`, since that event only runs on the newly joined client. However depending on what you're doing it may be more useful to send the data later, specifically once the client is fully caught up. In that case, the `OnClientCaughtUp` event would the the appropriate place to send the event from, however this event runs on every client, therefore you would first check that the given playerId passed to the event is that id of the local player, and only if that's the case send an input action.
+The simple way to do this would be to send an input action in `OnClientBeginCatchUp`, since that event only runs on the newly joined client. However depending on what you're doing it may be more useful to send the data later, specifically once the client is fully caught up. In that case, the `OnClientCaughtUp` event would be the appropriate place to send the input action from, however this event runs on every client, therefore you would first check that the given playerId passed to the event is that id of the local player, and only if that's the case send an input action. You could also use `SendSingletonInputAction` with the joined client's id being the responsible player, however the major difference would be that if the joined client instantly left after sending the input action, this input action would still be sent but by a different player - after the `OnClientLeft` event. Which makes `SendSingletonInputAction` the wrong pick in this scenario, however it may be the right one in others.
 
 Keep in mind that `OnClientBeginCatchUp` is the only non game state event (and only runs on one client), **every other event runs on every client**.
 
@@ -333,14 +325,15 @@ Keep in mind that `OnClientBeginCatchUp` is the only non game state event (and o
 
 ## Game State Events
 
-Game state events are raised on every client in the exact same order on the same game tick.
+Game state safe events are raised on every client in the exact same order on the same game tick.
 
-Only inside of these events, modification of game states and changing Lockstep event registration is allowed. See [game states](#game-states) for what rules to follow when modifying game states.
+Only inside of these events, modification of game states is allowed. See [game states](#game-states) for what rules to follow when modifying game states.
 
 - `OnInit()` (This is [special](#first-client). Also, it only runs on the first client, but at that time it is the only - therefore every - client.)
-- `OnClientJoined(int playerId)`
-- `OnClientCaughtUp(int playerId)`
-- `OnClientLeft(int playerId)`
+- `OnClientJoined()` Use `JoinedPlayerId` from the lockstep api.
+- `OnClientCaughtUp()` Use `CatchingUpPlayerId` from the lockstep api.
+- `OnClientLeft()` Use `LeftPlayerId` from the lockstep api.
+- `OnMasterChanged` Use `OldMasterPlayerId` and `MasterPlayerId` from the lockstep api.
 - `OnTick()`
 - `OnImportStart()` Use import related properties on Lockstep inside this event to know more about the import process.
 - `OnImportedGameState()` Use import related properties on Lockstep inside this event to know more about the import process.
@@ -349,11 +342,11 @@ Only inside of these events, modification of game states and changing Lockstep e
 
 ## Non Game State Events
 
-Non game state events are events running on either just one client or every client, and are not running on any specific tick, just whenever they happen.
+Non game state safe events are events running on either just one client or every client, and are not running on any specific tick, just whenever they happen.
 
-These events are not allowed to modify the game states, nor change registration of Lockstep events.
+These events are not allowed to modify the game states:
 
-- `OnClientBeginCatchUp(int playerId)` (This is an exception as it is allowed to change event registration, but still must not modify game states)
+- `OnClientBeginCatchUp()` Use `CatchingUpPlayerId` from the lockstep api.
 - Every unity or VRChat event
 
 These 2 aren't really events, but they are called by the Lockstep system.
@@ -363,7 +356,6 @@ These 2 aren't really events, but they are called by the Lockstep system.
 
 TODO: the ability to take master from another master in Lockstep
 TODO: actually implement autosaving (auto exporting)
-TODO: remove talk about conditional/runtime event registration in the notes file. It's not a thing and it won't happen
 TODO: add xml docs to lock step event type enum fields
 TODO: add xml docs to LockstepGameState abstract base class
 TODO: add lockstep info UI with basic information and notifications/log
@@ -371,3 +363,4 @@ TODO: make tick rate on non master clients a bit more variable such that it trie
 TODO: guarantee that every input action sent from a player is run before we get the client left input action
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
+TODO: add uint importDataVersion to deserialize params and update notes
