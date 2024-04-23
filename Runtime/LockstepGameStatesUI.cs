@@ -552,7 +552,5 @@ namespace JanSharp
             autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
             InstantAutosaveTimerUpdateLoop();
         }
-
-        // TODO: show import state in game states UI
     }
 }
