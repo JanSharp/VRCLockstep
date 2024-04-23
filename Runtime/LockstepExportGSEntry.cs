@@ -13,6 +13,9 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private LockstepGameStatesUI gameStatesUI;
         [HideInInspector] public LockstepGameState gameState;
 
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         public TextMeshProUGUI infoLabel;
         [System.NonSerialized] public bool doAutosave = false;
 

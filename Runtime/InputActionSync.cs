@@ -27,7 +27,10 @@ namespace JanSharp
         // Who is the current owner of this object. Null if object is not currently in use.
         // [System.NonSerialized] public VRCPlayerApi Owner; // In the base class.
 
-        public bool isLateJoinerSyncInst = false;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private bool isLateJoinerSyncInst = false;
 
         // First one is 1, making 0 an indication of an invalid index.
         // Since the input action index 0 is invalid, the unique id 0 is also invalid.

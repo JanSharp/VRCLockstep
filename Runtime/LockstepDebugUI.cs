@@ -13,7 +13,10 @@ namespace JanSharp
     {
         [SerializeField] [HideInInspector] private LockstepAPI lockstep;
 
-        public Transform flagsParent;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private Transform flagsParent;
         private string[] flagFieldNames = new string[]
         {
             "isTickPaused",
@@ -35,21 +38,30 @@ namespace JanSharp
         private const float MinMaxTimeFrame = 5f;
         private int lastFullSecond = int.MinValue;
 
-        public TextMeshProUGUI lockstepPerformanceText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private TextMeshProUGUI lockstepPerformanceText;
         private const string lockstepLastUpdateSWFieldName = "lastUpdateSW";
         private double averageUpdateMS;
         private double minUpdateMS = double.MaxValue;
         private double maxUpdateMS = double.MinValue;
         private string formattedMaxAndMax;
 
-        public TextMeshProUGUI debugUIPerformanceText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private TextMeshProUGUI debugUIPerformanceText;
         private System.Diagnostics.Stopwatch debugLastUpdateSW = new System.Diagnostics.Stopwatch();
         private double debugAverageUpdateMS;
         private double debugMinUpdateMS = double.MaxValue;
         private double debugMaxUpdateMS = double.MinValue;
         private string debugFormattedMaxAndMax;
 
-        public Transform numbersParent;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private Transform numbersParent;
         private string[] numbersFieldNames = new string[]
         {
             "currentTick",
@@ -65,9 +77,18 @@ namespace JanSharp
         private TextMeshProUGUI[] numbersValues;
         private TextMeshProUGUI[] numbersLabels;
 
-        public RectTransform clientStatesParent;
-        public TextMeshProUGUI clientStatesCountText;
-        public float clientStatesElemHeight;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private RectTransform clientStatesParent;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private TextMeshProUGUI clientStatesCountText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private float clientStatesElemHeight;
         private object[] clientStatesListObj;
         private DataDictionary clientStates;
         private DataDictionary clientNames;
@@ -82,17 +103,35 @@ namespace JanSharp
             "Normal",
         };
 
-        public RectTransform leftClientsParent;
-        public TextMeshProUGUI leftClientsCountText;
-        public float leftClientsElemHeight;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private RectTransform leftClientsParent;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private TextMeshProUGUI leftClientsCountText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private float leftClientsElemHeight;
         private object[] leftClientsListObj;
         private uint[] leftClients;
         private const string LeftClientsFieldName = "leftClients";
         private const string LeftClientsCountFieldName = "leftClientsCount";
 
-        public RectTransform inputActionsByUniqueIdParent;
-        public TextMeshProUGUI inputActionsByUniqueIdCountText;
-        public float inputActionsByUniqueIdElemHeight;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private RectTransform inputActionsByUniqueIdParent;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private TextMeshProUGUI inputActionsByUniqueIdCountText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private float inputActionsByUniqueIdElemHeight;
         private object[] inputActionsByUniqueIdListObj;
         private DataDictionary inputActionsByUniqueId;
         private DataList inputActionsByUniqueIdKeys;
@@ -100,9 +139,18 @@ namespace JanSharp
         private const string InputActionsByUniqueIdsFieldName = "inputActionsByUniqueId";
         private const string InputActionHandlerEventNamesFieldName = "inputActionHandlerEventNames";
 
-        public RectTransform uniqueIdsByTickParent;
-        public TextMeshProUGUI uniqueIdsByTickCountText;
-        public float uniqueIdsByTickElemHeight;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private RectTransform uniqueIdsByTickParent;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private TextMeshProUGUI uniqueIdsByTickCountText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private float uniqueIdsByTickElemHeight;
         private object[] uniqueIdsByTickListObj;
         private DataDictionary uniqueIdsByTick;
         private ulong[][] uniqueIdsByTickUnrolled = new ulong[ArrList.MinCapacity][];

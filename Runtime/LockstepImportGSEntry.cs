@@ -13,6 +13,9 @@ namespace JanSharp
         [HideInInspector] public LockstepGameStatesUI gameStatesUI;
         [HideInInspector] public LockstepGameState gameState;
 
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         public TextMeshProUGUI infoLabel;
         [System.NonSerialized] public bool canImport;
         ///<summary>LockstepImportedGS</summary>

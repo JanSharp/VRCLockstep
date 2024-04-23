@@ -42,20 +42,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 850b009dbf8cbdfdba7cf075900c275f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 4718634957554442505}
   lockstep: {fileID: 4728509102619734785}
-  syncedTick: 0
 --- !u!114 &4718634957554442505
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66,8 +65,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   interactTextPlacement: {fileID: 0}
   interactText: Use
   interactTextGO: {fileID: 0}
@@ -124,13 +123,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 02728d41db794ca8d8b5845b990cb948, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -147,8 +146,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   interactTextPlacement: {fileID: 0}
   interactText: Use
   interactTextGO: {fileID: 0}
@@ -205,13 +204,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d63d583f695d311eda8bdcd11f54cf3f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -228,8 +227,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   interactTextPlacement: {fileID: 0}
   interactText: Use
   interactTextGO: {fileID: 0}
@@ -290,13 +289,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 249f9baf3e65a558baf204bb5b2582cb, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -313,12 +312,21 @@ MonoBehaviour:
   onClientLeftListeners: []
   onMasterChangedListeners: []
   onTickListeners: []
+  onImportStartListeners: []
+  onImportedGameStateListeners: []
+  onImportFinishedListeners: []
+  onGameStatesToAutosaveChangedListeners: []
+  onAutosaveIntervalSecondsChangedListeners: []
+  onIsAutosavePausedChangedListeners: []
   allGameStates: []
+  singletonInputActionIAId: 0
   masterChangedIAId: 0
   clientJoinedIAId: 0
   clientGotLateJoinerDataIAId: 0
   clientLeftIAId: 0
   clientCaughtUpIAId: 0
+  importStartIAId: 0
+  importGameStateIAId: 0
 --- !u!114 &6658752726484821156
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -329,8 +337,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   interactTextPlacement: {fileID: 0}
   interactText: Use
   interactTextGO: {fileID: 0}
@@ -425,18 +433,18 @@ PrefabInstance:
     - target: {fileID: 6243652546771352964, guid: 0ac21e3d0ac31a3fa869e6dbd7216fba,
         type: 3}
       propertyPath: poolEventListener
-      value:
+      value: 
       objectReference: {fileID: 5948473159169846534}
     - target: {fileID: 6243652546771352964, guid: 0ac21e3d0ac31a3fa869e6dbd7216fba,
         type: 3}
       propertyPath: serializationData.Prefab
-      value:
+      value: 
       objectReference: {fileID: 6243652546771352964, guid: 0ac21e3d0ac31a3fa869e6dbd7216fba,
         type: 3}
     - target: {fileID: 9184674909746598733, guid: 0ac21e3d0ac31a3fa869e6dbd7216fba,
         type: 3}
       propertyPath: pool
-      value:
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0ac21e3d0ac31a3fa869e6dbd7216fba, type: 3}

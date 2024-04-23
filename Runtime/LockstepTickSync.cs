@@ -9,9 +9,12 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class LockstepTickSync : UdonSharpBehaviour
     {
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         public Lockstep lockstep;
-        public bool isSinglePlayer = false; // Default value must match the one in Lockstep.
-        public uint currentTick;
+        [System.NonSerialized] public bool isSinglePlayer = false; // Default value must match the one in Lockstep.
+        [System.NonSerialized] public uint currentTick;
         private uint tickInSyncedData;
         [UdonSynced] private byte[] syncedData = new byte[0];
         private int readPosition = 0;

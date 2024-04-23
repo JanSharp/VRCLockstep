@@ -13,41 +13,128 @@ namespace JanSharp
     {
         [SerializeField] [HideInInspector] private LockstepAPI lockstep;
 
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private GameObject mainGSEntryPrefab;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private GameObject importGSEntryPrefab;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private GameObject exportGSEntryPrefab;
 
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Transform mainGSList;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private GameObject dimBackground;
 
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Slider autosaveTimerSlider;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI autosaveTimerText;
 
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private GameObject importWindow;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI importSelectedText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private InputField serializedInputField;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI importInfoText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Transform importGSList;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Button confirmImportButton;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI confirmImportButtonText;
 
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private GameObject exportWindow;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI exportSelectedText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Transform exportGSList;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private InputField autosaveIntervalField;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Slider autosaveIntervalSlider;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private InputField serializedOutputField;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private InputField exportNameField;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Button confirmExportButton;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI confirmExportButtonText;
 
-        [SerializeField] [HideInInspector] private float minAutosaveInterval;
-        [SerializeField] [HideInInspector] private float defaultAutosaveInterval;
-        [SerializeField] [HideInInspector] private float autosaveInterval;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private float minAutosaveInterval;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private float defaultAutosaveInterval;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private float autosaveInterval;
 
-        [SerializeField] [HideInInspector] private LockstepMainGSEntry[] mainGSEntries;
-        [SerializeField] [HideInInspector] private LockstepImportGSEntry[] importGSEntries;
-        [SerializeField] [HideInInspector] private LockstepExportGSEntry[] exportGSEntries;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private LockstepMainGSEntry[] mainGSEntries;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private LockstepImportGSEntry[] importGSEntries;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private LockstepExportGSEntry[] exportGSEntries;
 
         private bool isImportInitialized = false;
         private bool isExportInitialized = false;
@@ -64,7 +151,10 @@ namespace JanSharp
         string exportName;
 
         private int importSelectedCount = 0;
-        [SerializeField] [HideInInspector] private int exportSelectedCount;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private int exportSelectedCount;
 
         private VRCPlayerApi localPlayer;
 

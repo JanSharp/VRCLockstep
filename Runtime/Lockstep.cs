@@ -25,8 +25,14 @@ namespace JanSharp
         // custom game states will have ids starting at this, ascending
         private const uint LJFirstCustomGameStateIAId = 2;
 
-        public InputActionSync lateJoinerInputActionSync;
-        public LockstepTickSync tickSync;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private InputActionSync lateJoinerInputActionSync;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private LockstepTickSync tickSync;
         [System.NonSerialized] public uint currentTick;
         [System.NonSerialized] public uint waitTick; // The system will run this tick, but not past it.
         public override uint CurrentTick => currentTick;
@@ -94,24 +100,72 @@ namespace JanSharp
         ///<para>uint singletonId => objet[] { uint responsiblePlayerId, byte[] singletonInputActionData }</para></summary>
         private DataDictionary singletonInputActions = new DataDictionary();
 
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] inputActionHandlerInstances;
-        [SerializeField] [HideInInspector] private string[] inputActionHandlerEventNames;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] inputActionHandlerInstances;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private string[] inputActionHandlerEventNames;
 
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onInitListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientJoinedListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientCaughtUpListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onClientLeftListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onMasterChangedListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onTickListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportStartListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportedGameStateListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportFinishedListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onGameStatesToAutosaveChangedListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
-        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onInitListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onClientJoinedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onClientCaughtUpListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onClientLeftListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onMasterChangedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onTickListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onImportStartListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onImportedGameStateListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onImportFinishedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onGameStatesToAutosaveChangedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
 
-        [SerializeField] [HideInInspector] private LockstepGameState[] allGameStates;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private LockstepGameState[] allGameStates;
         // string internalName => LockstepGameState gameState
         private DataDictionary gameStatesByInternalName = new DataDictionary();
         // string internalName => int indexInAllGameStates
