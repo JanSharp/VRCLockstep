@@ -353,7 +353,7 @@ namespace JanSharp
             }
         }
 
-        public void OnAutosaveIntervalFieldChanged()
+        public void OnAutosaveIntervalFieldEndEdit()
         {
             if (int.TryParse(autosaveIntervalField.text, out int autosaveIntervalMinutes))
                 autosaveInterval = (float)autosaveIntervalMinutes;
@@ -362,8 +362,8 @@ namespace JanSharp
             if (autosaveInterval < minAutosaveInterval)
             {
                 autosaveInterval = minAutosaveInterval;
-                // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but the setter for text doesn't
-                // seem to raise the changed event... Udon what is going on?
+            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but this only raises the text changed
+            // event, not the end edit, so it's fine.
                 autosaveIntervalField.text = ((int)autosaveInterval).ToString();
             }
             autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
@@ -373,8 +373,8 @@ namespace JanSharp
         public void OnAutosaveIntervalSliderChanged()
         {
             autosaveInterval = autosaveIntervalSlider.value;
-            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but the setter for text doesn't seem
-            // to raise the changed event... Udon what is going on?
+            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but this only raises the text changed
+            // event, not the end edit, so it's fine.
             autosaveIntervalField.text = ((int)autosaveInterval).ToString();
             SendApplyAutosaveIntervalDelayed();
         }
@@ -543,6 +543,8 @@ namespace JanSharp
         public void OnAutosaveIntervalSecondsChanged()
         {
             autosaveInterval = Mathf.Floor(lockstep.AutosaveIntervalSeconds / 60f);
+            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but this only raises the text changed
+            // event, not the end edit, so it's fine.
             autosaveIntervalField.text = ((int)autosaveInterval).ToString();
             autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
             InstantAutosaveTimerUpdateLoop();

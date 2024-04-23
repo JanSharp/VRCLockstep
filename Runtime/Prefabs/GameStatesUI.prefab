@@ -1695,6 +1695,8 @@ MonoBehaviour:
     type: 3}
   mainGSList: {fileID: 8315912742155832182}
   dimBackground: {fileID: 8315912741354935664}
+  autosaveTimerSlider: {fileID: 3970646879236373889}
+  autosaveTimerText: {fileID: 5536368933076519069}
   importWindow: {fileID: 8315912741185170229}
   importSelectedText: {fileID: 4859878675522975124}
   serializedInputField: {fileID: 8315912742567915866}
@@ -1711,8 +1713,6 @@ MonoBehaviour:
   exportNameField: {fileID: 2871884128677178060}
   confirmExportButton: {fileID: 8315912742473667882}
   confirmExportButtonText: {fileID: 8315912741110725841}
-  autosaveTimerSlider: {fileID: 3970646879236373889}
-  autosaveTimerText: {fileID: 5536368933076519069}
   minAutosaveInterval: 1
   defaultAutosaveInterval: 5
   autosaveInterval: 5
@@ -3562,7 +3562,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 8315912742538806657}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999777
+  m_Size: 0.99997663
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -4941,7 +4941,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: OnAutosaveIntervalFieldChanged
+          m_StringArgument: OnAutosaveIntervalFieldEndEdit
           m_BoolArgument: 0
         m_CallState: 2
   m_OnValueChanged:
@@ -6030,7 +6030,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00012207031}
+  m_AnchoredPosition: {x: 0, y: 0.00048828125}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8315912742155832180

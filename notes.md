@@ -364,5 +364,4 @@ TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: disallow and reject `exportName`s which contain `\n` or `\r`
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
-TODO: the text changed event is not getting raised by setting text on text mesh pro ugui because it's set to listen to end edit, not text changed. update the comments in the game states UI
 TODO: is initial catch up is true on the initial master?! that's very wrong
