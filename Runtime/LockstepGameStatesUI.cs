@@ -20,6 +20,9 @@ namespace JanSharp
         [SerializeField] private Transform mainGSList;
         [SerializeField] private GameObject dimBackground;
 
+        [SerializeField] private Slider autosaveTimerSlider;
+        [SerializeField] private TextMeshProUGUI autosaveTimerText;
+
         [SerializeField] private GameObject importWindow;
         [SerializeField] private TextMeshProUGUI importSelectedText;
         [SerializeField] private InputField serializedInputField;
@@ -38,9 +41,9 @@ namespace JanSharp
         [SerializeField] private Button confirmExportButton;
         [SerializeField] private TextMeshProUGUI confirmExportButtonText;
 
-        [SerializeField] [HideInInspector] private int minAutosaveInterval;
-        [SerializeField] [HideInInspector] private int defaultAutosaveInterval;
-        [SerializeField] [HideInInspector] private int autosaveInterval;
+        [SerializeField] [HideInInspector] private float minAutosaveInterval;
+        [SerializeField] [HideInInspector] private float defaultAutosaveInterval;
+        [SerializeField] [HideInInspector] private float autosaveInterval;
 
         [SerializeField] [HideInInspector] private LockstepMainGSEntry[] mainGSEntries;
         [SerializeField] [HideInInspector] private LockstepImportGSEntry[] importGSEntries;
@@ -63,10 +66,29 @@ namespace JanSharp
         private int importSelectedCount = 0;
         [SerializeField] [HideInInspector] private int exportSelectedCount;
 
+        private VRCPlayerApi localPlayer;
+
         private void Start()
         {
+            localPlayer = Networking.LocalPlayer;
             foreach (LockstepImportGSEntry entry in importGSEntries)
                 importEntriesByInternalName.Add(entry.gameState.GameStateInternalName, entry);
+        }
+
+        private void Enable()
+        {
+            if (isExportInitialized)
+                InstantAutosaveTimerUpdateLoop();
+        }
+
+        public void Disable()
+        {
+            autosaveTimerUpdateLoopCounter = 0;
+            if (applyAutosaveIntervalDelayedCounter != 0)
+            {
+                applyAutosaveIntervalDelayedCounter = 1;
+                ApplyAutosaveIntervalDelayed();
+            }
         }
 
         public void OpenImportWindow()
@@ -304,12 +326,27 @@ namespace JanSharp
 
         public void SetAutosaveSelected()
         {
+            LockstepGameState[] toAutosave = new LockstepGameState[exportGSEntries.Length];
+            int i = 0;
+            foreach (LockstepExportGSEntry entry in exportGSEntries)
+                if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
+                    toAutosave[i++] = entry.gameState;
+            // The rest are null and that's fine, GameStatesToAutosave will shorten the array when copying.
+            lockstep.GameStatesToAutosave = toAutosave; // Raises OnGameStatesToAutosaveChanged.
+        }
+
+        private void UpdateAutosaveInfoLabelsReadingFromLockstep()
+        {
+            LockstepGameState[] toAutosave = lockstep.GameStatesToAutosave;
+            DataDictionary lut = new DataDictionary();
+            foreach (LockstepGameState gs in toAutosave)
+                lut.Add(gs, true);
             for (int i = 0; i < exportGSEntries.Length; i++)
             {
                 LockstepExportGSEntry entry = exportGSEntries[i];
                 if (!entry.gameState.GameStateSupportsImportExport)
                     continue;
-                bool doAutosave = entry.mainToggle.isOn;
+                bool doAutosave = lut.ContainsKey(entry.gameState);
                 entry.doAutosave = doAutosave;
                 entry.infoLabel.gameObject.SetActive(doAutosave);
                 mainGSEntries[i].autosaveText.gameObject.SetActive(doAutosave);
@@ -318,24 +355,45 @@ namespace JanSharp
 
         public void OnAutosaveIntervalFieldChanged()
         {
-            if (!int.TryParse(autosaveIntervalField.text, out autosaveInterval))
+            if (int.TryParse(autosaveIntervalField.text, out int autosaveIntervalMinutes))
+                autosaveInterval = (float)autosaveIntervalMinutes;
+            else
                 autosaveInterval = defaultAutosaveInterval;
             if (autosaveInterval < minAutosaveInterval)
             {
                 autosaveInterval = minAutosaveInterval;
                 // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but the setter for text doesn't
                 // seem to raise the changed event... Udon what is going on?
-                autosaveIntervalField.text = autosaveInterval.ToString();
+                autosaveIntervalField.text = ((int)autosaveInterval).ToString();
             }
             autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
+            SendApplyAutosaveIntervalDelayed();
         }
 
         public void OnAutosaveIntervalSliderChanged()
         {
-            autosaveInterval = (int)autosaveIntervalSlider.value;
-                // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but the setter for text doesn't
-                // seem to raise the changed event... Udon what is going on?
-            autosaveIntervalField.text = autosaveInterval.ToString();
+            autosaveInterval = autosaveIntervalSlider.value;
+            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but the setter for text doesn't seem
+            // to raise the changed event... Udon what is going on?
+            autosaveIntervalField.text = ((int)autosaveInterval).ToString();
+            SendApplyAutosaveIntervalDelayed();
+        }
+
+        private void SendApplyAutosaveIntervalDelayed()
+        {
+            applyAutosaveIntervalDelayedCounter++;
+            SendCustomEventDelayedSeconds(nameof(ApplyAutosaveIntervalDelayed), 2f);
+            if (applyAutosaveIntervalDelayedCounter == 1)
+                lockstep.StartScopedAutosavePause();
+        }
+
+        private int applyAutosaveIntervalDelayedCounter = 0;
+        public void ApplyAutosaveIntervalDelayed()
+        {
+            if (applyAutosaveIntervalDelayedCounter == 0 || (--applyAutosaveIntervalDelayedCounter) != 0)
+                return;
+            lockstep.StopScopedAutosavePause();
+            lockstep.AutosaveIntervalSeconds = autosaveInterval * 60f; // Raises OnAutosaveIntervalSecondsChanged.
         }
 
         public void OnExportEntryToggled()
@@ -394,12 +452,64 @@ namespace JanSharp
             serializedOutputField.text = "";
         }
 
+        private void InstantAutosaveTimerUpdateLoop()
+        {
+            autosaveTimerUpdateLoopCounter = 1; // Intentional set instead of increment to force an instant update.
+            AutosaveTimerUpdateLoop();
+        }
+
+        private int autosaveTimerUpdateLoopCounter = 0;
+        private float nextPlayerDistanceCheckTime = 0f;
+        public void AutosaveTimerUpdateLoop()
+        {
+            if (autosaveTimerUpdateLoopCounter == 0 || (--autosaveTimerUpdateLoopCounter) != 0)
+                return;
+
+            if (lockstep.GameStatesToAutosaveCount == 0)
+            {
+                autosaveTimerSlider.gameObject.SetActive(false);
+                return;
+            }
+            if (!localPlayer.IsValid())
+                return;
+
+            float seconds = lockstep.SecondsUntilNextAutosave;
+            float interval = lockstep.AutosaveIntervalSeconds + 0.0625f; // Prevent division by 0.
+            autosaveTimerSlider.value = (interval - seconds) / interval;
+            int hours = (int)(seconds / 3600f);
+            seconds -= hours * 3600;
+            int minutes = (int)(seconds / 60f);
+            seconds -= minutes * 60;
+            if (hours != 0)
+                autosaveTimerText.text = $"autosave in {hours}h {minutes + (seconds > 0f ? 1 : 0)}m";
+            else if (minutes != 0)
+                autosaveTimerText.text = $"autosave in {minutes + (seconds > 0f ? 1 : 0)}m";
+            else
+                autosaveTimerText.text = $"autosave in {(int)seconds}s";
+            autosaveTimerSlider.gameObject.SetActive(true);
+
+            float delay;
+            if (Time.time >= nextPlayerDistanceCheckTime
+                && Vector3.Distance(this.transform.position, localPlayer.GetPosition()) > 16f)
+            {
+                nextPlayerDistanceCheckTime = Time.time + 7.5f;
+                delay = 10f;
+            }
+            else
+                delay = Mathf.Clamp(interval / 300f, 0.125f, 4f);
+
+            autosaveTimerUpdateLoopCounter++;
+            SendCustomEventDelayedSeconds(nameof(AutosaveTimerUpdateLoop), delay);
+        }
+
         private void OnInitialized()
         {
             isImportInitialized = true;
             isExportInitialized = true;
             UpdateImportButton();
             UpdateExportButton();
+            autosaveTimerUpdateLoopCounter++;
+            AutosaveTimerUpdateLoop();
         }
 
         [LockstepEvent(LockstepEventType.OnInit)]
@@ -420,6 +530,22 @@ namespace JanSharp
         {
             UpdateImportButton();
             UpdateExportButton();
+        }
+
+        [LockstepEvent(LockstepEventType.OnGameStatesToAutosaveChanged)]
+        public void OnGameStatesToAutosaveChanged()
+        {
+            UpdateAutosaveInfoLabelsReadingFromLockstep();
+            InstantAutosaveTimerUpdateLoop();
+        }
+
+        [LockstepEvent(LockstepEventType.OnAutosaveIntervalSecondsChanged)]
+        public void OnAutosaveIntervalSecondsChanged()
+        {
+            autosaveInterval = Mathf.Floor(lockstep.AutosaveIntervalSeconds / 60f);
+            autosaveIntervalField.text = ((int)autosaveInterval).ToString();
+            autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
+            InstantAutosaveTimerUpdateLoop();
         }
 
         // TODO: show import state in game states UI

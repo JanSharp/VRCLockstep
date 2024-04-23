@@ -326,6 +326,100 @@ namespace JanSharp
         public abstract int GameStatesWaitingForImportCount { get; }
 
         /// <summary>
+        /// <para>Autosaves are written to the
+        /// <see href="https://docs.vrchat.com/docs/local-vrchat-storage">log file</see> and can be found by
+        /// searching for "<p>[Lockstep] Export:</p>". Log files are deleted if they are 24 hours old and
+        /// VRChat gets launched, so be sure to extract autosaves shortly after closing VRChat, if they are
+        /// needed.</para>
+        /// <para>When getting this property it will never be <see langword="null"/> and will only contain
+        /// entries with <see cref="LockstepGameState.GameStateSupportsImportExport"/> being
+        /// <see langword="true"/>.</para>
+        /// <para>Reading returns a copy of the internal array to prevent modifications.</para>
+        /// <para>Writing <see langword="null"/> is treated like writing an empty array.</para>
+        /// <para>Writing an array saves a copy of the given array.</para>
+        /// <para>When writing an array, any <see langword="null"/> or entries where
+        /// <see cref="LockstepGameState.GameStateSupportsImportExport"/> is <see langword="false"/> get
+        /// removed from the array. This enables simply taking <see cref="AllGameStates"/> and writing it to
+        /// <see cref="GameStatesToAutosave"/>, without having to filter them. And if one of them shouldn't be
+        /// autosaved it allows simply setting that one to <see langword="null"/> instead of having to create
+        /// another array and moving elements around.</para>
+        /// <para>When this array is non empty it will automatically be autosaving at the specified
+        /// <see cref="AutosaveIntervalSeconds"/>. If <see cref="IsAutosavePaused"/> is <see langword="true"/>
+        /// or <see cref="IsImporting"/> is <see langword="true"/> it will effectively pause the autosave
+        /// timer. Lockstep may also pause the timer at any time internally.</para>
+        /// <para>Whenever this value changes, <see cref="LockstepEventType.OnGameStatesToAutosaveChanged"/>
+        /// gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
+        /// within a frame the event only gets raised once (you can thank Udon).</para>
+        /// <para>All APIs related to autosaving are local only.</para>
+        /// <para>Default: Empty array.</para>
+        /// </summary>
+        public abstract LockstepGameState[] GameStatesToAutosave { get; set; }
+        /// <summary>
+        /// <para>Get the length of <see cref="GameStatesToAutosave"/> without performing an entire array
+        /// copy.</para>
+        /// </summary>
+        public abstract int GameStatesToAutosaveCount { get; }
+        /// <summary>
+        /// <para>Negative values get clamped to 0f, which means "autosave every frame" so long as autosaves
+        /// are not <see cref="IsAutosavePaused"/> as well as autosaves not being blocked through other means
+        /// internally, such as <see cref="IsImporting"/> being <see langword="true"/> or other internal
+        /// reasons.</para>
+        /// <para>Infinity or NaN values get rejected and log an error. If I could I would throw an exception.
+        /// </para>
+        /// <para>When writing to this property the system will immediately determine when the next autosave
+        /// should occur based on the time of the previous autosave and the newly set interval. This can
+        /// result in an immediate autosave.</para>
+        /// <para>Since written changes take effect immediately it may be preferable to wait until 1 to 3
+        /// seconds after user input from a slider or text field to prevent potential lag spikes caused by
+        /// an autosave in the middle of the user writing text or moving a slider. Mainly since the size of
+        /// the lag spike is unknown because it purely depends on how long it takes game states to serialize
+        /// themselves and how big the resulting export data is.</para>
+        /// <para>Whenever this value changes,
+        /// <see cref="LockstepEventType.OnAutosaveIntervalSecondsChanged"/> gets raised 1 frame delayed to
+        /// prevent recursion, subsequently if there are multiple changes within a frame the event only gets
+        /// raised once (you can thank Udon).</para>
+        /// <para>Default: <p>300f.</p></para>
+        /// </summary>
+        public abstract float AutosaveIntervalSeconds { get; set; }
+        /// <summary>
+        /// <para>When nothing is being autosaved, which means <see cref="GameStatesToAutosave"/> is empty,
+        /// <see cref="float.PositiveInfinity"/> will be returned.</para>
+        /// <para>When the internal timer is paused for any reason, it naturally also causes this property to
+        /// continuously return the same - paused - value.</para>
+        /// <para>Never negative, can be zero.</para>
+        /// </summary>
+        public abstract float SecondsUntilNextAutosave { get; }
+        /// <summary>
+        /// <para>This property is modified through <see cref="StartScopedAutosavePause"/> and
+        /// <see cref="StopScopedAutosavePause"/>. There is an internal counter which increments for every
+        /// <see cref="StartScopedAutosavePause"/> call and decrements for every
+        /// <see cref="StopScopedAutosavePause"/> call. Whenever this internal counter is non zero,
+        /// <see cref="IsAutosavePaused"/> is <see langword="true"/>.</para>
+        /// <para>Autosaves are automatically started and stopped depending on if
+        /// <see cref="GameStatesToAutosave"/> is empty or not, pausing is separate from that.</para>
+        /// <para>Whenever this value changes, <see cref="LockstepEventType.OnIsAutosavePausedChanged"/> gets
+        /// raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes within a
+        /// frame the event only gets raised once (you can thank Udon).</para>
+        /// </summary>
+        public abstract bool IsAutosavePaused { get; }
+        /// <summary>
+        /// <para>Think of <see cref="StartScopedAutosavePause"/> and <see cref="StopScopedAutosavePause"/>
+        /// just like setting a paused <see cref="bool"/> to <see langword="true"/> and
+        /// <see langword="false"/>. The only difference is that multiple systems can set this
+        /// "<see cref="bool"/>" to <see langword="true"/> at the same time, without having to worry what the
+        /// previous state was, as autosaving will only be unpaused once <see cref="StopScopedAutosavePause"/>
+        /// has been called a matching amount of times as <see cref="StartScopedAutosavePause"/>.</para>
+        /// <para>This allows pausing autosaves without touching <see cref="GameStatesToAutosave"/> nor
+        /// <see cref="AutosaveIntervalSeconds"/> and without multiple systems interfering with each other.
+        /// </para>
+        /// <para><see cref="StopScopedAutosavePause"/> can be called even when the internal counter is zero.
+        /// </para>
+        /// </summary>
+        public abstract void StartScopedAutosavePause();
+        /// <inheritdoc cref="StartScopedAutosavePause"/>
+        public abstract void StopScopedAutosavePause();
+
+        /// <summary>
         /// <para>When data has already been written to the internal write stream using any of the
         /// <c>Write</c> functions, however the call to <see cref="SendInputAction(uint)"/>,
         /// <see cref="SendSingletonInputAction(uint)"/> or its overload ends up not happening due to an early

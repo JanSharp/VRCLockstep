@@ -2,23 +2,30 @@
 namespace JanSharp {
     public enum LockstepEventType
     {
+        /// <summary>
+        /// <para>Game state safe.</para>
+        /// </summary>
         OnInit,
         /// <summary>
-        /// <para></para> Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.
+        /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         OnClientJoined,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which is
         /// beginning to catch up.</para>
+        /// <para>Not game state safe - only raised on one client, the one beginning catch up.</para>
         /// </summary>
         OnClientBeginCatchUp,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which has
         /// caught up.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         OnClientCaughtUp,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.LeftPlayerId"/> to get the id of the left client.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         OnClientLeft,
         /// <summary>
@@ -26,12 +33,43 @@ namespace JanSharp {
         /// </para>
         /// <para>Use <see cref="LockstepAPI.MasterPlayerId"/> to get the id of the new master client.
         /// (<see cref="LockstepAPI.MasterPlayerId"/> is not limited to the scope of this event.)</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         OnMasterChanged,
+        /// <summary>
+        /// <para>Game state safe.</para>
+        /// </summary>
         OnTick,
+        /// <summary>
+        /// <para>Game state safe.</para>
+        /// </summary>
         OnImportStart,
+        /// <summary>
+        /// <para>Game state safe.</para>
+        /// </summary>
         OnImportedGameState,
+        /// <summary>
+        /// <para>Game state safe.</para>
+        /// </summary>
         OnImportFinished,
+        /// <summary>
+        /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
+        /// within a frame the event only gets raised once (you can thank Udon).</para>
+        /// <para>Not game state safe - autosaving is local only.</para>
+        /// </summary>
+        OnGameStatesToAutosaveChanged,
+        /// <summary>
+        /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
+        /// within a frame the event only gets raised once (you can thank Udon).</para>
+        /// <para>Not game state safe - autosaving is local only.</para>
+        /// </summary>
+        OnAutosaveIntervalSecondsChanged,
+        /// <summary>
+        /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
+        /// within a frame the event only gets raised once (you can thank Udon).</para>
+        /// <para>Not game state safe - autosaving is local only.</para>
+        /// </summary>
+        OnIsAutosavePausedChanged,
     }
 
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]

@@ -107,6 +107,9 @@ namespace JanSharp
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportStartListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportedGameStateListeners;
         [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onImportFinishedListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onGameStatesToAutosaveChangedListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
+        [SerializeField] [HideInInspector] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
 
         [SerializeField] [HideInInspector] private LockstepGameState[] allGameStates;
         // string internalName => LockstepGameState gameState
@@ -292,6 +295,7 @@ namespace JanSharp
                 isCatchingUp = false;
                 SendClientCaughtUpIA(); // Uses isInitialCatchUp.
                 isInitialCatchUp = false;
+                StartOrStopAutosave();
                 startTick = currentTick;
                 tickStartTime = Time.time;
                 if (isMaster)
@@ -780,6 +784,7 @@ namespace JanSharp
             waitTick = uint.MaxValue;
             EnterSingePlayerMode();
             initializedEnoughForImportExport = true;
+            StartOrStopAutosave();
             RaiseOnInit();
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
@@ -1693,6 +1698,72 @@ namespace JanSharp
                 listener.SendCustomEvent(nameof(LockstepEventType.OnImportFinished));
         }
 
+        private bool markedForOnGameStatesToAutosaveChanged;
+        private void MarkForOnGameStatesToAutosaveChanged()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  MarkForOnGameStatesToAutosaveChanged");
+            #endif
+            if (markedForOnGameStatesToAutosaveChanged)
+                return;
+            markedForOnGameStatesToAutosaveChanged = true;
+            SendCustomEventDelayedFrames(nameof(RaiseOnGameStatesToAutosaveChanged), 1);
+        }
+
+        public void RaiseOnGameStatesToAutosaveChanged()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnGameStatesToAutosaveChanged");
+            #endif
+            markedForOnGameStatesToAutosaveChanged = false;
+            foreach (UdonSharpBehaviour listener in onGameStatesToAutosaveChangedListeners)
+                listener.SendCustomEvent(nameof(LockstepEventType.OnGameStatesToAutosaveChanged));
+        }
+
+        private bool markedForOnAutosaveIntervalSecondsChanged;
+        private void MarkForOnAutosaveIntervalSecondsChanged()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  MarkForOnAutosaveIntervalSecondsChanged");
+            #endif
+            if (markedForOnAutosaveIntervalSecondsChanged)
+                return;
+            markedForOnAutosaveIntervalSecondsChanged = true;
+            SendCustomEventDelayedFrames(nameof(RaiseOnAutosaveIntervalSecondsChanged), 1);
+        }
+
+        public void RaiseOnAutosaveIntervalSecondsChanged()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnAutosaveIntervalSecondsChanged");
+            #endif
+            markedForOnAutosaveIntervalSecondsChanged = false;
+            foreach (UdonSharpBehaviour listener in onAutosaveIntervalSecondsChangedListeners)
+                listener.SendCustomEvent(nameof(LockstepEventType.OnAutosaveIntervalSecondsChanged));
+        }
+
+        private bool markedForOnIsAutosavePausedChanged;
+        private void MarkForOnIsAutosavePausedChanged()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  MarkForOnIsAutosavePausedChanged");
+            #endif
+            if (markedForOnIsAutosavePausedChanged)
+                return;
+            markedForOnIsAutosavePausedChanged = true;
+            SendCustomEventDelayedFrames(nameof(RaiseOnIsAutosavePausedChanged), 1);
+        }
+
+        public void RaiseOnIsAutosavePausedChanged()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnIsAutosavePausedChanged");
+            #endif
+            markedForOnIsAutosavePausedChanged = false;
+            foreach (UdonSharpBehaviour listener in onIsAutosavePausedChangedListeners)
+                listener.SendCustomEvent(nameof(LockstepEventType.OnIsAutosavePausedChanged));
+        }
+
         public override string GetDisplayName(uint playerId)
         {
             if (clientNames.TryGetValue(playerId, out DataToken nameToken))
@@ -1830,6 +1901,7 @@ namespace JanSharp
             ResetWriteStream();
 
             string encoded = Base64.Encode(exportedData);
+            Debug.Log("[Lockstep] Export:" + (exportName != null ? $" {exportName}:\n" : "\n") + encoded);
             #if LockstepDebug
             exportStopWatch.Stop();
             Debug.Log($"[LockstepDebug] Lockstep  Export (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation time: {crcMs}ms, total time: {exportStopWatch.ElapsedMilliseconds}ms");
@@ -1959,6 +2031,7 @@ namespace JanSharp
             if (isImporting == value)
                 return;
             isImporting = value;
+            StartOrStopAutosave();
             if (value)
                 RaiseOnImportStart();
             else
@@ -2097,6 +2170,193 @@ namespace JanSharp
             if (!isImporting || leftPlayerId != ImportingPlayerId)
                 return;
             SetIsImporting(false);
+        }
+
+        private bool AutosaveShouldBeRunning
+            => initializedEnoughForImportExport
+            && !(isCatchingUp && isInitialCatchUp)
+            && autosavePauseScopeCount == 0
+            && !isImporting;
+
+        private void StartOrStopAutosave()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  StartOrStopAutosave");
+            #endif
+            if (gameStatesToAutosave.Length == 0)
+            {
+                autosaveTimerStart = -1f;
+                autosaveTimerPausedAt = float.PositiveInfinity;
+                return;
+            }
+
+            bool doRun = AutosaveShouldBeRunning;
+            if (autosaveTimerStart == -1f) // Timer has not been started yet, start it.
+            {
+                autosaveTimerStart = Time.time;
+                autosaveTimerPausedAt = doRun ? -1f : 0f;
+                if (doRun)
+                    SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
+                return;
+            }
+
+            if (doRun == (autosaveTimerPausedAt == -1f)) // Expected running state matches current state.
+                return;
+
+            if (!doRun) // Pause the timer.
+            {
+                autosaveTimerPausedAt = Time.time - autosaveTimerStart;
+                return;
+            }
+
+            // Resume the timer.
+            autosaveTimerStart = Time.time - autosaveTimerPausedAt;
+            autosaveTimerPausedAt = -1f;
+            SendCustomEventDelayedSeconds(nameof(AutosaveLoop), SecondsUntilNextAutosave);
+        }
+
+        private LockstepGameState[] gameStatesToAutosave = new LockstepGameState[0];
+        public override LockstepGameState[] GameStatesToAutosave
+        {
+            get
+            {
+                int length = gameStatesToAutosave.Length;
+                LockstepGameState[] result = new LockstepGameState[length];
+                gameStatesToAutosave.CopyTo(result, 0);
+                return result;
+            }
+            set
+            {
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] Lockstep  GameStatesToAutosave.set");
+                #endif
+                if (value == null)
+                {
+                    if (gameStatesToAutosave.Length == 0)
+                        return;
+                    gameStatesToAutosave = new LockstepGameState[0];
+                    StartOrStopAutosave();
+                    MarkForOnGameStatesToAutosaveChanged();
+                    return;
+                }
+
+                int validCount = 0;
+                bool identical = true;
+                foreach (LockstepGameState gs in value)
+                    if (gs != null && gs.GameStateSupportsImportExport)
+                    {
+                        if (validCount >= gameStatesToAutosave.Length || gs != gameStatesToAutosave[validCount])
+                            identical = false;
+                        validCount++;
+                    }
+                if (identical && validCount == gameStatesToAutosave.Length) // To only raise the event if it actually changed.
+                    return;
+
+                gameStatesToAutosave = new LockstepGameState[validCount];
+                if (validCount == 0)
+                {
+                    StartOrStopAutosave();
+                    MarkForOnGameStatesToAutosaveChanged();
+                    return;
+                }
+                int i = 0;
+                foreach (LockstepGameState gs in value)
+                    if (gs != null && gs.GameStateSupportsImportExport)
+                        gameStatesToAutosave[i++] = gs;
+                StartOrStopAutosave();
+                MarkForOnGameStatesToAutosaveChanged();
+            }
+        }
+        public override int GameStatesToAutosaveCount => gameStatesToAutosave.Length;
+
+        private float autosaveIntervalSeconds = 300f;
+        public override float AutosaveIntervalSeconds
+        {
+            get => autosaveIntervalSeconds;
+            set
+            {
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] Lockstep  AutosaveIntervalSeconds.set");
+                #endif
+                if (float.IsInfinity(value) || float.IsNaN(value))
+                {
+                    Debug.LogError($"[Lockstep] Attempt to write {value} to {nameof(AutosaveIntervalSeconds)} "
+                        + $"which is invalid (+-inf and nan are invalid), ignoring. Treat this like an exception.");
+                    return;
+                }
+                float newValue = Mathf.Max(0f, value);
+                if (newValue == autosaveIntervalSeconds)
+                    return;
+                autosaveIntervalSeconds = newValue;
+                // If it is not paused, send another loop event which should be received at the right time.
+                if (autosaveTimerPausedAt == -1f)
+                    SendCustomEventDelayedSeconds(nameof(AutosaveLoop), SecondsUntilNextAutosave);
+                MarkForOnAutosaveIntervalSecondsChanged();
+            }
+        }
+
+        /// <summary>
+        /// <para><p>-1f</p> means the timer is not running.</para>
+        /// </summary>
+        private float autosaveTimerStart = -1f;
+        /// <summary>
+        /// <para><p>-1f</p> means the timer is not paused. It is only ever -1f if
+        /// <see cref="autosaveTimerStart"/> is non -1f, so it's actually running.</para>
+        /// </summary>
+        private float autosaveTimerPausedAt = float.PositiveInfinity;
+
+        public override float SecondsUntilNextAutosave => autosaveTimerPausedAt == -1f
+            ? Mathf.Max(0f, autosaveIntervalSeconds - (Time.time - autosaveTimerStart))
+            : float.IsInfinity(autosaveTimerPausedAt) ? autosaveTimerPausedAt
+            : Mathf.Max(0f, autosaveIntervalSeconds - autosaveTimerPausedAt);
+
+        private int autosavePauseScopeCount = 0;
+        public override bool IsAutosavePaused => autosavePauseScopeCount != 0;
+
+        public override void StartScopedAutosavePause()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  StartScopedAutosavePause");
+            #endif
+            autosavePauseScopeCount++;
+            if (autosavePauseScopeCount == 1)
+            {
+                StartOrStopAutosave();
+                MarkForOnIsAutosavePausedChanged();
+            }
+        }
+
+        public override void StopScopedAutosavePause()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  StopScopedAutosavePause");
+            #endif
+            if (autosavePauseScopeCount == 0)
+                return;
+            autosavePauseScopeCount--;
+            if (autosavePauseScopeCount == 0)
+            {
+                StartOrStopAutosave();
+                MarkForOnIsAutosavePausedChanged();
+            }
+        }
+
+        private int autosaveCount = 0;
+
+        public void AutosaveLoop()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AutosaveLoop");
+            #endif
+            if (autosaveTimerPausedAt != -1f) // Autosaving is paused or straight up no longer running.
+                return;
+            float timePassed = Time.time - autosaveTimerStart;
+            if (timePassed + 1.5f < autosaveIntervalSeconds) // Accept the event 1.5 seconds early, but if it's
+                return; // earlier than that, nope, too soon, ignore this call. It's caused by duplicate calls.
+            string autosaveName = $"autosave {++autosaveCount} (tick: {currentTick})";
+            Export(GameStatesToAutosave, autosaveName); // Export writes to the log file.
+            autosaveTimerStart = Time.time;
+            SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
         }
     }
 }

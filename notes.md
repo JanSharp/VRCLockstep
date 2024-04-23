@@ -345,6 +345,9 @@ Non game state safe events are events running on either just one client or every
 These events are not allowed to modify the game states:
 
 - `OnClientBeginCatchUp()` Use `CatchingUpPlayerId` from the lockstep api.
+- `OnGameStatesToAutosaveChanged()`
+- `OnAutosaveIntervalSecondsChanged()`
+- `OnIsAutosavePausedChanged()`
 - Every unity or VRChat event
 
 These 2 aren't really events, but they are called by the Lockstep system.
@@ -353,10 +356,13 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
 TODO: the ability to take master from another master in Lockstep
-TODO: actually implement autosaving (auto exporting)
 TODO: add xml docs to lock step event type enum fields
 TODO: add xml docs to LockstepGameState abstract base class
 TODO: add lockstep info UI with basic information and notifications/log
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
+TODO: disallow and reject `exportName`s which contain `\n` or `\r`
+TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
+TODO: the text changed event is not getting raised by setting text on text mesh pro ugui because it's set to listen to end edit, not text changed. update the comments in the game states UI
+TODO: is initial catch up is true on the initial master?! that's very wrong

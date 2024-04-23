@@ -28,6 +28,9 @@ namespace JanSharp
             { LockstepEventType.OnImportStart, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnImportedGameState, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnImportFinished, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnGameStatesToAutosaveChanged, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnAutosaveIntervalSecondsChanged, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnIsAutosavePausedChanged, new List<(int order, UdonSharpBehaviour ub)>() },
         };
         private static List<LockstepGameState> allGameStates = new List<LockstepGameState>();
         public static ReadOnlyCollection<LockstepGameState> AllGameStates => allGameStates.AsReadOnly();
@@ -53,6 +56,9 @@ namespace JanSharp
             LockstepEventType.OnImportStart,
             LockstepEventType.OnImportedGameState,
             LockstepEventType.OnImportFinished,
+            LockstepEventType.OnGameStatesToAutosaveChanged,
+            LockstepEventType.OnAutosaveIntervalSecondsChanged,
+            LockstepEventType.OnIsAutosavePausedChanged,
         };
 
         static LockstepOnBuild()

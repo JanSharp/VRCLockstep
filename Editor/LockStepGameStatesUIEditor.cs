@@ -109,15 +109,15 @@ namespace JanSharp
             confirmExportButtonProxy.ApplyModifiedProperties();
 
             Slider autosaveIntervalSlider = (Slider)proxy.FindProperty("autosaveIntervalSlider").objectReferenceValue;
-            int defaultAutosaveInterval = (int)autosaveIntervalSlider.value;
-            proxy.FindProperty("minAutosaveInterval").intValue = (int)autosaveIntervalSlider.minValue;
-            proxy.FindProperty("defaultAutosaveInterval").intValue = defaultAutosaveInterval;
-            proxy.FindProperty("autosaveInterval").intValue = defaultAutosaveInterval;
+            float defaultAutosaveInterval = autosaveIntervalSlider.value;
+            proxy.FindProperty("minAutosaveInterval").floatValue = autosaveIntervalSlider.minValue;
+            proxy.FindProperty("defaultAutosaveInterval").floatValue = defaultAutosaveInterval;
+            proxy.FindProperty("autosaveInterval").floatValue = defaultAutosaveInterval;
             proxy.ApplyModifiedProperties();
 
             InputField autosaveIntervalField = (InputField)proxy.FindProperty("autosaveIntervalField").objectReferenceValue;
             SerializedObject fieldProxy = new SerializedObject(autosaveIntervalField);
-            fieldProxy.FindProperty("m_Text").stringValue = defaultAutosaveInterval.ToString();
+            fieldProxy.FindProperty("m_Text").stringValue = ((int)defaultAutosaveInterval).ToString();
             fieldProxy.ApplyModifiedProperties();
 
             return true;
