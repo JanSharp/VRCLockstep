@@ -358,8 +358,10 @@ These 2 aren't really events, but they are called by the Lockstep system.
 TODO: the ability to take master from another master in Lockstep
 TODO: add xml docs to lock step event type enum fields
 TODO: add xml docs to LockstepGameState abstract base class
+  TODO: note that it is highly recommended not to return an error message from DeserializeGameState, have it just be a last resort
 TODO: add lockstep info UI with basic information and notifications/log
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
+TODO: hide all internal references from inspector when debug # define is not defined
