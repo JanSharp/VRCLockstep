@@ -768,6 +768,7 @@ namespace JanSharp
             ignoreIncomingInputActions = false;
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = false;
+            isInitialCatchUp = false; // The master never raises a caught up event for itself.
             clientStates = new DataDictionary();
             clientNames = new DataDictionary();
             DataToken keyToken = localPlayerId;
@@ -909,7 +910,6 @@ namespace JanSharp
                 // game state may happen before OnInit, which is invalid behaviour for this system.
                 stillAllowLocalClientJoinedIA = false;
                 isCatchingUp = false;
-                isInitialCatchUp = false;
                 FactoryReset();
                 BecomeInitialMaster();
                 return;
