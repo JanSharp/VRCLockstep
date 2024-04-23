@@ -1849,6 +1849,12 @@ namespace JanSharp
                 Debug.LogError("[Lockstep] Attempt to call Export before OnInit or OnClientBeginCatchUp, ignoring.");
                 return null;
             }
+            if (exportName != null && (exportName.Contains("\n") || exportName.Contains("\r")))
+            {
+                Debug.LogError("[Lockstep] Attempt to call Export where the given exportName contains '\\n' "
+                    + "and or '\\r' (newline characters), which is forbidden. Ignoring.");
+                return null;
+            }
             ResetWriteStream();
 
             uint validCount = 0;
@@ -1952,6 +1958,14 @@ namespace JanSharp
 
             exportedDate = ReadDateTime();
             exportName = ReadString();
+            if (exportName != null)
+            {
+                // While the Export function will refuse export names with newlines, it is possible to
+                // fabricate an import/export string which could in turn contain newlines in the name. However
+                // the whole point of Export refusing them is that the API guarantees that the name shall
+                // never under any circumstances contain newlines. So they must be removed here.
+                exportName = exportName.Replace('\n', ' ').Replace('\r', ' ');
+            }
             int gameStatesCount = (int)ReadSmallUInt();
 
             object[][] importedGameStates = new object[gameStatesCount][];
@@ -2016,6 +2030,8 @@ namespace JanSharp
             foreach(object[] importedGS in importedGameStates)
                 if (LockstepImportedGS.GetErrorMsg(importedGS) == null)
                     validImportedGSs[count++] = importedGS;
+            if (exportName != null)
+                exportName = exportName.Replace('\n', ' ').Replace('\r', ' ');
             SendImportStartIA(exportDate, exportName, validImportedGSs);
         }
 

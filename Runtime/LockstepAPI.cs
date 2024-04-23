@@ -205,11 +205,14 @@ namespace JanSharp
         /// total amount of given game states (which also support exporting) is 0, the function returns
         /// <see langword="null"/>. Must not contain <see langword="null"/>.</param>
         /// <param name="exportName">The name to save inside of the exported string which can be read back
-        /// when importing in the future. <see langword="null"/> is a valid value.</param>
+        /// when importing in the future. <see langword="null"/> is a valid value. Must not contain
+        /// "<c>\n</c>" nor "<c>\r</c>"; If it does <see langword="null"/> is returned, however it will also
+        /// log an error message so this should be treated like an exception.</param>
         /// <returns>A base 64 encoded string containing a bit of metadata such as which game states have been
         /// exported, their version, the current UTC date and time and then of course exported data retrieved
         /// from <see cref="LockstepGameState.SerializeGameState(bool)"/>. Returns <see langword="null"/> if
-        /// called at an invalid time or with invalid <paramref name="gameStates"/>.</returns>
+        /// called at an invalid time or with invalid <paramref name="gameStates"/> or
+        /// <paramref name="exportName"/>.</returns>
         public abstract string Export(LockstepGameState[] gameStates, string exportName);
         /// <summary>
         /// <para>Load and validate a given base 64 exported string, converting it into an array of objects
@@ -230,7 +233,9 @@ namespace JanSharp
         /// <see cref="Export(LockstepGameState[], string)"/> call was made.</param>
         /// <param name="exportName">The name which was passed to
         /// <see cref="Export(LockstepGameState[], string)"/> at the time of exporting, which can be
-        /// <see langword="null"/>.</param>
+        /// <see langword="null"/>. It is guaranteed to never contain "<c>\n</c>" nor "<c>\r</c>". If the
+        /// imported string was manually fabricated and it did contain newlines then those will silently get
+        /// replaced with white spaces.</param>
         /// <returns><see cref="LockstepImportedGS"/>[] importedGameStates, or <see langword="null"/> in case
         /// the given <paramref name="exportedString"/> was invalid.</returns>
         public abstract object[][] ImportPreProcess(
@@ -248,7 +253,9 @@ namespace JanSharp
         /// <param name="exportDate">The UTC date and time obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
         /// <param name="exportName">The name obtained from
-        /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
+        /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>. If you provide a
+        /// different name and that happens to contain "<c>\n</c>" nor "<c>\r</c>" then those will silently be
+        /// replaced with white spaces.</param>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
         public abstract void StartImport(
@@ -282,6 +289,7 @@ namespace JanSharp
         public abstract System.DateTime ImportingFromDate { get; }
         /// <summary>
         /// <para>The name that was set during the export of the currently being imported data.</para>
+        /// <para>Guaranteed to never contain "<c>\n</c>" nor "<c>\r</c>".</para>
         /// <para>Can be <see langword="null"/>.</para>
         /// <para>Usable if <see cref="IsImporting"/> is true, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>

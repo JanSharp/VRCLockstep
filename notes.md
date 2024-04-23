@@ -362,6 +362,5 @@ TODO: add lockstep info UI with basic information and notifications/log
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
-TODO: disallow and reject `exportName`s which contain `\n` or `\r`
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: is initial catch up is true on the initial master?! that's very wrong

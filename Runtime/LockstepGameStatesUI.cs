@@ -435,7 +435,10 @@ namespace JanSharp
             foreach (LockstepExportGSEntry entry in exportGSEntries)
                 if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
                     gameStates[i++] = entry.gameState;
-            string exportName = exportNameField.text.Trim();
+            // It is a single line field so I would expect newlines to be impossible, however since I cannot
+            // trust it, just in case they do exist they get removed, because according to lockstep's api they
+            // are invalid.
+            string exportName = exportNameField.text.Trim().Replace('\n', ' ').Replace('\r', ' ');
             if (exportName == "")
                 exportName = null;
             serializedOutputField.text = lockstep.Export(gameStates, exportName);
