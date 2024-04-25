@@ -618,7 +618,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 2636254698101497693}
   m_OnClick:
     m_PersistentCalls:
@@ -900,7 +900,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 6490622244127133650}
   m_OnClick:
     m_PersistentCalls:
@@ -1702,6 +1702,8 @@ MonoBehaviour:
   serializedInputField: {fileID: 8315912742567915866}
   importInfoText: {fileID: 8315912740984491370}
   importGSList: {fileID: 8315912742651624664}
+  importSelectAllButton: {fileID: 7258458348595935913}
+  importSelectNoneButton: {fileID: 5735336382968699410}
   confirmImportButton: {fileID: 8315912742696054417}
   confirmImportButtonText: {fileID: 8315912742193930586}
   exportWindow: {fileID: 8315912741474953698}
@@ -3561,8 +3563,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8315912742538806656}
   m_HandleRect: {fileID: 8315912742538806657}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.9999777
+  m_Value: 0
+  m_Size: 0.99997663
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -6030,7 +6032,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.006591797}
+  m_AnchoredPosition: {x: 0, y: 0.0026855469}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8315912742155832180

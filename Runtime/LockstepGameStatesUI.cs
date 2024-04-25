@@ -70,6 +70,14 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
+        [SerializeField] private Button importSelectAllButton;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private Button importSelectNoneButton;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private Button confirmImportButton;
         #if !LockstepDebug
         [HideInInspector]
@@ -295,6 +303,11 @@ namespace JanSharp.Internal
                 + $"\n<size=90%>{exportName ?? "<i>unnamed</i>"} "
                 + $"<nobr><size=70%>(from {exportDate.ToLocalTime():yyyy-MM-dd HH:mm})</nobr>";
             importSelectedCount = canImportCount;
+            if (canImportCount != 0)
+            {
+                importSelectAllButton.interactable = true;
+                importSelectNoneButton.interactable = true;
+            }
             UpdateImportSelectedCount();
         }
 
@@ -393,6 +406,8 @@ namespace JanSharp.Internal
             importSelectedCount = 0;
             importSelectedText.text = "";
             importInfoText.text = "";
+            importSelectAllButton.interactable = false;
+            importSelectNoneButton.interactable = false;
             UpdateImportButton();
         }
 
