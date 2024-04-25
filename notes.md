@@ -364,4 +364,3 @@ TODO: make tick rate on non master clients a bit more variable such that it trie
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
-TODO: add write stream position for seeking

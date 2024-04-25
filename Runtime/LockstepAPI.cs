@@ -437,6 +437,34 @@ namespace JanSharp
         /// </summary>
         public abstract void ResetWriteStream();
         /// <summary>
+        /// <para>Be very careful with this. Not only is this the position/index within the write stream where
+        /// the next <c>Write</c> call would write binary data to - which then naturally automatically
+        /// advances the <see cref="WriteStreamPosition"/> - but this is also used as the total length of the
+        /// amount of data that has been written to the write stream. As such that amount of data will then be
+        /// sent as the input action data.</para>
+        /// <para>Effectively this is a low level api to jump around in the write stream, as in the process of
+        /// writing data to the stream, some value may not be known at the time of writing, requiring it to be
+        /// skipped and then jumped back to at a later point in time. After the jump back it also must jump
+        /// forward again as otherwise the input action data would be cut short.</para>
+        /// <para>A common use case for this is to skip the length of a list of values that is about to be
+        /// written to the write stream (so += 4 most likely). Then loop through the elements, conditionally
+        /// write data to the write stream and for each element written to it increment a counter which tracks
+        /// how many elements have actually been written to the write stream. Then once the loop is finished,
+        /// jump back to the saved write stream position where the length value should be at, write the length
+        /// there, and then jump forwards again as to not cut the input action data short, or not to overwrite
+        /// data that had just been written. Naturally this is only needed if the length of the list that will
+        /// actually be written to the write stream is unknown at the beginning of the list.</para>
+        /// <para>Since this is a low level api, there are no save guards in place. Negative values are
+        /// invalid, however not checked for. It will simply throw an exception at some point in the future if
+        /// a negative value was written to this.</para>
+        /// <para>Through improper use of this variable it is possible to include random garbage data in an
+        /// input action which was actually part of a previous input action. There's no reason to do this, and
+        /// even if you can think of a reason to do it, it'd oh so very most likely result in either an
+        /// exception inside of lockstep for indexing an array with an out of bounds index, or a random
+        /// exception inside of your system due to, well, random garbage data.</para>
+        /// </summary>
+        public abstract int WriteStreamPosition { get; set; }
+        /// <summary>
         /// <para>When using <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
         /// or its overload or <see cref="LockstepGameState.SerializeGameState(bool)"/>, in order to pass data
         /// to the input action or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> use this

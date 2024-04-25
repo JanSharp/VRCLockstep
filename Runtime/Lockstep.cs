@@ -1836,6 +1836,7 @@ namespace JanSharp.Internal
         private int writeStreamSize = 0;
 
         public override void ResetWriteStream() => writeStreamSize = 0;
+        public override int WriteStreamPosition { get => writeStreamSize; set => writeStreamSize = value; }
         public override void Write(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void Write(byte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void Write(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
