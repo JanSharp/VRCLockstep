@@ -6,6 +6,9 @@ using VRC.Udon.Common;
 
 namespace JanSharp.Internal
 {
+    #if !LockstepDebug
+    [AddComponentMenu("")]
+    #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class LockstepTickSync : UdonSharpBehaviour
     {

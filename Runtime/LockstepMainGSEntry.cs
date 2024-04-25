@@ -6,6 +6,9 @@ using TMPro;
 
 namespace JanSharp.Internal
 {
+    #if !LockstepDebug
+    [AddComponentMenu("")]
+    #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepMainGSEntry : LockstepGameStateEntryBase
     {

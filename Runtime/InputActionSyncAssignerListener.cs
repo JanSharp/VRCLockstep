@@ -6,6 +6,9 @@ using Cyan.PlayerObjectPool;
 
 namespace JanSharp.Internal
 {
+    #if !LockstepDebug
+    [AddComponentMenu("")]
+    #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class InputActionSyncAssignerListener : CyanPlayerObjectPoolEventListener
     {

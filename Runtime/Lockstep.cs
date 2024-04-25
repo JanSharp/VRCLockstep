@@ -14,6 +14,9 @@ namespace JanSharp.Internal
         Normal,
     }
 
+    #if !LockstepDebug
+    [AddComponentMenu("")]
+    #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class Lockstep : LockstepAPI
     {

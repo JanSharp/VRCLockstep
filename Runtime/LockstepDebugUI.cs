@@ -8,6 +8,9 @@ using VRC.SDK3.Data;
 
 namespace JanSharp.Internal
 {
+    #if !LockstepDebug
+    [AddComponentMenu("")]
+    #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepDebugUI : UdonSharpBehaviour
     {
