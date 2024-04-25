@@ -365,6 +365,5 @@ TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: in non debug builds add the attribute that makes scripts not show up in the add component list
-TODO: either move internal scripts to an internal namespace or make them private, depending on if that's possible
 TODO: add write stream position for seeking
 TODO: disable select all/none in import while there is nothing to select

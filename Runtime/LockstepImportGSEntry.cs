@@ -5,7 +5,7 @@ using VRC.Udon;
 using UnityEngine.UI;
 using TMPro;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepImportGSEntry : LockstepGameStateEntryBase

@@ -5,7 +5,7 @@ using VRC.Udon;
 using Cyan.PlayerObjectPool;
 using VRC.Udon.Common;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class InputActionSync : CyanPlayerObjectPoolObject

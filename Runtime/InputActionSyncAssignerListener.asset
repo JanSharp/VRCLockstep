@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 1
   hasInteractEvent: 0
-  scriptID: -1006550626050364182
+  scriptID: -689515811223975208
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 3|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.Lockstep, JanSharp.Lockstep
+      Data: JanSharp.Internal.Lockstep, JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 

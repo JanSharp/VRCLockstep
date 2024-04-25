@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using VRC.SDK3.Data;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepDebugUI : UdonSharpBehaviour

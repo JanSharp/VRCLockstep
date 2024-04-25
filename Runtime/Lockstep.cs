@@ -4,7 +4,7 @@ using VRC.SDKBase;
 using VRC.Udon;
 using VRC.SDK3.Data;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     internal enum ClientState : byte
     {

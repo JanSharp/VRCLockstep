@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 1
   hasInteractEvent: 0
-  scriptID: -3587989408142700495
+  scriptID: -6590599728325341838
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -1580,7 +1580,7 @@ MonoBehaviour:
       Data: 94|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.LockstepMainGSEntry[], JanSharp.Lockstep
+      Data: JanSharp.Internal.LockstepMainGSEntry[], JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 
@@ -1646,7 +1646,7 @@ MonoBehaviour:
       Data: 99|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.LockstepImportGSEntry[], JanSharp.Lockstep
+      Data: JanSharp.Internal.LockstepImportGSEntry[], JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 
@@ -1707,7 +1707,7 @@ MonoBehaviour:
       Data: 103|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.LockstepExportGSEntry[], JanSharp.Lockstep
+      Data: JanSharp.Internal.LockstepExportGSEntry[], JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 

@@ -12,7 +12,7 @@ using System.Collections.ObjectModel;
 using System;
 using TMPro;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     [InitializeOnLoad]
     public static class LockstepGameStatesUIEditorOnBuild

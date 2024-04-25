@@ -5,7 +5,7 @@ using VRC.Udon;
 using UnityEngine.UI;
 using TMPro;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     public abstract class LockstepGameStateEntryBase : UdonSharpBehaviour
     {

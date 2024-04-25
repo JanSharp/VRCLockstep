@@ -9,7 +9,7 @@ using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Linq;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     [InitializeOnLoad]
     public static class LockstepOnBuild
