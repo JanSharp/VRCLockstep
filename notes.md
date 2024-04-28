@@ -256,7 +256,7 @@ There's 2 parts to this, both can only be done at initialization - in other word
 Defining games states is done using an abstract class as a base class. Said abstract class will require you to implement a few methods and properties:
 
 - string GameStateInternalName { get; } // Must be a completely unique name for this game state. Use whatever you like, but I'd recommend `author-name.package-name` (or just some descriptive name of your system as the `package-name`.). (If you're making a package it's effectively the internal package name without the `com.` prefix.)
-- string GameStateDisplayName { get; } // A user readable and identifiable name of this system/game state.
+- string GameStateDisplayName { get; } // A user readable and identifiable name for this system/game state.
 - bool GameStateSupportsImportExport { get; } // When false, the isExport and isImport parameters will naturally never be true.
 - uint GameStateDataVersion { get; } // Current version used by SerializeState and DeserializeState. Can start at 0, but doesn't really matter.
 - uint GameStateLowestSupportedDataVersion { get; } // Lowest version of exported data DeserializeState is capable of importing.
@@ -357,10 +357,13 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
 TODO: the ability to take master from another master in Lockstep
-TODO: add xml docs to LockstepGameState abstract base class
-  TODO: note that it is highly recommended not to return an error message from DeserializeGameState, have it just be a last resort
 TODO: add lockstep info UI with basic information and notifications/log
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
+TODO: on build doesn't handle inheritance even though I explicitly made it handle it... wtf
+TODO: add validation for GameStateLowestSupportedDataVersion to be `<=` GameStateDataVersion
+TODO: think about on tick being raised at the start vs end of a tick in relation to game state serialization and deserialization for late joiners. I believe that one is correct while the other is incorrect, or at the very least when raising it at the end of the tick, OnTick must run before game states get serialized
+TODO: mention where the returned error message from DeserializeGameState gets displayed
+TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received
