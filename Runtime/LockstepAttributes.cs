@@ -69,6 +69,8 @@ namespace JanSharp {
         OnMasterChanged,
         /// <summary>
         /// <para>Raised <see cref="LockstepAPI.TickRate"/> times per second.</para>
+        /// <para>Raised at the start of a tick, the very first function to run in a tick. Except for the
+        /// very first client which runs <see cref="OnInit"/> right before <see cref="OnTick"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnTick,

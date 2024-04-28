@@ -407,8 +407,12 @@ namespace JanSharp.Internal
                 uniqueIdsByTick.Remove(nextTickToken);
             }
 
-            RaiseOnTick(); // At the end of a tick.
             currentTick = nextTick;
+            RaiseOnTick(); // At the start of a tick. For the very first tick it is raised separately.
+            // Must happen here, as raising it at the end of the tick would require doing so before sending
+            // late joiner data, however that messes up the order in which the 2 functions get called which
+            // overall just complicates things.
+
             // Slowly increase the immutable tick. This prevents potential lag spikes when many input actions
             // were sent while catching up. This approach also prevents being caught catching up forever by
             // not touching waitTick.
@@ -842,6 +846,7 @@ namespace JanSharp.Internal
             initializedEnoughForImportExport = true;
             StartOrStopAutosave();
             RaiseOnInit();
+            RaiseOnTick();
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
             tickStartTime = Time.time;

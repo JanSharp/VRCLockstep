@@ -364,6 +364,5 @@ TODO: expose list of clients in the game state in the api
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: on build doesn't handle inheritance even though I explicitly made it handle it... wtf
 TODO: add validation for GameStateLowestSupportedDataVersion to be `<=` GameStateDataVersion
-TODO: think about on tick being raised at the start vs end of a tick in relation to game state serialization and deserialization for late joiners. I believe that one is correct while the other is incorrect, or at the very least when raising it at the end of the tick, OnTick must run before game states get serialized
 TODO: mention where the returned error message from DeserializeGameState gets displayed
 TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received
