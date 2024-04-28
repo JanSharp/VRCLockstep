@@ -206,6 +206,7 @@ In order for some data structure to qualify as a game state, interaction with th
 - Reading from it can happen any time
 - Writing to it must only happen inside of input actions, or otherwise game state safe events raised and declared as such by the Lockstep system itself, like the on tick event
 - Writing to it must only use data that is apart of the game state, or passed in as arguments to the input action/event that got raised
+  - The only except is OnInit which is allowed to use any data it wants
 
 When the rules for writing to it are not followed it results in a desync.
 
@@ -356,7 +357,6 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
 TODO: the ability to take master from another master in Lockstep
-TODO: add xml docs to lock step event type enum fields
 TODO: add xml docs to LockstepGameState abstract base class
   TODO: note that it is highly recommended not to return an error message from DeserializeGameState, have it just be a last resort
 TODO: add lockstep info UI with basic information and notifications/log

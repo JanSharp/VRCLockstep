@@ -3,18 +3,47 @@ namespace JanSharp {
     public enum LockstepEventType
     {
         /// <summary>
+        /// <para>The very first event to ever get raised, only ever raised throughout the lifetime of the
+        /// entire lockstep system across all clients, so only once on the very first client.</para>
+        /// <para>There are edge cases where it does run multiple times throughout the lifetime of a VRChat
+        /// world instance, such as when a client joins and all other clients instantly leave afterwards,
+        /// leaving the new client without late joiner data and alone, therefore it behaves just like a
+        /// completely fresh instance of the world.</para>
+        /// <para>From within this event and going forward sending input actions is allowed. However since
+        /// <see cref="OnInit"/> gets raised when there is just a single client and it is game state safe,
+        /// it is also possible to simply directly initialize and modify game states.</para>
+        /// <para><see cref="OnInit"/> has the special purpose of initializing game states for the very first
+        /// time, as all other clients in the future are going to receive late joiner data containing the
+        /// existing game states. Since <see cref="OnInit"/> is the very first initialization, it is allowed
+        /// to use any data to initialize the game state(s). This is natural since there is no previous game
+        /// state data to mutate.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnInit,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
+        /// <para>This is the first event to be raised for the joined client, and it is also guaranteed to be
+        /// raised before any input actions sent by the joining client are received and run.</para>
+        /// <para>Clients to exist in the internal game state a little bit before this event gets raised,
+        /// those clients are still waiting on late joiner data and are for all intents and purposes not yet
+        /// loaded into the world.</para>
+        /// <para>This event is also raised on the client which joined, including the very first client (right
+        /// after <see cref="OnInit"/>).</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnClientJoined,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which is
         /// beginning to catch up.</para>
-        /// <para>Not game state safe - only raised on one client, the one beginning catch up.</para>
+        /// <para>This is the very first event raised on every client which isn't the very first client, since
+        /// for the first client <see cref="OnInit"/> gets raised instead. While
+        /// <see cref="OnClientBeginCatchUp"/> is not game state safe, the 2 events serve the same purpose in
+        /// allowing other systems - non game states - to initialize and to start accepting user input.</para>
+        /// <para>From within this event and going forward sending input actions is allowed.</para>
+        /// <para>At this point in time, this client - the local client - is not yet part of the game state in
+        /// any of the custom game states. <see cref="OnClientJoined"/> eventually gets raised after this
+        /// event.</para>
+        /// <para><b>Not game state safe</b> - only raised on one client, the one beginning catch up.</para>
         /// </summary>
         OnClientBeginCatchUp,
         /// <summary>
@@ -25,6 +54,8 @@ namespace JanSharp {
         OnClientCaughtUp,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.LeftPlayerId"/> to get the id of the left client.</para>
+        /// <para>It is guaranteed that after this event got raised, not a single input action sent by the
+        /// left client shall be received.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnClientLeft,
@@ -37,36 +68,49 @@ namespace JanSharp {
         /// </summary>
         OnMasterChanged,
         /// <summary>
+        /// <para>Raised <see cref="LockstepAPI.TickRate"/> times per second.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnTick,
         /// <summary>
+        /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
+        /// started import.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportStart,
         /// <summary>
+        /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
+        /// imported game state.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportedGameState,
         /// <summary>
+        /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
+        /// finished import.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportFinished,
         /// <summary>
+        /// <para>Raised whenever <see cref="LockstepAPI.GameStatesToAutosave"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
-        /// within a frame the event only gets raised once (you can thank Udon).</para>
+        /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
+        /// value may not actually be different from the last time you've read it.</para>
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
         OnGameStatesToAutosaveChanged,
         /// <summary>
+        /// <para>Raised whenever <see cref="LockstepAPI.AutosaveIntervalSeconds"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
-        /// within a frame the event only gets raised once (you can thank Udon).</para>
+        /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
+        /// value may not actually be different from the last time you've read it.</para>
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
         OnAutosaveIntervalSecondsChanged,
         /// <summary>
+        /// <para>Raised whenever <see cref="LockstepAPI.IsAutosavePaused"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
-        /// within a frame the event only gets raised once (you can thank Udon).</para>
+        /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
+        /// value may not actually be different from the last time you've read it.</para>
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
         OnIsAutosavePausedChanged,

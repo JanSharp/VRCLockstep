@@ -9,6 +9,11 @@ namespace JanSharp
     public abstract class LockstepAPI : UdonSharpBehaviour
     {
         /// <summary>
+        /// <para>The internal tick rate of lockstep. Also the amount of times
+        /// <see cref="LockstepEventType.OnTick"/> gets raised per second.</para>
+        /// </summary>
+        public const float TickRate = 10f;
+        /// <summary>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// <para>Game state safe.</para>
@@ -78,24 +83,28 @@ namespace JanSharp
         /// <see cref="LockstepEventType.OnMasterChanged"/> event is raised.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint MasterPlayerId { get; }
         /// <summary>
         /// <para>The id of the client which was the master right before the new master client.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnMasterChanged"/>.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint OldMasterPlayerId { get; }
         /// <summary>
         /// <para>The id of the joined client.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnClientJoined"/>.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint JoinedPlayerId { get; }
         /// <summary>
         /// <para>The id of the left client.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnClientLeft"/>.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint LeftPlayerId { get; }
@@ -103,6 +112,7 @@ namespace JanSharp
         /// <para>The id of the client which is beginning to catch up or has caught up.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
         /// <see cref="LockstepEventType.OnClientCaughtUp"/>.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe (but keep in mind that <see cref="LockstepEventType.OnClientBeginCatchUp"/>
         /// is a game state safe event. <see cref="LockstepEventType.OnClientCaughtUp"/> Is however).</para>
         /// </summary>
@@ -112,6 +122,7 @@ namespace JanSharp
         /// the <see cref="LockstepEventType.OnClientJoined"/> event has been raised, and the
         /// <see cref="LockstepEventType.OnClientLeft"/> event has not been raised.</para>
         /// <para>Usable inside of input actions.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint SendingPlayerId { get; }
@@ -277,6 +288,7 @@ namespace JanSharp
         /// </para>
         /// <para>Usable if <see cref="IsImporting"/> is true, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint ImportingPlayerId { get; }
