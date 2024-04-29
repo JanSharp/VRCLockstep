@@ -216,6 +216,14 @@ namespace JanSharp.Internal
         private static bool GameStatesOnBuild(LockstepGameState gameState)
         {
             allGameStates.Add(gameState);
+            if (gameState.GameStateLowestSupportedDataVersion > gameState.GameStateDataVersion)
+            {
+                Debug.LogError($"[Lockstep] The GameStateLowestSupportedDataVersion "
+                    + $"({gameState.GameStateLowestSupportedDataVersion}) must be less than or equal to the "
+                    + $"GameStateDataVersion ({gameState.GameStateDataVersion}) for {gameState.GetType().Name}",
+                    gameState);
+                return false;
+            }
             return true;
         }
     }
