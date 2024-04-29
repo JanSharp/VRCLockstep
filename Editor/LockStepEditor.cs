@@ -142,8 +142,15 @@ namespace JanSharp.Internal
                     return;
                 if (method.Name != attr.EventType.ToString())
                 {
-                    Debug.LogError($"The method name {method.Name} does not match the expected Lockstep "
-                        + $"event name {attr.EventType.ToString()} for the {ubType.Name} script.", ub);
+                    Debug.LogError($"[Lockstep] The method name {method.Name} does not match the expected "
+                        + $"Lockstep event name {attr.EventType.ToString()} for the {ubType.Name} script.", ub);
+                    result = false;
+                    return;
+                }
+                if (!method.IsPublic)
+                {
+                    Debug.LogError($"[Lockstep] The method {ubType.Name}.{method.Name} is marked as a Lockstep "
+                        + $"event, however Lockstep event methods must be public.", ub);
                     result = false;
                     return;
                 }
@@ -155,10 +162,17 @@ namespace JanSharp.Internal
                 LockstepInputActionAttribute attr = method.GetCustomAttribute<LockstepInputActionAttribute>();
                 if (attr == null)
                     return;
+                if (!method.IsPublic)
+                {
+                    Debug.LogError($"[Lockstep] The method {ubType.Name}.{method.Name} is marked as an input "
+                        + $"action, however input action methods must be public.", ub);
+                    result = false;
+                    return;
+                }
                 typeCache.inputActions.Add((method.Name, attr.IdFieldName));
             }
 
-            foreach (MethodInfo method in ubType.GetMethods(BindingFlags.Instance | BindingFlags.Public))
+            foreach (MethodInfo method in ubType.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 CheckEventAttribute(method);
                 CheckInputActionAttribute(method);

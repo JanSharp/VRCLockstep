@@ -362,6 +362,5 @@ TODO: make tick rate on non master clients a bit more variable such that it trie
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
-TODO: on build doesn't handle inheritance even though I explicitly made it handle it... wtf
 TODO: mention where the returned error message from DeserializeGameState gets displayed
 TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received

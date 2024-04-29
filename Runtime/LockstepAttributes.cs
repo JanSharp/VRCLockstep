@@ -125,6 +125,7 @@ namespace JanSharp {
         public LockstepEventType EventType => eventType;
 
         /// <summary>
+        /// <para>The method this attribute gets applied to must be public.</para>
         /// <para>The name of the function this attribute is applied to must have the exact same name as the
         /// name of the <paramref name="eventType"/>.</para>
         /// <para>Event registration is performed at OnBuild, which is to say that scripts with these kinds of
@@ -152,6 +153,7 @@ namespace JanSharp {
         public string IdFieldName => idFieldName;
 
         /// <summary>
+        /// <para>The method this attribute gets applied to must be public.</para>
         /// <para>The id field must be a <see cref="uint"/>. It is the id to use when calling
         /// <see cref="LockstepAPI.SendInputAction(uint)"/>,
         /// <see cref="LockstepAPI.SendSingletonInputAction(uint)"/> or its overload.</para>
