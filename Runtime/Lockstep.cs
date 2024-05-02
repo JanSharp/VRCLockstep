@@ -73,6 +73,7 @@ namespace JanSharp.Internal
 
         private ulong unrecoverableStateDueToUniqueId = 0uL;
 
+        public const ulong InputActionIndexBits = 0x00000000ffffffffuL;
         public const int PlayerIdKeyShift = 32;
         // ulong uniqueId => objet[] { uint inputActionId, byte[] inputActionData }
         // uniqueId: pppppppp pppppppp pppppppp pppppppp iiiiiiii iiiiiiii iiiiiiii iiiiiiii
@@ -81,6 +82,11 @@ namespace JanSharp.Internal
         // Unique ids associated with their input actions, all of which are input actions
         // which have not been run yet and are either waiting for the tick in which they will be run,
         // or waiting for tick sync to inform this client of which tick to run them in.
+        //
+        // On the master, as soon as the first mutable tick has been reached, this is guaranteed to be empty.
+        // As soon as ticks are running, be it for the first master or catching up on new clients, this dict
+        // is guaranteed to only contain input actions that are going to be run. Any input actions received
+        // before catching up that got run already get removed.
         private DataDictionary inputActionsByUniqueId = new DataDictionary();
 
         // uint => ulong[]
@@ -181,6 +187,19 @@ namespace JanSharp.Internal
             }
         }
         public override int AllGameStatesCount => allGameStates.Length;
+
+        /// <summary>
+        /// <para>uint playerId => InputActionSync inst</para>
+        /// </summary>
+        private DataDictionary inputActionSyncByPlayerId = new DataDictionary();
+        /// <summary>
+        /// <para>uint playerId => uint latestInputActionIndex</para>
+        /// </summary>
+        private DataDictionary latestInputActionIndexByPlayerId = new DataDictionary();
+        /// <summary>
+        /// <para>uint playerId => uint latestInputActionIndex</para>
+        /// </summary>
+        private DataDictionary latestInputActionIndexByPlayerIdForLJ;
 
         ///<summary><para>**Internal Game State**</para>
         ///<para>uint playerId => byte ClientState</para></summary>
@@ -344,7 +363,7 @@ namespace JanSharp.Internal
             // Run all the way to waitTick when isMaster, otherwise other clients would most likely desync.
             if (isMaster ? currentTick == waitTick : waitTick - currentTick < TickRate)
             {
-                RemoveOutdatedUniqueIdsByTick();
+                CleanUpOldTickAssociations();
                 isCatchingUp = false;
                 SendClientCaughtUpIA(); // Uses isInitialCatchUp.
                 isInitialCatchUp = false;
@@ -356,10 +375,10 @@ namespace JanSharp.Internal
             }
         }
 
-        private void RemoveOutdatedUniqueIdsByTick()
+        private void CleanUpOldTickAssociations()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  RemoveOutdatedUniqueIdsByTick");
+            Debug.Log($"[LockstepDebug] Lockstep  CleanUpOldTickAssociations");
             #endif
             DataList keys = uniqueIdsByTick.GetKeys();
             for (int i = 0; i < keys.Count; i++)
@@ -369,8 +388,7 @@ namespace JanSharp.Internal
                     continue;
 
                 uniqueIdsByTick.Remove(tickToRunToken, out DataToken uniqueIdsToken);
-                foreach (ulong uniqueId in (ulong[])uniqueIdsToken.Reference)
-                    inputActionsByUniqueId.Remove(uniqueId); // Remove simply does nothing if it already doesn't exist.
+                // inputActionsByUniqueId has already been cleaned up by CleanUpOldInputActions.
             }
         }
 
@@ -676,6 +694,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnInputActionSyncPlayerAssigned");
             #endif
+            inputActionSyncByPlayerId.Add((uint)player.playerId, inputActionSync);
             if (!player.isLocal)
                 return;
 
@@ -683,6 +702,17 @@ namespace JanSharp.Internal
 
             inputActionSyncForLocalPlayer = inputActionSync;
             SendCustomEventDelayedSeconds(nameof(OnLocalInputActionSyncPlayerAssignedDelayed), 2f);
+        }
+
+        public void OnInputActionSyncPlayerUnassigned(VRCPlayerApi player, InputActionSync inputActionSync)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnInputActionSyncPlayerUnassigned");
+            #endif
+            DataToken playerIdToken = (uint)player.playerId;
+            if (!inputActionSyncByPlayerId.Remove(playerIdToken))
+                return; // Could already be removed due to client left input action.
+            latestInputActionIndexByPlayerId.Add(playerIdToken, inputActionSync.latestInputActionIndex);
         }
 
         public void OnLocalInputActionSyncPlayerAssignedDelayed()
@@ -904,6 +934,7 @@ namespace JanSharp.Internal
             // Nope, no other play may become master, so we take it and completely reset.
             clientStates = null;
             clientNames = null;
+            latestInputActionIndexByPlayerIdForLJ = null;
             CheckMasterChange();
         }
 
@@ -920,6 +951,7 @@ namespace JanSharp.Internal
             ForgetAboutInputActionsWaitingToBeSent();
             clientStates = null;
             clientNames = null;
+            latestInputActionIndexByPlayerIdForLJ = null;
             currentlyNoMaster = true;
             isWaitingToSendClientJoinedIA = true;
             isWaitingForLateJoinerSync = false;
@@ -1150,6 +1182,7 @@ namespace JanSharp.Internal
             isWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
             clientNames = null;
+            latestInputActionIndexByPlayerIdForLJ = null;
             SendInputAction(clientJoinedIAId, forceOneFrameDelay: false);
         }
 
@@ -1217,6 +1250,18 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  LogBinaryData:{result}");
         }
 
+        private uint GetLatestInputActionIndex(uint playerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetLatestInputActionIndex - playerId: {playerId}");
+            #endif
+            DataToken playerIdToken = playerId;
+            if (inputActionSyncByPlayerId.TryGetValue(playerIdToken, out DataToken inputActionSyncToken))
+                return ((InputActionSync)inputActionSyncToken.Reference).latestInputActionIndex;
+            // If inputActionSyncByPlayerId doesn't contain it, this this is guaranteed to contain it.
+            return latestInputActionIndexByPlayerId[playerIdToken].UInt;
+        }
+
         private void SendLateJoinerData()
         {
             #if LockstepDebug
@@ -1241,6 +1286,7 @@ namespace JanSharp.Internal
                 WriteSmall(keyToken.UInt);
                 Write(clientStates[keyToken].Byte);
                 Write(clientNames[keyToken].String);
+                WriteSmall(GetLatestInputActionIndex(keyToken.UInt));
             }
 
             // Singleton input actions game state.
@@ -1290,15 +1336,18 @@ namespace JanSharp.Internal
 
             clientStates = new DataDictionary();
             clientNames = new DataDictionary();
+            latestInputActionIndexByPlayerIdForLJ = new DataDictionary();
             int count = (int)ReadSmallUInt();
             for (int i = 0; i < count; i++)
             {
                 uint playerId = ReadSmallUInt();
                 byte clientState = ReadByte();
                 string clientName = ReadString();
+                uint latestInputActionIndex = ReadSmallUInt();
                 DataToken keyToken = playerId;
                 clientStates.Add(keyToken, clientState);
                 clientNames.Add(keyToken, clientName);
+                latestInputActionIndexByPlayerIdForLJ.Add(keyToken, latestInputActionIndex);
                 if ((ClientState)clientState == ClientState.Master)
                 {
                     // In order for late joiner data to be sent it must come from a master, which means this
@@ -1416,6 +1465,78 @@ namespace JanSharp.Internal
             ArrList.Clear(ref unprocessedLJSerializedGameStates, ref unprocessedLJSerializedGSCount);
         }
 
+        private void CleanUpOldInputActions()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  CleanUpOldInputActions");
+            #endif
+            if (latestInputActionIndexByPlayerIdForLJ == null)
+            {
+                Debug.Log("[Lockstep] Impossible, latestInputActionIndexByPlayerIdForLJ is null inside of "
+                    + "CleanUpOldInputActions. The function should only ever be called once, which happens "
+                    + "after latestInputActionIndexByPlayerIdForLJ got populated.");
+                return;
+            }
+            DataDictionary uniqueIdsForUnknownPlayers = new DataDictionary();
+            DataDictionary shouldKeepIAsForUnknownPlayers = new DataDictionary();
+
+            DataList uniqueIds = inputActionsByUniqueId.GetKeys();
+            int count = uniqueIds.Count;
+            for (int i = 0; i < count; i++)
+            {
+                ulong uniqueId = uniqueIds[i].ULong;
+                uint playerId = (uint)(uniqueId >> PlayerIdKeyShift);
+                uint inputActionIndex = (uint)(uniqueId & InputActionIndexBits);
+                if (latestInputActionIndexByPlayerIdForLJ.TryGetValue(playerId, out DataToken latestToken))
+                {
+                    // Forget about input actions that are older than the latest input action index for a
+                    // given player. Must use <= because the latest index is the latest one that has already
+                    // been run by the master. Therefore it must not run anymore, it already modified the game
+                    // state which got serialized and sent to this client.
+                    if (inputActionIndex <= latestToken.UInt)
+                        inputActionsByUniqueId.Remove(uniqueId);
+                    continue;
+                }
+                // At this point the given player id for the input action does not exist in the client states
+                // game state. It may either no longer exist or it might not yet exist.
+                // If it no longer exists then the input actions for the given player can all be removed.
+                // If the player does not yet exist in the client states game state then there must be a
+                // client joined input action for the given player id that will be run during catch up.
+                // There may also be multiple client joined input actions, which is very unlikely to happen
+                // while catching up, however if it were to happen while catching up it would be because of
+                // master changes during catching up, which means all input actions sent by the joined client
+                // - including the multiple joined client input actions - must be kept, because the new master
+                // would end up running all of them. This should be guaranteed.
+                // TL;DR: if this point is reached, if there is any client joined input action for the given
+                // player id then all their input actions must be kept. If not, they must all be forgotten
+                // about.
+                if (!uniqueIdsForUnknownPlayers.TryGetValue(playerId, out DataToken listToken))
+                {
+                    listToken = new DataList();
+                    uniqueIdsForUnknownPlayers.Add(playerId, listToken);
+                }
+                listToken.DataList.Add(uniqueId);
+
+                uint inputActionId = (uint)(((object[])inputActionsByUniqueId[uniqueId].Reference)[0]);
+                if (inputActionId == clientJoinedIAId)
+                    shouldKeepIAsForUnknownPlayers.SetValue(playerId, true);
+            }
+
+            DataList playerIds = uniqueIdsForUnknownPlayers.GetKeys();
+            count = playerIds.Count;
+            for (int i = 0; i < count; i++)
+            {
+                DataToken playerIdToken = playerIds[i];
+                if (shouldKeepIAsForUnknownPlayers.ContainsKey(playerIdToken))
+                    continue;
+                DataList uniqueIdsToForget = uniqueIdsForUnknownPlayers[playerIdToken].DataList;
+                for (int j = 0; j < uniqueIdsToForget.Count; j++)
+                    inputActionsByUniqueId.Remove(uniqueIdsToForget[j]);
+            }
+
+            latestInputActionIndexByPlayerIdForLJ = null;
+        }
+
         private void DoneProcessingLJGameStates()
         {
             #if LockstepDebug
@@ -1423,6 +1544,7 @@ namespace JanSharp.Internal
             #endif
             bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
             ForgetAboutUnprocessedLJSerializedGameSates();
+            CleanUpOldInputActions();
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
@@ -1492,6 +1614,10 @@ namespace JanSharp.Internal
             clientNames.Remove(keyToken, out DataToken displayNameToken);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
+            // Only one of the following is going to still contain data for the given player id. No need to
+            // check for which one it is though, because all that needs to happen is removal.
+            inputActionSyncByPlayerId.Remove(keyToken);
+            latestInputActionIndexByPlayerId.Remove(keyToken);
 
             CheckIfLateJoinerSyncShouldStop();
             CheckIfSingletonInputActionGotDropped(playerId);

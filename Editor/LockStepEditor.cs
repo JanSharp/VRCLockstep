@@ -234,7 +234,7 @@ namespace JanSharp.Internal
             {
                 Debug.LogError($"[Lockstep] The GameStateLowestSupportedDataVersion "
                     + $"({gameState.GameStateLowestSupportedDataVersion}) must be less than or equal to the "
-                    + $"GameStateDataVersion ({gameState.GameStateDataVersion}) for {gameState.GetType().Name}",
+                    + $"GameStateDataVersion ({gameState.GameStateDataVersion}) for {gameState.GetType().Name}.",
                     gameState);
                 return false;
             }

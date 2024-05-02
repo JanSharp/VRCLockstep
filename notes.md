@@ -357,10 +357,36 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
 TODO: the ability to take master from another master in Lockstep
+  TODO: change the back and forth to go like this: It'll be faster and arguably more reliable
+    - `master <- requester`
+    - wait for first mutable tick
+    - `master -> requester`
+    - wait 1 second
+    - `master <- requester`
+    - wait 1 second
+    - `master -> requester`
+    - change master
 TODO: add lockstep info UI with basic information and notifications/log
+  - show local client state
+  - show client count
+  - have tabbed pane with 2 tabs
+    - notification log
+    - client states list
+TODO: add master preference game state
+  - the player with the highest preference to be master will become master
+  - when in the scene, enable a slider for the local player in the info UI
+  - when in the scene, enable a slider for each player in the client states list in the info UI
+  - import export support
 TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
+TODO: add OnPreClientJoined
+TODO: add note about what state a client changed to in the different client state change related events
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: mention where the returned error message from DeserializeGameState gets displayed
 TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received
+TODO: ensure that on build handler validation for lock step events happens every time, not just the first time after compilation
+TODO: on nth tick? game state safe.
+TODO: raise event delayed by ticks, game state safe.
+TODO: validate input action id fields being serialized by unity
+TODO: when becoming master, associate all input actions without a tick association with the first mutable tick. I think that's all that needs to happen

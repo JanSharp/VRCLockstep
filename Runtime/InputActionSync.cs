@@ -40,6 +40,11 @@ namespace JanSharp.Internal
         // Unique id is the shifted player index plus the input action index.
         private uint nextInputActionIndex = 1u;
 
+        /// <summary>
+        /// <para>The latest input action index either sent or received by this script.</para>
+        /// </summary>
+        public uint latestInputActionIndex;
+
         // sending
 
         private bool retrying = false;
@@ -77,6 +82,7 @@ namespace JanSharp.Internal
 
         private bool hasPartialInputAction = false;
         private uint receivedInputActionId;
+        private uint receivedInputActionIndex;
         private ulong receivedUniqueId;
         private byte[] receivedData;
         private int partialContinueIndex;
@@ -195,18 +201,20 @@ namespace JanSharp.Internal
             if (uiqCount == 0) // Absolutely nothing is being sent out right now, nothing to do.
                 return;
 
-            if (!doCallback || isLateJoinerSyncInst)
-                ArrQueue.Clear(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
-            else
+            if (doCallback && !isLateJoinerSyncInst)
             {
-                while (uiqCount != 0)
+                int length = uniqueIdQueue.Length;
+                for (int i = 0; i < uiqCount; i++)
                 {
-                    // When retrying is true, the unique id is still in this queue.
-                    ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
+                    ulong uniqueId = uniqueIdQueue[(uiqStartIndex + i) % length];
                     if (uniqueId != 0uL)
+                    {
+                        latestInputActionIndex = (uint)(uniqueId & Lockstep.InputActionIndexBits);
                         lockstep.InputActionSent(uniqueId);
+                    }
                 }
             }
+            ArrQueue.Clear(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
 
             stageSize = 0;
             stagedUniqueIdCount = 0;
@@ -296,7 +304,10 @@ namespace JanSharp.Internal
             {
                 ulong uniqueId = ArrQueue.Dequeue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
                 if (!isLateJoinerSyncInst)
+                {
+                    latestInputActionIndex = (uint)(uniqueId & Lockstep.InputActionIndexBits);
                     lockstep.InputActionSent(uniqueId);
+                }
             }
 
             if (uiqCount != 0)
@@ -350,6 +361,7 @@ namespace JanSharp.Internal
                 if (partialMissingSize == 0)
                 {
                     hasPartialInputAction = false;
+                    latestInputActionIndex = receivedInputActionIndex;
                     lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
                 }
             }
@@ -379,7 +391,8 @@ namespace JanSharp.Internal
                 Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - bytes left (syncedDataLength - i): {syncedDataLength - i}");
                 #endif
                 // Read IA header.
-                receivedUniqueId = shiftedSendingPlayerId | DataStream.ReadSmallUInt(ref syncedData, ref i);
+                receivedInputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref i);
+                receivedUniqueId = shiftedSendingPlayerId | (ulong)receivedInputActionIndex;
                 receivedInputActionId = DataStream.ReadSmallUInt(ref syncedData, ref i);
                 int dataLength = (int)DataStream.ReadSmallUInt(ref syncedData, ref i);
                 #if LockstepDebug
@@ -402,6 +415,7 @@ namespace JanSharp.Internal
                 for (int j = 0; j < dataLength; j++)
                     receivedData[j] = syncedData[i + j];
                 i += dataLength;
+                latestInputActionIndex = receivedInputActionIndex;
                 lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
             }
         }

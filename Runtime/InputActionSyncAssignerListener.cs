@@ -24,12 +24,17 @@ namespace JanSharp.Internal
             inputActionSync.lockstep = lockstep;
             inputActionSync.shiftedPlayerId = ((ulong)player.playerId) << Lockstep.PlayerIdKeyShift;
             inputActionSync.ownerPlayerId = (uint)player.playerId;
+            // New players always restart at 1u, but 1u was not sent yet so the last received one is 0u.
+            inputActionSync.latestInputActionIndex = 0u;
 
             lockstep.OnInputActionSyncPlayerAssigned(player, inputActionSync);
         }
 
         // This event is called when any player's object has been unassigned.
         public override void _OnPlayerUnassigned(VRCPlayerApi player, int poolIndex, UdonBehaviour poolObject)
-        { }
+        {
+            InputActionSync inputActionSync = (InputActionSync)(Component)poolObject;
+            lockstep.OnInputActionSyncPlayerUnassigned(player, inputActionSync);
+        }
     }
 }
