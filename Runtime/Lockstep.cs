@@ -73,8 +73,6 @@ namespace JanSharp.Internal
 
         private ulong unrecoverableStateDueToUniqueId = 0uL;
 
-        ///cSpell:ignore xxpppppp
-
         public const int PlayerIdKeyShift = 32;
         // ulong uniqueId => objet[] { uint inputActionId, byte[] inputActionData }
         // uniqueId: pppppppp pppppppp pppppppp pppppppp iiiiiiii iiiiiiii iiiiiiii iiiiiiii
