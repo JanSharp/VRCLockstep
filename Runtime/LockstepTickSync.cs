@@ -105,7 +105,7 @@ namespace JanSharp.Internal
                 uint tickToRunIn = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
                 uint playerId = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
                 uint inputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
-                lockstep.AssociateInputActionWithTick(
+                lockstep.AssociateIncomingInputActionWithTick(
                     tickToRunIn,
                     ((ulong)playerId << Lockstep.PlayerIdKeyShift) | (ulong)inputActionIndex
                 );

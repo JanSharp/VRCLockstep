@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -678,7 +678,7 @@ namespace JanSharp.Internal
 
             if (currentTick < firstMutableTick)
             {
-                AssociateInputActionWithTick(firstMutableTick, uniqueId, allowOnMaster: true);
+                AssociateInputActionWithTick(firstMutableTick, uniqueId);
                 if (!isSinglePlayer)
                     tickSync.AddInputActionToRun(firstMutableTick, uniqueId);
                 return;
@@ -1125,7 +1125,7 @@ namespace JanSharp.Internal
             #endif
             isSinglePlayer = false;
             tickSync.isSinglePlayer = false;
-            // (0u, 0u) Indicate that any input actions associated with ticks
+            // (0u, 0uL) Indicate that any input actions associated with ticks
             // before this client became master should be dropped. This isn't
             // useful for the true initial master, but if a client reset the instance
             // because the master left before sending late joiner data finished,
@@ -1136,7 +1136,7 @@ namespace JanSharp.Internal
             // And this must be done through the tick sync script, not using an input
             // action, in order to avoid race conditions, because those would
             // absolutely happen when using an input action to clear tick associations.
-            tickSync.AddInputActionToRun(0u, 0u);
+            tickSync.AddInputActionToRun(0u, 0uL);
             tickSync.RequestSerialization(); // Restart the tick sync loop.
         }
 
@@ -1694,7 +1694,7 @@ namespace JanSharp.Internal
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
-                AssociateInputActionWithTickInternal(firstMutableTick, uniqueId);
+                AssociateInputActionWithTick(firstMutableTick, uniqueId);
                 return uniqueId;
             }
 
@@ -1704,7 +1704,7 @@ namespace JanSharp.Internal
                 {
                     Debug.LogError("[Lockstep] Impossible, the uniqueId when instantly running an input action "
                         + "on master cannot be 0 while not in single player, because every input action "
-                        + "get sent over the network and gets a unique id assigned in the process. "
+                        + "gets sent over the network and gets a unique id assigned in the process. "
                         + "Something is very wrong in the code. Ignoring this action.");
                     return 0uL;
                 }
@@ -1737,10 +1737,10 @@ namespace JanSharp.Internal
             uniqueIdsByTick.Clear();
         }
 
-        public void AssociateInputActionWithTick(uint tickToRunIn, ulong uniqueId, bool allowOnMaster = false)
+        public void AssociateIncomingInputActionWithTick(uint tickToRunIn, ulong uniqueId)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
+            Debug.Log($"[LockstepDebug] Lockstep  AssociateIncomingInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
             #endif
             if (tickToRunIn == 0u && uniqueId == 0uL)
             {
@@ -1750,19 +1750,19 @@ namespace JanSharp.Internal
 
             if (ignoreIncomingInputActions)
                 return;
-            if (isMaster && !allowOnMaster)
+            if (isMaster)
             {
                 Debug.LogWarning("[Lockstep] The master client (which is this client) should "
                     + "not be receiving data about running an input action at a tick...");
             }
 
-            AssociateInputActionWithTickInternal(tickToRunIn, uniqueId);
+            AssociateInputActionWithTick(tickToRunIn, uniqueId);
         }
 
-        private void AssociateInputActionWithTickInternal(uint tickToRunIn, ulong uniqueId)
+        private void AssociateInputActionWithTick(uint tickToRunIn, ulong uniqueId)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTickInternal - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
+            Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
             #endif
             // Mark the input action to run at the given tick.
             DataToken tickToRunInToken = new DataToken(tickToRunIn);
