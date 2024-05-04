@@ -69,6 +69,9 @@ namespace JanSharp.Internal
         private const int MaxHeaderSize = 3 * 5; // 3 * small uint
         private const int PotentialStageSizeOverflowThreshold = MaxSyncedDataSize - MaxHeaderSize;
 
+        /// <summary>
+        /// <para>Does not contain 0uL uniqueIds.</para>
+        /// </summary>
         private ulong[] uniqueIdQueue = new ulong[ArrList.MinCapacity];
         private int uiqStartIndex = 0;
         private int uiqCount = 0;
@@ -201,18 +204,16 @@ namespace JanSharp.Internal
             if (uiqCount == 0) // Absolutely nothing is being sent out right now, nothing to do.
                 return;
 
-            if (doCallback && !isLateJoinerSyncInst)
+            if (doCallback && !isLateJoinerSyncInst && uiqCount != 0)
             {
                 int length = uniqueIdQueue.Length;
+                ulong uniqueId = 0uL;
                 for (int i = 0; i < uiqCount; i++)
                 {
-                    ulong uniqueId = uniqueIdQueue[(uiqStartIndex + i) % length];
-                    if (uniqueId != 0uL)
-                    {
-                        latestInputActionIndex = (uint)(uniqueId & Lockstep.InputActionIndexBits);
-                        lockstep.InputActionSent(uniqueId);
-                    }
+                    uniqueId = uniqueIdQueue[(uiqStartIndex + i) % length];
+                    lockstep.InputActionSent(uniqueId);
                 }
+                latestInputActionIndex = (uint)(uniqueId & Lockstep.InputActionIndexBits);
             }
             ArrQueue.Clear(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount);
 
