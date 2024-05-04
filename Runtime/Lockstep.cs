@@ -86,7 +86,7 @@ namespace JanSharp.Internal
         // On the master, as soon as the first mutable tick has been reached, this is guaranteed to be empty.
         // As soon as ticks are running, be it for the first master or catching up on new clients, this dict
         // is guaranteed to only contain input actions that are going to be run. Any input actions received
-        // before catching up that got run already get removed.
+        // before catching up that got run on the other clients already get removed.
         private DataDictionary inputActionsByUniqueId = new DataDictionary();
 
         // uint => ulong[]
@@ -678,9 +678,7 @@ namespace JanSharp.Internal
 
             if (currentTick < firstMutableTick)
             {
-                AssociateInputActionWithTick(firstMutableTick, uniqueId);
-                if (!isSinglePlayer)
-                    tickSync.AddInputActionToRun(firstMutableTick, uniqueId);
+                AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
                 return;
             }
 
@@ -1694,7 +1692,7 @@ namespace JanSharp.Internal
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
                 inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
-                AssociateInputActionWithTick(firstMutableTick, uniqueId);
+                AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
                 return uniqueId;
             }
 
@@ -1757,6 +1755,16 @@ namespace JanSharp.Internal
             }
 
             AssociateInputActionWithTick(tickToRunIn, uniqueId);
+        }
+
+        private void AssociateInputActionWithTickOnMaster(uint tickToRunIn, ulong uniqueId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTickInternal - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
+            #endif
+            AssociateInputActionWithTick(tickToRunIn, uniqueId);
+            if (!isSinglePlayer)
+                tickSync.AddInputActionToRun(tickToRunIn, uniqueId);
         }
 
         private void AssociateInputActionWithTick(uint tickToRunIn, ulong uniqueId)
