@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -1024,6 +1024,7 @@ namespace JanSharp.Internal
             Networking.SetOwner(localPlayer, tickSync.gameObject);
             tickSync.RequestSerialization();
 
+            AssociateUnassociatedInputActionsWithTicks();
             processLeftPlayersSentCount++;
             ProcessLeftPlayers();
             if (isSinglePlayer) // In case it was already single player before CheckMasterChange ran.
@@ -1042,6 +1043,62 @@ namespace JanSharp.Internal
             {
                 flagForLateJoinerSyncSentCount++;
                 FlagForLateJoinerSync();
+            }
+        }
+
+        private void AssociateUnassociatedInputActionsWithTicks()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AssociateUnassociatedInputActionsWithTicks");
+            #endif
+            if (!isMaster)
+            {
+                Debug.LogError("[Lockstep] Attempt to use AssociateUnassociatedInputActionsWithTicks on non master.");
+                return;
+            }
+            if (currentTick >= firstMutableTick)
+            {
+                Debug.LogError("[Lockstep] For simplicity AssociateUnassociatedInputActionsWithTicks is only "
+                    + "allowed to be called when the current tick is less than the first mutable tick. "
+                    + "The main reason is that there is currently a guarantee that inputActionsByUniqueId is "
+                    + "empty on the master as soon as the first mutable tick is reached. Therefore "
+                    + "associating input actions with ticks once they are mutable would break this guarantee.");
+                return;
+            }
+
+            DataDictionary associatedUniqueIds = new DataDictionary();
+            DataList uniqueIdLists = uniqueIdsByTick.GetValues();
+            int count = uniqueIdLists.Count;
+            for (int i = 0; i < count; i++)
+                foreach (ulong uniqueId in ((ulong[])uniqueIdLists[i].Reference))
+                    associatedUniqueIds.Add(uniqueId, true);
+
+            count = inputActionsByUniqueId.Count;
+            if (count == associatedUniqueIds.Count) // Every input action is already associated with a tick.
+                return;
+            DataList uniqueIds = inputActionsByUniqueId.GetKeys();
+            // Must use DataList because System.Array.Sort is not exposed... and this is faster than manually
+            // implementing insert sort, because Udon is slow.
+            DataList unassociatedUniqueIds = new DataList();
+            int unassociatedCount = count - associatedUniqueIds.Count;
+            unassociatedUniqueIds.Capacity = unassociatedCount;
+            for (int i = 0; i < count; i++)
+            {
+                ulong uniqueId = uniqueIds[i].ULong;
+                if (associatedUniqueIds.ContainsKey(uniqueId))
+                    continue;
+                unassociatedUniqueIds.Add(uniqueId);
+            }
+            // Must be sorted because we cannot rely on the iteration order of the DataDictionary, however the
+            // input actions with lower index must come first as they were sent first, and that is part of
+            // the specification of lockstep. By simply sorting the entire array it does mean that players
+            // with lower player id will get their input actions associated and run earlier, but that is fine.
+            unassociatedUniqueIds.Sort();
+
+            for (int i = 0; i < unassociatedCount; i++)
+            {
+                ulong uniqueId = unassociatedUniqueIds[i].ULong;
+                AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
             }
         }
 
@@ -1760,7 +1817,7 @@ namespace JanSharp.Internal
         private void AssociateInputActionWithTickOnMaster(uint tickToRunIn, ulong uniqueId)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTickInternal - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
+            Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTickOnMaster - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
             #endif
             AssociateInputActionWithTick(tickToRunIn, uniqueId);
             if (!isSinglePlayer)
