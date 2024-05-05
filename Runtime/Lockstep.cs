@@ -47,7 +47,7 @@ namespace JanSharp.Internal
         /// </summary>
         private uint masterPlayerId;
         private uint startTick;
-        private uint firstMutableTick; // Effectively 1 tick past the last immutable tick.
+        private uint firstMutableTick = 0u; // Effectively 1 tick past the last immutable tick.
         private float tickStartTime;
         private int byteCountForLatestLJSync = -1;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
@@ -64,6 +64,7 @@ namespace JanSharp.Internal
         private bool isInitialCatchUp = true;
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
+        private bool initializedEnoughForImportExport = false;
         // Only true for the initial catch up to avoid it being true for just a few ticks seemingly randomly
         // (Caused by the master changing which requires catching up to what the previous master had already
         // processed. See IsMaster property.)
@@ -941,14 +942,35 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FactoryReset");
             #endif
-            lateJoinerInputActionSync.gameObject.SetActive(true);
-            lateJoinerInputActionSync.lockstepIsMaster = false;
+            if (IsProcessingLJGameStates || initializedEnoughForImportExport)
+            {
+                Debug.LogError("[Lockstep] It is invalid to call FactoryReset once IsProcessingLJGameStates or "
+                    + "initializedEnoughForImportExport is true, since that implies that OnInit or game state "
+                    + "deserialization has already happened. After either of those points in time factory "
+                    + "resetting would mean the system would perform one of those 2 things again, which goes "
+                    + "against the specification of this lockstep implementation. (While technically "
+                    + "IsProcessingLJGameStates can be true without any game state deserialization having "
+                    + "happened, it still does not make sense to factory reset in this case.)");
+                return;
+            }
+            if (isMaster)
+            {
+                Debug.LogError("[Lockstep] Impossible because when isMaster is true, "
+                    + "initializedEnoughForImportExport is also true which was checked previously.");
+                return;
+            }
+            // isSinglePlayer is only ever true when isMaster is true, therefore no need to check nor reset.
+
+            // Only ever used (on the master) once initializedEnoughForImportExport is true.
+            // byteCountForLatestLJSync = -1;
+
             tickSync.ClearInputActionsToRun();
             ForgetAboutUnprocessedLJSerializedGameSates();
             ForgetAboutLeftPlayers();
             ForgetAboutInputActionsWaitingToBeSent();
             clientStates = null;
             clientNames = null;
+            firstMutableTick = 0u; // Technically not needed, but it makes a lot of sense to be here.
             latestInputActionIndexByPlayerIdForLJ = null;
             currentlyNoMaster = true;
             isWaitingToSendClientJoinedIA = true;
@@ -956,6 +978,8 @@ namespace JanSharp.Internal
             inputActionsByUniqueId.Clear();
             uniqueIdsByTick.Clear();
             isTickPaused = true;
+            // Do this last just in case it ends up running deserialization upon being reactivated.
+            lateJoinerInputActionSync.gameObject.SetActive(true);
         }
 
         public void CheckMasterChange()
@@ -2288,7 +2312,6 @@ namespace JanSharp.Internal
         ///<summary>LockstepImportedGS[]</summary>
         private object[][] importedGSsToSend;
 
-        private bool initializedEnoughForImportExport = false;
         // None of this is part of an internal game state, which is fine because late joiner sync will not be
         // performed while isImporting is true.
         private bool isImporting = false;

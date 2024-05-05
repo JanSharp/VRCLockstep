@@ -34,6 +34,8 @@ namespace JanSharp.Internal
             "isSinglePlayer",
             "currentlyNoMaster",
             "checkMasterChangeAfterProcessingLJGameStates",
+            "initializedEnoughForImportExport",
+            "isImporting",
         };
         private Toggle[] flagToggles;
         private TextMeshProUGUI[] flagLabels;
