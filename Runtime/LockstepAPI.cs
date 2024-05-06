@@ -14,6 +14,7 @@ namespace JanSharp
         /// </summary>
         public const float TickRate = 10f;
         /// <summary>
+        /// <para>The first tick is <c>1u</c>, not <c>0u</c>.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// <para>Game state safe.</para>
@@ -187,6 +188,30 @@ namespace JanSharp
         /// <param name="responsiblePlayerId">The player id of the client which is takes the initial
         /// responsibility of sending the input action.</param>
         public abstract ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId);
+        /// <summary>
+        /// <para>Simply a wrapper around <see cref="SendMasterChangeRequestIA(uint)"/> with the local
+        /// client's id passed in as the new master client id.</para>
+        /// </summary>
+        /// <returns>Returns <see langword="true"/> if the input action was sent successfully.</returns>
+        public abstract bool RequestLocalClientToBecomeMaster();
+        /// <summary>
+        /// <para>Sends an input action requesting to change the current lockstep master.</para>
+        /// <para>It is not guaranteed that it will actually change mater to the given client id, due to edge
+        /// cases around players leaving. If it is desired to really force a client to become master then it
+        /// may be best to listen to the <see cref="LockstepEventType.OnMasterChanged"/> event to check if the
+        /// desired client actually became master, and if not re send the request. Just make sure to check if
+        /// the desired client is even still in the world.</para>
+        /// <para>Usable any time, though if <see cref="CanSendInputActions"/> is <see langword="false"/> this
+        /// will not send any input action and simply return <see langword="false"/>.</para>
+        /// </summary>
+        /// <param name="newMasterClientId"><para>The client id which should become the lockstep
+        /// master.</para>
+        /// <para>If the given client id is already master then no request is sent.</para>
+        /// <para>Giving this a client id which does not exist in the client states internal game state is
+        /// invalid.</para>
+        /// </param>
+        /// <returns>Returns <see langword="true"/> if the input action was sent successfully.</returns>
+        public abstract bool SendMasterChangeRequestIA(uint newMasterClientId);
         /// <summary>
         /// <para>The display names are saved in an internal lockstep game state. They are available starting
         /// from within <see cref="LockstepEventType.OnClientJoined"/> all the way until the end of

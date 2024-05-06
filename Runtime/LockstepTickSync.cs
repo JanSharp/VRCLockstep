@@ -18,6 +18,7 @@ namespace JanSharp.Internal
         public Lockstep lockstep;
         [System.NonSerialized] public bool isSinglePlayer = false; // Default value must match the one in Lockstep.
         [System.NonSerialized] public uint currentTick;
+        [System.NonSerialized] public bool stopAfterThisSync = false;
         private uint tickInSyncedData;
         [UdonSynced] private byte[] syncedData = new byte[0];
         private int readPosition = 0;
@@ -75,6 +76,14 @@ namespace JanSharp.Internal
             if (!result.success)
             {
                 SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), 1f);
+                return;
+            }
+            if (stopAfterThisSync)
+            {
+                stopAfterThisSync = false;
+                if (bufferSize != bufferSizeToClear)
+                    Debug.LogError("[Lockstep] When stopping syncing in tick sync, there must never be any "
+                        + "data added to the buffer afterwards, however there was.");
                 return;
             }
 

@@ -36,6 +36,9 @@ namespace JanSharp.Internal
             "checkMasterChangeAfterProcessingLJGameStates",
             "initializedEnoughForImportExport",
             "isImporting",
+            "masterChangeRequestInProgress",
+            "sendMasterChangeConfirmationInFirstMutableTick",
+            "finishMasterChangeProcessAtEndOfTick",
         };
         private Toggle[] flagToggles;
         private TextMeshProUGUI[] flagLabels;
@@ -77,6 +80,7 @@ namespace JanSharp.Internal
             "byteCountForLatestLJSync",
             "unprocessedLJSerializedGSCount",
             "nextLJGameStateToProcess",
+            "requestedMasterClientId",
             "unrecoverableStateDueToUniqueId",
         };
         private TextMeshProUGUI[] numbersValues;

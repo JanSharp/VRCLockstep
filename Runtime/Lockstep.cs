@@ -267,6 +267,13 @@ namespace JanSharp.Internal
         private ulong sendingUniqueId;
         public override ulong SendingUniqueId => sendingUniqueId;
 
+        // All of these 4 are part of the game state, however not part of LJ data because LJ data won't be
+        // sent while masterChangeRequestInProcess is true.
+        private bool masterChangeRequestInProgress = false;
+        private uint requestedMasterClientId = 0u;
+        private bool sendMasterChangeConfirmationInFirstMutableTick = false;
+        private bool finishMasterChangeProcessAtEndOfTick = false;
+
         private void Start()
         {
             #if LockstepDebug
@@ -312,12 +319,19 @@ namespace JanSharp.Internal
             uint runUntilTick = System.Math.Min(waitTick, startTick + (uint)(timePassed * TickRate));
             for (uint tick = currentTick + 1; tick <= runUntilTick; tick++)
             {
+                if (finishMasterChangeProcessAtEndOfTick && isMaster)
+                {
+                    finishMasterChangeProcessAtEndOfTick = false;
+                    StopBeingMaster();
+                    break;
+                }
+
                 // This is the correct place for this logic because:
                 // This logic must not run while catching up, so moving it into TryRunNextTick would be wrong.
                 // But what about TryRunNextTick returning false? It won't be, because:
                 // sendLateJoinerDataAtEndOfTick is only going to be true on the master.
                 // For the master client, TryRunNextTick is guaranteed to return true - actually run the tick.
-                if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick && !isImporting)
+                if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick && !isImporting && !masterChangeRequestInProgress)
                 {
                     // Waiting until the first mutable tick, because if the master was catching up and
                     // associating new input actions with ticks while doing so, those would be enqueued at
@@ -331,6 +345,14 @@ namespace JanSharp.Internal
                     sendLateJoinerDataAtEndOfTick = false;
                     SendLateJoinerData();
                 }
+
+                // Only happens on master.
+                if (sendMasterChangeConfirmationInFirstMutableTick && currentTick > firstMutableTick)
+                {
+                    sendMasterChangeConfirmationInFirstMutableTick = false;
+                    SendConfirmedMasterChangeIA();
+                }
+
                 if (!TryRunNextTick())
                     break;
             }
@@ -439,8 +461,29 @@ namespace JanSharp.Internal
             #if LockstepDebug
             // Debug.Log($"[DebugLockstep] Running tick {currentTick}");
             #endif
+
             if (uniqueIds != null)
+            {
                 RunInputActionsForUniqueIds(uniqueIds);
+                if (finishMasterChangeProcessAtEndOfTick)
+                {
+                    finishMasterChangeProcessAtEndOfTick = false;
+                    if (isMaster)
+                    {
+                        // The master will never actually associate the confirmation input action with a tick,
+                        // however if the master sends it and instantly leaves and then a different client
+                        // only receives the IA without the tick association and that client then becomes
+                        // master then it would associate it with a tick, which is how we get here.
+                        StopBeingMaster();
+                        return false; // To break out of the tick running loop.
+                    }
+                    else if (requestedMasterClientId == localPlayerId)
+                        BecomeNewMaster();
+                    else
+                        FinishMasterChangeRequestOnUnrelatedClient();
+                }
+            }
+
             return true;
         }
 
@@ -879,6 +922,129 @@ namespace JanSharp.Internal
             tickStartTime = Time.time;
         }
 
+        private void BecomeNewMaster()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  BecomeNewMaster");
+            #endif
+            masterChangeRequestInProgress = false;
+            isMaster = true;
+            lateJoinerInputActionSync.gameObject.SetActive(true);
+            lateJoinerInputActionSync.lockstepIsMaster = true;
+            Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
+            Networking.SetOwner(localPlayer, tickSync.gameObject);
+            tickSync.RequestSerialization();
+            waitTick = uint.MaxValue;
+
+            firstMutableTick = currentTick + 1u; // must be greater than currentTick for the function below.
+            AssociateUnassociatedInputActionsWithTicks(); // Before master changed gets raised.
+
+            UpdateClientStatesForNewMaster();
+            currentTick++;
+            RaiseOnTick();
+        }
+
+        private void StopBeingMaster()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  StopBeingMaster");
+            #endif
+            masterChangeRequestInProgress = false;
+            isMaster = false;
+            waitTick = currentTick;
+            // Actually end the current tick and allow other clients to run said current tick.
+            tickSync.currentTick = currentTick;
+            tickSync.stopAfterThisSync = true;
+            // tickStartTime will be a bit off (too high) since ticks won't run for a short bit.
+            lateJoinerInputActionSync.lockstepIsMaster = false;
+            lateJoinerInputActionSync.gameObject.SetActive(false);
+
+            UpdateClientStatesForNewMaster();
+        }
+
+        private void FinishMasterChangeRequestOnUnrelatedClient()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  FinishMasterChangeRequestOnUnrelatedClient");
+            #endif
+            masterChangeRequestInProgress = false;
+            UpdateClientStatesForNewMaster();
+        }
+
+        private void UpdateClientStatesForNewMaster()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  UpdateClientStatesForNewMaster");
+            #endif
+            uint oldMasterPlayerId = masterPlayerId;
+            masterPlayerId = requestedMasterClientId;
+            requestedMasterClientId = 0u; // Reset just to be clean, not actually required.
+            clientStates[oldMasterPlayerId] = (byte)ClientState.Normal;
+            clientStates[masterPlayerId] = (byte)ClientState.Master;
+            RaiseOnMasterChanged(oldMasterPlayerId);
+        }
+
+        public override bool RequestLocalClientToBecomeMaster()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RequestToBecomeMaster");
+            #endif
+            return SendMasterChangeRequestIA(localPlayerId);
+        }
+
+        public override bool SendMasterChangeRequestIA(uint newMasterClientId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendMasterChangeRequestIA - newMasterClientId: {newMasterClientId}");
+            #endif
+            if (!CanSendInputActions || newMasterClientId == masterPlayerId || masterChangeRequestInProgress)
+                return false;
+            if (!clientStates.ContainsKey(newMasterClientId))
+            {
+                Debug.LogError("[Lockstep] Attempt to send master request with a client id that is not in "
+                    + "the client states game state.");
+                return false;
+            }
+
+            WriteSmall(newMasterClientId);
+            SendInputAction(masterChangeRequestIAId);
+            return true;
+        }
+
+        [SerializeField] [HideInInspector] private uint masterChangeRequestIAId;
+        [LockstepInputAction(nameof(masterChangeRequestIAId))]
+        public void OnMasterChangeRequestIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnMasterChangeRequestIA");
+            #endif
+            if (masterChangeRequestInProgress) // Already in process, ignore another request.
+                return;
+            masterChangeRequestInProgress = true;
+            requestedMasterClientId = ReadSmallUInt();
+            if (!isMaster)
+                return;
+            sendMasterChangeConfirmationInFirstMutableTick = true;
+        }
+
+        private void SendConfirmedMasterChangeIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendConfirmedMasterChangeIA");
+            #endif
+            SendInputAction(confirmedMasterChangeIAId);
+        }
+
+        [SerializeField] [HideInInspector] private uint confirmedMasterChangeIAId;
+        [LockstepInputAction(nameof(confirmedMasterChangeIAId))]
+        public void OnConfirmedMasterChangeIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnConfirmedMasterChangeIA");
+            #endif
+            finishMasterChangeProcessAtEndOfTick = true;
+        }
+
         private bool IsAnyClientWaitingForLateJoinerSync()
         {
             #if LockstepDebug
@@ -1039,7 +1205,7 @@ namespace JanSharp.Internal
             // isCatchingUp was already true.
 
             // The immutable tick prevents any newly enqueued input actions from being enqueued too early,
-            // to prevent desyncs when not in single player as wells as poor IA ordering in general.
+            // to prevent desyncs when not in single player as well as poor IA ordering in general.
             firstMutableTick = waitTick + 1;
 
             lateJoinerInputActionSync.gameObject.SetActive(true);

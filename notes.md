@@ -356,16 +356,6 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - SerializeState
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
-TODO: the ability to take master from another master in Lockstep
-  TODO: change the back and forth to go like this: It'll be faster and arguably more reliable
-    - `master <- requester`
-    - wait for first mutable tick
-    - `master -> requester`
-    - wait 1 second
-    - `master <- requester`
-    - wait 1 second
-    - `master -> requester`
-    - change master
 TODO: add lockstep info UI with basic information and notifications/log
   - show local client state
   - show client count
@@ -391,3 +381,8 @@ TODO: raise event delayed by ticks, game state safe.
 TODO: validate input action id fields being serialized by unity
 TODO: when becoming master, associate all input actions without a tick association with the first mutable tick. I think that's all that needs to happen
 TODO: use Array.ConstrainedCopy wherever possible
+TODO: handle it no longer being the oldest player that'll become the new master
+TODO: rename OnMasterChanged to OnMasterClientChanged to prevent potential naming collisions with other systems
+TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions with other systems
+TODO: handle the master leaving while a master change request is in progress
+TODO: handle the player leaving which was requested to be the new master

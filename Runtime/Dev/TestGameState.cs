@@ -20,6 +20,7 @@ namespace JanSharp
 
         /// <summary>uint playerId => PlayerData</summary>
         [System.NonSerialized] public DataDictionary allPlayerData = new DataDictionary();
+        private uint prevTick = 0u;
 
         public const int PlayerData_PlayerId = 0; // uint
         public const int PlayerData_DisplayName = 1; // string
@@ -69,10 +70,20 @@ namespace JanSharp
             ui.UpdateUI();
         }
 
+        [LockstepEvent(LockstepEventType.OnMasterChanged)]
+        public void OnMasterChanged()
+        {
+            Debug.Log($"<dlt> TestGameState  OnMasterChanged - OldMasterPlayerId: {lockstep.OldMasterPlayerId}, MasterPlayerId: {lockstep.MasterPlayerId}, CurrentTick: {lockstep.CurrentTick}");
+        }
+
         [LockstepEvent(LockstepEventType.OnTick)]
         public void OnTick()
         {
             // Debug.Log("<dlt> TestGameState  OnTick");
+
+            if (prevTick != 0 && lockstep.CurrentTick != (prevTick + 1u))
+                Debug.Log($"<dlt> Expected tick {prevTick + 1u}, got {lockstep.CurrentTick}.");
+            prevTick = lockstep.CurrentTick;
 
             // Reactivate the code below for SendSingletonInputAction testing.
             // if (((int)lockstep.currentTick % 50) == 0)
