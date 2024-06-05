@@ -386,3 +386,8 @@ TODO: rename OnMasterChanged to OnMasterClientChanged to prevent potential namin
 TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions with other systems
 TODO: handle the master leaving while a master change request is in progress
 TODO: handle the player leaving which was requested to be the new master
+
+TODO: handle the fact that it is no longer guaranteed that the client that's been in the instance the longest is the one which will become master
+
+TODO: handle the master change confirmation having been sent and then the new master player leaving before actually becoming master, therefore the confirmation input action running after the player left already, but also before the client left input action
+TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

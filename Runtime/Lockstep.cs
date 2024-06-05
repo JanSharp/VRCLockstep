@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -1316,6 +1316,8 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  ProcessLeftPlayers");
             #endif
             if ((--processLeftPlayersSentCount) != 0)
+                return;
+            if (!isMaster)
                 return;
 
             CheckSingePlayerModeChange();
