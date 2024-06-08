@@ -1880,7 +1880,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  SendClientCaughtUpIA");
             #endif
             WriteSmall(localPlayerId);
-            Write(isInitialCatchUp ? 1 : 0); // `doRaise`.
+            Write(isInitialCatchUp ? (byte)1 : (byte)0); // `doRaise`.
             SendInputAction(clientCaughtUpIAId, forceOneFrameDelay: false);
         }
 
