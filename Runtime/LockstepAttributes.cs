@@ -3,8 +3,8 @@ namespace JanSharp {
     public enum LockstepEventType
     {
         /// <summary>
-        /// <para>The very first event to ever get raised, only ever raised throughout the lifetime of the
-        /// entire lockstep system across all clients, so only once on the very first client.</para>
+        /// <para>The very first event to ever get raised, only ever raised once throughout the lifetime of
+        /// the entire lockstep system across all clients, so only once on the very first client.</para>
         /// <para>There are edge cases where it does run multiple times throughout the lifetime of a VRChat
         /// world instance, such as when a client joins and all other clients instantly leave afterwards,
         /// leaving the new client without late joiner data and alone, therefore it behaves just like a
@@ -49,6 +49,8 @@ namespace JanSharp {
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which has
         /// caught up.</para>
+        /// <para>It is possible for a client to become master before finishing catching up, in which case
+        /// <see cref="OnMasterChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnClientCaughtUp,
@@ -64,13 +66,16 @@ namespace JanSharp {
         /// </para>
         /// <para>Use <see cref="LockstepAPI.MasterPlayerId"/> to get the id of the new master client.
         /// (<see cref="LockstepAPI.MasterPlayerId"/> is not limited to the scope of this event.)</para>
+        /// <para>It is possible for a client to become master before finishing catching up, in which case
+        /// <see cref="OnMasterChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnMasterChanged,
         /// <summary>
         /// <para>Raised <see cref="LockstepAPI.TickRate"/> times per second.</para>
-        /// <para>Raised at the start of a tick, the very first function to run in a tick. Except for the
-        /// very first client which runs <see cref="OnInit"/> right before <see cref="OnTick"/>.</para>
+        /// <para>Raised at the end of a tick. Guaranteed to be the last event in a tick since there are no
+        /// events which could instantly get raised through any actions that any <see cref="OnTick"/> handler
+        /// could take.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnTick,

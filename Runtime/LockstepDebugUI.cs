@@ -28,17 +28,18 @@ namespace JanSharp.Internal
             "stillAllowLocalClientJoinedIA",
             "ignoreIncomingInputActions",
             "isWaitingToSendClientJoinedIA",
-            "sendLateJoinerDataAtEndOfTick",
+            "sendLateJoinerDataAtStartOfTick",
             "isCatchingUp",
             "isInitialCatchUp",
             "isSinglePlayer",
             "currentlyNoMaster",
             "checkMasterChangeAfterProcessingLJGameStates",
             "initializedEnoughForImportExport",
+            "isAskingForBetterMasterCandidates",
             "isImporting",
             "masterChangeRequestInProgress",
             "sendMasterChangeConfirmationInFirstMutableTick",
-            "finishMasterChangeProcessAtEndOfTick",
+            "finishMasterChangeProcessAtStartOfTick",
         };
         private Toggle[] flagToggles;
         private TextMeshProUGUI[] flagLabels;
@@ -73,7 +74,7 @@ namespace JanSharp.Internal
         private string[] numbersFieldNames = new string[]
         {
             "currentTick",
-            "waitTick",
+            "lastRunnableTick",
             "firstMutableTick",
             "startTick",
             "tickStartTime",

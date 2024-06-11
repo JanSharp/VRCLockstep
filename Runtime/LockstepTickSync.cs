@@ -17,7 +17,7 @@ namespace JanSharp.Internal
         #endif
         public Lockstep lockstep;
         [System.NonSerialized] public bool isSinglePlayer = false; // Default value must match the one in Lockstep.
-        [System.NonSerialized] public uint currentTick;
+        [System.NonSerialized] public uint lastRunnableTick;
         [System.NonSerialized] public bool stopAfterThisSync = false;
         private uint tickInSyncedData;
         [UdonSynced] private byte[] syncedData = new byte[0];
@@ -38,7 +38,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] LockstepTickSync  AddInputActionToRun");
             #endif
             uint playerId = (uint)(uniqueId >> Lockstep.PlayerIdKeyShift);
-            uint inputActionIndex = (uint)(uniqueId & 0x00000000ffffffffuL);
+            uint inputActionIndex = (uint)(uniqueId & Lockstep.InputActionIndexBits);
             DataStream.WriteSmall(ref buffer, ref bufferSize, tickToRunIn);
             DataStream.WriteSmall(ref buffer, ref bufferSize, playerId);
             DataStream.WriteSmall(ref buffer, ref bufferSize, inputActionIndex);
@@ -56,7 +56,8 @@ namespace JanSharp.Internal
         public override void OnPreSerialization()
         {
             tickBufferSize = 0;
-            DataStream.WriteSmall(ref tickBuffer, ref tickBufferSize, currentTick);
+            DataStream.WriteSmall(ref tickBuffer, ref tickBufferSize, lastRunnableTick);
+            // TODO: use System.Array.Copy
             int totalSize = tickBufferSize + bufferSize;
             if (syncedData.Length != totalSize)
                 syncedData = new byte[totalSize];
@@ -64,7 +65,7 @@ namespace JanSharp.Internal
                 syncedData[i] = tickBuffer[i];
             for (int i = 0; i < bufferSize; i++)
                 syncedData[tickBufferSize + i] = buffer[i];
-            tickInSyncedData = currentTick;
+            tickInSyncedData = lastRunnableTick;
             bufferSizeToClear = bufferSize;
         }
 
@@ -107,7 +108,7 @@ namespace JanSharp.Internal
         public override void OnDeserialization()
         {
             readPosition = 0;
-            lockstep.waitTick = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
+            lockstep.lastRunnableTick = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
             int length = syncedData.Length;
             while (readPosition < length)
             {

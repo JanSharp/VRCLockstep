@@ -34,8 +34,23 @@ namespace JanSharp.Internal
         [HideInInspector]
         #endif
         [SerializeField] private LockstepTickSync tickSync;
+        /// <summary>
+        /// <para>On the master this is the currently running tick, as in new input actions are getting
+        /// associated and run in this tick.</para>
+        /// <para>On non master this is the tick input actions will get run in. Once input actions have been
+        /// run for this tick it as advanced immediately to the next tick, so you can think of it like input
+        /// actions getting run at the end of a tick (as well as on tick).</para>
+        /// <para>Ultimately this means that no matter what client we are on, when TryRunTick runs, the very
+        /// last thing that happens is raising on tick and incrementing currentTick. I hope this makes master
+        /// changes (which happen at the start of a tick) easier to think about.</para>
+        /// </summary>
         [System.NonSerialized] public uint currentTick;
-        [System.NonSerialized] public uint waitTick; // The system will run this tick, but not past it.
+        /// <summary>
+        /// <para>The system will run this tick, but not any later ticks.</para>
+        /// <para>This means that <see cref="currentTick"/> can be 1 higher than <see cref="lastRunnableTick"/>,
+        /// since in order for a tick to fully run it must increment <see cref="currentTick"/> at the end.</para>
+        /// </summary>
+        [System.NonSerialized] public uint lastRunnableTick;
         public override uint CurrentTick => currentTick;
 
         private VRCPlayerApi localPlayer;
@@ -46,7 +61,17 @@ namespace JanSharp.Internal
         /// <para>**Internal Game State**</para>
         /// </summary>
         private uint masterPlayerId;
+        /// <summary>
+        /// <para>The first tick this client actually ran itself, inclusive.</para>
+        /// </summary>
         private uint startTick;
+        /// <summary>
+        /// <para>So long as <see cref="currentTick"/> is less than <i>or equal to</i> the
+        /// <see cref="firstMutableTick"/> there can be input actions associated with ticks even on the
+        /// master.</para>
+        /// <para>Once <see cref="currentTick"/> is greater than the <see cref="firstMutableTick"/> it is
+        /// guaranteed that there are no more input actions associated with ticks on the master.</para>
+        /// </summary>
         private uint firstMutableTick = 0u; // Effectively 1 tick past the last immutable tick.
         private float tickStartTime;
         private int byteCountForLatestLJSync = -1;
@@ -59,7 +84,7 @@ namespace JanSharp.Internal
         private bool ignoreIncomingInputActions = true;
         private bool isWaitingToSendClientJoinedIA = true;
         private bool isWaitingForLateJoinerSync = false;
-        private bool sendLateJoinerDataAtEndOfTick = false;
+        private bool sendLateJoinerDataAtStartOfTick = false;
         private bool isCatchingUp = false;
         private bool isInitialCatchUp = true;
         private bool isSinglePlayer = false;
@@ -71,6 +96,21 @@ namespace JanSharp.Internal
         public override bool IsCatchingUp => isCatchingUp && isInitialCatchUp;
         public override bool IsSinglePlayer => isSinglePlayer;
         public override bool CanSendInputActions => !ignoreLocalInputActions;
+
+        private bool isAskingForBetterMasterCandidates = false;
+        /// <summary>
+        /// <para>uint playerId => bool true</para>
+        /// <para>Basically just a hash set.</para>
+        /// </summary>
+        private DataDictionary notYetRespondedCandidates;
+        /// <summary>
+        /// <para>This is only used and "maintained" on and by the asking client. All other clients do not
+        /// keep track of which clients have accepted to be candidates, since on other clients they may
+        /// receive the response from one client before the initial request, making it impossible to clear the
+        /// list, and making it impossible to guarantee only the right clients are in this list.</para>
+        /// </summary>
+        private uint[] acceptingCandidates = new uint[ArrList.MinCapacity];
+        private int acceptingCandidatesCount = 0;
 
         private ulong unrecoverableStateDueToUniqueId = 0uL;
 
@@ -230,6 +270,7 @@ namespace JanSharp.Internal
         private int processLeftPlayersSentCount = 0;
         private int checkOtherMasterCandidatesSentCount = 0;
         private int someoneLeftWhileWeWereWaitingForLJSyncSentCount = 0;
+        private bool waitingForCandidatesLoopRunning = false;
 
         // Used by the debug UI.
         private System.Diagnostics.Stopwatch lastUpdateSW = new System.Diagnostics.Stopwatch();
@@ -270,9 +311,10 @@ namespace JanSharp.Internal
         // All of these 4 are part of the game state, however not part of LJ data because LJ data won't be
         // sent while masterChangeRequestInProcess is true.
         private bool masterChangeRequestInProgress = false;
+        private uint masterRequestManagingMasterId = 0u;
         private uint requestedMasterClientId = 0u;
         private bool sendMasterChangeConfirmationInFirstMutableTick = false;
-        private bool finishMasterChangeProcessAtEndOfTick = false;
+        private bool finishMasterChangeProcessAtStartOfTick = false;
 
         private void Start()
         {
@@ -316,52 +358,16 @@ namespace JanSharp.Internal
                 RunInputActionsForThisFrame();
 
             float timePassed = Time.time - tickStartTime;
-            uint runUntilTick = System.Math.Min(waitTick, startTick + (uint)(timePassed * TickRate));
-            for (uint tick = currentTick + 1; tick <= runUntilTick; tick++)
-            {
-                if (finishMasterChangeProcessAtEndOfTick && isMaster)
-                {
-                    finishMasterChangeProcessAtEndOfTick = false;
-                    StopBeingMaster();
+            uint runUntilTick = System.Math.Min(lastRunnableTick, startTick + (uint)(timePassed * TickRate));
+            for (uint tick = currentTick; tick <= runUntilTick; tick++)
+                if (!TryRunCurrentTick())
                     break;
-                }
-
-                // This is the correct place for this logic because:
-                // This logic must not run while catching up, so moving it into TryRunNextTick would be wrong.
-                // But what about TryRunNextTick returning false? It won't be, because:
-                // sendLateJoinerDataAtEndOfTick is only going to be true on the master.
-                // For the master client, TryRunNextTick is guaranteed to return true - actually run the tick.
-                if (sendLateJoinerDataAtEndOfTick && currentTick > firstMutableTick && !isImporting && !masterChangeRequestInProgress)
-                {
-                    // Waiting until the first mutable tick, because if the master was catching up and
-                    // associating new input actions with ticks while doing so, those would be enqueued at
-                    // the current first mutable tick at that time. Incoming player joined actions would also
-                    // be enqueued at the end just the same. This means if late joiner sync data was to be
-                    // sent before all these input actions that were added during catch up have run, then
-                    // there could be a case where a client receives late joiner sync data at a tick before
-                    // it knows which input actions were associated with ticks right after receiving LJ data.
-                    // It would think that there are no actions there, so it would desync. This edge case
-                    // requires multiple players to join while the master is still catching up.
-                    sendLateJoinerDataAtEndOfTick = false;
-                    SendLateJoinerData();
-                }
-
-                // Only happens on master.
-                if (sendMasterChangeConfirmationInFirstMutableTick && currentTick > firstMutableTick)
-                {
-                    sendMasterChangeConfirmationInFirstMutableTick = false;
-                    SendConfirmedMasterChangeIA();
-                }
-
-                if (!TryRunNextTick())
-                    break;
-            }
 
             if (isMaster)
             {
                 // Synced tick is always 1 behind, that way new input actions can be run in
                 // the current tick on the master without having to queue them for the next tick.
-                tickSync.currentTick = currentTick - 1u;
+                tickSync.lastRunnableTick = currentTick - 1u;
             }
 
             lastUpdateSW.Stop();
@@ -374,8 +380,8 @@ namespace JanSharp.Internal
             #endif
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
-            while (currentTick != waitTick
-                && TryRunNextTick()
+            while (currentTick <= lastRunnableTick
+                && TryRunCurrentTick()
                 && stopwatch.ElapsedMilliseconds < 10L)
             { }
             stopwatch.Stop(); // I don't think this actually matters, but it's not used anymore so sure.
@@ -384,7 +390,9 @@ namespace JanSharp.Internal
             // This little leeway is required, as it may not be able to reach waitTick because
             // input actions may arrive after tick sync data.
             // Run all the way to waitTick when isMaster, otherwise other clients would most likely desync.
-            if (isMaster ? currentTick == waitTick : waitTick - currentTick < TickRate)
+            if (isMaster
+                ? currentTick > lastRunnableTick // Yes it's duplicated but this is more readable.
+                : currentTick > lastRunnableTick || lastRunnableTick - currentTick < TickRate)
             {
                 CleanUpOldTickAssociations();
                 isCatchingUp = false;
@@ -407,7 +415,7 @@ namespace JanSharp.Internal
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken tickToRunToken = keys[i];
-                if (tickToRunToken.UInt > currentTick)
+                if (tickToRunToken.UInt >= currentTick)
                     continue;
 
                 uniqueIdsByTick.Remove(tickToRunToken, out DataToken uniqueIdsToken);
@@ -415,12 +423,11 @@ namespace JanSharp.Internal
             }
         }
 
-        private bool TryRunNextTick()
+        private bool TryRunCurrentTick()
         {
-            uint nextTick = currentTick + 1u;
-            DataToken nextTickToken = nextTick;
+            DataToken currentTickToken = currentTick;
             ulong[] uniqueIds = null;
-            if (uniqueIdsByTick.TryGetValue(nextTickToken, out DataToken uniqueIdsToken))
+            if (uniqueIdsByTick.TryGetValue(currentTickToken, out DataToken uniqueIdsToken))
             {
                 uniqueIds = (ulong[])uniqueIdsToken.Reference;
                 foreach (ulong uniqueId in uniqueIds)
@@ -432,7 +439,7 @@ namespace JanSharp.Internal
                             // This variable is purely used as to not spam the log file every frame with this error message.
                             unrecoverableStateDueToUniqueId = uniqueId;
                             /// cSpell:ignore desync, desyncs
-                            Debug.LogError($"[Lockstep] There's an input action queued to run on the tick {nextTick} "
+                            Debug.LogError($"[Lockstep] There's an input action queued to run on the tick {currentTick} "
                                 + $"originating from the player {playerId}, however the input action "
                                 + $"with the unique id {uniqueId} was never received and the given player id "
                                 + $"is not in the instance. This is an error state the system "
@@ -443,45 +450,96 @@ namespace JanSharp.Internal
                         }
                         return false;
                     }
-                uniqueIdsByTick.Remove(nextTickToken);
+                uniqueIdsByTick.Remove(currentTickToken);
             }
 
-            currentTick = nextTick;
-            RaiseOnTick(); // At the start of a tick. For the very first tick it is raised separately.
-            // Must happen here, as raising it at the end of the tick would require doing so before sending
-            // late joiner data, however that messes up the order in which the 2 functions get called which
-            // overall just complicates things.
+            #if LockstepDebug
+            if (isMaster && currentTick > firstMutableTick && uniqueIds != null)
+                Debug.LogError($"[LockstepDebug] When on master the first mutable tick is the only tick that "
+                    + $"is still allowed to have input actions associated with it. Past that there must be "
+                    + $"zero input actions associated with ticks, since they should just get run as soon as "
+                    + $"they get received (or once they got sent if the local client was issuing them).");
+            #endif
+
+            if (uniqueIds != null)
+                RunInputActionsForUniqueIds(uniqueIds);
+
+            RaiseOnTick(); // End of tick.
+
+            currentTick++;
 
             // Slowly increase the immutable tick. This prevents potential lag spikes when many input actions
-            // were sent while catching up. This approach also prevents being caught catching up forever by
+            // were sent while catching up. This approach also prevents being stuck catching up forever by
             // not touching waitTick.
             // Still continue increasing it even when done catching up, for the same reason: no lag spikes.
             if ((currentTick % TickRate) == 0u)
                 firstMutableTick++;
             #if LockstepDebug
-            // Debug.Log($"[DebugLockstep] Running tick {currentTick}");
+            // Debug.Log($"[LockstepDebug] Running tick {currentTick}");
             #endif
 
-            if (uniqueIds != null)
+            StartOfTick();
+
+            if (isMaster && !StartOfTickChecksOnMaster())
+                return false;
+
+            return true;
+        }
+
+        private void StartOfTick()
+        {
+            if (!isMaster && finishMasterChangeProcessAtStartOfTick)
             {
-                RunInputActionsForUniqueIds(uniqueIds);
-                if (finishMasterChangeProcessAtEndOfTick)
+                finishMasterChangeProcessAtStartOfTick = false;
+                if (masterRequestManagingMasterId == localPlayerId)
                 {
-                    finishMasterChangeProcessAtEndOfTick = false;
-                    if (isMaster)
-                    {
-                        // The master will never actually associate the confirmation input action with a tick,
-                        // however if the master sends it and instantly leaves and then a different client
-                        // only receives the IA without the tick association and that client then becomes
-                        // master then it would associate it with a tick, which is how we get here.
-                        StopBeingMaster();
-                        return false; // To break out of the tick running loop.
-                    }
-                    else if (requestedMasterClientId == localPlayerId)
-                        BecomeNewMaster();
-                    else
-                        FinishMasterChangeRequestOnUnrelatedClient();
+                    Debug.LogError($"[Lockstep] Impossible because the master cannot change during a master "
+                        + $"change request through another change request. Therefore the only way for the "
+                        + $"master to change during a request is by the previous master leaving. If this "
+                        + $"happens then another clint becomes master, and said client may put the "
+                        + $"confirmation input action into the 'catchup queue' so to speak, which is the "
+                        + $"only way for the master client to actually reach this point in the code. However "
+                        + $"if that happens then the masterRequestManagingMasterId cannot equal the local "
+                        + $"client id. And, side note, this is unrecoverable.");
                 }
+                SetMaster(requestedMasterClientId);
+            }
+        }
+
+        private bool StartOfTickChecksOnMaster()
+        {
+            // Simply put, none of the checks make sense while still catching up, and while I can't explain it
+            // right now, I'm quite certain that StopBeingMaster would break if called while still catching up
+            // and the others may not behave properly either.
+            if (isCatchingUp)
+                return true;
+
+            if (finishMasterChangeProcessAtStartOfTick)
+            {
+                finishMasterChangeProcessAtStartOfTick = false;
+                SetMaster(requestedMasterClientId);
+                return false; // To break out of the tick running loop.
+            }
+
+            if (sendLateJoinerDataAtStartOfTick && currentTick > firstMutableTick && !isImporting && !masterChangeRequestInProgress)
+            {
+                // Waiting until the first mutable tick, because if the master was catching up and
+                // associating new input actions with ticks while doing so, those would be enqueued at
+                // the current first mutable tick at that time. Incoming player joined actions would also
+                // be enqueued at the end just the same. This means if late joiner sync data was to be
+                // sent before all these input actions that were added during catch up have run, then
+                // there could be a case where a client receives late joiner sync data at a tick before
+                // it knows which input actions were associated with ticks right after receiving LJ data.
+                // It would think that there are no actions there, so it would desync. This edge case
+                // requires multiple players to join while the master is still catching up.
+                sendLateJoinerDataAtStartOfTick = false;
+                SendLateJoinerData();
+            }
+
+            if (sendMasterChangeConfirmationInFirstMutableTick && currentTick > firstMutableTick)
+            {
+                sendMasterChangeConfirmationInFirstMutableTick = false;
+                SendConfirmedMasterChangeIA();
             }
 
             return true;
@@ -524,17 +582,17 @@ namespace JanSharp.Internal
             iatrnCount = 0;
         }
 
-        private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId)
+        private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId, bool bypassValidityCheck = false)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputAction");
             #endif
             ResetReadStream();
             readStream = inputActionData;
-            RunInputActionWithCurrentReadStream(inputActionId, uniqueId);
+            RunInputActionWithCurrentReadStream(inputActionId, uniqueId, bypassValidityCheck);
         }
 
-        private void RunInputActionWithCurrentReadStream(uint inputActionId, ulong uniqueId)
+        private void RunInputActionWithCurrentReadStream(uint inputActionId, ulong uniqueId, bool bypassValidityCheck = false)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionWithCurrentReadStream");
@@ -552,7 +610,7 @@ namespace JanSharp.Internal
             // couldn't think of another solution that wouldn't introduce other issues.
             // The clientJoinedIAId is of course allowed regardless, since that's how a client gets added to
             // clientStates in the first place.
-            if (inputActionId != clientJoinedIAId && !clientStates.ContainsKey(sendingPlayerId))
+            if (!bypassValidityCheck && inputActionId != clientJoinedIAId && !clientStates.ContainsKey(sendingPlayerId))
             {
                 #if LockstepDebug
                 Debug.Log($"[LockStepDebug] The player id {sendingPlayerId} is not in the client states game"
@@ -568,6 +626,20 @@ namespace JanSharp.Internal
         private bool IsAllowedToSendInputActionId(uint inputActionId)
         {
             return !ignoreLocalInputActions || (stillAllowLocalClientJoinedIA && inputActionId == clientJoinedIAId);
+        }
+
+        private void SendInstantAction(uint inputActionId, bool doRunLocally = false)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendInstantAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}, doRunLocally: {doRunLocally}");
+            #endif
+            byte[] inputActionData = new byte[writeStreamSize];
+            System.Array.Copy(writeStream, inputActionData, writeStreamSize);
+            ResetWriteStream();
+            ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
+            if (!doRunLocally)
+                return;
+            RunInputAction(inputActionId, inputActionData, uniqueId, bypassValidityCheck: true);
         }
 
         public override ulong SendInputAction(uint inputActionId)
@@ -717,10 +789,14 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  InputActionSent");
             #endif
-            if (!isMaster)
+            if (!isMaster) // When instant actions are sent, isMaster is still going to be false.
                 return;
 
-            if (currentTick < firstMutableTick)
+            // Must use <= in order to ensure correct order of input actions. There may already be input
+            // actions associated with the firstMutableTick, so if currentTick == firstMutableTick then it
+            // must still associate them in order for these new input actions to run after the already
+            // associated ones.
+            if (currentTick <= firstMutableTick)
             {
                 AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
                 return;
@@ -771,7 +847,9 @@ namespace JanSharp.Internal
 
             if (localPlayer.isMaster)
             {
-                BecomeInitialMaster();
+                // No longer guaranteed to be the first and single client in the instance, therefore run
+                // through the usual CheckMasterChange process.
+                CheckMasterChange();
                 return;
             }
 
@@ -821,6 +899,7 @@ namespace JanSharp.Internal
                 bool foundMaster = false;
                 for (int i = 0; i < allStates.Count; i++)
                 {
+                    // TODO: this logic no longer makes sense since there is now a guarantee that there is always a master in client states.
                     if ((ClientState)allStates[i].Byte == ClientState.Master)
                     {
                         foundMaster = true;
@@ -909,39 +988,43 @@ namespace JanSharp.Internal
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
             tickSync.RequestSerialization();
-            startTick = 0u;
+            startTick = 1u;
             currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
-            waitTick = uint.MaxValue;
+            lastRunnableTick = uint.MaxValue;
             EnterSingePlayerMode();
             initializedEnoughForImportExport = true;
             StartOrStopAutosave();
             RaiseOnInit();
-            RaiseOnTick();
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
             tickStartTime = Time.time;
         }
 
-        private void BecomeNewMaster()
+        /// <summary>
+        /// <para>Can and is supposed to be called on all clients.</para>
+        /// </summary>
+        private void SetMaster(uint newMasterId)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  BecomeNewMaster");
+            Debug.Log($"[LockstepDebug] Lockstep  SetMaster - newMasterId: {newMasterId}");
             #endif
-            masterChangeRequestInProgress = false;
-            isMaster = true;
-            lateJoinerInputActionSync.gameObject.SetActive(true);
-            lateJoinerInputActionSync.lockstepIsMaster = true;
-            Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
-            Networking.SetOwner(localPlayer, tickSync.gameObject);
-            tickSync.RequestSerialization();
-            waitTick = uint.MaxValue;
 
-            firstMutableTick = currentTick + 1u; // must be greater than currentTick for the function below.
-            AssociateUnassociatedInputActionsWithTicks(); // Before master changed gets raised.
+            if (masterPlayerId == newMasterId)
+            {
+                Debug.LogError("[Lockstep] SetMaster being called with the same player id as the current "
+                    + "master indicates that something went wrong somewhere.");
+                return;
+            }
 
-            UpdateClientStatesForNewMaster();
-            currentTick++;
-            RaiseOnTick();
+            if (localPlayerId == masterPlayerId)
+            {
+                StopBeingMaster();
+                UpdateClientStatesForNewMaster(newMasterId);
+            }
+            else if (localPlayerId == newMasterId)
+                BecomeMasterGeneric(); // Calls UpdateClientStatesForNewMaster in the middle.
+            else
+                UpdateClientStatesForNewMaster(newMasterId);
         }
 
         private void StopBeingMaster()
@@ -951,35 +1034,42 @@ namespace JanSharp.Internal
             #endif
             masterChangeRequestInProgress = false;
             isMaster = false;
-            waitTick = currentTick;
-            // Actually end the current tick and allow other clients to run said current tick.
-            tickSync.currentTick = currentTick;
+            // This runs at the start of a tick. That tick should not actually get run though, so stop right there.
+            lastRunnableTick = currentTick - 1u;
+            // Actually end the last tick this master ran and allow other clients to run said tick.
+            tickSync.lastRunnableTick = lastRunnableTick;
             tickSync.stopAfterThisSync = true;
             // tickStartTime will be a bit off (too high) since ticks won't run for a short bit.
             lateJoinerInputActionSync.lockstepIsMaster = false;
             lateJoinerInputActionSync.gameObject.SetActive(false);
-
-            UpdateClientStatesForNewMaster();
         }
 
-        private void FinishMasterChangeRequestOnUnrelatedClient()
-        {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  FinishMasterChangeRequestOnUnrelatedClient");
-            #endif
-            masterChangeRequestInProgress = false;
-            UpdateClientStatesForNewMaster();
-        }
-
-        private void UpdateClientStatesForNewMaster()
+        private void UpdateClientStatesForNewMaster(uint newMasterId)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  UpdateClientStatesForNewMaster");
             #endif
+
+            bool oldMasterHasAState = clientStates.ContainsKey(masterPlayerId);
+            if (!oldMasterHasAState)
+            {
+                Debug.LogError($"[Lockstep] The system is supposed to guarantee that there is always 1 client "
+                    + "in client states which has the master state. However UpdateClientStatesForNewMaster "
+                    + "noticed that the previous master id is no longer in the client states.");
+            }
+
             uint oldMasterPlayerId = masterPlayerId;
-            masterPlayerId = requestedMasterClientId;
+            masterPlayerId = newMasterId;
+
+            // If a master change happened through any means, abort master change request if it is in progress.
+            masterChangeRequestInProgress = false;
+            masterRequestManagingMasterId = 0u; // Reset just to be clean, not actually required.
             requestedMasterClientId = 0u; // Reset just to be clean, not actually required.
-            clientStates[oldMasterPlayerId] = (byte)ClientState.Normal;
+            sendMasterChangeConfirmationInFirstMutableTick = false;
+            finishMasterChangeProcessAtStartOfTick = false;
+
+            if (oldMasterHasAState)
+                clientStates[oldMasterPlayerId] = (byte)ClientState.Normal;
             clientStates[masterPlayerId] = (byte)ClientState.Master;
             RaiseOnMasterChanged(oldMasterPlayerId);
         }
@@ -1021,6 +1111,7 @@ namespace JanSharp.Internal
             if (masterChangeRequestInProgress) // Already in process, ignore another request.
                 return;
             masterChangeRequestInProgress = true;
+            masterRequestManagingMasterId = masterPlayerId;
             requestedMasterClientId = ReadSmallUInt();
             if (!isMaster)
                 return;
@@ -1042,7 +1133,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnConfirmedMasterChangeIA");
             #endif
-            finishMasterChangeProcessAtEndOfTick = true;
+            finishMasterChangeProcessAtStartOfTick = true;
         }
 
         private bool IsAnyClientWaitingForLateJoinerSync()
@@ -1057,14 +1148,16 @@ namespace JanSharp.Internal
             return false;
         }
 
-        private bool IsAnyClientNotWaitingForLateJoinerSync()
+        private bool IsAnyClientNotWaitingForLateJoinerSyncAndNotLeft()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  IsAnyClientNotWaitingForLateJoinerSync");
+            Debug.Log($"[LockstepDebug] Lockstep  IsAnyClientNotWaitingForLateJoinerSyncAndNotLeft");
             #endif
+            DataList allKeys = clientStates.GetKeys();
             DataList allStates = clientStates.GetValues();
             for (int i = 0; i < allStates.Count; i++)
-                if ((ClientState)allStates[i].Byte != ClientState.WaitingForLateJoinerSync)
+                if ((ClientState)allStates[i].Byte != ClientState.WaitingForLateJoinerSync
+                    && !ArrList.Contains(ref leftClients, ref leftClientsCount, allKeys[i].UInt))
                     return true;
             return false;
         }
@@ -1085,18 +1178,12 @@ namespace JanSharp.Internal
                     continue;
                 uint playerId = playerIdToken.UInt;
                 VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)playerId);
-                if (player == null)
+                if (player == null || !player.IsValid())
                     continue;
-                Debug.Log("[Lockstep] // TODO: Ask the given client to become master. Keep in mind that "
-                    + "that client isn't even running ticks right now, so it requires a special input action. "
-                    + "For now this simply gets ignored and the local client becomes master instead, "
-                    + "causing every other client which isn't still waiting for late joiner sync "
-                    + "to pretty much just break. The behaviour is undefined. "
-                    + "Note that this this is super low priority because chances of this here "
-                    + "ever happening are stupidly low or even impossible.");
-                // return; // once the above is implemented, uncomment the return here.
+                SendAcceptedMasterCandidateIA(playerId);
+                return;
             }
-            // Nope, no other play may become master, so we take it and completely reset.
+            // Nope, no other player may become master, so we take it and completely reset.
             clientStates = null;
             clientNames = null;
             latestInputActionIndexByPlayerIdForLJ = null;
@@ -1139,6 +1226,10 @@ namespace JanSharp.Internal
             firstMutableTick = 0u; // Technically not needed, but it makes a lot of sense to be here.
             latestInputActionIndexByPlayerIdForLJ = null;
             currentlyNoMaster = true;
+            StopWaitingForCandidatesAsAMasterAlreadyExists();
+            // The times where ignoreLocalInputActions would be false, FactoryReset should no longer get called.
+            stillAllowLocalClientJoinedIA = false;
+            ignoreIncomingInputActions = true;
             isWaitingToSendClientJoinedIA = true;
             isWaitingForLateJoinerSync = false;
             inputActionsByUniqueId.Clear();
@@ -1146,6 +1237,11 @@ namespace JanSharp.Internal
             isTickPaused = true;
             // Do this last just in case it ends up running deserialization upon being reactivated.
             lateJoinerInputActionSync.gameObject.SetActive(true);
+        }
+
+        private bool CouldBecomeMaster()
+        {
+            return !(isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync);
         }
 
         public void CheckMasterChange()
@@ -1172,41 +1268,59 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync)
+            if (!CouldBecomeMaster())
             {
-                if (clientStates != null && IsAnyClientNotWaitingForLateJoinerSync())
+                if (clientStates != null && IsAnyClientNotWaitingForLateJoinerSyncAndNotLeft())
                 {
                     checkOtherMasterCandidatesSentCount++;
                     SendCustomEventDelayedSeconds(nameof(CheckOtherMasterCandidates), 1f);
                     return;
                 }
                 // The master left before finishing sending late joiner data and we are now the new master
-                // without all the data, therefore we must completely reset the system and pretend we
-                // are the first client in the instance.
-                // Because of this, not a single event - not even the deserialization events for game states -
-                // must raised while isWaitingForLateJoinerSync is still true, otherwise deserialization of a
-                // game state may happen before OnInit, which is invalid behaviour for this system.
-                stillAllowLocalClientJoinedIA = false;
-                isCatchingUp = false;
-                FactoryReset();
-                BecomeInitialMaster();
+                // without all the data. There is no longer a guarantee that the new master (which is the
+                // local client in this case) is the one which has been in the instance the longest. Therefore
+                // we must now ask all existing clients to tell us if they have the previous game state. If
+                // yes then they should become master, otherwise a factory reset is required.
+                AskForBetterMasterCandidate();
                 return;
             }
+
+            BecomeMasterGeneric();
+        }
+
+        private void BecomeMasterGeneric()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  BecomeMasterGeneric - currentTick: {currentTick}, lastRunnableTick: {lastRunnableTick}");
+            #endif
 
             isMaster = true; // currentlyNoMaster will be set to false in OnMasterChangedIA later.
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = false;
+
+            // If this client has never run ticks before then currentTick will still be 0,
+            // while lastRunnableTick will never be 0 here.
+            // If currentTick is past lastRunnableTick (which it will only ever be by 1) then this client is
+            // fully caught up with whatever the last tick the previous master had run was.
+            bool instantlyBecomeMaster = currentTick > lastRunnableTick;
+
+            if (instantlyBecomeMaster)
+                FinishCatchingUpOnMaster(); // We weren't actually catching up but the logic is the same.
+            else
+            {
+                isCatchingUp = true; // Catch up as quickly as possible to the lastRunnableTick. Unless it was
+                // already catching up, this should usually only quickly advance by 1 or 2 ticks, which is fine.
+                // The real reason this is required is for the public IsMaster property to behave correctly.
+                // Leave isInitialCatchUp untouched, as this may in fact still be the initial catch up, if
+                // isCatchingUp was already true.
+            }
             isTickPaused = false;
-            isCatchingUp = true; // Catch up as quickly as possible to the waitTick. Unless it was already
-            // catching up, this should usually only quickly advance by 1 or 2 ticks, which is fine. The real
-            // reason this is required is for the public IsMaster property to behave correctly.
-            // Leave isInitialCatchUp untouched, as this may in fact still be the initial catch up, if
-            // isCatchingUp was already true.
 
             // The immutable tick prevents any newly enqueued input actions from being enqueued too early,
             // to prevent desyncs when not in single player as well as poor IA ordering in general.
-            firstMutableTick = waitTick + 1;
+            // AssociateUnassociatedInputActionsWithTicks also requires currentTick to be <= lastRunnableTick.
+            firstMutableTick = currentTick;
 
             lateJoinerInputActionSync.gameObject.SetActive(true);
             lateJoinerInputActionSync.lockstepIsMaster = true;
@@ -1215,10 +1329,230 @@ namespace JanSharp.Internal
             tickSync.RequestSerialization();
 
             AssociateUnassociatedInputActionsWithTicks();
+
+            if (instantlyBecomeMaster)
+                UpdateClientStatesForNewMaster(localPlayerId);
+            else
+            {
+                SendMasterChangedIA(); // Do it here to have it happen in the first mutable tick, which is the
+                // first tick the previous master didn't get to run anymore.
+                // And process left players afterwards which guarantees that there is always 1 master in the
+                // client states.
+            }
+
             processLeftPlayersSentCount++;
             ProcessLeftPlayers();
-            if (isSinglePlayer) // In case it was already single player before CheckMasterChange ran.
+            if (isSinglePlayer) // In case it was already single player before BecomeMasterGeneric ran.
                 InstantlyRunInputActionsWaitingToBeSent();
+        }
+
+        private void StartWaitingForCandidatesLoop()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  StartWaitingForCandidatesLoop");
+            #endif
+            if (waitingForCandidatesLoopRunning)
+                return;
+            waitingForCandidatesLoopRunning = true;
+            // 2 seconds should be more than enough for a full roundtrip to every client.
+            SendCustomEventDelayedSeconds(nameof(WaitingForCandidatesLoop), 2f);
+        }
+
+        public void WaitingForCandidatesLoop()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  WaitingForCandidatesLoop");
+            #endif
+            if (!isAskingForBetterMasterCandidates)
+            {
+                waitingForCandidatesLoopRunning = false;
+                return;
+            }
+
+            DataDictionary toKeep = new DataDictionary();
+            VRCPlayerApi[] players = new VRCPlayerApi[VRCPlayerApi.GetPlayerCount()];
+            VRCPlayerApi.GetPlayers(players);
+            foreach (VRCPlayerApi player in players)
+                if (player != null && player.IsValid() // Severe trust issues.
+                    && notYetRespondedCandidates.ContainsKey(player.playerId))
+                    toKeep.Add(player.playerId, true);
+            notYetRespondedCandidates = toKeep;
+
+            if (notYetRespondedCandidates.Count == 0)
+            {
+                AllCandidatesHaveResponded();
+                return;
+            }
+
+            // 2 seconds instead of like 1 or 0.5 because we're now waiting on some client which probably lost
+            // internet connection for a bit and they may either leave or respond late. We don't know but we
+            // can't rush them to respond so just wait patiently for something to happen.
+            SendCustomEventDelayedSeconds(nameof(WaitingForCandidatesLoop), 2f);
+        }
+
+        private bool TryGetMasterCandidate(out uint candidateClientId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  TryGetMasterCandidate");
+            #endif
+            for (int i = 0; i < acceptingCandidatesCount; i++)
+            {
+                uint candidateId = acceptingCandidates[i];
+                VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)candidateId);
+                if (player != null && player.IsValid()) // Trust issues.
+                {
+                    candidateClientId = candidateId;
+                    return true;
+                }
+            }
+            candidateClientId = 0u;
+            return false;
+        }
+
+        private void AskForBetterMasterCandidate()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AskForBetterMasterCandidate");
+            #endif
+
+            if (TryGetMasterCandidate(out uint candidateClientId))
+            {
+                // Oh hey the local client had already asked previously and there's still a potential
+                // candidate in the instance, ask that client to become master.
+                SendAcceptedMasterCandidateIA(candidateClientId);
+                return;
+            }
+
+            isAskingForBetterMasterCandidates = true;
+            notYetRespondedCandidates = new DataDictionary();
+            VRCPlayerApi[] players = new VRCPlayerApi[VRCPlayerApi.GetPlayerCount()];
+            VRCPlayerApi.GetPlayers(players);
+            foreach (VRCPlayerApi player in players)
+                if (player != null && player.IsValid()) // Severe trust issues.
+                    notYetRespondedCandidates.Add((uint)player.playerId, true);
+            ArrList.Clear(ref acceptingCandidates, ref acceptingCandidatesCount);
+
+            if (notYetRespondedCandidates.Count == 0) // Particularly important for the true initial master.
+            {
+                AllCandidatesHaveResponded();
+                return;
+            }
+
+            StartWaitingForCandidatesLoop();
+            SendAskForBetterMasterCandidateIA(localPlayerId);
+        }
+
+        private void SendAskForBetterMasterCandidateIA(uint askingPlayerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendAskForBetterMasterCandidateIA");
+            #endif
+            WriteSmall(askingPlayerId);
+            SendInstantAction(askForBetterMasterCandidateIAId);
+        }
+
+        [SerializeField] [HideInInspector] private uint askForBetterMasterCandidateIAId;
+        [LockstepInputAction(nameof(askForBetterMasterCandidateIAId))]
+        public void OnAskForBetterMasterCandidateIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnAskForBetterMasterCandidateIA");
+            #endif
+            uint askingPlayerId = ReadSmallUInt();
+            SendResponseForBetterMasterCandidateIA(askingPlayerId, localPlayerId, CouldBecomeMaster());
+        }
+
+        private void SendResponseForBetterMasterCandidateIA(uint askingPlayerIdRoundtrip, uint playerId, bool couldBecomeMaster)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendResponseForBetterMasterCandidateIA");
+            #endif
+            WriteSmall(askingPlayerIdRoundtrip);
+            WriteSmall(playerId);
+            Write((byte)(isMaster ? 0x2u : couldBecomeMaster ? 1u : 0u));
+            SendInstantAction(responseForBetterMasterCandidateIAId);
+        }
+
+        [SerializeField] [HideInInspector] private uint responseForBetterMasterCandidateIAId;
+        [LockstepInputAction(nameof(responseForBetterMasterCandidateIAId))]
+        public void OnResponseForBetterMasterCandidateIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnResponseForBetterMasterCandidateIA");
+            #endif
+            uint askingPlayerIdRoundtrip = ReadSmallUInt();
+            uint remotePlayerId = ReadSmallUInt();
+            byte couldBecomeMaster = ReadByte();
+            if (!isAskingForBetterMasterCandidates)
+                return;
+            if (askingPlayerIdRoundtrip != localPlayerId) // A different player asked, we don't care.
+                return;
+            if (couldBecomeMaster == 2u)
+            {
+                StopWaitingForCandidatesAsAMasterAlreadyExists();
+                return;
+            }
+            if (!notYetRespondedCandidates.ContainsKey(remotePlayerId))
+                return; // Uh what? I guess the remote player left already and we're receiving this afterwards.
+            // Or this is a new client that joined right after we sent the question/request.
+
+            notYetRespondedCandidates.Remove(remotePlayerId);
+            if (couldBecomeMaster != 0u)
+                ArrList.Add(ref acceptingCandidates, ref acceptingCandidatesCount, remotePlayerId);
+            if (notYetRespondedCandidates.Count != 0)
+                return;
+            AllCandidatesHaveResponded();
+        }
+
+        private void AllCandidatesHaveResponded()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AllCandidatesHaveResponded");
+            #endif
+
+            if (!TryGetMasterCandidate(out uint candidateClientId))
+            {
+                FactoryReset();
+                BecomeInitialMaster();
+                return;
+            }
+
+            SendAcceptedMasterCandidateIA(candidateClientId);
+        }
+
+        private void StopWaitingForCandidatesAsAMasterAlreadyExists()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  StopWaitingForCandidatesAsAMasterAlreadyExists");
+            #endif
+
+            isAskingForBetterMasterCandidates = false;
+            notYetRespondedCandidates = null;
+            ArrList.Clear(ref acceptingCandidates, ref acceptingCandidatesCount);
+        }
+
+        private void SendAcceptedMasterCandidateIA(uint acceptedPlayerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendAcceptedMasterCandidateIA");
+            #endif
+            WriteSmall(acceptedPlayerId);
+            SendInstantAction(acceptedMasterCandidateIAId);
+        }
+
+        [SerializeField] [HideInInspector] private uint acceptedMasterCandidateIAId;
+        [LockstepInputAction(nameof(acceptedMasterCandidateIAId))]
+        public void OnAcceptedMasterCandidateIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnAcceptedMasterCandidateIA");
+            #endif
+            uint acceptedPlayerId = ReadSmallUInt();
+            if (acceptedPlayerId != localPlayerId)
+                return;
+            if (isMaster) // This client was already asked to become master previously, ignore another confirmation.
+                return;
+            BecomeMasterGeneric();
         }
 
         private void FinishCatchingUpOnMaster()
@@ -1226,8 +1560,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FinishCatchingUpOnMaster");
             #endif
-            waitTick = uint.MaxValue;
-            SendMasterChangedIA();
+            lastRunnableTick = uint.MaxValue;
 
             if (IsAnyClientWaitingForLateJoinerSync())
             {
@@ -1246,13 +1579,14 @@ namespace JanSharp.Internal
                 Debug.LogError("[Lockstep] Attempt to use AssociateUnassociatedInputActionsWithTicks on non master.");
                 return;
             }
-            if (currentTick >= firstMutableTick)
+            if (currentTick > firstMutableTick)
             {
                 Debug.LogError("[Lockstep] For simplicity AssociateUnassociatedInputActionsWithTicks is only "
-                    + "allowed to be called when the current tick is less than the first mutable tick. "
-                    + "The main reason is that there is currently a guarantee that inputActionsByUniqueId is "
-                    + "empty on the master as soon as the first mutable tick is reached. Therefore "
-                    + "associating input actions with ticks once they are mutable would break this guarantee.");
+                    + "allowed to be called when the current tick is less than or equal to the first mutable "
+                    + "tick. The main reason is that there is currently a guarantee that "
+                    + "inputActionsByUniqueId is empty on the master as soon as the first mutable tick is "
+                    + "passed. Therefore associating input actions with ticks once they are mutable would "
+                    + $"break this guarantee. currentTick: {currentTick}, firstMutableTick: {firstMutableTick}.");
                 return;
             }
 
@@ -1477,7 +1811,7 @@ namespace JanSharp.Internal
             // If isMaster && isCatchingUp, this actually does _not_ need special handling, because
             // sendLateJoinerDataAtEndOfTick is only checked after catching up is done.
             if (IsAnyClientWaitingForLateJoinerSync())
-                sendLateJoinerDataAtEndOfTick = true;
+                sendLateJoinerDataAtStartOfTick = true;
         }
 
         private int Clamp(int value, int min, int max)
@@ -1565,7 +1899,7 @@ namespace JanSharp.Internal
                 ResetWriteStream();
             }
 
-            Write(currentTick);
+            WriteSmall(currentTick);
             lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, writeStream, writeStreamSize);
             ResetWriteStream();
 
@@ -1645,7 +1979,7 @@ namespace JanSharp.Internal
                 return;
             }
 
-            currentTick = ReadUInt();
+            currentTick = ReadSmallUInt();
 
             lateJoinerInputActionSync.gameObject.SetActive(false);
             isWaitingForLateJoinerSync = false;
@@ -1812,7 +2146,7 @@ namespace JanSharp.Internal
             #endif
             if (isMaster && !IsAnyClientWaitingForLateJoinerSync())
             {
-                sendLateJoinerDataAtEndOfTick = false;
+                sendLateJoinerDataAtStartOfTick = false;
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
             }
         }
@@ -1893,9 +2227,17 @@ namespace JanSharp.Internal
             #endif
             uint playerId = ReadSmallUInt();
             byte doRaise = ReadByte();
-            clientStates[playerId] = (byte)ClientState.Normal;
+            if (clientStates[playerId].Byte != (byte)ClientState.Master)
+                clientStates[playerId] = (byte)ClientState.Normal;
             if (doRaise != 0)
                 RaiseOnClientCaughtUp(playerId);
+        }
+
+        private bool IsInstantActionIAId(uint inputActionId)
+        {
+            return inputActionId == askForBetterMasterCandidateIAId
+                || inputActionId == responseForBetterMasterCandidateIAId
+                || inputActionId == acceptedMasterCandidateIAId;
         }
 
         public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, ulong uniqueId, byte[] inputActionData)
@@ -1918,6 +2260,12 @@ namespace JanSharp.Internal
                 return;
             }
 
+            if (IsInstantActionIAId(inputActionId))
+            {
+                RunInputAction(inputActionId, inputActionData, uniqueId, bypassValidityCheck: true);
+                return;
+            }
+
             if (ignoreIncomingInputActions)
                 return;
 
@@ -1932,7 +2280,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryToInstantlyRunInputActionOnMaster");
             #endif
-            if (currentTick < firstMutableTick) // Can't run it in the current tick. A check for isCatchingUp
+            if (currentTick <= firstMutableTick) // Can't run it in the current tick. A check for isCatchingUp
             { // is not needed, because the condition above will always be true when isCatchingUp is true.
                 if (uniqueId == 0uL)
                 {
@@ -2100,7 +2448,7 @@ namespace JanSharp.Internal
             this.oldMasterPlayerId = oldMasterPlayerId;
             foreach (UdonSharpBehaviour listener in onMasterChangedListeners)
                 listener.SendCustomEvent(nameof(LockstepEventType.OnMasterChanged));
-            this.oldMasterPlayerId = 0; // To prevent misuse of the API which would cause desyncs.
+            this.oldMasterPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
         private void RaiseOnTick()

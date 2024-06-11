@@ -78,10 +78,16 @@ namespace JanSharp
         public abstract bool IsMaster { get; }
         /// <summary>
         /// <para>The player id of the lockstep master, which differs from VRChat's master. The lockstep
-        /// master is effectively the acting server for the networking system. By default it is quite likely
-        /// for lockstep's master to be the same as VRChat's master.</para>
+        /// master is effectively the acting server for the networking system.</para>
+        /// <para>Which client may be lockstep master is undefined. When the master leaves the system will
+        /// simply choose some player which has been in the instance long enough to know the game state.
+        /// Outside of that there are no automatic master changes, however the master can be changed through
+        /// <see cref="RequestLocalClientToBecomeMaster"/> or <see cref="SendMasterChangeRequestIA(uint)"/>.
+        /// </para>
         /// <para>If the master leaves, this id remains unchanged until the
         /// <see cref="LockstepEventType.OnMasterChanged"/> event is raised.</para>
+        /// <para><see cref="IsMaster"/> may be <see langword="true"/> even before
+        /// <see cref="MasterPlayerId"/> is equal to the local player id.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>

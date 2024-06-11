@@ -217,6 +217,7 @@ MonoBehaviour:
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 3631483135168420125}
   isLateJoinerSyncInst: 1
+  latestInputActionIndex: 0
 --- !u!114 &3631483135168420125
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -320,6 +321,8 @@ MonoBehaviour:
   onIsAutosavePausedChangedListeners: []
   allGameStates: []
   singletonInputActionIAId: 0
+  masterChangeRequestIAId: 0
+  confirmedMasterChangeIAId: 0
   masterChangedIAId: 0
   clientJoinedIAId: 0
   clientGotLateJoinerDataIAId: 0
@@ -360,6 +363,12 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7333547669545421152}
     m_Modifications:
+    - target: {fileID: 2436496720751312213, guid: 0ac21e3d0ac31a3fa869e6dbd7216fba,
+        type: 3}
+      propertyPath: programSource
+      value: 
+      objectReference: {fileID: 11400000, guid: 2198d3daa09eca24186cd87102f01cb5,
+        type: 2}
     - target: {fileID: 2436496720751312213, guid: 0ac21e3d0ac31a3fa869e6dbd7216fba,
         type: 3}
       propertyPath: serializedPublicVariablesBytesString
