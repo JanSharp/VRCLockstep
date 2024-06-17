@@ -88,7 +88,7 @@ namespace JanSharp
             // Reactivate the code below for SendSingletonInputAction testing.
             // if (((int)lockstep.currentTick % 50) == 0)
             // {
-            //     lockstep.WriteSmall(lockstep.currentTick);
+            //     lockstep.WriteSmallUInt(lockstep.currentTick);
             //     lockstep.SendSingletonInputAction(singletonTestIAId);
             // }
         }
@@ -129,8 +129,8 @@ namespace JanSharp
         private void SendSetDescriptionIA(uint playerId, string description)
         {
             Debug.Log("<dlt> TestGameState  SendSetDescriptionIA");
-            lockstep.WriteSmall(playerId);
-            lockstep.Write(description);
+            lockstep.WriteSmallUInt(playerId);
+            lockstep.WriteString(description);
             lockstep.SendInputAction(setDescriptionNameIAId);
         }
 
@@ -153,14 +153,14 @@ namespace JanSharp
             Debug.Log("<dlt> TestGameState  SerializeGameState");
 
             int count = allPlayerData.Count;
-            lockstep.WriteSmall((uint)count);
+            lockstep.WriteSmallUInt((uint)count);
             DataList allPlayerDataValues = allPlayerData.GetValues();
             for (int i = 0; i < count; i++)
             {
                 object[] playerData = (object[])allPlayerDataValues[i].Reference;
                 if (!isExport)
-                    lockstep.WriteSmall((uint)playerData[PlayerData_PlayerId]);
-                lockstep.Write((string)playerData[PlayerData_Description]);
+                    lockstep.WriteSmallUInt((uint)playerData[PlayerData_PlayerId]);
+                lockstep.WriteString((string)playerData[PlayerData_Description]);
             }
         }
 

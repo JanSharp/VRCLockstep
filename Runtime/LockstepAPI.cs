@@ -518,43 +518,43 @@ namespace JanSharp
         /// <para>Usable any time (technically).</para>
         /// </summary>
         /// <param name="value">The value to be serialized and written to the byte stream.</param>
-        public abstract void Write(sbyte value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(byte value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(short value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(ushort value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(int value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(uint value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(long value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(ulong value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(float value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(double value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(Vector2 value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(Vector3 value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(Vector4 value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(Quaternion value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(char value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(string value);
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void Write(System.DateTime value);
-        /// <inheritdoc cref="Write(sbyte)"/>
+        public abstract void WriteSByte(sbyte value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteByte(byte value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteShort(short value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteUShort(ushort value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteInt(int value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteUInt(uint value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteLong(long value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteULong(ulong value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteFloat(float value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteDouble(double value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteVector2(Vector2 value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteVector3(Vector3 value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteVector4(Vector4 value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteQuaternion(Quaternion value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteChar(char value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteString(string value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteDateTime(System.DateTime value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
         /// <param name="bytes">The raw bytes to be written to the byte stream. This does not add any length
         /// information to the binary stream, it just takes these bytes as they are.</param>
-        public abstract void Write(byte[] bytes);
+        public abstract void WriteBytes(byte[] bytes);
         /// <summary>
         /// <para>When using <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
         /// or its overload or <see cref="LockstepGameState.SerializeGameState(bool)"/>, in order to pass data
@@ -569,18 +569,18 @@ namespace JanSharp
         /// efficient, both in terms of speed and size.</para>
         /// <para>Usable any time (technically).</para>
         /// </summary>
-        /// <inheritdoc cref="Write(sbyte)"/>
-        public abstract void WriteSmall(short value);
-        /// <inheritdoc cref="WriteSmall(short)"/>
-        public abstract void WriteSmall(ushort value);
-        /// <inheritdoc cref="WriteSmall(short)"/>
-        public abstract void WriteSmall(int value);
-        /// <inheritdoc cref="WriteSmall(short)"/>
-        public abstract void WriteSmall(uint value);
-        /// <inheritdoc cref="WriteSmall(short)"/>
-        public abstract void WriteSmall(long value);
-        /// <inheritdoc cref="WriteSmall(short)"/>
-        public abstract void WriteSmall(ulong value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteSmallShort(short value);
+        /// <inheritdoc cref="WriteSmallShort(short)"/>
+        public abstract void WriteSmallUShort(ushort value);
+        /// <inheritdoc cref="WriteSmallShort(short)"/>
+        public abstract void WriteSmallInt(int value);
+        /// <inheritdoc cref="WriteSmallShort(short)"/>
+        public abstract void WriteSmallUInt(uint value);
+        /// <inheritdoc cref="WriteSmallShort(short)"/>
+        public abstract void WriteSmallLong(long value);
+        /// <inheritdoc cref="WriteSmallShort(short)"/>
+        public abstract void WriteSmallULong(ulong value);
 
         /// <summary>
         /// <para>Inside of input actions or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>
@@ -626,9 +626,9 @@ namespace JanSharp
         public abstract System.DateTime ReadDateTime();
         /// <inheritdoc cref="ReadSByte"/>
         /// <param name="byteCount">The amount of raw bytes to read from the read stream. Very most likely
-        /// used in conjunction with <see cref="Write(byte[])"/>, but again said write function does not write
-        /// any length information to the write stream, therefore it is up to the caller to know the length of
-        /// the data to be read.</param>
+        /// used in conjunction with <see cref="WriteBytes(byte[])"/>, but again said write function does not
+        /// write any length information to the write stream, therefore it is up to the caller to know the
+        /// length of the data to be read.</param>
         public abstract byte[] ReadBytes(int byteCount);
         /// <inheritdoc cref="ReadSByte"/>
         public abstract short ReadSmallShort();

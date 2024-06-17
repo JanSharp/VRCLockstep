@@ -228,7 +228,7 @@ In any serialization context it is expected to simply call Write functions on Lo
 
 In any deserialization context it is expected to call Read* functions on Lockstep in the exact same order as the Write functions to read from an internal stream inside of Lockstep.
 
-So basically to send an `int value` in an input action, `lockstep.Write(value)` in the send function, call `lockstep.SendInputAction(...)`, and `int value = lockstep.ReadInt()` in the input action event.
+So basically to send an `int value` in an input action, `lockstep.WriteInt(value)` in the send function, call `lockstep.SendInputAction(...)`, and `int value = lockstep.ReadInt()` in the input action event.
 
 The Write and Read functions and their data types must match up perfectly.
 
@@ -238,7 +238,7 @@ Since both the write and read functions are interacting with internal streams in
 
 If serialization of lists, dictionaries or similar is required, simply Write the length of the given list/data structure and then Write each value or key value pair or similar n times afterwards. Then deserialization can be achieved by reading the length and having a for loop looping n times reading the contained values of the list/dictionary or otherwise.
 
-(For optimization I would recommend to `WriteSmall(uint)` for lengths of arrays/lists/dictionaries, but `WriteSmall(int)` would also work.)
+(For optimization I would recommend to `WriteSmallUInt(uint)` for lengths of arrays/lists/dictionaries, but `WriteSmallInt(int)` would also work.)
 
 If serialization of other/custom data structures is required, simply unroll them into primitives.
 
@@ -388,11 +388,14 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 TODO: handle the master leaving while a master change request is in progress
 TODO: handle the player leaving which was requested to be the new master
 
+- [ ] more consistently send the client joined IA... though looking at it it's already pretty consistent. I don't know how it was possible for the client joined IA to just not get run on the master, as though it wasn't even received...
 - [ ] maybe handle receiving tick sync data even when we are owner of the tick sync script
 - [x] if candidates are being asked for when we become instance master, either take over that process or reset it and ask again
 - [x] if a candidate has been confirmed to become master, remember that id and wait for them to take master, preventing the local client to become master
 - [x] if the candidate that has been confirmed was already in leftClients then wait a second before cancelling the candidate asking process and run check master change again
 - [x] if the candidate that has been confirmed leaves, wait a second and do the same as above
+- [ ] there's apparently a way for the master client to have the client state "normal"... and it makes no sense... for now I've simply added a log message in the only location where it seems like it would be possible to happen, as well as having handled OnClientJoinedIA running late
+- [ ] maybe ignore player left event for local player
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
 

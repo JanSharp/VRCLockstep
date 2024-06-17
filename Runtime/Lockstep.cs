@@ -758,8 +758,8 @@ namespace JanSharp.Internal
             // Write 2 more values to the stream, then shuffle the data around when copying to the
             // singletonInputActionData such that those 2 new values come first, not last.
             int actualInputActionDataSize = writeStreamSize;
-            WriteSmall(singletonId);
-            WriteSmall(inputActionId);
+            WriteSmallUInt(singletonId);
+            WriteSmallUInt(inputActionId);
             byte[] singletonInputActionData = new byte[writeStreamSize];
             int idsSize = writeStreamSize - actualInputActionDataSize;
             for (int i = 0; i < idsSize; i++)
@@ -1147,7 +1147,7 @@ namespace JanSharp.Internal
                 return false;
             }
 
-            WriteSmall(newMasterClientId);
+            WriteSmallUInt(newMasterClientId);
             SendInputAction(masterChangeRequestIAId);
             return true;
         }
@@ -1565,8 +1565,8 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendResponseForBetterMasterCandidateIA");
             #endif
-            WriteSmall(askingPlayerIdRoundtrip);
-            Write((byte)(isMaster ? 2u : couldBecomeMaster ? 1u : 0u));
+            WriteSmallUInt(askingPlayerIdRoundtrip);
+            WriteByte((byte)(isMaster ? 2u : couldBecomeMaster ? 1u : 0u));
             SendInstantAction(responseForBetterMasterCandidateIAId, doRunLocally: askingPlayerIdRoundtrip == localPlayerId);
         }
 
@@ -1657,8 +1657,8 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendAcceptedMasterCandidateIA");
             #endif
-            WriteSmall(acceptedPlayerId);
-            Write((byte)(force ? 1u : 0u));
+            WriteSmallUInt(acceptedPlayerId);
+            WriteByte((byte)(force ? 1u : 0u));
             SendInstantAction(acceptedMasterCandidateIAId, doRunLocally: true);
         }
 
@@ -1695,7 +1695,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendRefusedMasterCandidateConfirmationIA");
             #endif
-            WriteSmall(askingPlayerIdRoundtrip);
+            WriteSmallUInt(askingPlayerIdRoundtrip);
             SendInstantAction(refusedMasterCandidateConfirmationIAId, doRunLocally: true);
         }
 
@@ -1917,7 +1917,7 @@ namespace JanSharp.Internal
             clientNames = null;
             currentlyNoMaster = true; // When clientStates is null, this must be true.
             latestInputActionIndexByPlayerIdForLJ = null;
-            Write(localPlayerDisplayName);
+            WriteString(localPlayerDisplayName);
             SendInputAction(clientJoinedIAId, forceOneFrameDelay: false);
         }
 
@@ -2016,30 +2016,30 @@ namespace JanSharp.Internal
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
             // Client states game state.
-            WriteSmall((uint)clientStates.Count);
+            WriteSmallUInt((uint)clientStates.Count);
             DataList keys = clientStates.GetKeys();
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken keyToken = keys[i];
-                WriteSmall(keyToken.UInt);
-                Write(clientStates[keyToken].Byte);
-                Write(clientNames[keyToken].String);
-                WriteSmall(GetLatestInputActionIndex(keyToken.UInt));
+                WriteSmallUInt(keyToken.UInt);
+                WriteByte(clientStates[keyToken].Byte);
+                WriteString(clientNames[keyToken].String);
+                WriteSmallUInt(GetLatestInputActionIndex(keyToken.UInt));
             }
 
             // Singleton input actions game state.
-            WriteSmall(nextSingletonId);
-            WriteSmall((uint)singletonInputActions.Count);
+            WriteSmallUInt(nextSingletonId);
+            WriteSmallUInt((uint)singletonInputActions.Count);
             keys = singletonInputActions.GetKeys();
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken keyToken = keys[i];
-                WriteSmall(keyToken.UInt);
+                WriteSmallUInt(keyToken.UInt);
                 object[] inputActionData = (object[])singletonInputActions[keyToken].Reference;
-                WriteSmall((uint)inputActionData[0]);
+                WriteSmallUInt((uint)inputActionData[0]);
                 byte[] singletonInputActionData = (byte[])inputActionData[1];
-                WriteSmall((uint)singletonInputActionData.Length);
-                Write(singletonInputActionData);
+                WriteSmallUInt((uint)singletonInputActionData.Length);
+                WriteBytes(singletonInputActionData);
             }
 
             lateJoinerInputActionSync.SendInputAction(LJInternalGameStatesIAId, writeStream, writeStreamSize);
@@ -2056,7 +2056,7 @@ namespace JanSharp.Internal
                 ResetWriteStream();
             }
 
-            WriteSmall(currentTick);
+            WriteSmallUInt(currentTick);
             lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, writeStream, writeStreamSize);
             ResetWriteStream();
 
@@ -2350,7 +2350,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientLeftIA");
             #endif
-            WriteSmall(playerId);
+            WriteSmallUInt(playerId);
             SendInputAction(clientLeftIAId, forceOneFrameDelay: false);
         }
 
@@ -2390,7 +2390,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientCaughtUpIA");
             #endif
-            Write(isInitialCatchUp ? (byte)1 : (byte)0); // `doRaise`.
+            WriteByte(isInitialCatchUp ? (byte)1 : (byte)0); // `doRaise`.
             SendInputAction(clientCaughtUpIAId, forceOneFrameDelay: false);
         }
 
@@ -2744,30 +2744,30 @@ namespace JanSharp.Internal
 
         public override void ResetWriteStream() => writeStreamSize = 0;
         public override int WriteStreamPosition { get => writeStreamSize; set => writeStreamSize = value; }
-        public override void Write(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(byte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(ushort value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(int value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(uint value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(long value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(ulong value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(float value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(double value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(Vector2 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(Vector3 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(Vector4 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(Quaternion value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
-        public override void Write(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
-        public override void WriteSmall(short value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public override void WriteSmall(ushort value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public override void WriteSmall(int value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public override void WriteSmall(uint value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public override void WriteSmall(long value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
-        public override void WriteSmall(ulong value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSByte(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteByte(byte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteShort(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteUShort(ushort value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteInt(int value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteUInt(uint value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteLong(long value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteULong(ulong value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteFloat(float value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteDouble(double value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteVector2(Vector2 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteVector3(Vector3 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteVector4(Vector4 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteQuaternion(Quaternion value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteChar(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteString(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteDateTime(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteBytes(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
+        public override void WriteSmallShort(short value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmallUShort(ushort value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmallInt(int value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmallUInt(uint value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmallLong(long value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
+        public override void WriteSmallULong(ulong value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
 
         ///<summary>Arrays assigned to this variable always have the exact length of the data that is actually
         ///available to be read, and once assigned to this variable they are immutable.</summary>
@@ -2836,24 +2836,24 @@ namespace JanSharp.Internal
             if (validCount == 0) // No error log here, because this is the only sensible and by definition
                 return null; // acceptable error case in which again by definition null is returned.
 
-            Write(System.DateTime.UtcNow);
-            Write(exportName);
-            WriteSmall(validCount);
+            WriteDateTime(System.DateTime.UtcNow);
+            WriteString(exportName);
+            WriteSmallUInt(validCount);
 
             foreach (LockstepGameState gameState in gameStates)
             {
                 if (!gameState.GameStateSupportsImportExport)
                     continue;
-                Write(gameState.GameStateInternalName);
-                Write(gameState.GameStateDisplayName);
-                WriteSmall(gameState.GameStateDataVersion);
+                WriteString(gameState.GameStateInternalName);
+                WriteString(gameState.GameStateDisplayName);
+                WriteSmallUInt(gameState.GameStateDataVersion);
 
                 int sizePosition = writeStreamSize;
                 writeStreamSize += 4;
                 gameState.SerializeGameState(true);
                 int stopPosition = writeStreamSize;
                 writeStreamSize = sizePosition;
-                Write(stopPosition - sizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
+                WriteInt(stopPosition - sizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
                 writeStreamSize = stopPosition;
             }
 
@@ -2864,7 +2864,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             long crcMs = exportStopWatch.ElapsedMilliseconds - crcStartMs;
             #endif
-            Write(crc);
+            WriteUInt(crc);
 
             byte[] exportedData = new byte[writeStreamSize];
             for (int i = 0; i < writeStreamSize; i++)
@@ -3063,11 +3063,11 @@ namespace JanSharp.Internal
                 Debug.LogError("[Lockstep] Attempt to SendImportStartIA with 0 game states to import, ignoring.");
                 return;
             }
-            Write(exportDate);
-            Write(exportName);
-            WriteSmall((uint)importedGSs.Length);
+            WriteDateTime(exportDate);
+            WriteString(exportName);
+            WriteSmallUInt((uint)importedGSs.Length);
             foreach (object[] importedGS in importedGSs)
-                WriteSmall((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
+                WriteSmallUInt((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
             importedGSsToSend = importedGSs;
             SendInputAction(importStartIAId);
         }
@@ -3109,9 +3109,9 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendImportGameStateIA");
             #endif
-            WriteSmall((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
-            WriteSmall(LockstepImportedGS.GetDataVersion(importedGS));
-            Write(LockstepImportedGS.GetBinaryData(importedGS));
+            WriteSmallUInt((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
+            WriteSmallUInt(LockstepImportedGS.GetDataVersion(importedGS));
+            WriteBytes(LockstepImportedGS.GetBinaryData(importedGS));
             SendInputAction(importGameStateIAId);
         }
 
