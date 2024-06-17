@@ -874,7 +874,8 @@ namespace JanSharp.Internal
                 // No longer guaranteed to be the first and single client in the instance, therefore run
                 // through the usual CheckMasterChange process.
                 CheckMasterChange();
-                return;
+                if (isMaster) // If we didn't become master immediately, tell any potential existing master that we exist.
+                    return;
             }
 
             ignoreLocalInputActions = true;
