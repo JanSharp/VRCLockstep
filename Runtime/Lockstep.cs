@@ -1107,6 +1107,8 @@ namespace JanSharp.Internal
             masterPlayerId = newMasterId;
             if (ArrList.Contains(ref leftClients, ref leftClientsCount, masterPlayerId))
                 SetMasterLeftFlag();
+            else
+                currentlyNoMaster = false;
         }
 
         private void CheckIfRequestedMasterClientLeft(uint leftClientId)
