@@ -1163,6 +1163,8 @@ namespace JanSharp.Internal
                 requestedMasterClientId = 0u; // Just to be clean.
                 return;
             }
+            if (requestedMasterClientId == masterPlayerId) // Multiple requests were sent by the same player
+                return; // in quick succession, ignore the duplicates.
             masterChangeRequestInProgress = true;
             masterRequestManagingMasterId = masterPlayerId;
 
