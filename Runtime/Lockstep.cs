@@ -1929,13 +1929,17 @@ namespace JanSharp.Internal
             #endif
             uint playerId = ReadSmallUInt();
             string playerName = ReadString();
-            // Using set value, because the given player may already have a state,
-            // because it is valid for the client joined input action to be sent
-            // multiple times. And whenever it is sent, it means the client is waiting
-            // for late joiner sync.
             DataToken keyToken = playerId;
-            clientStates.SetValue(keyToken, (byte)ClientState.WaitingForLateJoinerSync);
-            clientNames.SetValue(keyToken, playerName);
+            if (clientStates.TryGetValue(keyToken, out DataToken currentState))
+            {
+                if ((ClientState)currentState.Byte != ClientState.WaitingForLateJoinerSync)
+                    return;
+            }
+            else
+            {
+                clientStates.Add(keyToken, (byte)ClientState.WaitingForLateJoinerSync);
+                clientNames.Add(keyToken, playerName);
+            }
 
             if (isMaster)
             {
@@ -2316,6 +2320,9 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnClientGotLateJoinerDataIA");
             #endif
             uint playerId = ReadSmallUInt();
+            if (clientStates[playerId].Byte == (byte)ClientState.Master)
+                Debug.LogError("[Lockstep] Impossible, a client started catching up while already being master, "
+                    + "however the got LJ data IA gets sent before the master change check happens.");
             clientStates[playerId] = (byte)ClientState.CatchingUp;
             CheckIfLateJoinerSyncShouldStop();
             RaiseOnClientJoined(playerId);
