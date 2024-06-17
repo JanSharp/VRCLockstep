@@ -1943,7 +1943,7 @@ namespace JanSharp.Internal
                 clientsJoinedInTheLastFiveMinutes++;
                 SendCustomEventDelayedSeconds(nameof(PlayerJoinedFiveMinutesAgo), 300f);
                 flagForLateJoinerSyncSentCount++;
-                float lateJoinerSyncDelay = Mathf.Min(30f, 3f * (float)clientsJoinedInTheLastFiveMinutes);
+                float lateJoinerSyncDelay = Mathf.Min(8f, 2.5f + 0.5f * (float)clientsJoinedInTheLastFiveMinutes);
                 SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), lateJoinerSyncDelay);
             }
         }
