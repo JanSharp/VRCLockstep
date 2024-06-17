@@ -380,13 +380,9 @@ TODO: ensure that on build handler validation for lock step events happens every
 TODO: on nth tick? game state safe.
 TODO: raise event delayed by ticks, game state safe.
 TODO: validate input action id fields being serialized by unity
-TODO: when becoming master, associate all input actions without a tick association with the first mutable tick. I think that's all that needs to happen
 TODO: use the static Array.Copy wherever possible, because unfortunately the instance function CopyTo doesn't have the majority of the overloads
-TODO: handle it no longer being the oldest player that'll become the new master
 TODO: rename OnMasterChanged to OnMasterClientChanged to prevent potential naming collisions with other systems
 TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions with other systems
-TODO: handle the master leaving while a master change request is in progress
-TODO: handle the player leaving which was requested to be the new master
 
 - [ ] more consistently send the client joined IA... though looking at it it's already pretty consistent. I don't know how it was possible for the client joined IA to just not get run on the master, as though it wasn't even received...
 - [ ] maybe handle receiving tick sync data even when we are owner of the tick sync script
@@ -398,31 +394,3 @@ TODO: handle the player leaving which was requested to be the new master
 - [ ] maybe ignore player left event for local player
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
-
-other - send request
-master - run request, save some values, set flag for confirmation
-other - run request, save some values
-master - reach end of a mutable tick, send confirmation
-master - run confirmation, give up responsibility of running ticks
-other - run confirmation, become master
-
-other - leaves
-master - OnPlayerLeft, save in leftPlayers
-master - ProcessLeftPlayers, send OnClientLeft, clear leftPlayers
-master - OnClientLeft, remove from clientStates
-
-master - leaves
-other - OnPlayerLeft
-
-
-
-other - send request
-master - run request, save some values, set flag for confirmation
-other - run request, save some values
-  other - leaves
-master - reach end of a mutable tick, send confirmation
-  master - OnPlayerLeft, save in leftPlayers
-  master - ProcessLeftPlayers, send OnClientLeft, clear leftPlayers
-  master - OnClientLeft, remove from clientStates
-master - run confirmation, give up responsibility of running ticks
-other - run confirmation, become master
