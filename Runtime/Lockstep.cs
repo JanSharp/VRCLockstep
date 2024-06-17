@@ -1882,7 +1882,6 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendMasterChangedIA");
             #endif
-            WriteSmall(localPlayerId);
             SendInputAction(masterChangedIAId, forceOneFrameDelay: false);
         }
 
@@ -1893,8 +1892,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnMasterChangedIA");
             #endif
-            uint playerId = ReadSmallUInt();
-            UpdateClientStatesForNewMaster(playerId);
+            UpdateClientStatesForNewMaster(sendingPlayerId);
         }
 
         private void SendClientJoinedIA()
@@ -1909,14 +1907,13 @@ namespace JanSharp.Internal
                     + "prevent this from happening.");
                 return;
             }
-            WriteSmall(localPlayerId);
-            Write(localPlayerDisplayName);
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
             clientNames = null;
             currentlyNoMaster = true; // When clientStates is null, this must be true.
             latestInputActionIndexByPlayerIdForLJ = null;
+            Write(localPlayerDisplayName);
             SendInputAction(clientJoinedIAId, forceOneFrameDelay: false);
         }
 
@@ -1927,9 +1924,8 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientJoinedIA");
             #endif
-            uint playerId = ReadSmallUInt();
             string playerName = ReadString();
-            DataToken keyToken = playerId;
+            DataToken keyToken = sendingPlayerId;
             if (clientStates.TryGetValue(keyToken, out DataToken currentState))
             {
                 if ((ClientState)currentState.Byte != ClientState.WaitingForLateJoinerSync)
@@ -2308,7 +2304,6 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientGotLateJoinerDataIA");
             #endif
-            WriteSmall(localPlayerId);
             SendInputAction(clientGotLateJoinerDataIAId, forceOneFrameDelay: false);
         }
 
@@ -2319,13 +2314,12 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientGotLateJoinerDataIA");
             #endif
-            uint playerId = ReadSmallUInt();
-            if (clientStates[playerId].Byte == (byte)ClientState.Master)
+            if (clientStates[sendingPlayerId].Byte == (byte)ClientState.Master)
                 Debug.LogError("[Lockstep] Impossible, a client started catching up while already being master, "
                     + "however the got LJ data IA gets sent before the master change check happens.");
-            clientStates[playerId] = (byte)ClientState.CatchingUp;
+            clientStates[sendingPlayerId] = (byte)ClientState.CatchingUp;
             CheckIfLateJoinerSyncShouldStop();
-            RaiseOnClientJoined(playerId);
+            RaiseOnClientJoined(sendingPlayerId);
         }
 
         private void SendClientLeftIA(uint playerId)
@@ -2373,7 +2367,6 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientCaughtUpIA");
             #endif
-            WriteSmall(localPlayerId);
             Write(isInitialCatchUp ? (byte)1 : (byte)0); // `doRaise`.
             SendInputAction(clientCaughtUpIAId, forceOneFrameDelay: false);
         }
@@ -2385,12 +2378,11 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientCaughtUpIA");
             #endif
-            uint playerId = ReadSmallUInt();
             byte doRaise = ReadByte();
-            if (clientStates[playerId].Byte != (byte)ClientState.Master)
-                clientStates[playerId] = (byte)ClientState.Normal;
+            if (clientStates[sendingPlayerId].Byte != (byte)ClientState.Master)
+                clientStates[sendingPlayerId] = (byte)ClientState.Normal;
             if (doRaise != 0)
-                RaiseOnClientCaughtUp(playerId);
+                RaiseOnClientCaughtUp(sendingPlayerId);
         }
 
         private bool IsInstantActionIAId(uint inputActionId)
