@@ -919,6 +919,8 @@ namespace JanSharp.Internal
                 someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
                 SendCustomEventDelayedSeconds(nameof(SomeoneLeftWhileWeWereWaitingForLJSync), 2.5f);
                 // Note that the delay should be > than the delay for the call to OnLocalInputActionSyncPlayerAssignedDelayed.
+                if (!ArrList.Contains(ref leftClients, ref leftClientsCount, playerId)) // Ignore duplicate left events.
+                    ArrList.Add(ref leftClients, ref leftClientsCount, playerId); // Remember everything until we actually get clientStates.
                 return;
             }
 
@@ -1004,6 +1006,7 @@ namespace JanSharp.Internal
             DataToken keyToken = localPlayerId;
             clientStates.Add(keyToken, (byte)ClientState.Master);
             clientNames.Add(keyToken, localPlayerDisplayName);
+            ArrList.Clear(ref leftClients, ref leftClientsCount);
             masterPlayerId = localPlayerId;
             lateJoinerInputActionSync.lockstepIsMaster = true;
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
@@ -2087,6 +2090,8 @@ namespace JanSharp.Internal
                     SetMasterPlayerId(playerId);
             }
 
+            RemoveClientsFromLeftClientsWhichAreNotInClientStates();
+
             singletonInputActions.Clear();
             nextSingletonId = ReadSmallUInt();
             count = (int)ReadSmallUInt();
@@ -2096,6 +2101,23 @@ namespace JanSharp.Internal
                 uint inputActionId = ReadSmallUInt();
                 byte[] singletonInputActionData = ReadBytes((int)ReadSmallUInt());
                 singletonInputActions.Add(singletonId, new DataToken(new object[] { inputActionId, singletonInputActionData }));
+            }
+        }
+
+        private void RemoveClientsFromLeftClientsWhichAreNotInClientStates()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RemoveClientsFromLeftClientsWhichAreNotInClientStates");
+            #endif
+            int i = 0;
+            int newI = 0;
+            while (i < leftClientsCount)
+            {
+                if (clientStates.ContainsKey(leftClients[i]))
+                    leftClients[newI++] = leftClients[i];
+                else
+                    leftClientsCount--;
+                i++;
             }
         }
 
