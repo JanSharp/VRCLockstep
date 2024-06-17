@@ -59,6 +59,8 @@ namespace JanSharp.Internal
         private InputActionSync inputActionSyncForLocalPlayer;
         /// <summary>
         /// <para>**Internal Game State**</para>
+        /// <para>When <see cref="clientStates"/> is not <see langword="null"/> then this is guaranteed to be
+        /// the client id which has the <see cref="ClientState.Master"/> state.</para>
         /// </summary>
         private uint masterPlayerId;
         /// <summary>
@@ -97,7 +99,16 @@ namespace JanSharp.Internal
         public override bool IsSinglePlayer => isSinglePlayer;
         public override bool CanSendInputActions => !ignoreLocalInputActions;
 
-        private bool isAskingForBetterMasterCandidates = false;
+        /// <summary>
+        /// <para><see langword="true"/> on a single client, the asking client.</para>
+        /// </summary>
+        private bool isAskingForMasterCandidates = false;
+        /// <summary>
+        /// <para><see langword="true"/> on every other client, not the asking client.</para>
+        /// <para>Clients which just joined may also have this set to <see langword="false"/>.</para>
+        /// </summary>
+        private bool someoneIsAskingForMasterCandidates = false;
+        private uint clientIdAskingForCandidates;
         /// <summary>
         /// <para>uint playerId => bool true</para>
         /// <para>Basically just a hash set.</para>
@@ -111,6 +122,8 @@ namespace JanSharp.Internal
         /// </summary>
         private uint[] acceptingCandidates = new uint[ArrList.MinCapacity];
         private int acceptingCandidatesCount = 0;
+        private bool acceptForcedCandidate = false;
+        private uint acceptForcedCandidateFromPlayerId;
 
         private ulong unrecoverableStateDueToUniqueId = 0uL;
 
@@ -242,8 +255,11 @@ namespace JanSharp.Internal
         /// </summary>
         private DataDictionary latestInputActionIndexByPlayerIdForLJ;
 
-        ///<summary><para>**Internal Game State**</para>
-        ///<para>uint playerId => byte ClientState</para></summary>
+        /// <summary>
+        /// <para>**Internal Game State**</para>
+        /// <para>uint playerId => byte ClientState</para>
+        /// <para>Guaranteed to always contain exactly 1 client with the <see cref="ClientState.Master"/> state.</para>
+        /// </summary>
         private DataDictionary clientStates = null;
         ///<summary><para>**Internal Game State**</para>
         ///<para>uint playerId => string playerDisplayName</para></summary>
@@ -255,7 +271,13 @@ namespace JanSharp.Internal
         // non game state
         private uint[] leftClients = new uint[ArrList.MinCapacity];
         private int leftClientsCount = 0;
-        // This flag ultimately indicates that there is no client with the Master state in the clientStates game state
+        /// <summary>
+        /// <para>Must be <see langword="true"/> when <see cref="clientStates"/> is <see langword="null"/>.</para>
+        /// <para>Otherwise is true when the <see cref="masterPlayerId"/> has left, aka when said id is in
+        /// <see cref="leftClients"/>.</para>
+        /// <para>Hilariously it is possible for <see cref="isMaster"/> to be <see langword="true"/> while
+        /// this is still <see langword="false"/>. Incredibly rare, but possible.</para>
+        /// </summary>
         private bool currentlyNoMaster = true;
 
         private int clientsJoinedInTheLastFiveMinutes = 0;
@@ -268,7 +290,6 @@ namespace JanSharp.Internal
 
         private int flagForLateJoinerSyncSentCount = 0;
         private int processLeftPlayersSentCount = 0;
-        private int checkOtherMasterCandidatesSentCount = 0;
         private int someoneLeftWhileWeWereWaitingForLJSyncSentCount = 0;
         private bool waitingForCandidatesLoopRunning = false;
 
@@ -308,11 +329,14 @@ namespace JanSharp.Internal
         private ulong sendingUniqueId;
         public override ulong SendingUniqueId => sendingUniqueId;
 
-        // All of these 4 are part of the game state, however not part of LJ data because LJ data won't be
-        // sent while masterChangeRequestInProcess is true.
+        // 4 of these are part of the game state, however not part of LJ data because LJ data won't be sent
+        // while masterChangeRequestInProcess is true.
         private bool masterChangeRequestInProgress = false;
         private uint masterRequestManagingMasterId = 0u;
         private uint requestedMasterClientId = 0u;
+        /// <summary>
+        /// Not part of the game state.
+        /// </summary>
         private bool sendMasterChangeConfirmationInFirstMutableTick = false;
         private bool finishMasterChangeProcessAtStartOfTick = false;
 
@@ -845,7 +869,7 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (localPlayer.isMaster)
+            if (Networking.IsMaster)
             {
                 // No longer guaranteed to be the first and single client in the instance, therefore run
                 // through the usual CheckMasterChange process.
@@ -873,17 +897,22 @@ namespace JanSharp.Internal
 
             if (isMaster)
             {
-                ArrList.Add(ref leftClients, ref leftClientsCount, playerId);
+                if (masterChangeRequestInProgress && playerId == requestedMasterClientId)
+                {
+                    SendCancelledMasterChangeIA();
+                    sendMasterChangeConfirmationInFirstMutableTick = false; // Prevent sending the confirmation.
+                }
+                AddToLeftClients(playerId);
                 processLeftPlayersSentCount++;
                 SendCustomEventDelayedSeconds(nameof(ProcessLeftPlayers), 1f);
                 return;
             }
 
-            if (clientStates == null) // Implies `isWaitingAfterJustJoining || isWaitingForLateJoinerSync`
+            if (clientStates == null) // Implies `isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync`
             {
-                if (!(isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync))
+                if (!isWaitingToSendClientJoinedIA && !isWaitingForLateJoinerSync)
                     Debug.LogError("[Lockstep] clientStates should be impossible to be null when "
-                        + "isWaitingAfterJustJoining and isWaitingForLateJoinerSync are both false.");
+                        + "isWaitingToSendClientJoinedIA and isWaitingForLateJoinerSync are both false.");
                 // Still waiting for late joiner sync, so who knows,
                 // maybe this client will become the new master.
                 someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
@@ -892,27 +921,19 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (!clientStates.TryGetValue(playerId, out DataToken clientStateToken))
-            {
-                // Already removed... was it the master that got removed?
-                DataList allStates = clientStates.GetValues();
-                bool foundMaster = false;
-                for (int i = 0; i < allStates.Count; i++)
-                {
-                    // TODO: this logic no longer makes sense since there is now a guarantee that there is always a master in client states.
-                    if ((ClientState)allStates[i].Byte == ClientState.Master)
-                    {
-                        foundMaster = true;
-                        break;
-                    }
-                }
-                if (!foundMaster)
-                    SetMasterLeftFlag();
-                return;
-            }
+            AddToLeftClients(playerId);
+        }
 
+        private void AddToLeftClients(uint playerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AddToLeftClients");
+            #endif
+            if (!clientStates.ContainsKey(playerId) // If they're not in clientStates then we simply don't care.
+                || ArrList.Contains(ref leftClients, ref leftClientsCount, playerId))
+                return; // ^ Detect and ignore player left events (aka major trust issues).
             ArrList.Add(ref leftClients, ref leftClientsCount, playerId);
-            if ((ClientState)clientStateToken.Byte == ClientState.Master)
+            if (playerId == masterPlayerId)
                 SetMasterLeftFlag();
         }
 
@@ -945,7 +966,7 @@ namespace JanSharp.Internal
                 // clientStates is still null... so maybe this client should be taking charge.
                 CheckMasterChange();
 
-                // Nope, not taking charge, so some other client is not giving us late joiner data.
+                // Nope, did not take charge, so some other client is not giving us late joiner data.
                 if (!isMaster)
                 {
                     // Tell that client that we exist.
@@ -1022,7 +1043,7 @@ namespace JanSharp.Internal
                 UpdateClientStatesForNewMaster(newMasterId);
             }
             else if (localPlayerId == newMasterId)
-                BecomeMasterGeneric(); // Calls UpdateClientStatesForNewMaster in the middle.
+                BecomeNewMaster(); // Calls UpdateClientStatesForNewMaster in the middle.
             else
                 UpdateClientStatesForNewMaster(newMasterId);
         }
@@ -1059,7 +1080,7 @@ namespace JanSharp.Internal
             }
 
             uint oldMasterPlayerId = masterPlayerId;
-            masterPlayerId = newMasterId;
+            SetMasterPlayerId(newMasterId);
 
             // If a master change happened through any means, abort master change request if it is in progress.
             masterChangeRequestInProgress = false;
@@ -1068,10 +1089,34 @@ namespace JanSharp.Internal
             sendMasterChangeConfirmationInFirstMutableTick = false;
             finishMasterChangeProcessAtStartOfTick = false;
 
+            someoneIsAskingForMasterCandidates = false;
+            acceptForcedCandidate = false;
+            StopWaitingForCandidates();
+
             if (oldMasterHasAState)
                 clientStates[oldMasterPlayerId] = (byte)ClientState.Normal;
             clientStates[masterPlayerId] = (byte)ClientState.Master;
             RaiseOnMasterChanged(oldMasterPlayerId);
+        }
+
+        private void SetMasterPlayerId(uint newMasterId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SetMasterPlayerId");
+            #endif
+            masterPlayerId = newMasterId;
+            if (ArrList.Contains(ref leftClients, ref leftClientsCount, masterPlayerId))
+                SetMasterLeftFlag();
+        }
+
+        private void CheckIfRequestedMasterClientLeft(uint leftClientId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  CheckIfRequestedMasterClientLeft");
+            #endif
+            if (!masterChangeRequestInProgress || leftClientId != requestedMasterClientId)
+                return;
+            CompletelyCancelMasterChangeRequest();
         }
 
         public override bool RequestLocalClientToBecomeMaster()
@@ -1110,11 +1155,22 @@ namespace JanSharp.Internal
             #endif
             if (masterChangeRequestInProgress) // Already in process, ignore another request.
                 return;
+            requestedMasterClientId = ReadSmallUInt();
+            if (!clientStates.ContainsKey(requestedMasterClientId)) // The client left already, ignore it.
+            { // Cannot use leftClients for a check here since that is not part of the game state.
+                requestedMasterClientId = 0u; // Just to be clean.
+                return;
+            }
             masterChangeRequestInProgress = true;
             masterRequestManagingMasterId = masterPlayerId;
-            requestedMasterClientId = ReadSmallUInt();
+
             if (!isMaster)
                 return;
+            if (ArrList.Contains(ref leftClients, ref leftClientsCount, requestedMasterClientId))
+            {
+                SendCancelledMasterChangeIA();
+                return;
+            }
             sendMasterChangeConfirmationInFirstMutableTick = true;
         }
 
@@ -1133,7 +1189,58 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnConfirmedMasterChangeIA");
             #endif
+            if (!clientStates.ContainsKey(requestedMasterClientId)) // The client left already, cannot change master.
+            { // Cannot use leftClients for a check here since that is not part of the game state.
+                CompletelyCancelMasterChangeRequest();
+                return;
+            }
             finishMasterChangeProcessAtStartOfTick = true;
+        }
+
+        private void SendCancelledMasterChangeIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendCancelledMasterChangeIA");
+            #endif
+            SendInputAction(cancelledMasterChangeIAId);
+        }
+
+        [SerializeField] [HideInInspector] private uint cancelledMasterChangeIAId;
+        [LockstepInputAction(nameof(cancelledMasterChangeIAId))]
+        public void OnCancelledMasterChangeIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnCancelledMasterChangeIA");
+            #endif
+            CompletelyCancelMasterChangeRequest();
+        }
+
+        /// <summary>
+        /// <para>Modifies the game state.</para>
+        /// <para>Also resets <see cref="sendMasterChangeConfirmationInFirstMutableTick"/> even though that is
+        /// not part of the game state as it'll only matter on the master.</para>
+        /// </summary>
+        private void CompletelyCancelMasterChangeRequest()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  CompletelyCancelMasterChangeRequest");
+            #endif
+            masterChangeRequestInProgress = false;
+            masterRequestManagingMasterId = 0u;
+            requestedMasterClientId = 0u;
+            finishMasterChangeProcessAtStartOfTick = false;
+            sendMasterChangeConfirmationInFirstMutableTick = false; // Only matters if this is the master client.
+        }
+
+        private DataDictionary GetLeftClientsLut()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetLeftClientsLut");
+            #endif
+            DataDictionary lut = new DataDictionary();
+            for (int i = 0; i < leftClientsCount; i++)
+                lut.Add(leftClients[i], true);
+            return lut;
         }
 
         private bool IsAnyClientWaitingForLateJoinerSync()
@@ -1141,53 +1248,14 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  IsAnyClientWaitingForLateJoinerSync");
             #endif
-            DataList allStates = clientStates.GetValues();
-            for (int i = 0; i < allStates.Count; i++)
-                if ((ClientState)allStates[i].Byte == ClientState.WaitingForLateJoinerSync)
-                    return true;
-            return false;
-        }
-
-        private bool IsAnyClientNotWaitingForLateJoinerSyncAndNotLeft()
-        {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  IsAnyClientNotWaitingForLateJoinerSyncAndNotLeft");
-            #endif
+            DataDictionary leftClientsLut = GetLeftClientsLut();
             DataList allKeys = clientStates.GetKeys();
             DataList allStates = clientStates.GetValues();
             for (int i = 0; i < allStates.Count; i++)
-                if ((ClientState)allStates[i].Byte != ClientState.WaitingForLateJoinerSync
-                    && !ArrList.Contains(ref leftClients, ref leftClientsCount, allKeys[i].UInt))
+                if ((ClientState)allStates[i].Byte == ClientState.WaitingForLateJoinerSync
+                    && !leftClientsLut.ContainsKey(allKeys[i].UInt))
                     return true;
             return false;
-        }
-
-        public void CheckOtherMasterCandidates()
-        {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  CheckOtherMasterCandidates");
-            #endif
-            if ((--checkOtherMasterCandidatesSentCount) != 0)
-                return;
-
-            DataList allPlayerIds = clientStates.GetKeys();
-            for (int i = 0; i < allPlayerIds.Count; i++)
-            {
-                DataToken playerIdToken = allPlayerIds[i];
-                if ((ClientState)clientStates[playerIdToken].Byte == ClientState.WaitingForLateJoinerSync)
-                    continue;
-                uint playerId = playerIdToken.UInt;
-                VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)playerId);
-                if (player == null || !player.IsValid())
-                    continue;
-                SendAcceptedMasterCandidateIA(playerId);
-                return;
-            }
-            // Nope, no other player may become master, so we take it and completely reset.
-            clientStates = null;
-            clientNames = null;
-            latestInputActionIndexByPlayerIdForLJ = null;
-            CheckMasterChange();
         }
 
         private void FactoryReset()
@@ -1217,6 +1285,9 @@ namespace JanSharp.Internal
             // Only ever used (on the master) once initializedEnoughForImportExport is true.
             // byteCountForLatestLJSync = -1;
 
+            // Not needed to call CompletelyCancelMasterChangeRequest since it would require input actions to
+            // run before FactoryReset gets called which itself would be invalid.
+
             tickSync.ClearInputActionsToRun();
             ForgetAboutUnprocessedLJSerializedGameSates();
             ForgetAboutLeftPlayers();
@@ -1226,7 +1297,9 @@ namespace JanSharp.Internal
             firstMutableTick = 0u; // Technically not needed, but it makes a lot of sense to be here.
             latestInputActionIndexByPlayerIdForLJ = null;
             currentlyNoMaster = true;
-            StopWaitingForCandidatesAsAMasterAlreadyExists();
+            StopWaitingForCandidates();
+            someoneIsAskingForMasterCandidates = false;
+            acceptForcedCandidate = false;
             // The times where ignoreLocalInputActions would be false, FactoryReset should no longer get called.
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = true;
@@ -1239,7 +1312,7 @@ namespace JanSharp.Internal
             lateJoinerInputActionSync.gameObject.SetActive(true);
         }
 
-        private bool CouldBecomeMaster()
+        private bool CouldTakeOverMaster()
         {
             return !(isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync);
         }
@@ -1259,7 +1332,7 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (isMaster || !currentlyNoMaster || !Networking.IsMaster || checkOtherMasterCandidatesSentCount != 0)
+            if (isMaster || !currentlyNoMaster || !Networking.IsMaster)
                 return;
 
             if (IsProcessingLJGameStates)
@@ -1268,30 +1341,39 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (!CouldBecomeMaster())
+            if (!CouldTakeOverMaster())
             {
-                if (clientStates != null && IsAnyClientNotWaitingForLateJoinerSyncAndNotLeft())
-                {
-                    checkOtherMasterCandidatesSentCount++;
-                    SendCustomEventDelayedSeconds(nameof(CheckOtherMasterCandidates), 1f);
-                    return;
-                }
-                // The master left before finishing sending late joiner data and we are now the new master
-                // without all the data. There is no longer a guarantee that the new master (which is the
+                // The master left before finishing sending late joiner data and we are now the new VRC master
+                // without all the data. There is no longer a guarantee that the new VRC master (which is the
                 // local client in this case) is the one which has been in the instance the longest. Therefore
                 // we must now ask all existing clients to tell us if they have the previous game state. If
                 // yes then they should become master, otherwise a factory reset is required.
+                // Cannot look through clientStates and ask an already known client to become master, because
+                // that introduces race conditions where ultimately multiple clients could become master at
+                // the same time (for example when this client instantly leaves after telling another one to
+                // become master, and then the new VRC instance master also becomes master along side the one
+                // that was told to become master by the previous VRC instance master.)
                 AskForBetterMasterCandidate();
                 return;
             }
 
-            BecomeMasterGeneric();
+            if (someoneIsAskingForMasterCandidates)
+            {
+                // We have no way of knowing if that other client had sent a confirmation to some client which
+                // we may not have received yet. Waiting is not an option since that is a race condition.
+                // So the only thing we can do is talk with every single client in the instance before
+                // anybody - including the local client - may become master.
+                AskForBetterMasterCandidate();
+                return;
+            }
+
+            BecomeNewMaster();
         }
 
-        private void BecomeMasterGeneric()
+        private void BecomeNewMaster()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  BecomeMasterGeneric - currentTick: {currentTick}, lastRunnableTick: {lastRunnableTick}");
+            Debug.Log($"[LockstepDebug] Lockstep  BecomeNewMaster - currentTick: {currentTick}, lastRunnableTick: {lastRunnableTick}");
             #endif
 
             isMaster = true; // currentlyNoMaster will be set to false in OnMasterChangedIA later.
@@ -1340,9 +1422,12 @@ namespace JanSharp.Internal
                 // client states.
             }
 
+            if (masterChangeRequestInProgress)
+                SendCancelledMasterChangeIA();
+
             processLeftPlayersSentCount++;
             ProcessLeftPlayers();
-            if (isSinglePlayer) // In case it was already single player before BecomeMasterGeneric ran.
+            if (isSinglePlayer) // In case it was already single player before BecomeNewMaster ran.
                 InstantlyRunInputActionsWaitingToBeSent();
         }
 
@@ -1363,7 +1448,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  WaitingForCandidatesLoop");
             #endif
-            if (!isAskingForBetterMasterCandidates)
+            if (!isAskingForMasterCandidates)
             {
                 waitingForCandidatesLoopRunning = false;
                 return;
@@ -1378,15 +1463,9 @@ namespace JanSharp.Internal
                     toKeep.Add(player.playerId, true);
             notYetRespondedCandidates = toKeep;
 
-            if (notYetRespondedCandidates.Count == 0)
-            {
-                AllCandidatesHaveResponded();
-                return;
-            }
+            if (notYetRespondedCandidates.Count == 0) // Even still continue running this loop, until a candidate
+                AllCandidatesHaveResponded(); // actually becomes master. This handles poorly timed leaves.
 
-            // 2 seconds instead of like 1 or 0.5 because we're now waiting on some client which probably lost
-            // internet connection for a bit and they may either leave or respond late. We don't know but we
-            // can't rush them to respond so just wait patiently for something to happen.
             SendCustomEventDelayedSeconds(nameof(WaitingForCandidatesLoop), 2f);
         }
 
@@ -1417,38 +1496,42 @@ namespace JanSharp.Internal
 
             if (TryGetMasterCandidate(out uint candidateClientId))
             {
+                StartWaitingForCandidatesLoop();
                 // Oh hey the local client had already asked previously and there's still a potential
                 // candidate in the instance, ask that client to become master.
-                SendAcceptedMasterCandidateIA(candidateClientId);
+                SendAcceptedMasterCandidateIA(candidateClientId, force: false);
                 return;
             }
 
-            isAskingForBetterMasterCandidates = true;
+            if (isAskingForMasterCandidates)
+                return;
+
+            // Even if someone else was already asking, we cannot take over the process due to race conditions,
+            // so just restart from the beginning.
+            someoneIsAskingForMasterCandidates = false;
+            acceptForcedCandidate = false;
+
+            isAskingForMasterCandidates = true;
             notYetRespondedCandidates = new DataDictionary();
             VRCPlayerApi[] players = new VRCPlayerApi[VRCPlayerApi.GetPlayerCount()];
-            VRCPlayerApi.GetPlayers(players);
+            VRCPlayerApi.GetPlayers(players); // Includes local player.
             foreach (VRCPlayerApi player in players)
                 if (player != null && player.IsValid()) // Severe trust issues.
                     notYetRespondedCandidates.Add((uint)player.playerId, true);
             ArrList.Clear(ref acceptingCandidates, ref acceptingCandidatesCount);
 
-            if (notYetRespondedCandidates.Count == 0) // Particularly important for the true initial master.
-            {
-                AllCandidatesHaveResponded();
-                return;
-            }
-
             StartWaitingForCandidatesLoop();
-            SendAskForBetterMasterCandidateIA(localPlayerId);
+            SendAskForBetterMasterCandidateIA();
         }
 
-        private void SendAskForBetterMasterCandidateIA(uint askingPlayerId)
+        private void SendAskForBetterMasterCandidateIA()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendAskForBetterMasterCandidateIA");
             #endif
-            WriteSmall(askingPlayerId);
-            SendInstantAction(askForBetterMasterCandidateIAId);
+            // If someone was already asking for candidates when we became instance master, then the local
+            // client may in fact be able to become master and yet still have to go through this process.
+            SendInstantAction(askForBetterMasterCandidateIAId, doRunLocally: true);
         }
 
         [SerializeField] [HideInInspector] private uint askForBetterMasterCandidateIAId;
@@ -1458,19 +1541,25 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnAskForBetterMasterCandidateIA");
             #endif
-            uint askingPlayerId = ReadSmallUInt();
-            SendResponseForBetterMasterCandidateIA(askingPlayerId, localPlayerId, CouldBecomeMaster());
+            if (isAskingForMasterCandidates && sendingPlayerId != localPlayerId)
+            {
+                Debug.LogError("[Lockstep] Impossible because for this to happen there would have to be 2 "
+                    + "VRChat instance masters simultaneously.");
+                return;
+            }
+            someoneIsAskingForMasterCandidates = true;
+            clientIdAskingForCandidates = sendingPlayerId;
+            SendResponseForBetterMasterCandidateIA(sendingPlayerId, CouldTakeOverMaster());
         }
 
-        private void SendResponseForBetterMasterCandidateIA(uint askingPlayerIdRoundtrip, uint playerId, bool couldBecomeMaster)
+        private void SendResponseForBetterMasterCandidateIA(uint askingPlayerIdRoundtrip, bool couldBecomeMaster)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendResponseForBetterMasterCandidateIA");
             #endif
             WriteSmall(askingPlayerIdRoundtrip);
-            WriteSmall(playerId);
-            Write((byte)(isMaster ? 0x2u : couldBecomeMaster ? 1u : 0u));
-            SendInstantAction(responseForBetterMasterCandidateIAId);
+            Write((byte)(isMaster ? 2u : couldBecomeMaster ? 1u : 0u));
+            SendInstantAction(responseForBetterMasterCandidateIAId, doRunLocally: askingPlayerIdRoundtrip == localPlayerId);
         }
 
         [SerializeField] [HideInInspector] private uint responseForBetterMasterCandidateIAId;
@@ -1481,30 +1570,32 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnResponseForBetterMasterCandidateIA");
             #endif
             uint askingPlayerIdRoundtrip = ReadSmallUInt();
-            uint remotePlayerId = ReadSmallUInt();
             byte couldBecomeMaster = ReadByte();
-            if (!isAskingForBetterMasterCandidates)
+            if (!isAskingForMasterCandidates)
                 return;
             if (askingPlayerIdRoundtrip != localPlayerId) // A different player asked, we don't care.
                 return;
             if (couldBecomeMaster == 2u)
             {
-                StopWaitingForCandidatesAsAMasterAlreadyExists();
+                StopWaitingForCandidates();
+                // Tell all the other clients that we stopped asking about it. This approach prevents race
+                // conditions since both the question and the stop action would be sent by the same IA sync script.
+                SendStoppedAskingForCandidatesThanksToExistingMasterIA();
                 return;
             }
-            if (!notYetRespondedCandidates.ContainsKey(remotePlayerId))
+            if (!notYetRespondedCandidates.ContainsKey(sendingPlayerId))
                 return; // Uh what? I guess the remote player left already and we're receiving this afterwards.
             // Or this is a new client that joined right after we sent the question/request.
 
-            notYetRespondedCandidates.Remove(remotePlayerId);
+            notYetRespondedCandidates.Remove(sendingPlayerId);
             if (couldBecomeMaster != 0u)
-                ArrList.Add(ref acceptingCandidates, ref acceptingCandidatesCount, remotePlayerId);
+                ArrList.Add(ref acceptingCandidates, ref acceptingCandidatesCount, sendingPlayerId);
             if (notYetRespondedCandidates.Count != 0)
                 return;
             AllCandidatesHaveResponded();
         }
 
-        private void AllCandidatesHaveResponded()
+        private void AllCandidatesHaveResponded(bool force = false)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AllCandidatesHaveResponded");
@@ -1517,27 +1608,50 @@ namespace JanSharp.Internal
                 return;
             }
 
-            SendAcceptedMasterCandidateIA(candidateClientId);
+            SendAcceptedMasterCandidateIA(candidateClientId, force);
         }
 
-        private void StopWaitingForCandidatesAsAMasterAlreadyExists()
+        private void StopWaitingForCandidates()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StopWaitingForCandidatesAsAMasterAlreadyExists");
             #endif
 
-            isAskingForBetterMasterCandidates = false;
+            isAskingForMasterCandidates = false;
             notYetRespondedCandidates = null;
-            ArrList.Clear(ref acceptingCandidates, ref acceptingCandidatesCount);
+            // Not clearing acceptingCandidates as it could be reused later.
         }
 
-        private void SendAcceptedMasterCandidateIA(uint acceptedPlayerId)
+        private void SendStoppedAskingForCandidatesThanksToExistingMasterIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendStoppedAskingForCandidatesThanksToExistingMasterIA");
+            #endif
+            SendInstantAction(sendStoppedAskingForCandidatesThanksToExistingMasterIAId, doRunLocally: true);
+        }
+
+        [SerializeField] [HideInInspector] private uint sendStoppedAskingForCandidatesThanksToExistingMasterIAId;
+        [LockstepInputAction(nameof(sendStoppedAskingForCandidatesThanksToExistingMasterIAId))]
+        public void OnStoppedAskingForCandidatesThanksToExistingMasterIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnStoppedAskingForCandidatesThanksToExistingMasterIA");
+            #endif
+            if (sendingPlayerId != clientIdAskingForCandidates) // If they don't match then more players have
+                return; // left and another one is asking for candidates, which may also mean that the
+            // lockstep master had left while this currently running IA was in transit.
+            someoneIsAskingForMasterCandidates = false;
+            acceptForcedCandidate = false;
+        }
+
+        private void SendAcceptedMasterCandidateIA(uint acceptedPlayerId, bool force)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendAcceptedMasterCandidateIA");
             #endif
             WriteSmall(acceptedPlayerId);
-            SendInstantAction(acceptedMasterCandidateIAId);
+            Write((byte)(force ? 1u : 0u));
+            SendInstantAction(acceptedMasterCandidateIAId, doRunLocally: true);
         }
 
         [SerializeField] [HideInInspector] private uint acceptedMasterCandidateIAId;
@@ -1548,11 +1662,49 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnAcceptedMasterCandidateIA");
             #endif
             uint acceptedPlayerId = ReadSmallUInt();
-            if (acceptedPlayerId != localPlayerId)
+            bool force = ReadByte() != 0u;
+            if (acceptedPlayerId != localPlayerId
+                || !isMaster // This client was already asked to become master previously, ignore another confirmation.
+                || !currentlyNoMaster) // A different client already became master, or this client is getting
+            { // asked too early - before getting a player left event - so it cannot take master yet.
+                acceptForcedCandidate = false;
                 return;
-            if (isMaster) // This client was already asked to become master previously, ignore another confirmation.
+            }
+            if (clientIdAskingForCandidates != sendingPlayerId
+                && (!force || !acceptForcedCandidate || sendingPlayerId != acceptForcedCandidateFromPlayerId))
+            {
+                acceptForcedCandidate = true;
+                acceptForcedCandidateFromPlayerId = sendingPlayerId;
+                SendRefusedMasterCandidateConfirmationIA(sendingPlayerId);
                 return;
-            BecomeMasterGeneric();
+            }
+            acceptForcedCandidate = false;
+            BecomeNewMaster();
+        }
+
+        private void SendRefusedMasterCandidateConfirmationIA(uint askingPlayerIdRoundtrip)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendRefusedMasterCandidateConfirmationIA");
+            #endif
+            WriteSmall(askingPlayerIdRoundtrip);
+            SendInstantAction(refusedMasterCandidateConfirmationIAId, doRunLocally: true);
+        }
+
+        [SerializeField] [HideInInspector] private uint refusedMasterCandidateConfirmationIAId;
+        [LockstepInputAction(nameof(refusedMasterCandidateConfirmationIAId))]
+        public void OnRefusedMasterCandidateConfirmationIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnRefusedMasterCandidateConfirmationIA");
+            #endif
+            uint askingPlayerIdRoundtrip = ReadSmallUInt();
+            if (askingPlayerIdRoundtrip != localPlayerId
+                || !isAskingForMasterCandidates
+                || notYetRespondedCandidates.Count != 0)
+                return; // Whichever client just refused a confirmation, we don't care about it.
+            AllCandidatesHaveResponded(force: true); // Resend confirmation to the client we actually did accept.
+            // (Which may not actually be the client which just refused either, mind you.)
         }
 
         private void FinishCatchingUpOnMaster()
@@ -1738,11 +1890,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnMasterChangedIA");
             #endif
             uint playerId = ReadSmallUInt();
-            clientStates[playerId] = (byte)ClientState.Master;
-            uint oldId = masterPlayerId;
-            masterPlayerId = playerId;
-            currentlyNoMaster = false;
-            RaiseOnMasterChanged(oldId);
+            UpdateClientStatesForNewMaster(playerId);
         }
 
         private void SendClientJoinedIA()
@@ -1763,6 +1911,7 @@ namespace JanSharp.Internal
             isWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
             clientNames = null;
+            currentlyNoMaster = true; // When clientStates is null, this must be true.
             latestInputActionIndexByPlayerIdForLJ = null;
             SendInputAction(clientJoinedIAId, forceOneFrameDelay: false);
         }
@@ -1929,13 +2078,8 @@ namespace JanSharp.Internal
                 clientStates.Add(keyToken, clientState);
                 clientNames.Add(keyToken, clientName);
                 latestInputActionIndexByPlayerIdForLJ.Add(keyToken, latestInputActionIndex);
-                if ((ClientState)clientState == ClientState.Master)
-                {
-                    // In order for late joiner data to be sent it must come from a master, which means this
-                    // if statement is guaranteed to run (naturally exactly once. There's only 1 master.)
-                    masterPlayerId = playerId;
-                    currentlyNoMaster = false;
-                }
+                if ((ClientState)clientState == ClientState.Master) // clientStates always has exactly 1 Master.
+                    SetMasterPlayerId(playerId);
             }
 
             singletonInputActions.Clear();
@@ -2191,7 +2335,7 @@ namespace JanSharp.Internal
             #endif
             uint playerId = ReadSmallUInt();
             DataToken keyToken = playerId;
-            clientStates.Remove(keyToken);
+            clientStates.Remove(keyToken, out DataToken clientStateToken);
             clientNames.Remove(keyToken, out DataToken displayNameToken);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
@@ -2200,9 +2344,14 @@ namespace JanSharp.Internal
             inputActionSyncByPlayerId.Remove(keyToken);
             latestInputActionIndexByPlayerId.Remove(keyToken);
 
+            if ((ClientState)clientStateToken.Byte == ClientState.Master)
+                Debug.LogError("[Lockstep] Impossible, OnClientLeftIA got run for the master client. When "
+                    + "the master leaves a new client should have taken the master state before this IA ran.");
+
             CheckIfLateJoinerSyncShouldStop();
             CheckIfSingletonInputActionGotDropped(playerId);
             CheckIfImportingPlayerLeft(playerId);
+            CheckIfRequestedMasterClientLeft(playerId);
             leftClientName = displayNameToken.String;
             RaiseOnClientLeft(playerId);
             leftClientName = null;

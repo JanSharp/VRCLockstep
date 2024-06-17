@@ -35,8 +35,10 @@ namespace JanSharp.Internal
             "currentlyNoMaster",
             "checkMasterChangeAfterProcessingLJGameStates",
             "initializedEnoughForImportExport",
-            "isAskingForBetterMasterCandidates",
             "isImporting",
+            "isAskingForMasterCandidates",
+            "someoneIsAskingForMasterCandidates",
+            "acceptForcedCandidate",
             "masterChangeRequestInProgress",
             "sendMasterChangeConfirmationInFirstMutableTick",
             "finishMasterChangeProcessAtStartOfTick",
@@ -83,6 +85,9 @@ namespace JanSharp.Internal
             "nextLJGameStateToProcess",
             "requestedMasterClientId",
             "unrecoverableStateDueToUniqueId",
+            "clientIdAskingForCandidates",
+            "acceptingCandidatesCount",
+            "acceptForcedCandidateFromPlayerId",
         };
         private TextMeshProUGUI[] numbersValues;
         private TextMeshProUGUI[] numbersLabels;

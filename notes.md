@@ -372,6 +372,7 @@ TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: add OnPreClientJoined
 TODO: add note about what state a client changed to in the different client state change related events
+TODO: add "world name" to lockstep which by default gets set to the scene file name but can be overwritten manually. This name would be included in exports and autosaves
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: mention where the returned error message from DeserializeGameState gets displayed
 TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received
@@ -387,5 +388,38 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 TODO: handle the master leaving while a master change request is in progress
 TODO: handle the player leaving which was requested to be the new master
 
-TODO: handle the master change confirmation having been sent and then the new master player leaving before actually becoming master, therefore the confirmation input action running after the player left already, but also before the client left input action
+- [ ] maybe handle receiving tick sync data even when we are owner of the tick sync script
+- [x] if candidates are being asked for when we become instance master, either take over that process or reset it and ask again
+- [x] if a candidate has been confirmed to become master, remember that id and wait for them to take master, preventing the local client to become master
+- [x] if the candidate that has been confirmed was already in leftClients then wait a second before cancelling the candidate asking process and run check master change again
+- [x] if the candidate that has been confirmed leaves, wait a second and do the same as above
+
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
+
+other - send request
+master - run request, save some values, set flag for confirmation
+other - run request, save some values
+master - reach end of a mutable tick, send confirmation
+master - run confirmation, give up responsibility of running ticks
+other - run confirmation, become master
+
+other - leaves
+master - OnPlayerLeft, save in leftPlayers
+master - ProcessLeftPlayers, send OnClientLeft, clear leftPlayers
+master - OnClientLeft, remove from clientStates
+
+master - leaves
+other - OnPlayerLeft
+
+
+
+other - send request
+master - run request, save some values, set flag for confirmation
+other - run request, save some values
+  other - leaves
+master - reach end of a mutable tick, send confirmation
+  master - OnPlayerLeft, save in leftPlayers
+  master - ProcessLeftPlayers, send OnClientLeft, clear leftPlayers
+  master - OnClientLeft, remove from clientStates
+master - run confirmation, give up responsibility of running ticks
+other - run confirmation, become master
