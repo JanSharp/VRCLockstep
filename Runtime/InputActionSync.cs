@@ -66,7 +66,10 @@ namespace JanSharp.Internal
         private int stageSize = 0;
         private int stagedUniqueIdCount = 0;
 
-        private const int MaxHeaderSize = 3 * 5; // 3 * small uint
+        /// <summary>
+        /// <para>3 * small uint.</para>
+        /// </summary>
+        private const int MaxHeaderSize = 3 * 5;
         private const int PotentialStageSizeOverflowThreshold = MaxSyncedDataSize - MaxHeaderSize;
 
         /// <summary>
@@ -115,6 +118,10 @@ namespace JanSharp.Internal
             return shiftedPlayerId | (ulong)(nextInputActionIndex++);
         }
 
+        /// <summary>
+        /// <para>Ignores the current <see cref="stageSize"/>, treats it as though it was always
+        /// <see cref="MaxSyncedDataSize"/>.</para>
+        /// </summary>
         private void MoveStageToQueue()
         {
             byte[] stageCopy = new byte[MaxSyncedDataSize];
@@ -141,7 +148,8 @@ namespace JanSharp.Internal
                 if (stageSize < MaxSyncedDataSize)
                     DataStream.Write(ref stage, ref stageSize, IgnoreRestOfDataMarker);
                 // Move the whole MaxSyncedDataSize regardless of if there are a few bytes at the end that are
-                // unused, because that allows using Array.CopyTo which is way faster than doing a loop in Udon.
+                // unused, to reduce the amount of times a new array has to be allocated when deserializing
+                // due to differing syncedData lengths when syncing lots of data in quick succession.
                 MoveStageToQueue();
             }
 
@@ -157,36 +165,31 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - uniqueId: 0x{uniqueId:x16}");
             #endif
 
-            // Write IA header.
+            // Write IA header. This is what MaxHeaderSize correlates to.
             DataStream.WriteSmall(ref stage, ref stageSize, index);
             DataStream.WriteSmall(ref stage, ref stageSize, inputActionId);
             DataStream.WriteSmall(ref stage, ref stageSize, (uint)inputActionDataSize);
 
             int baseIndex = 0;
-            int indexDiff = stageSize; // And minus baseIndex, but baseIndex is always 0 here.
             int remainingLength = inputActionDataSize;
             int freeSpace = MaxSyncedDataSize - stageSize;
             while (remainingLength > freeSpace)
             {
-                int stopIndex = baseIndex + freeSpace;
                 #if LockstepDebug
-                Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}, stopIndex: {stopIndex}");
+                Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
                 #endif
-                for (int i = baseIndex; i < stopIndex; i++)
-                    stage[i + indexDiff] = inputActionData[i];
+                System.Array.Copy(inputActionData, baseIndex, stage, stageSize, freeSpace);
                 MoveStageToQueue();
-                // Instead of starting with WriteSmall((uint)playerId), write SplitDataMarker.
+                // Instead of starting with WriteSmall((uint)ownerPlayerId), write SplitDataMarker.
                 DataStream.Write(ref stage, ref stageSize, SplitDataMarker);
-                baseIndex = stopIndex;
-                indexDiff = stageSize - baseIndex;
+                baseIndex += freeSpace;
                 remainingLength -= freeSpace;
                 freeSpace = MaxSyncedDataSize - stageSize;
             }
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, indexDiff: {indexDiff}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
             #endif
-            for (int i = baseIndex; i < inputActionDataSize; i++)
-                stage[i + indexDiff] = inputActionData[i];
+            System.Array.Copy(inputActionData, baseIndex, stage, stageSize, remainingLength);
             stageSize += remainingLength;
 
             ArrQueue.Enqueue(ref uniqueIdQueue, ref uiqStartIndex, ref uiqCount, uniqueId);
@@ -279,8 +282,7 @@ namespace JanSharp.Internal
 
             // Take the current stage and then clear the stage.
             syncedData = new byte[stageSize];
-            for (int i = 0; i < stageSize; i++)
-                syncedData[i] = stage[i];
+            System.Array.Copy(stage, syncedData, stageSize);
             sendingUniqueIdsCount = stagedUniqueIdCount;
             stageSize = 0;
             stagedUniqueIdCount = 0;
@@ -331,7 +333,6 @@ namespace JanSharp.Internal
 
             byte firstByte = syncedData[0];
             #if LockstepDebug
-            // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
             Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - firstByte: 0x{firstByte:x2} or {firstByte}");
             #endif
             if (firstByte == ClearedDataMarker)
@@ -349,11 +350,8 @@ namespace JanSharp.Internal
                     return; // We just joined, this data is not for us.
                 i++;
                 int bytesToRead = System.Math.Min(syncedDataLength - i, partialMissingSize);
-                int stopIndex = i + bytesToRead;
-                int offset = partialContinueIndex - i;
-                for (int j = i; j < stopIndex; j++)
-                    receivedData[j + offset] = syncedData[j];
-                i = stopIndex;
+                System.Array.Copy(syncedData, i, receivedData, partialContinueIndex, bytesToRead);
+                i += bytesToRead;
                 partialContinueIndex += bytesToRead;
                 partialMissingSize -= bytesToRead;
                 #if LockstepDebug
@@ -404,8 +402,7 @@ namespace JanSharp.Internal
                 {
                     hasPartialInputAction = true;
                     int rest = syncedDataLength - i;
-                    for (int j = 0; j < rest; j++)
-                        receivedData[j] = syncedData[i + j];
+                    System.Array.Copy(syncedData, i, receivedData, 0, rest);
                     partialContinueIndex = rest;
                     partialMissingSize = dataLength - rest;
                     #if LockstepDebug
@@ -413,8 +410,7 @@ namespace JanSharp.Internal
                     #endif
                     break;
                 }
-                for (int j = 0; j < dataLength; j++)
-                    receivedData[j] = syncedData[i + j];
+                System.Array.Copy(syncedData, i, receivedData, 0, dataLength);
                 i += dataLength;
                 latestInputActionIndex = receivedInputActionIndex;
                 lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);

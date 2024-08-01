@@ -57,14 +57,11 @@ namespace JanSharp.Internal
         {
             tickBufferSize = 0;
             DataStream.WriteSmall(ref tickBuffer, ref tickBufferSize, lastRunnableTick);
-            // TODO: use System.Array.Copy
             int totalSize = tickBufferSize + bufferSize;
             if (syncedData.Length != totalSize)
                 syncedData = new byte[totalSize];
-            for (int i = 0; i < tickBufferSize; i++)
-                syncedData[i] = tickBuffer[i];
-            for (int i = 0; i < bufferSize; i++)
-                syncedData[tickBufferSize + i] = buffer[i];
+            System.Array.Copy(tickBuffer, syncedData, tickBufferSize);
+            System.Array.Copy(buffer, 0, syncedData, tickBufferSize, bufferSize);
             tickInSyncedData = lastRunnableTick;
             bufferSizeToClear = bufferSize;
         }

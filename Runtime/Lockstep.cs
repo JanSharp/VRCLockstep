@@ -235,8 +235,7 @@ namespace JanSharp.Internal
             {
                 int length = allGameStates.Length;
                 LockstepGameState[] result = new LockstepGameState[length];
-                for (int i = 0; i < length; i++)
-                    result[i] = allGameStates[i];
+                allGameStates.CopyTo(result, 0);
                 return result;
             }
         }
@@ -683,8 +682,7 @@ namespace JanSharp.Internal
             }
 
             byte[] inputActionData = new byte[writeStreamSize];
-            for (int i = 0; i < writeStreamSize; i++)
-                inputActionData[i] = writeStream[i];
+            System.Array.Copy(writeStream, inputActionData, writeStreamSize);
             ResetWriteStream();
 
             return SendInputActionInternal(inputActionId, inputActionData, forceOneFrameDelay);
@@ -762,10 +760,8 @@ namespace JanSharp.Internal
             WriteSmallUInt(inputActionId);
             byte[] singletonInputActionData = new byte[writeStreamSize];
             int idsSize = writeStreamSize - actualInputActionDataSize;
-            for (int i = 0; i < idsSize; i++)
-                singletonInputActionData[i] = writeStream[actualInputActionDataSize + i];
-            for (int i = 0; i < actualInputActionDataSize; i++)
-                singletonInputActionData[idsSize + i] = writeStream[i];
+            System.Array.Copy(writeStream, actualInputActionDataSize, singletonInputActionData, 0, idsSize);
+            System.Array.Copy(writeStream, 0, singletonInputActionData, idsSize, actualInputActionDataSize);
             ResetWriteStream();
 
             singletonInputActions.Add(singletonId, new DataToken(new object[] { responsiblePlayerId, singletonInputActionData }));
@@ -2867,8 +2863,7 @@ namespace JanSharp.Internal
             WriteUInt(crc);
 
             byte[] exportedData = new byte[writeStreamSize];
-            for (int i = 0; i < writeStreamSize; i++)
-                exportedData[i] = writeStream[i];
+            System.Array.Copy(writeStream, exportedData, writeStreamSize);
             ResetWriteStream();
 
             string encoded = Base64.Encode(exportedData);
@@ -2945,8 +2940,8 @@ namespace JanSharp.Internal
                 LockstepImportedGS.SetDataVersion(importedGS, dataVersion);
                 int dataSize = ReadInt();
                 byte[] binaryData = new byte[dataSize];
-                for (int j = 0; j < dataSize; j++)
-                    binaryData[j] = readStream[readStreamPosition++];
+                System.Array.Copy(readStream, readStreamPosition, binaryData, 0, dataSize);
+                readStreamPosition += dataSize;
                 LockstepImportedGS.SetBinaryData(importedGS, binaryData);
                 DataToken internalNameToken = internalName;
                 if (!gameStatesByInternalName.TryGetValue(internalNameToken, out DataToken gameStateToken))
