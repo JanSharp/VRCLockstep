@@ -996,6 +996,7 @@ namespace JanSharp.Internal
             ignoreIncomingInputActions = false;
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = false;
+            lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = false;
             isInitialCatchUp = false; // The master never raises a caught up event for itself.
             clientStates = new DataDictionary();
             clientNames = new DataDictionary();
@@ -1004,7 +1005,6 @@ namespace JanSharp.Internal
             clientNames.Add(keyToken, localPlayerDisplayName);
             ArrList.Clear(ref leftClients, ref leftClientsCount);
             masterPlayerId = localPlayerId;
-            lateJoinerInputActionSync.lockstepIsMaster = true;
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
@@ -1061,8 +1061,6 @@ namespace JanSharp.Internal
             tickSync.lastRunnableTick = lastRunnableTick;
             tickSync.stopAfterThisSync = true;
             // tickStartTime will be a bit off (too high) since ticks won't run for a short bit.
-            lateJoinerInputActionSync.lockstepIsMaster = false;
-            lateJoinerInputActionSync.gameObject.SetActive(false);
         }
 
         private void UpdateClientStatesForNewMaster(uint newMasterId)
@@ -1309,11 +1307,10 @@ namespace JanSharp.Internal
             ignoreIncomingInputActions = true;
             isWaitingToSendClientJoinedIA = true;
             isWaitingForLateJoinerSync = false;
+            lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = false;
             inputActionsByUniqueId.Clear();
             uniqueIdsByTick.Clear();
             isTickPaused = true;
-            // Do this last just in case it ends up running deserialization upon being reactivated.
-            lateJoinerInputActionSync.gameObject.SetActive(true);
         }
 
         private bool CouldTakeOverMaster()
@@ -1408,8 +1405,6 @@ namespace JanSharp.Internal
             // AssociateUnassociatedInputActionsWithTicks also requires currentTick to be <= lastRunnableTick.
             firstMutableTick = currentTick;
 
-            lateJoinerInputActionSync.gameObject.SetActive(true);
-            lateJoinerInputActionSync.lockstepIsMaster = true;
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
             tickSync.RequestSerialization();
@@ -1909,6 +1904,7 @@ namespace JanSharp.Internal
             }
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = true;
+            lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = true;
             clientStates = null; // To know if this client actually received all data, first to last.
             clientNames = null;
             currentlyNoMaster = true; // When clientStates is null, this must be true.
@@ -2148,8 +2144,8 @@ namespace JanSharp.Internal
 
             currentTick = ReadSmallUInt();
 
-            lateJoinerInputActionSync.gameObject.SetActive(false);
             isWaitingForLateJoinerSync = false;
+            lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = false;
             TryMoveToNextLJSerializedGameState();
         }
 

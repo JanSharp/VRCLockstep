@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -23,7 +23,8 @@ namespace JanSharp.Internal
         private const byte IgnoreRestOfDataMarker = 0xff;
 
         [System.NonSerialized] public Lockstep lockstep;
-        [System.NonSerialized] public bool lockstepIsMaster;
+        /// <summary>Guaranteed to be <see langword="false"/> on the lockstep master client.</summary>
+        [System.NonSerialized] public bool lockstepIsWaitingForLateJoinerSync;
         [System.NonSerialized] public ulong shiftedPlayerId;
         [System.NonSerialized] public uint ownerPlayerId;
 
@@ -323,7 +324,7 @@ namespace JanSharp.Internal
             // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
             Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization - syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
             #endif
-            if ((isLateJoinerSyncInst && lockstepIsMaster) || lockstep == null)
+            if ((isLateJoinerSyncInst && !lockstepIsWaitingForLateJoinerSync) || lockstep == null)
             {
                 // When lockstep is still null, this can safely ignore any incoming data,
                 // because this script can handle broken partial actions and Lockstep

@@ -392,7 +392,7 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 - [ ] there's apparently a way for the master client to have the client state "normal"... and it makes no sense... for now I've simply added a log message in the only location where it seems like it would be possible to happen, as well as having handled OnClientJoinedIA running late
 - [ ] maybe ignore player left event for local player
 - [ ] handle event listeners being null due to being destroyed
-- [ ] keep late joiner script always enabled to prevent it from buffering all received data forever
+- [x] keep late joiner script always enabled to prevent it from buffering all received data forever
 - [ ] import/export ui needs a settings button for each game state, probably in the root/main list... maybe just in every list. That'll pop up a ui next to the main UI which has game state specific settings
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
