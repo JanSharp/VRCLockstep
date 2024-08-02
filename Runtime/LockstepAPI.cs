@@ -64,7 +64,7 @@ namespace JanSharp
         /// <para>Guaranteed to be <see langword="true"/> on exactly 1 client during the execution of any game
         /// state safe event. Outside of those it is possible for this to be true for 0 clients at some point
         /// in time.</para>
-        /// <para>If the goal is to only and an input action from 1 client even though the running function
+        /// <para>If the goal is to send an input action from only 1 client even though the running function
         /// is a game state event and therefore runs on all clients, it is most likely preferable to use
         /// <see cref="SendSingletonInputAction(uint)"/> or its overload instead of checking
         /// <see cref="IsMaster"/> as that is exactly what that function is made for. However outside of game
@@ -121,13 +121,14 @@ namespace JanSharp
         /// <see cref="LockstepEventType.OnClientCaughtUp"/>.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe (but keep in mind that <see cref="LockstepEventType.OnClientBeginCatchUp"/>
-        /// is a game state safe event. <see cref="LockstepEventType.OnClientCaughtUp"/> Is however).</para>
+        /// is not a game state safe event. <see cref="LockstepEventType.OnClientCaughtUp"/> is
+        /// however).</para>
         /// </summary>
         public abstract uint CatchingUpPlayerId { get; }
         /// <summary>
-        /// <para>The player id of client which sent the input action. It is guaranteed to be an id for which
-        /// the <see cref="LockstepEventType.OnClientJoined"/> event has been raised, and the
-        /// <see cref="LockstepEventType.OnClientLeft"/> event has not been raised.</para>
+        /// <para>The player id of the client which sent the currently running input action. It is guaranteed
+        /// to be an id for which the <see cref="LockstepEventType.OnClientJoined"/> event has been raised,
+        /// and the <see cref="LockstepEventType.OnClientLeft"/> event has not been raised.</para>
         /// <para>Usable inside of input actions.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
@@ -157,9 +158,9 @@ namespace JanSharp
         /// <summary>
         /// <para>Send an input action from one client which, since it is an input action, will then run on
         /// all clients in the same tick in the same order.</para>
-        /// <para>To pass data from the sending client to the input action, use <c>Write</c> or any of the
-        /// overloads before calling <see cref="SendInputAction(uint)"/>. Then on the receiving side call
-        /// <c>Read</c> functions with matching types and in matching order.</para>
+        /// <para>To pass data from the sending client to the input action, use <c>Write</c> functions before
+        /// calling <see cref="SendInputAction(uint)"/>. Then on the receiving side call <c>Read</c> functions
+        /// with matching types and in matching order.</para>
         /// <para>Usable any time.</para>
         /// </summary>
         /// <param name="inputActionId">The id associated with a method with the
@@ -171,9 +172,9 @@ namespace JanSharp
         /// <summary>
         /// <para>Send an input action from one client which, since it is an input action, will then run on
         /// all clients in the same tick in the same order.</para>
-        /// <para>To pass data from the sending client to the input action, use <c>Write</c> or any of the
-        /// overloads before calling <see cref="SendInputAction(uint)"/>. Then on the receiving side call
-        /// <c>Read</c> functions with matching types and in matching order.</para>
+        /// <para>To pass data from the sending client to the input action, use <c>Write</c> functions before
+        /// calling <see cref="SendInputAction(uint)"/>. Then on the receiving side call <c>Read</c> functions
+        /// with matching types and in matching order.</para>
         /// <para>The major difference is that <see cref="SendInputAction(uint)"/> simply sends an input
         /// action, meaning if multiple players call it, multiple input actions will be sent. This may be
         /// undesirable when inside of a game state safe event since that runs on every client, however there
@@ -188,11 +189,12 @@ namespace JanSharp
         /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
         /// <returns>The unique id of the input action that got sent. If <see cref="CanSendInputActions"/> is
         /// <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
-        /// returned. The unique id is only returned on the initial responsible client.</returns>
+        /// returned. The unique id is only returned on the initial responsible client, on all other clients
+        /// it is going to be 0uL.</returns>
         public abstract ulong SendSingletonInputAction(uint inputActionId);
         /// <inheritdoc cref="SendSingletonInputAction(uint)"/>
-        /// <param name="responsiblePlayerId">The player id of the client which is takes the initial
-        /// responsibility of sending the input action.</param>
+        /// <param name="responsiblePlayerId">The player id of the client which takes initial responsibility
+        /// of sending the input action.</param>
         public abstract ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId);
         /// <summary>
         /// <para>Simply a wrapper around <see cref="SendMasterChangeRequestIA(uint)"/> with the local
@@ -202,11 +204,11 @@ namespace JanSharp
         public abstract bool RequestLocalClientToBecomeMaster();
         /// <summary>
         /// <para>Sends an input action requesting to change the current lockstep master.</para>
-        /// <para>It is not guaranteed that it will actually change mater to the given client id, due to edge
+        /// <para>It is not guaranteed that it will actually change master to the given client id, due to edge
         /// cases around players leaving. If it is desired to really force a client to become master then it
         /// may be best to listen to the <see cref="LockstepEventType.OnMasterChanged"/> event to check if the
-        /// desired client actually became master, and if not re send the request. Just make sure to check if
-        /// the desired client is even still in the world.</para>
+        /// desired client actually became master, and if not then re send the request. Just make sure to
+        /// check if the desired client is even still in the world.</para>
         /// <para>Usable any time, though if <see cref="CanSendInputActions"/> is <see langword="false"/> this
         /// will not send any input action and simply return <see langword="false"/>.</para>
         /// </summary>
