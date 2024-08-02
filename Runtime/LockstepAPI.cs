@@ -14,6 +14,11 @@ namespace JanSharp
         /// </summary>
         public const float TickRate = 10f;
         /// <summary>
+        /// <para>The amount of times lockstep sends input action tick associations and the current tick from
+        /// the lockstep master to other clients per second.</para>
+        /// </summary>
+        public const float NetworkTickRate = 10f;
+        /// <summary>
         /// <para>The first tick is <c>1u</c>, not <c>0u</c>.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>

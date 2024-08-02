@@ -44,13 +44,13 @@ namespace JanSharp.Internal
         /// last thing that happens is raising on tick and incrementing currentTick. I hope this makes master
         /// changes (which happen at the start of a tick) easier to think about.</para>
         /// </summary>
-        [System.NonSerialized] public uint currentTick;
+        private uint currentTick;
         /// <summary>
         /// <para>The system will run this tick, but not any later ticks.</para>
         /// <para>This means that <see cref="currentTick"/> can be 1 higher than <see cref="lastRunnableTick"/>,
         /// since in order for a tick to fully run it must increment <see cref="currentTick"/> at the end.</para>
         /// </summary>
-        [System.NonSerialized] public uint lastRunnableTick;
+        private uint lastRunnableTick;
         public override uint CurrentTick => currentTick;
 
         private VRCPlayerApi localPlayer;
@@ -76,6 +76,10 @@ namespace JanSharp.Internal
         /// </summary>
         private uint firstMutableTick = 0u; // Effectively 1 tick past the last immutable tick.
         private float tickStartTime;
+        private float tickStartTimeShift;
+        private const float MaxTickStartTimeShift = (1f / TickRate) * 0.05f; // At most 5% faster or slower.
+        /// <summary>Bit shorter interval to make the system try to run ticks slightly sooner.</summary>
+        private const float PredictedTimeUntilNextNetworkTick = (1f / NetworkTickRate) * 0.925f;
         private int byteCountForLatestLJSync = -1;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
         // private float currentTickRate = TickRate;
@@ -383,8 +387,11 @@ namespace JanSharp.Internal
             float timePassed = Time.time - tickStartTime;
             uint runUntilTick = System.Math.Min(lastRunnableTick, startTick + (uint)(timePassed * TickRate));
             for (uint tick = currentTick; tick <= runUntilTick; tick++)
+            {
                 if (!TryRunCurrentTick())
                     break;
+                tickStartTime += tickStartTimeShift;
+            }
 
             if (isMaster)
             {
@@ -394,6 +401,15 @@ namespace JanSharp.Internal
             }
 
             lastUpdateSW.Stop();
+        }
+
+        public void SetLastRunnableTick(uint lastRunnableTick)
+        {
+            this.lastRunnableTick = lastRunnableTick;
+            float timeAtNextNetworkTick = Time.time + PredictedTimeUntilNextNetworkTick;
+            float timePassed = timeAtNextNetworkTick - tickStartTime;
+            uint runUntilTick = startTick + (uint)(timePassed * TickRate);
+            tickStartTimeShift = runUntilTick.CompareTo(lastRunnableTick) * MaxTickStartTimeShift;
         }
 
         private void CatchUp()
@@ -1019,6 +1035,7 @@ namespace JanSharp.Internal
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
             tickStartTime = Time.time;
+            tickStartTimeShift = 0f;
         }
 
         /// <summary>
@@ -1381,6 +1398,7 @@ namespace JanSharp.Internal
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = false;
+            tickStartTimeShift = 0f;
 
             // If this client has never run ticks before then currentTick will still be 0,
             // while lastRunnableTick will never be 0 here.

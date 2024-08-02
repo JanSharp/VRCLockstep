@@ -367,7 +367,6 @@ TODO: add master preference game state
   - when in the scene, enable a slider for the local player in the info UI
   - when in the scene, enable a slider for each player in the client states list in the info UI
   - import export support
-TODO: make tick rate on non master clients a bit more variable such that it tries to stay as close to wait tick as possible while also maintaining the tick rate decently consistently
 TODO: add game state safe prng
 TODO: expose list of clients in the game state in the api
 TODO: add OnPreClientJoined

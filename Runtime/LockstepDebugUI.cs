@@ -80,6 +80,7 @@ namespace JanSharp.Internal
             "firstMutableTick",
             "startTick",
             "tickStartTime",
+            "tickStartTimeShift",
             "byteCountForLatestLJSync",
             "unprocessedLJSerializedGSCount",
             "nextLJGameStateToProcess",

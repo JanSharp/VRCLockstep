@@ -22,7 +22,7 @@ namespace JanSharp.Internal
         private uint tickInSyncedData;
         [UdonSynced] private byte[] syncedData = new byte[0];
         private int readPosition = 0;
-        private float tickLoopDelay = 1f / Lockstep.TickRate;
+        private float tickLoopDelay = 1f / Lockstep.NetworkTickRate;
         private uint lastSyncedTick = 0u; // Default value really doesn't matter.
 
         private byte[] buffer = new byte[ArrList.MinCapacity];
@@ -105,7 +105,7 @@ namespace JanSharp.Internal
         public override void OnDeserialization()
         {
             readPosition = 0;
-            lockstep.lastRunnableTick = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
+            lockstep.SetLastRunnableTick(DataStream.ReadSmallUInt(ref syncedData, ref readPosition));
             int length = syncedData.Length;
             while (readPosition < length)
             {
