@@ -2551,13 +2551,38 @@ namespace JanSharp.Internal
             uniqueIdsByTick.Add(tickToRunInToken, new DataToken(new ulong[] { uniqueId }));
         }
 
+        private UdonSharpBehaviour[] CleanUpRemovedListeners(UdonSharpBehaviour[] listeners, int destroyedCount, string eventName)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  CleanUpRemovedListeners");
+            #endif
+            Debug.LogError($"[Lockstep] An event listener for {eventName} has been destroyed at runtime. "
+                + "Lockstep event listeners must not be destroyed in order to guarantee deterministic behavior.");
+            int length = listeners.Length;
+            UdonSharpBehaviour[] newListeners = new UdonSharpBehaviour[length - destroyedCount];
+            int j = 0;
+            for (int i = 0; i < length; i++)
+            {
+                UdonSharpBehaviour listener = listeners[i];
+                if (listener != null)
+                    newListeners[j++] = listener;
+            }
+            return newListeners;
+        }
+
         private void RaiseOnInit()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnInit");
             #endif
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onInitListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnInit));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnInit));
+            if (destroyedCount != 0)
+                onInitListeners = CleanUpRemovedListeners(onInitListeners, destroyedCount, nameof(LockstepEventType.OnInit));
         }
 
         private void RaiseOnClientJoined(uint joinedPlayerId)
@@ -2566,8 +2591,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientJoined");
             #endif
             this.joinedPlayerId = joinedPlayerId;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientJoinedListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnClientJoined));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnClientJoined));
+            if (destroyedCount != 0)
+                onClientJoinedListeners = CleanUpRemovedListeners(onClientJoinedListeners, destroyedCount, nameof(LockstepEventType.OnClientJoined));
             this.joinedPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
@@ -2577,8 +2608,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientBeginCatchUp");
             #endif
             this.catchingUpPlayerId = catchingUpPlayerId;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientBeginCatchUpListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnClientBeginCatchUp));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnClientBeginCatchUp));
+            if (destroyedCount != 0)
+                onClientBeginCatchUpListeners = CleanUpRemovedListeners(onClientBeginCatchUpListeners, destroyedCount, nameof(LockstepEventType.OnClientBeginCatchUp));
             this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
@@ -2588,8 +2625,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientCaughtUp");
             #endif
             this.catchingUpPlayerId = catchingUpPlayerId;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientCaughtUpListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnClientCaughtUp));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnClientCaughtUp));
+            if (destroyedCount != 0)
+                onClientCaughtUpListeners = CleanUpRemovedListeners(onClientCaughtUpListeners, destroyedCount, nameof(LockstepEventType.OnClientCaughtUp));
             this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
@@ -2599,8 +2642,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientLeft");
             #endif
             this.leftPlayerId = leftPlayerId;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientLeftListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnClientLeft));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnClientLeft));
+            if (destroyedCount != 0)
+                onClientLeftListeners = CleanUpRemovedListeners(onClientLeftListeners, destroyedCount, nameof(LockstepEventType.OnClientLeft));
             this.leftPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
@@ -2613,8 +2662,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnMasterChanged");
             #endif
             this.oldMasterPlayerId = oldMasterPlayerId;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onMasterChangedListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnMasterChanged));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnMasterChanged));
+            if (destroyedCount != 0)
+                onMasterChangedListeners = CleanUpRemovedListeners(onMasterChangedListeners, destroyedCount, nameof(LockstepEventType.OnMasterChanged));
             this.oldMasterPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
@@ -2623,8 +2678,14 @@ namespace JanSharp.Internal
             // #if LockstepDebug
             // Debug.Log($"[LockstepDebug] Lockstep  RaiseOnTick");
             // #endif
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onTickListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnTick));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnTick));
+            if (destroyedCount != 0)
+                onTickListeners = CleanUpRemovedListeners(onTickListeners, destroyedCount, nameof(LockstepEventType.OnTick));
         }
 
         private void RaiseOnImportStart()
@@ -2632,8 +2693,14 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportStart");
             #endif
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportStartListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnImportStart));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnImportStart));
+            if (destroyedCount != 0)
+                onImportStartListeners = CleanUpRemovedListeners(onImportStartListeners, destroyedCount, nameof(LockstepEventType.OnImportStart));
         }
 
         private void RaiseOnImportedGameState()
@@ -2641,8 +2708,14 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportedGameState");
             #endif
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportedGameStateListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnImportedGameState));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnImportedGameState));
+            if (destroyedCount != 0)
+                onImportedGameStateListeners = CleanUpRemovedListeners(onImportedGameStateListeners, destroyedCount, nameof(LockstepEventType.OnImportedGameState));
         }
 
         private void RaiseOnImportFinished()
@@ -2650,8 +2723,14 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportFinished");
             #endif
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportFinishedListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnImportFinished));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnImportFinished));
+            if (destroyedCount != 0)
+                onImportFinishedListeners = CleanUpRemovedListeners(onImportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnImportFinished));
         }
 
         private bool markedForOnGameStatesToAutosaveChanged;
@@ -2672,8 +2751,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnGameStatesToAutosaveChanged");
             #endif
             markedForOnGameStatesToAutosaveChanged = false;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onGameStatesToAutosaveChangedListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnGameStatesToAutosaveChanged));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnGameStatesToAutosaveChanged));
+            if (destroyedCount != 0)
+                onGameStatesToAutosaveChangedListeners = CleanUpRemovedListeners(onGameStatesToAutosaveChangedListeners, destroyedCount, nameof(LockstepEventType.OnGameStatesToAutosaveChanged));
         }
 
         private bool markedForOnAutosaveIntervalSecondsChanged;
@@ -2694,8 +2779,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnAutosaveIntervalSecondsChanged");
             #endif
             markedForOnAutosaveIntervalSecondsChanged = false;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onAutosaveIntervalSecondsChangedListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnAutosaveIntervalSecondsChanged));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnAutosaveIntervalSecondsChanged));
+            if (destroyedCount != 0)
+                onAutosaveIntervalSecondsChangedListeners = CleanUpRemovedListeners(onAutosaveIntervalSecondsChangedListeners, destroyedCount, nameof(LockstepEventType.OnAutosaveIntervalSecondsChanged));
         }
 
         private bool markedForOnIsAutosavePausedChanged;
@@ -2716,8 +2807,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnIsAutosavePausedChanged");
             #endif
             markedForOnIsAutosavePausedChanged = false;
+            int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onIsAutosavePausedChangedListeners)
-                listener.SendCustomEvent(nameof(LockstepEventType.OnIsAutosavePausedChanged));
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnIsAutosavePausedChanged));
+            if (destroyedCount != 0)
+                onIsAutosavePausedChangedListeners = CleanUpRemovedListeners(onIsAutosavePausedChangedListeners, destroyedCount, nameof(LockstepEventType.OnIsAutosavePausedChanged));
         }
 
         public override string GetDisplayName(uint playerId)
