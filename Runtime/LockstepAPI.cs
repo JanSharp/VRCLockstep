@@ -6,6 +6,14 @@ using VRC.SDK3.Data;
 
 namespace JanSharp
 {
+    public enum ClientState : byte
+    {
+        Master,
+        WaitingForLateJoinerSync,
+        CatchingUp,
+        Normal,
+    }
+
     public abstract class LockstepAPI : UdonSharpBehaviour
     {
         /// <summary>
@@ -65,6 +73,11 @@ namespace JanSharp
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract int AllGameStatesCount { get; }
+        public abstract ClientState GetClientState(uint playerId);
+        public abstract bool TryGetClientState(uint playerId, out ClientState clientState);
+        public abstract int ClientStatesCount { get; }
+        public abstract uint[] ClientPlayerIds { get; }
+        public abstract ClientState[] ClientStatesValues { get; }
         /// <summary>
         /// <para>Guaranteed to be <see langword="true"/> on exactly 1 client during the execution of any game
         /// state safe event. Outside of those it is possible for this to be true for 0 clients at some point

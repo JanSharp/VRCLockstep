@@ -6,14 +6,6 @@ using VRC.SDK3.Data;
 
 namespace JanSharp.Internal
 {
-    internal enum ClientState : byte
-    {
-        Master,
-        WaitingForLateJoinerSync,
-        CatchingUp,
-        Normal,
-    }
-
     #if !LockstepDebug
     [AddComponentMenu("")]
     #endif
@@ -245,6 +237,51 @@ namespace JanSharp.Internal
             }
         }
         public override int AllGameStatesCount => allGameStates.Length;
+
+        public override ClientState GetClientState(uint playerId)
+        {
+            return (ClientState)clientStates[playerId].Byte;
+        }
+
+        public override bool TryGetClientState(uint playerId, out ClientState clientState)
+        {
+            if (clientStates.TryGetValue(playerId, out DataToken clientStateToken))
+            {
+                clientState = (ClientState)clientStateToken.Byte;
+                return true;
+            }
+            clientState = ClientState.Normal; // Unused default value.
+            return false;
+        }
+        public override int ClientStatesCount => clientStates.Count;
+
+        public override uint[] ClientPlayerIds
+        {
+            get
+            {
+                int count = clientStates.Count;
+                uint[] playerIds = new uint[count];
+                DataList playerIdsList = clientStates.GetKeys();
+                playerIdsList.Sort(); // Can't trust VRChat's api, but this must have a deterministic order.
+                for (int i = 0; i < count; i++)
+                    playerIds[i] = playerIdsList[i].UInt;
+                return playerIds;
+            }
+        }
+
+        public override ClientState[] ClientStatesValues
+        {
+            get
+            {
+                int count = clientStates.Count;
+                ClientState[] clientStateValues = new ClientState[count];
+                DataList playerIdsList = clientStates.GetKeys();
+                playerIdsList.Sort(); // Can't trust VRChat's api, but this must have a deterministic order.
+                for (int i = 0; i < count; i++)
+                    clientStateValues[i] = (ClientState)clientStates[playerIdsList[i]].Byte;
+                return clientStateValues;
+            }
+        }
 
         /// <summary>
         /// <para>uint playerId => InputActionSync inst</para>

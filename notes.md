@@ -368,7 +368,7 @@ TODO: add master preference game state
   - when in the scene, enable a slider for each player in the client states list in the info UI
   - import export support
 TODO: add game state safe prng
-TODO: expose list of clients in the game state in the api
+TODO: add xml annotations to the list of player states in the api
 TODO: add OnPreClientJoined
 TODO: add note about what state a client changed to in the different client state change related events
 TODO: add "world name" to lockstep which by default gets set to the scene file name but can be overwritten manually. This name would be included in exports and autosaves
