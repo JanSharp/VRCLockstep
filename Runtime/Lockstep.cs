@@ -80,6 +80,7 @@ namespace JanSharp.Internal
         private const float MaxTickStartTimeShift = (1f / TickRate) * 0.05f; // At most 5% faster or slower.
         /// <summary>Bit shorter interval to make the system try to run ticks slightly sooner.</summary>
         private const float PredictedTimeUntilNextNetworkTick = (1f / NetworkTickRate) * 0.925f;
+        private const long MaxMSWhileCatchingUp = 10L;
         private int byteCountForLatestLJSync = -1;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
         // private float currentTickRate = TickRate;
@@ -368,7 +369,7 @@ namespace JanSharp.Internal
 
             if (isTickPaused)
             {
-                if (IsProcessingLJGameStates && Time.time >= nextLJGameStateToProcessTime)
+                if (IsProcessingLJGameStates && Time.realtimeSinceStartup >= nextLJGameStateToProcessTime)
                     ProcessNextLJSerializedGameState();
                 lastUpdateSW.Stop();
                 return;
@@ -384,13 +385,15 @@ namespace JanSharp.Internal
             if (iatrnCount != 0)
                 RunInputActionsForThisFrame();
 
-            float timePassed = Time.time - tickStartTime;
+            float timePassed = Time.realtimeSinceStartup - tickStartTime;
             uint runUntilTick = System.Math.Min(lastRunnableTick, startTick + (uint)(timePassed * TickRate));
             for (uint tick = currentTick; tick <= runUntilTick; tick++)
             {
                 if (!TryRunCurrentTick())
                     break;
                 tickStartTime += tickStartTimeShift;
+                if (lastUpdateSW.ElapsedMilliseconds >= MaxMSWhileCatchingUp)
+                    break;
             }
 
             if (isMaster)
@@ -406,7 +409,7 @@ namespace JanSharp.Internal
         public void SetLastRunnableTick(uint lastRunnableTick)
         {
             this.lastRunnableTick = lastRunnableTick;
-            float timeAtNextNetworkTick = Time.time + PredictedTimeUntilNextNetworkTick;
+            float timeAtNextNetworkTick = Time.realtimeSinceStartup + PredictedTimeUntilNextNetworkTick;
             float timePassed = timeAtNextNetworkTick - tickStartTime;
             uint runUntilTick = startTick + (uint)(timePassed * TickRate);
             tickStartTimeShift = runUntilTick.CompareTo(lastRunnableTick) * MaxTickStartTimeShift;
@@ -421,7 +424,7 @@ namespace JanSharp.Internal
             stopwatch.Start();
             while (currentTick <= lastRunnableTick
                 && TryRunCurrentTick()
-                && stopwatch.ElapsedMilliseconds < 10L)
+                && stopwatch.ElapsedMilliseconds < MaxMSWhileCatchingUp)
             { }
             stopwatch.Stop(); // I don't think this actually matters, but it's not used anymore so sure.
 
@@ -439,7 +442,7 @@ namespace JanSharp.Internal
                 isInitialCatchUp = false;
                 StartOrStopAutosave();
                 startTick = currentTick;
-                tickStartTime = Time.time;
+                tickStartTime = Time.realtimeSinceStartup;
                 if (isMaster)
                     FinishCatchingUpOnMaster();
             }
@@ -1034,7 +1037,7 @@ namespace JanSharp.Internal
             RaiseOnInit();
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
-            tickStartTime = Time.time;
+            tickStartTime = Time.realtimeSinceStartup;
             tickStartTimeShift = 0f;
         }
 
@@ -2196,7 +2199,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  TryMoveToNextLJSerializedGameState");
             #endif
             nextLJGameStateToProcess++;
-            nextLJGameStateToProcessTime = Time.time + LJGameStateProcessingFrequency;
+            nextLJGameStateToProcessTime = Time.realtimeSinceStartup + LJGameStateProcessingFrequency;
             if (nextLJGameStateToProcess >= unprocessedLJSerializedGSCount)
                 DoneProcessingLJGameStates();
         }
@@ -3279,7 +3282,7 @@ namespace JanSharp.Internal
             bool doRun = AutosaveShouldBeRunning;
             if (autosaveTimerStart == -1f) // Timer has not been started yet, start it.
             {
-                autosaveTimerStart = Time.time;
+                autosaveTimerStart = Time.realtimeSinceStartup;
                 autosaveTimerPausedAt = doRun ? -1f : 0f;
                 if (doRun)
                     SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
@@ -3291,12 +3294,12 @@ namespace JanSharp.Internal
 
             if (!doRun) // Pause the timer.
             {
-                autosaveTimerPausedAt = Time.time - autosaveTimerStart;
+                autosaveTimerPausedAt = Time.realtimeSinceStartup - autosaveTimerStart;
                 return;
             }
 
             // Resume the timer.
-            autosaveTimerStart = Time.time - autosaveTimerPausedAt;
+            autosaveTimerStart = Time.realtimeSinceStartup - autosaveTimerPausedAt;
             autosaveTimerPausedAt = -1f;
             SendCustomEventDelayedSeconds(nameof(AutosaveLoop), SecondsUntilNextAutosave);
         }
@@ -3392,7 +3395,7 @@ namespace JanSharp.Internal
         private float autosaveTimerPausedAt = float.PositiveInfinity;
 
         public override float SecondsUntilNextAutosave => autosaveTimerPausedAt == -1f
-            ? Mathf.Max(0f, autosaveIntervalSeconds - (Time.time - autosaveTimerStart))
+            ? Mathf.Max(0f, autosaveIntervalSeconds - (Time.realtimeSinceStartup - autosaveTimerStart))
             : float.IsInfinity(autosaveTimerPausedAt) ? autosaveTimerPausedAt
             : Mathf.Max(0f, autosaveIntervalSeconds - autosaveTimerPausedAt);
 
@@ -3436,12 +3439,12 @@ namespace JanSharp.Internal
             #endif
             if (autosaveTimerPausedAt != -1f) // Autosaving is paused or straight up no longer running.
                 return;
-            float timePassed = Time.time - autosaveTimerStart;
+            float timePassed = Time.realtimeSinceStartup - autosaveTimerStart;
             if (timePassed + 1.5f < autosaveIntervalSeconds) // Accept the event 1.5 seconds early, but if it's
                 return; // earlier than that, nope, too soon, ignore this call. It's caused by duplicate calls.
             string autosaveName = $"autosave {++autosaveCount} (tick: {currentTick})";
             Export(GameStatesToAutosave, autosaveName); // Export writes to the log file.
-            autosaveTimerStart = Time.time;
+            autosaveTimerStart = Time.realtimeSinceStartup;
             SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
         }
     }
