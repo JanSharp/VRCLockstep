@@ -240,19 +240,17 @@ namespace JanSharp.Internal
 
         public override ClientState GetClientState(uint playerId)
         {
-            return (ClientState)clientStates[playerId].Byte;
+            return clientStates.TryGetValue(playerId, out DataToken clientStateToken)
+                ? (ClientState)clientStateToken.Byte
+                : ClientState.None;
         }
 
         public override bool TryGetClientState(uint playerId, out ClientState clientState)
         {
-            if (clientStates.TryGetValue(playerId, out DataToken clientStateToken))
-            {
-                clientState = (ClientState)clientStateToken.Byte;
-                return true;
-            }
-            clientState = ClientState.Normal; // Unused default value.
-            return false;
+            clientState = GetClientState(playerId);
+            return clientState != ClientState.None;
         }
+
         public override int ClientStatesCount => clientStates.Count;
 
         public override uint[] ClientPlayerIds

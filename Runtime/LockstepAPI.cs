@@ -12,6 +12,12 @@ namespace JanSharp
         WaitingForLateJoinerSync,
         CatchingUp,
         Normal,
+        /// <summary>
+        /// <para>This state represents invalid or non existent clients. It is impossible for any client which
+        /// has a state inside of Lockstep to have this state, therefore
+        /// <see cref="LockstepAPI.ClientStatesValues"/> also never returns <see cref="None"/>.</para>
+        /// </summary>
+        None,
     }
 
     public abstract class LockstepAPI : UdonSharpBehaviour
