@@ -83,23 +83,9 @@ namespace JanSharp.Internal
         private LockstepClientStateEntry[] unusedClientStateEntries = new LockstepClientStateEntry[ArrList.MinCapacity];
         private int unusedClientStateEntriesCount = 0;
 
-        private string ClientStateToString(ClientState clientState)
-        {
-            if (clientState == ClientState.Master)
-                return "Master";
-            else if (clientState == ClientState.WaitingForLateJoinerSync)
-                return "WaitingForLateJoinerSync";
-            else if (clientState == ClientState.CatchingUp)
-                return "CatchingUp";
-            else if (clientState == ClientState.Normal)
-                return "Normal";
-            else
-                return "None";
-        }
-
         public void SetLocalClientState(ClientState clientState)
         {
-            localClientStateText.text = $"Local Client State: {ClientStateToString(clientState)}";
+            localClientStateText.text = $"Local Client State: {lockstep.ClientStateToString(clientState)}";
         }
 
         public void SetClientCount(int count)
@@ -142,7 +128,7 @@ namespace JanSharp.Internal
             clientStateEntries.Add(clientId, entry);
             entry.clientId = clientId;
             entry.clientDisplayNameText.text = displayName;
-            entry.clientStateText.text = ClientStateToString(clientState);
+            entry.clientStateText.text = lockstep.ClientStateToString(clientState);
         }
 
         public void RemoveClient(uint clientId)
@@ -170,7 +156,7 @@ namespace JanSharp.Internal
         public void SetClientState(uint clientId , ClientState clientState)
         {
             LockstepClientStateEntry entry = (LockstepClientStateEntry)clientStateEntries[clientId].Reference;
-            entry.clientStateText.text = ClientStateToString(clientState);
+            entry.clientStateText.text = lockstep.ClientStateToString(clientState);
         }
 
         public void SendNotification(string message)

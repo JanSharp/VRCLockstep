@@ -390,6 +390,6 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 - [x] clients can fall behind in ticks most likely whenever there is a lag spike... maybe Time.time is not consistent enough and it should use Time.realtimeSinceStartup
 - [x] remove LogBinaryData as I've only used it once to debug something and even then it wasn't really useful, and it's a big waste of debug performance
 - [ ] add current VRChat master and Lockstep master name to the top panel in the info ui
-- [ ] add ClientStateToString function to lockstep api, which uses a string array internally to "convert" the ClientState byte into the associated string.
+- [x] add ClientStateToString function to lockstep api, which uses a string array internally to "convert" the ClientState byte into the associated string.
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

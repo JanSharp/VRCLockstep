@@ -114,14 +114,6 @@ namespace JanSharp.Internal
         private const string ClientStatesFieldName = "allClientStates";
         private const string ClientNamesFieldName = "allClientNames";
         private const string ClientStatesCountFieldName = "allClientStatesCount";
-        private string[] clientStateNameLut = new string[]
-        {
-            nameof(ClientState.Master),
-            nameof(ClientState.WaitingForLateJoinerSync),
-            nameof(ClientState.CatchingUp),
-            nameof(ClientState.Normal),
-            nameof(ClientState.None),
-        };
 
         #if !LockstepDebug
         [HideInInspector]
@@ -324,11 +316,8 @@ namespace JanSharp.Internal
         // (object[] listObj, object[] listElemObj, int elemIndex) => void;
         public void UpdateClientStateListElemObj()
         {
-            // Just a cast to int or a cast to byte then int does not emit an actual conversion and as such
-            // causes the error that a byte variable is attempted to be used as an int. My guess is that
-            // UdonSharp assumes that enums are ints in this case or something.
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text
-                = clientStateNameLut[System.Convert.ToInt32(allClientStates[elemIndex])];
+                = lockstep.ClientStateToString(allClientStates[elemIndex]);
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text
                 = FormatPlayerId(allClientIds[elemIndex], allClientNames[elemIndex]);
         }

@@ -301,6 +301,27 @@ namespace JanSharp.Internal
             }
         }
 
+        private string[] clientStateNameLut = new string[]
+        {
+            nameof(ClientState.Master),
+            nameof(ClientState.WaitingForLateJoinerSync),
+            nameof(ClientState.CatchingUp),
+            nameof(ClientState.Normal),
+            nameof(ClientState.None),
+        };
+        public override string ClientStateToString(ClientState clientState)
+        {
+            // No debug log message because the debug UI calls this every frame.
+
+            // Just a cast to int or a cast to byte then int does not emit an actual conversion and as such
+            // causes the error that a byte variable is attempted to be used as an int. My guess is that
+            // UdonSharp assumes that enums are ints in this case or something.
+            int index = System.Convert.ToInt32(clientState);
+            return 0 <= index && index < clientStateNameLut.Length
+                ? clientStateNameLut[index]
+                : index.ToString();
+        }
+
         private void SetClientStatesToEmpty()
         {
             #if LockstepDebug

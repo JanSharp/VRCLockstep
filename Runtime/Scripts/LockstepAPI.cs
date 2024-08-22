@@ -85,6 +85,17 @@ namespace JanSharp
         public abstract uint[] ClientPlayerIds { get; }
         public abstract ClientState[] ClientStatesValues { get; }
         /// <summary>
+        /// <para>Convert a <see cref="ClientState"/> to a human readable string.</para>
+        /// <para>Very similar to how <see cref="object.ToString"/> works for enums in normal C#, but since in
+        /// Udon enums don't exist at runtime, they're just numbers, calling ToString directly on them just
+        /// gives you the internal number of the enum. This function gives you a readable string, unless the
+        /// underlying value is outside of the bounds of a valid enum, then it just returns the number
+        /// converted to a string.</para>
+        /// </summary>
+        /// <param name="clientState">Any client state to convert to a string.</param>
+        /// <returns>Never <see langword="null"/>.</returns>
+        public abstract string ClientStateToString(ClientState clientState);
+        /// <summary>
         /// <para>Guaranteed to be <see langword="true"/> on exactly 1 client during the execution of any game
         /// state safe event. Outside of those it is possible for this to be true for 0 clients at some point
         /// in time.</para>
