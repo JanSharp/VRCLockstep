@@ -106,17 +106,21 @@ namespace JanSharp.Internal
         #endif
         [SerializeField] private float clientStatesElemHeight;
         private object[] clientStatesListObj;
-        private DataDictionary clientStates;
-        private DataDictionary clientNames;
-        private DataList clientStatesKeys;
-        private const string ClientStatesFieldName = "clientStates";
-        private const string ClientNamesFieldName = "clientNames";
+        private uint[] allClientIds;
+        private ClientState[] allClientStates;
+        private string[] allClientNames;
+        private int allClientStatesCount;
+        private const string ClientIdsFieldName = "allClientIds";
+        private const string ClientStatesFieldName = "allClientStates";
+        private const string ClientNamesFieldName = "allClientNames";
+        private const string ClientStatesCountFieldName = "allClientStatesCount";
         private string[] clientStateNameLut = new string[]
         {
-            "Master",
-            "WaitingForLateJoinerSync",
-            "CatchingUp",
-            "Normal",
+            nameof(ClientState.Master),
+            nameof(ClientState.WaitingForLateJoinerSync),
+            nameof(ClientState.CatchingUp),
+            nameof(ClientState.Normal),
+            nameof(ClientState.None),
         };
 
         #if !LockstepDebug
@@ -303,16 +307,15 @@ namespace JanSharp.Internal
         private void UpdateClientStates()
         {
             // Always fetch new because it can be reset in some special cases.
-            clientStates = (DataDictionary)lockstep.GetProgramVariable(ClientStatesFieldName);
-            clientNames = (DataDictionary)lockstep.GetProgramVariable(ClientNamesFieldName);
-
-            if (clientStates != null)
-                clientStatesKeys = clientStates.GetKeys();
+            allClientIds = (uint[])lockstep.GetProgramVariable(ClientIdsFieldName);
+            allClientStates = (ClientState[])lockstep.GetProgramVariable(ClientStatesFieldName);
+            allClientNames = (string[])lockstep.GetProgramVariable(ClientNamesFieldName);
+            allClientStatesCount = (int)lockstep.GetProgramVariable(ClientStatesCountFieldName);
 
             UpdateList(
                 clientStatesListObj,
-                clientStates == null,
-                clientStates == null ? 0 : clientStates.Count,
+                allClientStates == null,
+                allClientStates == null ? 0 : allClientStatesCount,
                 nameof(CreateValueLabelListElemObj),
                 nameof(UpdateClientStateListElemObj)
             );
@@ -321,11 +324,13 @@ namespace JanSharp.Internal
         // (object[] listObj, object[] listElemObj, int elemIndex) => void;
         public void UpdateClientStateListElemObj()
         {
-            DataToken playerIdToken = clientStatesKeys[elemIndex];
+            // Just a cast to int or a cast to byte then int does not emit an actual conversion and as such
+            // causes the error that a byte variable is attempted to be used as an int. My guess is that
+            // UdonSharp assumes that enums are ints in this case or something.
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Value]).text
-                = clientStateNameLut[clientStates[playerIdToken].Byte];
+                = clientStateNameLut[System.Convert.ToInt32(allClientStates[elemIndex])];
             ((TextMeshProUGUI)listElemObj[ValueLabel_ListElemObj_Label]).text
-                = FormatPlayerId(playerIdToken.UInt, clientNames[playerIdToken].String);
+                = FormatPlayerId(allClientIds[elemIndex], allClientNames[elemIndex]);
         }
 
         private void InitializeLeftClients()

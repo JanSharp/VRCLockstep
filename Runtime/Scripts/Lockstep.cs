@@ -58,7 +58,7 @@ namespace JanSharp.Internal
         private InputActionSync inputActionSyncForLocalPlayer;
         /// <summary>
         /// <para>**Internal Game State**</para>
-        /// <para>When <see cref="clientStates"/> is not <see langword="null"/> then this is guaranteed to be
+        /// <para>When <see cref="allClientStates"/> is not <see langword="null"/> then this is guaranteed to be
         /// the client id which has the <see cref="ClientState.Master"/> state.</para>
         /// </summary>
         private uint masterPlayerId;
@@ -245,31 +245,48 @@ namespace JanSharp.Internal
         }
         public override int AllGameStatesCount => allGameStates.Length;
 
+        private bool PlayerIdHasClientState(uint playerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  PlayerIdHasClientState - playerId: {playerId}");
+            #endif
+            return ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId) >= 0;
+        }
+
+        private ClientState GetClientStateUnsafe(uint playerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetClientStateUnsafe - playerId: {playerId}");
+            #endif
+            return allClientStates[ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId)];
+        }
+
         public override ClientState GetClientState(uint playerId)
         {
-            return clientStates.TryGetValue(playerId, out DataToken clientStateToken)
-                ? (ClientState)clientStateToken.Byte
-                : ClientState.None;
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetClientState - playerId: {playerId}");
+            #endif
+            int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
+            return index >= 0 ? allClientStates[index] : ClientState.None;
         }
 
         public override bool TryGetClientState(uint playerId, out ClientState clientState)
         {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  TryGetClientState - playerId: {playerId}");
+            #endif
             clientState = GetClientState(playerId);
             return clientState != ClientState.None;
         }
 
-        public override int ClientStatesCount => clientStates.Count;
+        public override int ClientStatesCount => allClientStatesCount;
 
         public override uint[] ClientPlayerIds
         {
             get
             {
-                int count = clientStates.Count;
-                uint[] playerIds = new uint[count];
-                DataList playerIdsList = clientStates.GetKeys();
-                playerIdsList.Sort(); // Can't trust VRChat's api, but this must have a deterministic order.
-                for (int i = 0; i < count; i++)
-                    playerIds[i] = playerIdsList[i].UInt;
+                uint[] playerIds = new uint[allClientIdsCount];
+                System.Array.Copy(allClientIds, playerIds, allClientIdsCount);
                 return playerIds;
             }
         }
@@ -278,14 +295,103 @@ namespace JanSharp.Internal
         {
             get
             {
-                int count = clientStates.Count;
-                ClientState[] clientStateValues = new ClientState[count];
-                DataList playerIdsList = clientStates.GetKeys();
-                playerIdsList.Sort(); // Can't trust VRChat's api, but this must have a deterministic order.
-                for (int i = 0; i < count; i++)
-                    clientStateValues[i] = (ClientState)clientStates[playerIdsList[i]].Byte;
-                return clientStateValues;
+                ClientState[] clientStates = new ClientState[allClientStatesCount];
+                System.Array.Copy(allClientStates, clientStates, allClientStatesCount);
+                return clientStates;
             }
+        }
+
+        private void SetClientStatesToEmpty()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SetClientStatesToEmpty");
+            #endif
+            allClientIds = new uint[ArrList.MinCapacity];
+            allClientIdsCount = 0;
+            allClientStates = new ClientState[ArrList.MinCapacity];
+            allClientStatesCount = 0;
+            allClientNames = new string[ArrList.MinCapacity];
+            allClientNamesCount = 0;
+            ClearInfoUIClients();
+        }
+
+        private void SetClientStatesToNull()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SetClientStatesToNull");
+            #endif
+            allClientIds = null;
+            allClientIdsCount = 0;
+            allClientStates = null;
+            allClientStatesCount = 0;
+            allClientNames = null;
+            allClientNamesCount = 0;
+            ClearInfoUIClients();
+        }
+
+        private void AddClientState(uint playerId, ClientState clientState, string playerName)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AddClientState - playerId: {playerId}, clientState: {clientState}, playerName: {playerName}");
+            #endif
+            // Note the ~, not -. Read C# docs about BinarySearch, that's just how it is.
+            int index = ~ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
+            #if LockstepDebug
+            if (index < 0)
+            {
+                Debug.LogError($"[LockstepDebug] Attempt to add client state with already existing playerId {playerId}.");
+                playerId = allClientIds[index]; // Intentionally crash the script.
+                return;
+            }
+            #endif
+            ArrList.Insert(ref allClientIds, ref allClientIdsCount, playerId, index);
+            ArrList.Insert(ref allClientStates, ref allClientStatesCount, clientState, index);
+            ArrList.Insert(ref allClientNames, ref allClientNamesCount, playerName, index);
+            TryUpdateInfoUILocalClientState(playerId);
+            UpdateInfoUIClientCount();
+            AddInfoUIClient(playerId, playerName, clientState);
+        }
+
+        private void SetClientState(uint playerId, ClientState clientState)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SetClientState - playerId: {playerId}, clientState: {clientState}");
+            #endif
+            int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
+            #if LockstepDebug
+            if (index < 0)
+            {
+                Debug.LogError($"[LockstepDebug] Attempt to set client state of non existent playerId {playerId}.");
+                playerId = allClientIds[index]; // Intentionally crash the script.
+                return;
+            }
+            #endif
+            allClientStates[index] = clientState;
+            UpdateInfoUIClientState(playerId, clientState);
+        }
+
+        private void RemoveClientState(uint playerId, out ClientState clientState, out string playerName)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RemoveClientState - playerId: {playerId}");
+            #endif
+            int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
+            #if LockstepDebug
+            if (index < 0)
+            {
+                Debug.LogError($"[LockstepDebug] Attempt to remove client state of non existent playerId {playerId}.");
+                playerId = allClientIds[index]; // Intentionally crash the script.
+                clientState = ClientState.None;
+                playerName = null;
+                return;
+            }
+            #endif
+            ArrList.RemoveAt(ref allClientIds, ref allClientIdsCount, index);
+            clientState = ArrList.RemoveAt(ref allClientStates, ref allClientStatesCount, index);
+            playerName = ArrList.RemoveAt(ref allClientNames, ref allClientNamesCount, index);
+            TryUpdateInfoUILocalClientState(playerId);
+            UpdateInfoUIClientCount();
+            RemoveInfoUIClient(playerId);
         }
 
         /// <summary>
@@ -303,13 +409,23 @@ namespace JanSharp.Internal
 
         /// <summary>
         /// <para>**Internal Game State**</para>
-        /// <para>uint playerId => byte ClientState</para>
+        /// <para>Guaranteed to to be sorted ascending.</para>
+        /// </summary>
+        private uint[] allClientIds = null;
+        private int allClientIdsCount = 0;
+        /// <summary>
+        /// <para>**Internal Game State**</para>
+        /// <para>Indexes are associated with playerIds in <see cref="allClientIds"/>.</para>
         /// <para>Guaranteed to always contain exactly 1 client with the <see cref="ClientState.Master"/> state.</para>
         /// </summary>
-        private DataDictionary clientStates = null;
-        ///<summary><para>**Internal Game State**</para>
-        ///<para>uint playerId => string playerDisplayName</para></summary>
-        private DataDictionary clientNames = null;
+        private ClientState[] allClientStates = null;
+        private int allClientStatesCount = 0;
+        /// <summary>
+        /// <para>**Internal Game State**</para>
+        /// <para>Indexes are associated with playerIds in <see cref="allClientIds"/>.</para>
+        /// </summary>
+        private string[] allClientNames = null;
+        private int allClientNamesCount = 0;
         /// <summary>
         /// <para>Game state safe inside of <see cref="GetDisplayName(uint)"/>.</para>
         /// </summary>
@@ -318,7 +434,7 @@ namespace JanSharp.Internal
         private uint[] leftClients = new uint[ArrList.MinCapacity];
         private int leftClientsCount = 0;
         /// <summary>
-        /// <para>Must be <see langword="true"/> when <see cref="clientStates"/> is <see langword="null"/>.</para>
+        /// <para>Must be <see langword="true"/> when <see cref="allClientStates"/> is <see langword="null"/>.</para>
         /// <para>Otherwise is true when the <see cref="masterPlayerId"/> has left, aka when said id is in
         /// <see cref="leftClients"/>.</para>
         /// <para>Hilariously it is possible for <see cref="isMaster"/> to be <see langword="true"/> while
@@ -518,7 +634,7 @@ namespace JanSharp.Internal
                     if (!inputActionsByUniqueId.ContainsKey(uniqueId))
                     {
                         uint playerId = (uint)(uniqueId >> PlayerIdKeyShift);
-                        if (uniqueId != unrecoverableStateDueToUniqueId && !clientStates.ContainsKey(playerId))
+                        if (uniqueId != unrecoverableStateDueToUniqueId && !PlayerIdHasClientState(playerId))
                         {
                             // This variable is purely used as to not spam the log file every frame with this error message.
                             unrecoverableStateDueToUniqueId = uniqueId;
@@ -694,7 +810,7 @@ namespace JanSharp.Internal
             // couldn't think of another solution that wouldn't introduce other issues.
             // The clientJoinedIAId is of course allowed regardless, since that's how a client gets added to
             // clientStates in the first place.
-            if (!bypassValidityCheck && inputActionId != clientJoinedIAId && !clientStates.ContainsKey(sendingPlayerId))
+            if (!bypassValidityCheck && inputActionId != clientJoinedIAId && !PlayerIdHasClientState(sendingPlayerId))
             {
                 #if LockstepDebug
                 Debug.Log($"[LockStepDebug] The player id {sendingPlayerId} is not in the client states game"
@@ -973,7 +1089,7 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (clientStates == null) // Implies `isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync`
+            if (allClientStates == null) // Implies `isWaitingToSendClientJoinedIA || isWaitingForLateJoinerSync`
             {
                 if (!isWaitingToSendClientJoinedIA && !isWaitingForLateJoinerSync)
                     Debug.LogError("[Lockstep] clientStates should be impossible to be null when "
@@ -996,7 +1112,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AddToLeftClients");
             #endif
-            if (!clientStates.ContainsKey(playerId) // If they're not in clientStates then we simply don't care.
+            if (!PlayerIdHasClientState(playerId) // If they're not in clientStates then we simply don't care.
                 || ArrList.Contains(ref leftClients, ref leftClientsCount, playerId))
                 return; // ^ Detect and ignore player left events (aka major trust issues).
             ArrList.Add(ref leftClients, ref leftClientsCount, playerId);
@@ -1012,7 +1128,7 @@ namespace JanSharp.Internal
             if ((--someoneLeftWhileWeWereWaitingForLJSyncSentCount) != 0)
                 return;
 
-            if (clientStates == null)
+            if (allClientStates == null)
             {
                 if (!currentlyNoMaster)
                 {
@@ -1066,15 +1182,8 @@ namespace JanSharp.Internal
             isWaitingForLateJoinerSync = false;
             lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = false;
             isInitialCatchUp = false; // The master never raises a caught up event for itself.
-            clientStates = new DataDictionary();
-            clientNames = new DataDictionary();
-            ClearInfoUIClients();
-            DataToken keyToken = localPlayerId;
-            clientStates.Add(keyToken, (byte)ClientState.Master);
-            clientNames.Add(keyToken, localPlayerDisplayName);
-            TryUpdateInfoUILocalClientState(localPlayerId);
-            UpdateInfoUIClientCount();
-            AddInfoUIClient(localPlayerId, localPlayerDisplayName, ClientState.Master);
+            SetClientStatesToEmpty();
+            AddClientState(localPlayerId, ClientState.Master, localPlayerDisplayName);
             ArrList.Clear(ref leftClients, ref leftClientsCount);
             masterPlayerId = localPlayerId;
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
@@ -1142,7 +1251,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  UpdateClientStatesForNewMaster");
             #endif
 
-            bool oldMasterHasAState = clientStates.ContainsKey(masterPlayerId);
+            bool oldMasterHasAState =  PlayerIdHasClientState(masterPlayerId);
             if (!oldMasterHasAState)
             {
                 Debug.LogError($"[Lockstep] The system is supposed to guarantee that there is always 1 client "
@@ -1165,12 +1274,8 @@ namespace JanSharp.Internal
             StopWaitingForCandidates();
 
             if (oldMasterHasAState)
-            {
-                clientStates[oldMasterPlayerId] = (byte)ClientState.Normal;
-                UpdateInfoUIClientState(oldMasterPlayerId, ClientState.Normal);
-            }
-            clientStates[masterPlayerId] = (byte)ClientState.Master;
-            UpdateInfoUIClientState(masterPlayerId, ClientState.Master);
+                SetClientState(oldMasterPlayerId, ClientState.Normal);
+            SetClientState(masterPlayerId, ClientState.Master);
             RaiseOnMasterChanged(oldMasterPlayerId);
         }
 
@@ -1211,7 +1316,7 @@ namespace JanSharp.Internal
             #endif
             if (!CanSendInputActions || newMasterClientId == masterPlayerId || masterChangeRequestInProgress)
                 return false;
-            if (!clientStates.ContainsKey(newMasterClientId))
+            if (!PlayerIdHasClientState(newMasterClientId))
             {
                 Debug.LogError("[Lockstep] Attempt to send master request with a client id that is not in "
                     + "the client states game state.");
@@ -1233,7 +1338,7 @@ namespace JanSharp.Internal
             if (masterChangeRequestInProgress) // Already in process, ignore another request.
                 return;
             requestedMasterClientId = ReadSmallUInt();
-            if (!clientStates.ContainsKey(requestedMasterClientId)) // The client left already, ignore it.
+            if (!PlayerIdHasClientState(requestedMasterClientId)) // The client left already, ignore it.
             { // Cannot use leftClients for a check here since that is not part of the game state.
                 requestedMasterClientId = 0u; // Just to be clean.
                 return;
@@ -1268,7 +1373,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnConfirmedMasterChangeIA");
             #endif
-            if (!clientStates.ContainsKey(requestedMasterClientId)) // The client left already, cannot change master.
+            if (!PlayerIdHasClientState(requestedMasterClientId)) // The client left already, cannot change master.
             { // Cannot use leftClients for a check here since that is not part of the game state.
                 CompletelyCancelMasterChangeRequest();
                 return;
@@ -1328,11 +1433,9 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  IsAnyClientWaitingForLateJoinerSync");
             #endif
             DataDictionary leftClientsLut = GetLeftClientsLut();
-            DataList allKeys = clientStates.GetKeys();
-            DataList allStates = clientStates.GetValues();
-            for (int i = 0; i < allStates.Count; i++)
-                if ((ClientState)allStates[i].Byte == ClientState.WaitingForLateJoinerSync
-                    && !leftClientsLut.ContainsKey(allKeys[i].UInt))
+            for (int i = 0; i < allClientStatesCount; i++)
+                if (allClientStates[i] == ClientState.WaitingForLateJoinerSync
+                    && !leftClientsLut.ContainsKey(allClientIds[i]))
                     return true;
             return false;
         }
@@ -1371,9 +1474,7 @@ namespace JanSharp.Internal
             ForgetAboutUnprocessedLJSerializedGameSates();
             ForgetAboutLeftPlayers();
             ForgetAboutInputActionsWaitingToBeSent();
-            clientStates = null;
-            clientNames = null;
-            ClearInfoUIClients();
+            SetClientStatesToNull();
             firstMutableTick = 0u; // Technically not needed, but it makes a lot of sense to be here.
             latestInputActionIndexByPlayerIdForLJ = null;
             currentlyNoMaster = true;
@@ -1908,7 +2009,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CheckSingePlayerModeChange");
             #endif
-            bool shouldBeSinglePlayer = clientStates.Count - leftClientsCount <= 1;
+            bool shouldBeSinglePlayer = allClientStatesCount - leftClientsCount <= 1;
             if (isSinglePlayer == shouldBeSinglePlayer)
                 return;
             if (shouldBeSinglePlayer)
@@ -1984,9 +2085,7 @@ namespace JanSharp.Internal
             isWaitingToSendClientJoinedIA = false;
             isWaitingForLateJoinerSync = true;
             lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = true;
-            clientStates = null; // To know if this client actually received all data, first to last.
-            clientNames = null;
-            ClearInfoUIClients();
+            SetClientStatesToNull(); // To know if this client actually received all data, first to last.
             currentlyNoMaster = true; // When clientStates is null, this must be true.
             latestInputActionIndexByPlayerIdForLJ = null;
             WriteString(localPlayerDisplayName);
@@ -2002,19 +2101,13 @@ namespace JanSharp.Internal
             #endif
             string playerName = ReadString();
             DataToken keyToken = sendingPlayerId;
-            if (clientStates.TryGetValue(keyToken, out DataToken currentState))
+            if (TryGetClientState(sendingPlayerId, out ClientState currentState))
             {
-                if ((ClientState)currentState.Byte != ClientState.WaitingForLateJoinerSync)
+                if (currentState != ClientState.WaitingForLateJoinerSync)
                     return;
             }
             else
-            {
-                clientStates.Add(keyToken, (byte)ClientState.WaitingForLateJoinerSync);
-                clientNames.Add(keyToken, playerName);
-                TryUpdateInfoUILocalClientState(sendingPlayerId);
-                UpdateInfoUIClientCount();
-                AddInfoUIClient(sendingPlayerId, playerName, ClientState.WaitingForLateJoinerSync);
-            }
+                AddClientState(sendingPlayerId, ClientState.WaitingForLateJoinerSync, playerName);
 
             if (isMaster)
             {
@@ -2079,21 +2172,20 @@ namespace JanSharp.Internal
                 lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
             // Client states game state.
-            WriteSmallUInt((uint)clientStates.Count);
-            DataList keys = clientStates.GetKeys();
-            for (int i = 0; i < keys.Count; i++)
+            WriteSmallUInt((uint)allClientStatesCount);
+            for (int i = 0; i < allClientStatesCount; i++)
             {
-                DataToken keyToken = keys[i];
-                WriteSmallUInt(keyToken.UInt);
-                WriteByte(clientStates[keyToken].Byte);
-                WriteString(clientNames[keyToken].String);
-                WriteSmallUInt(GetLatestInputActionIndex(keyToken.UInt));
+                uint playerId = allClientIds[i];
+                WriteSmallUInt(playerId);
+                WriteByte((byte)allClientStates[i]);
+                WriteString(allClientNames[i]);
+                WriteSmallUInt(GetLatestInputActionIndex(playerId));
             }
 
             // Singleton input actions game state.
             WriteSmallUInt(nextSingletonId);
             WriteSmallUInt((uint)singletonInputActions.Count);
-            keys = singletonInputActions.GetKeys();
+            DataList keys = singletonInputActions.GetKeys();
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken keyToken = keys[i];
@@ -2134,25 +2226,22 @@ namespace JanSharp.Internal
             // the beginning, forget about everything that's been received so far.
             ForgetAboutUnprocessedLJSerializedGameSates();
 
-            clientStates = new DataDictionary();
-            clientNames = new DataDictionary();
-            ClearInfoUIClients();
+            SetClientStatesToEmpty();
             latestInputActionIndexByPlayerIdForLJ = new DataDictionary();
             int count = (int)ReadSmallUInt();
             for (int i = 0; i < count; i++)
             {
                 uint playerId = ReadSmallUInt();
-                byte clientState = ReadByte();
+                ClientState clientState = (ClientState)ReadByte();
                 string clientName = ReadString();
                 uint latestInputActionIndex = ReadSmallUInt();
-                DataToken keyToken = playerId;
-                clientStates.Add(keyToken, clientState);
-                clientNames.Add(keyToken, clientName);
-                latestInputActionIndexByPlayerIdForLJ.Add(keyToken, latestInputActionIndex);
-                if ((ClientState)clientState == ClientState.Master) // clientStates always has exactly 1 Master.
+                ArrList.Add(ref allClientIds, ref allClientIdsCount, playerId);
+                ArrList.Add(ref allClientStates, ref allClientStatesCount, clientState);
+                ArrList.Add(ref allClientNames, ref allClientNamesCount, clientName);
+                latestInputActionIndexByPlayerIdForLJ.Add(playerId, latestInputActionIndex);
+                if (clientState == ClientState.Master) // clientStates always has exactly 1 Master.
                     SetMasterPlayerId(playerId);
-                // TODO: This needs sorting.
-                AddInfoUIClient(playerId, clientName, (ClientState)clientState);
+                AddInfoUIClient(playerId, clientName, clientState);
             }
             TryUpdateInfoUILocalClientState(localPlayerId);
             UpdateInfoUIClientCount();
@@ -2180,7 +2269,7 @@ namespace JanSharp.Internal
             int newI = 0;
             while (i < leftClientsCount)
             {
-                if (clientStates.ContainsKey(leftClients[i]))
+                if (PlayerIdHasClientState(leftClients[i]))
                     leftClients[newI++] = leftClients[i];
                 else
                     leftClientsCount--;
@@ -2191,9 +2280,9 @@ namespace JanSharp.Internal
         private void OnLJCustomGameStateIA(uint inputActionId)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  OnLJCustomGameStateIA - clientStates is null: {clientStates == null}");
+            Debug.Log($"[LockstepDebug] Lockstep  OnLJCustomGameStateIA - allClientStates is null: {allClientStates == null}");
             #endif
-            if (clientStates == null) // This data was not meant for this client. Continue waiting.
+            if (allClientStates == null) // This data was not meant for this client. Continue waiting.
                 return;
 
             if (inputActionId - LJFirstCustomGameStateIAId != (uint)unprocessedLJSerializedGSCount)
@@ -2209,9 +2298,9 @@ namespace JanSharp.Internal
         private void OnLJCurrentTickIA()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  OnLJCurrentTickIA - clientStates is null: {clientStates == null}");
+            Debug.Log($"[LockstepDebug] Lockstep  OnLJCurrentTickIA - allClientStates is null: {allClientStates == null}");
             #endif
-            if (clientStates == null) // This data was not meant for this client. Continue waiting.
+            if (allClientStates == null) // This data was not meant for this client. Continue waiting.
             {
                 SendCustomEventDelayedSeconds(nameof(AskForLateJoinerSyncAgain), 2.5f);
                 return;
@@ -2235,7 +2324,7 @@ namespace JanSharp.Internal
             // should be impossible for this event to have been sent twice. But even if that were to happen,
             // late joiner sync initialization has a 5 second delay on the master, so it doesn't really
             // matter.
-            if (clientStates != null)
+            if (allClientStates != null)
                 return;
 
             Debug.LogWarning($"[Lockstep] The master has not sent another set of late joiner data for 2.5 seconds "
@@ -2405,11 +2494,10 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientGotLateJoinerDataIA");
             #endif
-            if (clientStates[sendingPlayerId].Byte == (byte)ClientState.Master)
+            if (GetClientStateUnsafe(sendingPlayerId) == ClientState.Master)
                 Debug.LogError("[Lockstep] Impossible, a client started catching up while already being master, "
                     + "however the got LJ data IA gets sent before the master change check happens.");
-            clientStates[sendingPlayerId] = (byte)ClientState.CatchingUp;
-            UpdateInfoUIClientState(sendingPlayerId, ClientState.CatchingUp);
+            SetClientState(sendingPlayerId, ClientState.CatchingUp);
             CheckIfLateJoinerSyncShouldStop();
             RaiseOnClientJoined(sendingPlayerId);
         }
@@ -2431,20 +2519,16 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnClientLeftIA");
             #endif
             uint playerId = ReadSmallUInt();
-            DataToken keyToken = playerId;
-            clientStates.Remove(keyToken, out DataToken clientStateToken);
-            clientNames.Remove(keyToken, out DataToken displayNameToken);
-            TryUpdateInfoUILocalClientState(playerId);
-            UpdateInfoUIClientCount();
-            RemoveInfoUIClient(playerId);
+            RemoveClientState(playerId, out ClientState clientState, out string playerName);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
             // Only one of the following is going to still contain data for the given player id. No need to
             // check for which one it is though, because all that needs to happen is removal.
+            DataToken keyToken = playerId;
             inputActionSyncByPlayerId.Remove(keyToken);
             latestInputActionIndexByPlayerId.Remove(keyToken);
 
-            if ((ClientState)clientStateToken.Byte == ClientState.Master)
+            if (clientState == ClientState.Master)
                 Debug.LogError("[Lockstep] Impossible, OnClientLeftIA got run for the master client. When "
                     + "the master leaves a new client should have taken the master state before this IA ran.");
 
@@ -2452,7 +2536,7 @@ namespace JanSharp.Internal
             CheckIfSingletonInputActionGotDropped(playerId);
             CheckIfImportingPlayerLeft(playerId);
             CheckIfRequestedMasterClientLeft(playerId);
-            leftClientName = displayNameToken.String;
+            leftClientName = playerName;
             RaiseOnClientLeft(playerId);
             leftClientName = null;
         }
@@ -2474,11 +2558,8 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnClientCaughtUpIA");
             #endif
             byte doRaise = ReadByte();
-            if (clientStates[sendingPlayerId].Byte != (byte)ClientState.Master)
-            {
-                clientStates[sendingPlayerId] = (byte)ClientState.Normal;
-                UpdateInfoUIClientState(sendingPlayerId, ClientState.Normal);
-            }
+            if (GetClientStateUnsafe(sendingPlayerId) != ClientState.Master)
+                SetClientState(sendingPlayerId, ClientState.Normal);
             if (doRaise != 0)
                 RaiseOnClientCaughtUp(sendingPlayerId);
         }
@@ -2902,8 +2983,12 @@ namespace JanSharp.Internal
 
         public override string GetDisplayName(uint playerId)
         {
-            if (clientNames.TryGetValue(playerId, out DataToken nameToken))
-                return nameToken.String;
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetDisplayName - playerId: {playerId}");
+            #endif
+            int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
+            if (index >= 0)
+                return allClientNames[index];
             if (leftClientName != null && playerId == leftPlayerId)
                 return leftClientName; // We are inside of the OnClientLeft event.
             Debug.LogError("[Lockstep] Attempt to call GetDisplayName with a playerId which is not currently "
@@ -3537,7 +3622,7 @@ namespace JanSharp.Internal
         {
             if (infoUI == null)
                 return;
-            infoUI.SetClientCount(clientStates.Count);
+            infoUI.SetClientCount(allClientStatesCount);
         }
 
         private void AddInfoUIClient(uint clientId, string displayName, ClientState clientState)
