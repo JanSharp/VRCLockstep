@@ -2044,18 +2044,6 @@ namespace JanSharp.Internal
             return System.Math.Min(max, System.Math.Max(min, value));
         }
 
-        private void LogBinaryData(byte[] data, int size)
-        {
-            string result = "";
-            for (int i = 0; i < size; i++)
-            {
-                if ((i % 32) == 0)
-                    result += "<v>\n";
-                result += data[i].ToString("x2");
-            }
-            Debug.Log($"[LockstepDebug] Lockstep  LogBinaryData:{result}");
-        }
-
         private uint GetLatestInputActionIndex(uint playerId)
         {
             #if LockstepDebug
@@ -2118,7 +2106,6 @@ namespace JanSharp.Internal
                 allGameStates[i].SerializeGameState(false);
                 #if LockstepDebug
                 Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerData (inner) - writeStreamSize: {writeStreamSize}");
-                LogBinaryData(writeStream, writeStreamSize);
                 #endif
                 lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, writeStream, writeStreamSize);
                 ResetWriteStream();
@@ -2274,7 +2261,6 @@ namespace JanSharp.Internal
             readStream = unprocessedLJSerializedGameStates[gameStateIndex];
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}");
-            LogBinaryData(readStream, readStream.Length);
             #endif
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u);
             if (errorMessage != null)

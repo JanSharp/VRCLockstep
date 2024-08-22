@@ -388,6 +388,6 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 - [x] keep late joiner script always enabled to prevent it from buffering all received data forever
 - [ ] import/export ui needs a settings button for each game state, probably in the root/main list... maybe just in every list. That'll pop up a ui next to the main UI which has game state specific settings
 - [x] clients can fall behind in ticks most likely whenever there is a lag spike... maybe Time.time is not consistent enough and it should use Time.realtimeSinceStartup
-- [ ] remove LogBinaryData as I've only used it once to debug something and even then it wasn't really useful, and it's a big waste of debug performance
+- [x] remove LogBinaryData as I've only used it once to debug something and even then it wasn't really useful, and it's a big waste of debug performance
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
