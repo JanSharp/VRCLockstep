@@ -16,22 +16,24 @@ namespace JanSharp
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private TextMeshProUGUI clientDisplayNameText;
+        public TextMeshProUGUI clientDisplayNameText;
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private TextMeshProUGUI clientStateText;
+        public TextMeshProUGUI clientStateText;
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private GameObject masterPreferenceObject;
+        public GameObject masterPreferenceObject;
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private TextMeshProUGUI masterPreferenceText;
+        public TextMeshProUGUI masterPreferenceText;
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private Slider masterPreferenceSlider;
+        public Slider masterPreferenceSlider;
+
+        [System.NonSerialized] public uint clientId;
     }
 }

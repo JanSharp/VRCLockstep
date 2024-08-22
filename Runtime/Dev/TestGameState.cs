@@ -181,7 +181,7 @@ namespace JanSharp
 
             ui.UpdateUI();
 
-            return null;
+            return "Hi there! Just wanted to say hello!";
         }
     }
 }

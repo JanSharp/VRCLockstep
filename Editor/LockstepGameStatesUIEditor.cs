@@ -26,7 +26,7 @@ namespace JanSharp.Internal
             if (lockstep == null)
             {
                 Debug.LogError("[Lockstep] The Lockstep Game State UI requires an instance of the "
-                    + "Lockstep script in the scene.", gameStatesUI);
+                    + "Lockstep prefab in the scene.", gameStatesUI);
                 return false;
             }
 
