@@ -339,7 +339,7 @@ namespace JanSharp.Internal
         private int someoneLeftWhileWeWereWaitingForLJSyncSentCount = 0;
         private bool waitingForCandidatesLoopRunning = false;
 
-        // Used by the debug UI.
+        // ALso used by the debug UI.
         private System.Diagnostics.Stopwatch lastUpdateSW = new System.Diagnostics.Stopwatch();
 
         // The actions run during catch up are actions that
