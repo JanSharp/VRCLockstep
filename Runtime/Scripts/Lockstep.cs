@@ -947,6 +947,13 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnPlayerLeft - player is null: {player == null}");
             #endif
             uint playerId = (uint)player.playerId;
+            if (playerId == localPlayerId)
+            {
+                isTickPaused = true; // Just sit there, do nothing and wait for the player to finish leaving
+                // the world. It is invalid for Lockstep to have 0 clients in its client states game state, so
+                // we must ignore the local player leaving.
+                return;
+            }
 
             // inputActionSyncForLocalPlayer could still be null while this event is running,
             // but if that's the case, isMaster is false and clientStates is null,
