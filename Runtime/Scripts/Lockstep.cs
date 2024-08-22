@@ -2070,7 +2070,7 @@ namespace JanSharp.Internal
             #endif
             if (isImporting)
             {
-                Debug.LogError("[Lockstep] Attempt to SendLateJoinerData while and import is still going on "
+                Debug.LogError("[Lockstep] Attempt to SendLateJoinerData while an import is still going on "
                     + "which if it was supported would be complete waste of networking bandwidth. So it isn't "
                     + "supported, and this call to SendLateJoinerData is ignored.");
                 return;
