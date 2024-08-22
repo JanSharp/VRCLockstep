@@ -102,7 +102,7 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnImportedGameState)]
         public void OnImportedGameState()
         {
-            Debug.Log($"<dlt> TestGameState  OnImportedGameState - ImportedGameState.GameStateInternalName: {lockstep.ImportedGameState.GameStateInternalName}");
+            Debug.Log($"<dlt> TestGameState  OnImportedGameState - ImportedGameState.GameStateInternalName: {lockstep.ImportedGameState.GameStateInternalName}, ImportErrorMessage: {lockstep.ImportErrorMessage ?? "<null>"}");
         }
 
         [LockstepEvent(LockstepEventType.OnImportFinished)]

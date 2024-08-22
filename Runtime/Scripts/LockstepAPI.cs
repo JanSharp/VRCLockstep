@@ -372,6 +372,15 @@ namespace JanSharp
         /// </summary>
         public abstract LockstepGameState ImportedGameState { get; }
         /// <summary>
+        /// <para>The return value of <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>.</para>
+        /// <para><see langword="null"/> means there was no error. Otherwise there was an error, however
+        /// deserialization is expected to handle errors as gracefully as possible, so the associated system
+        /// should still work afterwards.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract string ImportErrorMessage { get; }
+        /// <summary>
         /// <para>The version of the data that has just been imported.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/> and
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> even though that gets this value

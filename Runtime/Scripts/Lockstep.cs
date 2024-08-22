@@ -3206,6 +3206,7 @@ namespace JanSharp.Internal
         private System.DateTime importingFromDate;
         private string importingFromName;
         private LockstepGameState importedGameState;
+        private string importErrorMessage;
         private uint importedDataVersion;
         public override bool IsImporting => isImporting;
         public override uint ImportingPlayerId => importingPlayerId;
@@ -3213,6 +3214,7 @@ namespace JanSharp.Internal
         public override System.DateTime ImportingFromDate => importingFromDate;
         public override string ImportingFromName => importingFromName;
         public override LockstepGameState ImportedGameState => importedGameState;
+        public override string ImportErrorMessage => importErrorMessage;
         public override uint ImportedDataVersion => importedDataVersion;
         public override LockstepGameState[] GameStatesWaitingForImport
         {
@@ -3311,13 +3313,13 @@ namespace JanSharp.Internal
             }
             importedDataVersion = ReadSmallUInt();
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
-            string errorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion);
-            if (errorMessage != null)
-                SendInfoUINotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{errorMessage}");
-            // TODO: Expose the error message as part of the api for use inside of OnImportedGameState.
+            importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion);
+            if (importErrorMessage != null)
+                SendInfoUINotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
             importedGameState = gameState;
             RaiseOnImportedGameState();
             importedGameState = null;
+            importErrorMessage = null;
             importedDataVersion = 0u;
             if (gameStatesWaitingForImport.Count == 0)
                 SetIsImporting(false);
