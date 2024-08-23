@@ -1207,6 +1207,7 @@ namespace JanSharp.Internal
             AddClientState(localPlayerId, ClientState.Master, localPlayerDisplayName);
             ArrList.Clear(ref leftClients, ref leftClientsCount);
             masterPlayerId = localPlayerId;
+            UpdateInfoUILockstepMaster();
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
@@ -1306,6 +1307,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  SetMasterPlayerId");
             #endif
             masterPlayerId = newMasterId;
+            UpdateInfoUILockstepMaster();
             if (ArrList.Contains(ref leftClients, ref leftClientsCount, masterPlayerId))
                 SetMasterLeftFlag();
             else
@@ -3628,6 +3630,13 @@ namespace JanSharp.Internal
             if (infoUI == null || affectedPlayerId != localPlayerId)
                 return;
             infoUI.SetLocalClientState(GetClientState(localPlayerId));
+        }
+
+        private void UpdateInfoUILockstepMaster()
+        {
+            if (infoUI == null)
+                return;
+            infoUI.SetLockstepMaster(GetDisplayName(masterPlayerId));
         }
 
         private void UpdateInfoUIClientState(uint clientId, ClientState clientState)
