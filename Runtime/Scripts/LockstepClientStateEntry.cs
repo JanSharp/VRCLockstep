@@ -24,16 +24,19 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        public GameObject masterPreferenceObject;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         public TextMeshProUGUI masterPreferenceText;
         #if !LockstepDebug
         [HideInInspector]
         #endif
         public Slider masterPreferenceSlider;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        public Button makeMasterButton;
 
-        [System.NonSerialized] public uint clientId;
+        [System.NonSerialized] public LockstepInfoUI infoUI;
+        [System.NonSerialized] public uint playerId;
+
+        public void OnMakeMasterClick() => infoUI.OnMakeMasterClick(this);
     }
 }

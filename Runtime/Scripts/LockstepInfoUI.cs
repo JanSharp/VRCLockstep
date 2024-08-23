@@ -99,16 +99,17 @@ namespace JanSharp.Internal
         private VRCPlayerApi localPlayer;
         private uint localPlayerId;
 
-        private bool isBecomingMaster = false;
-        private bool IsBecomingMaster
+        private uint desiredNewMasterPlayerId;
+        private bool isChangingMaster = false;
+        private bool IsChangingMaster
         {
-            get => isBecomingMaster;
+            get => isChangingMaster;
             set
             {
-                if (isBecomingMaster == value)
+                if (isChangingMaster == value)
                     return;
-                isBecomingMaster = value;
-                UpdateBecomeMasterButton();
+                isChangingMaster = value;
+                UpdateBecomeAndMakeMasterButtons();
             }
         }
         private ClientState localClientState = ClientState.None;
@@ -121,7 +122,7 @@ namespace JanSharp.Internal
                     return;
                 localClientState = value;
                 localClientStateText.text = lockstep.ClientStateToString(localClientState);
-                UpdateBecomeMasterButton();
+                UpdateBecomeAndMakeMasterButtons();
             }
         }
 
@@ -231,41 +232,65 @@ namespace JanSharp.Internal
 
         public void OnBecomeMasterClick()
         {
-            if (IsBecomingMaster)
-                return;
-            IsBecomingMaster = lockstep.RequestLocalClientToBecomeMaster();
+            SetDesiredMasterPlayerId(localPlayerId);
         }
 
-        private void UpdateBecomeMasterButton()
+        public void OnMakeMasterClick(LockstepClientStateEntry entry)
         {
-            becomeMasterButton.interactable = !IsBecomingMaster
+            SetDesiredMasterPlayerId(entry.playerId);
+        }
+
+        private void SetDesiredMasterPlayerId(uint playerId)
+        {
+            desiredNewMasterPlayerId = playerId;
+            if (IsChangingMaster)
+                return;
+            IsChangingMaster = lockstep.SendMasterChangeRequestIA(desiredNewMasterPlayerId);
+        }
+
+        private void UpdateBecomeAndMakeMasterButtons()
+        {
+            becomeMasterButton.interactable = !IsChangingMaster
                 && LocalClientState != ClientState.Master
                 && lockstep.CanSendInputActions;
+
+            DataList entries = clientStateEntries.GetValues();
+            int count = entries.Count;
+            for (int i = 0; i < count; i++)
+                UpdateMakeMasterButton((LockstepClientStateEntry)entries[i].Reference);
+        }
+
+        private void UpdateMakeMasterButton(LockstepClientStateEntry entry)
+        {
+            entry.makeMasterButton.interactable = !IsChangingMaster
+                && lockstep.GetClientState(entry.playerId) != ClientState.Master;
+            // Does not need the lockstep.CanSendInputActions check because entries won't exist yet while that
+            // is still false.
         }
 
         [LockstepEvent(LockstepEventType.OnInit)]
         public void OnInit()
         {
-            UpdateBecomeMasterButton();
+            UpdateBecomeAndMakeMasterButtons();
         }
 
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp()
         {
-            UpdateBecomeMasterButton();
+            UpdateBecomeAndMakeMasterButtons();
         }
 
         [LockstepEvent(LockstepEventType.OnMasterChanged)]
         public void OnMasterChanged()
         {
-            if (!IsBecomingMaster)
+            if (!IsChangingMaster)
                 return;
-            if (lockstep.MasterPlayerId == localPlayerId)
+            if (lockstep.MasterPlayerId == desiredNewMasterPlayerId)
             {
-                IsBecomingMaster = false;
+                IsChangingMaster = false;
                 return;
             }
-            lockstep.RequestLocalClientToBecomeMaster(); // Try again.
+            lockstep.SendMasterChangeRequestIA(desiredNewMasterPlayerId); // Try again.
         }
 
         private void UpdateCanvasGroupVisibility(CanvasGroup canvasGroup, bool isVisible)
@@ -282,9 +307,10 @@ namespace JanSharp.Internal
 
         private LockstepClientStateEntry GetOrCreateEntry()
         {
+            LockstepClientStateEntry entry;
             if (unusedClientStateEntriesCount != 0)
             {
-                LockstepClientStateEntry entry = ArrList.RemoveAt(
+                entry = ArrList.RemoveAt(
                     ref unusedClientStateEntries,
                     ref unusedClientStateEntriesCount,
                     unusedClientStateEntriesCount - 1);
@@ -294,16 +320,19 @@ namespace JanSharp.Internal
             }
             GameObject entryGo = Instantiate(clientStateEntryPrefab);
             entryGo.transform.SetParent(clientStatesContent, worldPositionStays: false);
-            return entryGo.GetComponent<LockstepClientStateEntry>();
+            entry = entryGo.GetComponent<LockstepClientStateEntry>();
+            entry.infoUI = this;
+            return entry;
         }
 
         public void AddClient(uint clientId, string displayName, ClientState clientState)
         {
             LockstepClientStateEntry entry = GetOrCreateEntry();
             clientStateEntries.Add(clientId, entry);
-            entry.clientId = clientId;
+            entry.playerId = clientId;
             entry.clientDisplayNameText.text = displayName;
             entry.clientStateText.text = lockstep.ClientStateToString(clientState);
+            UpdateMakeMasterButton(entry);
         }
 
         public void RemoveClient(uint clientId)
@@ -332,6 +361,7 @@ namespace JanSharp.Internal
         {
             LockstepClientStateEntry entry = (LockstepClientStateEntry)clientStateEntries[clientId].Reference;
             entry.clientStateText.text = lockstep.ClientStateToString(clientState);
+            UpdateMakeMasterButton(entry);
         }
 
         public void SendNotification(string message)

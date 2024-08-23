@@ -392,10 +392,13 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 - [x] add ClientStateToString function to lockstep api, which uses a string array internally to "convert" the ClientState byte into the associated string.
 - [x] maybe show "become master" button in info ui,
   - [ ] potentially depending on whether or not the master preference game state is in the scene, or depending on a bool setting on in the ui script
-- [ ] maybe show "make master" button for each client in the info ui.
+- [x] maybe show "make master" button for each client in the info ui.
 - [ ] maybe make become master and make master buttons automatically increase your master preference to match the current highest preference out of all clients
 - [x] arrange the top panel of the info UI in 2 columns - left labels, right values - to improve readability
 - [ ] maybe add option for other systems to add per client info into the info ui
 - [ ] add api function to check if a player id exists in the internal game state, also mention that function in the docs for SendMasterChangeRequestIA
+- [ ] change info ui to not require any extra hooks inside of lockstep, just using lockstep events and api
+- [ ] fix that requesting for a client to be master when that client is still waiting for late joiner sync soft locks lockstep
+- [ ] fix lockstep AssociateUnassociatedInputActionsWithTicks setting capacity on a data list can set the capacity to be lower than what it currently has as its capacity which throws an exception
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
