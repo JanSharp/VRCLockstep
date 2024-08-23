@@ -266,6 +266,8 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetClientState - playerId: {playerId}");
             #endif
+            if (allClientStates == null)
+                return ClientState.None;
             int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
             return index >= 0 ? allClientStates[index] : ClientState.None;
         }
@@ -279,25 +281,41 @@ namespace JanSharp.Internal
             return clientState != ClientState.None;
         }
 
-        public override int ClientStatesCount => allClientStatesCount;
+        public override int ClientStatesCount => allClientStates == null ? 0 : allClientStatesCount;
 
-        public override uint[] ClientPlayerIds
+        public override uint[] AllClientPlayerIds
         {
             get
             {
+                if (allClientStates == null)
+                    return null;
                 uint[] playerIds = new uint[allClientIdsCount];
                 System.Array.Copy(allClientIds, playerIds, allClientIdsCount);
                 return playerIds;
             }
         }
 
-        public override ClientState[] ClientStatesValues
+        public override ClientState[] AllClientStates
         {
             get
             {
+                if (allClientStates == null)
+                    return null;
                 ClientState[] clientStates = new ClientState[allClientStatesCount];
                 System.Array.Copy(allClientStates, clientStates, allClientStatesCount);
                 return clientStates;
+            }
+        }
+
+        public override string[] AllClientDisplayNames
+        {
+            get
+            {
+                if (allClientStates == null)
+                    return null;
+                string[] clientNames = new string[allClientNamesCount];
+                System.Array.Copy(allClientNames, clientNames, allClientNamesCount);
+                return clientNames;
             }
         }
 

@@ -15,7 +15,7 @@ namespace JanSharp
         /// <summary>
         /// <para>This state represents invalid or non existent clients. It is impossible for any client which
         /// has a state inside of Lockstep to have this state, therefore
-        /// <see cref="LockstepAPI.ClientStatesValues"/> also never returns <see cref="None"/>.</para>
+        /// <see cref="LockstepAPI.AllClientStates"/> also never returns <see cref="None"/>.</para>
         /// </summary>
         None,
     }
@@ -79,11 +79,63 @@ namespace JanSharp
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract int AllGameStatesCount { get; }
+        /// <summary>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="playerId">Any player id. Non existent ones are valid.</param>
+        /// <returns>The current <see cref="ClientState"/> of the given <paramref name="playerId"/>, or
+        /// <see cref="ClientState.None"/> if the player does not exist in the internal game state.</returns>
         public abstract ClientState GetClientState(uint playerId);
+        /// <summary>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="playerId">Any player id. Non existent ones are valid.</param>
+        /// <param name="clientState">The current <see cref="ClientState"/> of the given
+        /// <paramref name="playerId"/>, or <see cref="ClientState.None"/> if the player does not exist in the
+        /// internal game state.</param>
+        /// <returns><see langword="true"/> when the given <paramref name="playerId"/> exists in lockstep's
+        /// internal game state.</returns>
         public abstract bool TryGetClientState(uint playerId, out ClientState clientState);
+        /// <summary>
+        /// <para>The current amount of players in lockstep's internal client states game state.</para>
+        /// <para>When <see cref="AllClientPlayerIds"/> and <see cref="AllClientStates"/> are
+        /// <see langword="null"/>, this simply returns <c>0</c>.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
         public abstract int ClientStatesCount { get; }
-        public abstract uint[] ClientPlayerIds { get; }
-        public abstract ClientState[] ClientStatesValues { get; }
+        /// <summary>
+        /// <para>Returns a copy of the current list of all player ids in lockstep's internal client states
+        /// game state.</para>
+        /// <para>Ordered ascending.</para>
+        /// <para>Usable any time, however before <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised this may be <see langword="null"/>.
+        /// After that this is never <see langword="null"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract uint[] AllClientPlayerIds { get; }
+        /// <summary>
+        /// <para>Returns a copy of the current list of all players' client states in lockstep's internal
+        /// game state.</para>
+        /// <para>Order of client states matches the player ids in <see cref="AllClientPlayerIds"/>.</para>
+        /// <para>Usable any time, however before <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised this may be <see langword="null"/>.
+        /// After that this is never <see langword="null"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract ClientState[] AllClientStates { get; }
+        /// <summary>
+        /// <para>Returns a copy of the current list of all players' display names in lockstep's internal
+        /// client states game state.</para>
+        /// <para>Order of display names matches the player ids in <see cref="AllClientPlayerIds"/>.</para>
+        /// <para>Usable any time, however before <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised this may be <see langword="null"/>.
+        /// After that this is never <see langword="null"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract string[] AllClientDisplayNames { get; }
         /// <summary>
         /// <para>Convert a <see cref="ClientState"/> to a human readable string.</para>
         /// <para>Very similar to how <see cref="object.ToString"/> works for enums in normal C#, but since in
