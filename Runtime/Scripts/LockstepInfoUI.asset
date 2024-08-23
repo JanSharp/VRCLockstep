@@ -1484,7 +1484,7 @@ MonoBehaviour:
       Data: 90|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JanSharp.LockstepClientStateEntry[], JanSharp.Lockstep
+      Data: JanSharp.Internal.LockstepClientStateEntry[], JanSharp.Lockstep
     - Name: 
       Entry: 8
       Data: 

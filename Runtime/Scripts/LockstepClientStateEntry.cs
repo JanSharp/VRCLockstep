@@ -5,7 +5,7 @@ using VRC.SDKBase;
 using VRC.Udon;
 using TMPro;
 
-namespace JanSharp
+namespace JanSharp.Internal
 {
     #if !LockstepDebug
     [AddComponentMenu("")]
