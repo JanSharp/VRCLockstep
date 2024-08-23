@@ -1977,7 +1977,8 @@ namespace JanSharp.Internal
             // implementing insert sort, because Udon is slow.
             DataList unassociatedUniqueIds = new DataList();
             int unassociatedCount = count - associatedUniqueIds.Count;
-            unassociatedUniqueIds.Capacity = unassociatedCount;
+            if (unassociatedCount > unassociatedUniqueIds.Capacity)
+                unassociatedUniqueIds.Capacity = unassociatedCount;
             for (int i = 0; i < count; i++)
             {
                 ulong uniqueId = uniqueIds[i].ULong;
