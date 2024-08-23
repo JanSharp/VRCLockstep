@@ -394,7 +394,7 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 - [ ] maybe show "become master" button in info ui, potentially depending on whether or not the master preference game state is in the scene, or depending on a bool setting on in the ui script
 - [ ] maybe show "make master" button for each client in the info ui.
 - [ ] maybe make become master and make master buttons automatically increase your master preference to match the current highest preference out of all clients
-- [ ] arrange the top panel of the info UI in 2 columns - left labels, right values - to improve readability
+- [x] arrange the top panel of the info UI in 2 columns - left labels, right values - to improve readability
 - [ ] maybe add option for other systems to add per client info into the info ui
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

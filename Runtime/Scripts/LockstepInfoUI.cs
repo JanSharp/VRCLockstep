@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC.SDKBase;
@@ -34,7 +34,15 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
+        [SerializeField] private GameObject lockstepMasterNoValueObj;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI vrcMasterText;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private GameObject vrcMasterNoValueObj;
         #if !LockstepDebug
         [HideInInspector]
         #endif
@@ -165,22 +173,24 @@ namespace JanSharp.Internal
         private void SetVRCMaster(VRCPlayerApi newMaster)
         {
             currentVRCMaster = newMaster;
-            vrcMasterText.text = $"VRChat Master: {(newMaster == null ? "" : newMaster.displayName)}";
+            vrcMasterText.text = newMaster != null ? newMaster.displayName : "";
+            vrcMasterNoValueObj.SetActive(newMaster == null);
         }
 
         public void SetLockstepMaster(string masterName)
         {
-            lockstepMasterText.text = $"Lockstep Master: {masterName ?? ""}";
+            lockstepMasterText.text = masterName ?? "";
+            lockstepMasterNoValueObj.SetActive(masterName == null);
         }
 
         public void SetLocalClientState(ClientState clientState)
         {
-            localClientStateText.text = $"Local Client State: {lockstep.ClientStateToString(clientState)}";
+            localClientStateText.text = lockstep.ClientStateToString(clientState);
         }
 
         public void SetClientCount(int count)
         {
-            clientCountText.text = $"Client Count: {count}";
+            clientCountText.text = count.ToString();
         }
 
         private void UpdateCanvasGroupVisibility(CanvasGroup canvasGroup, bool isVisible)
