@@ -296,8 +296,7 @@ namespace JanSharp
         /// may be best to listen to the <see cref="LockstepEventType.OnMasterChanged"/> event to check if the
         /// desired client actually became master, and if not then re send the request. Just make sure to
         /// check if the desired client is even still in the world.</para>
-        /// <para>Usable any time, though if <see cref="CanSendInputActions"/> is <see langword="false"/> this
-        /// will not send any input action and simply return <see langword="false"/>.</para>
+        /// <para>Usable any time.</para>
         /// </summary>
         /// <param name="newMasterClientId"><para>The client id which should become the lockstep
         /// master.</para>
@@ -305,7 +304,10 @@ namespace JanSharp
         /// <para>Giving this a client id which does not exist in the client states internal game state is
         /// invalid.</para>
         /// </param>
-        /// <returns>Returns <see langword="true"/> if the input action was sent successfully.</returns>
+        /// <returns>Returns <see langword="true"/> if the input action was sent successfully. It will only be
+        /// sent if <see cref="CanSendInputActions"/> is <see langword="true"/>, if the
+        /// <paramref name="newMasterClientId"/> is different than the <see cref="MasterPlayerId"/> and if
+        /// there is no master change request currently in progress.</returns>
         public abstract bool SendMasterChangeRequestIA(uint newMasterClientId);
         /// <summary>
         /// <para>The display names are saved in an internal lockstep game state. They are available starting

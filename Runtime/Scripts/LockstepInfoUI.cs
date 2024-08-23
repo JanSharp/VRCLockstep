@@ -50,6 +50,10 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
+        [SerializeField] private Button becomeMasterButton;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private TextMeshProUGUI clientCountText;
         #if !LockstepDebug
         [HideInInspector]
@@ -92,6 +96,35 @@ namespace JanSharp.Internal
         #endif
         [SerializeField] private Transform clientStatesContent;
 
+        private VRCPlayerApi localPlayer;
+        private uint localPlayerId;
+
+        private bool isBecomingMaster = false;
+        private bool IsBecomingMaster
+        {
+            get => isBecomingMaster;
+            set
+            {
+                if (isBecomingMaster == value)
+                    return;
+                isBecomingMaster = value;
+                UpdateBecomeMasterButton();
+            }
+        }
+        private ClientState localClientState = ClientState.None;
+        private ClientState LocalClientState
+        {
+            get => localClientState;
+            set
+            {
+                if (localClientState == value)
+                    return;
+                localClientState = value;
+                localClientStateText.text = lockstep.ClientStateToString(localClientState);
+                UpdateBecomeMasterButton();
+            }
+        }
+
         /// <summary>
         /// <para><see cref="uint"/> clientId => <see cref="LockstepClientStateEntry"/> entry</para>
         /// </summary>
@@ -111,6 +144,9 @@ namespace JanSharp.Internal
 
         private void Start()
         {
+            localPlayer = Networking.LocalPlayer;
+            localPlayerId = (uint)localPlayer.playerId;
+
             if (isCheckVRCMasterLoopRunning)
                 return;
             isCheckVRCMasterLoopRunning = true;
@@ -185,12 +221,51 @@ namespace JanSharp.Internal
 
         public void SetLocalClientState(ClientState clientState)
         {
-            localClientStateText.text = lockstep.ClientStateToString(clientState);
+            LocalClientState = clientState;
         }
 
         public void SetClientCount(int count)
         {
             clientCountText.text = count.ToString();
+        }
+
+        public void OnBecomeMasterClick()
+        {
+            if (IsBecomingMaster)
+                return;
+            IsBecomingMaster = lockstep.RequestLocalClientToBecomeMaster();
+        }
+
+        private void UpdateBecomeMasterButton()
+        {
+            becomeMasterButton.interactable = !IsBecomingMaster
+                && LocalClientState != ClientState.Master
+                && lockstep.CanSendInputActions;
+        }
+
+        [LockstepEvent(LockstepEventType.OnInit)]
+        public void OnInit()
+        {
+            UpdateBecomeMasterButton();
+        }
+
+        [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
+        public void OnClientBeginCatchUp()
+        {
+            UpdateBecomeMasterButton();
+        }
+
+        [LockstepEvent(LockstepEventType.OnMasterChanged)]
+        public void OnMasterChanged()
+        {
+            if (!IsBecomingMaster)
+                return;
+            if (lockstep.MasterPlayerId == localPlayerId)
+            {
+                IsBecomingMaster = false;
+                return;
+            }
+            lockstep.RequestLocalClientToBecomeMaster(); // Try again.
         }
 
         private void UpdateCanvasGroupVisibility(CanvasGroup canvasGroup, bool isVisible)
