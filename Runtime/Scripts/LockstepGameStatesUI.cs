@@ -58,7 +58,7 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private InputField serializedInputField;
+        [SerializeField] private TMP_InputField serializedInputField;
         #if !LockstepDebug
         [HideInInspector]
         #endif
@@ -99,7 +99,7 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private InputField autosaveIntervalField;
+        [SerializeField] private TMP_InputField autosaveIntervalField;
         #if !LockstepDebug
         [HideInInspector]
         #endif
@@ -107,11 +107,11 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private InputField serializedOutputField;
+        [SerializeField] private TMP_InputField serializedOutputField;
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private InputField exportNameField;
+        [SerializeField] private TMP_InputField exportNameField;
         #if !LockstepDebug
         [HideInInspector]
         #endif

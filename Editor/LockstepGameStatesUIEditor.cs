@@ -115,7 +115,7 @@ namespace JanSharp.Internal
             proxy.FindProperty("autosaveInterval").floatValue = defaultAutosaveInterval;
             proxy.ApplyModifiedProperties();
 
-            InputField autosaveIntervalField = (InputField)proxy.FindProperty("autosaveIntervalField").objectReferenceValue;
+            TMP_InputField autosaveIntervalField = (TMP_InputField)proxy.FindProperty("autosaveIntervalField").objectReferenceValue;
             SerializedObject fieldProxy = new SerializedObject(autosaveIntervalField);
             fieldProxy.FindProperty("m_Text").stringValue = ((int)defaultAutosaveInterval).ToString();
             fieldProxy.ApplyModifiedProperties();
