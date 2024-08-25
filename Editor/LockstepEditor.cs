@@ -19,8 +19,8 @@ namespace JanSharp.Internal
         private static Dictionary<LockstepEventType, List<(int order, UdonSharpBehaviour ub)>> allListeners = new Dictionary<LockstepEventType, List<(int order, UdonSharpBehaviour ub)>>()
         {
             { LockstepEventType.OnInit, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnClientJoined, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnClientBeginCatchUp, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnClientJoined, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnClientCaughtUp, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnClientLeft, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnMasterChanged, new List<(int order, UdonSharpBehaviour ub)>() },
@@ -47,8 +47,8 @@ namespace JanSharp.Internal
 
         private static readonly LockstepEventType[] allEventTypes = new LockstepEventType[] {
             LockstepEventType.OnInit,
-            LockstepEventType.OnClientJoined,
             LockstepEventType.OnClientBeginCatchUp,
+            LockstepEventType.OnClientJoined,
             LockstepEventType.OnClientCaughtUp,
             LockstepEventType.OnClientLeft,
             LockstepEventType.OnMasterChanged,

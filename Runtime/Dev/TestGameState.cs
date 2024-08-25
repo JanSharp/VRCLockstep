@@ -33,6 +33,12 @@ namespace JanSharp
             Debug.Log($"<dlt> TestGameState  OnInit");
         }
 
+        [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
+        public void OnClientBeginCatchUp()
+        {
+            Debug.Log($"<dlt> TestGameState  OnClientBeginCatchUp - {lockstep.CatchingUpPlayerId}");
+        }
+
         [LockstepEvent(LockstepEventType.OnClientJoined)]
         public void OnClientJoined()
         {
@@ -46,12 +52,6 @@ namespace JanSharp
 
             allPlayerData.Add(joinedPlayerId, new DataToken(playerData));
             ui.UpdateUI();
-        }
-
-        [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
-        public void OnClientBeginCatchUp()
-        {
-            Debug.Log($"<dlt> TestGameState  OnClientBeginCatchUp - {lockstep.CatchingUpPlayerId}");
         }
 
         [LockstepEvent(LockstepEventType.OnClientCaughtUp)]

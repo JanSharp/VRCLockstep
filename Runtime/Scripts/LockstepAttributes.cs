@@ -21,18 +21,6 @@ namespace JanSharp {
         /// </summary>
         OnInit,
         /// <summary>
-        /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
-        /// <para>This is the first event to be raised for the joined client, and it is also guaranteed to be
-        /// raised before any input actions sent by the joining client are received and run.</para>
-        /// <para>Clients to exist in the internal game state a little bit before this event gets raised,
-        /// those clients are still waiting on late joiner data and are for all intents and purposes not yet
-        /// loaded into the world.</para>
-        /// <para>This event is also raised on the client which joined, including the very first client (right
-        /// after <see cref="OnInit"/>).</para>
-        /// <para>Game state safe.</para>
-        /// </summary>
-        OnClientJoined,
-        /// <summary>
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which is
         /// beginning to catch up.</para>
         /// <para>This is the very first event raised on every client which isn't the very first client, since
@@ -46,6 +34,18 @@ namespace JanSharp {
         /// <para><b>Not game state safe</b> - only raised on one client, the one beginning catch up.</para>
         /// </summary>
         OnClientBeginCatchUp,
+        /// <summary>
+        /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
+        /// <para>This is the first event to be raised for the joined client, and it is also guaranteed to be
+        /// raised before any input actions sent by the joining client are received and run.</para>
+        /// <para>Clients to exist in the internal game state a little bit before this event gets raised,
+        /// those clients are still waiting on late joiner data and are for all intents and purposes not yet
+        /// loaded into the world.</para>
+        /// <para>This event is also raised on the client which joined, including the very first client (right
+        /// after <see cref="OnInit"/>).</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        OnClientJoined,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which has
         /// caught up.</para>
