@@ -83,6 +83,10 @@ namespace JanSharp {
         /// <para>Use <see cref="LockstepAPI.LeftPlayerId"/> to get the id of the left client.</para>
         /// <para>It is guaranteed that after this event got raised, not a single input action sent by the
         /// left client shall be received.</para>
+        /// <para>This event is not raised on the client which left, lockstep simply stops running as soon as
+        /// the local player leaves, unlike VRChat's
+        /// <see cref="UdonSharp.UdonSharpBehaviour.OnPlayerLeft(VRC.SDKBase.VRCPlayerApi)"/> event which does
+        /// get raised for the local client, at least as of 2024-08-31.</para>
         /// <para>The state of the left client in and after this event is <see cref="ClientState.None"/>, as
         /// the client is no longer in the internal client states game state.</para>
         /// <para>Game state safe.</para>
