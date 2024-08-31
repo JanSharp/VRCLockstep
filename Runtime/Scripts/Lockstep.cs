@@ -179,11 +179,11 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private UdonSharpBehaviour[] onClientJoinedListeners;
+        [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
+        [SerializeField] private UdonSharpBehaviour[] onClientJoinedListeners;
         #if !LockstepDebug
         [HideInInspector]
         #endif
@@ -2791,23 +2791,6 @@ namespace JanSharp.Internal
                 onInitListeners = CleanUpRemovedListeners(onInitListeners, destroyedCount, nameof(LockstepEventType.OnInit));
         }
 
-        private void RaiseOnClientJoined(uint joinedPlayerId)
-        {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientJoined");
-            #endif
-            this.joinedPlayerId = joinedPlayerId;
-            int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onClientJoinedListeners)
-                if (listener == null)
-                    destroyedCount++;
-                else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnClientJoined));
-            if (destroyedCount != 0)
-                onClientJoinedListeners = CleanUpRemovedListeners(onClientJoinedListeners, destroyedCount, nameof(LockstepEventType.OnClientJoined));
-            this.joinedPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
-        }
-
         private void RaiseOnClientBeginCatchUp(uint catchingUpPlayerId)
         {
             #if LockstepDebug
@@ -2823,6 +2806,23 @@ namespace JanSharp.Internal
             if (destroyedCount != 0)
                 onClientBeginCatchUpListeners = CleanUpRemovedListeners(onClientBeginCatchUpListeners, destroyedCount, nameof(LockstepEventType.OnClientBeginCatchUp));
             this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
+        }
+
+        private void RaiseOnClientJoined(uint joinedPlayerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientJoined");
+            #endif
+            this.joinedPlayerId = joinedPlayerId;
+            int destroyedCount = 0;
+            foreach (UdonSharpBehaviour listener in onClientJoinedListeners)
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnClientJoined));
+            if (destroyedCount != 0)
+                onClientJoinedListeners = CleanUpRemovedListeners(onClientJoinedListeners, destroyedCount, nameof(LockstepEventType.OnClientJoined));
+            this.joinedPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
         private void RaiseOnClientCaughtUp(uint catchingUpPlayerId)

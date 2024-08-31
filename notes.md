@@ -329,8 +329,8 @@ Game state safe events are raised on every client in the exact same order on the
 Only inside of these events, modification of game states is allowed. See [game states](#game-states) for what rules to follow when modifying game states.
 
 - `OnInit()` (This is [special](#first-client). Also, it only runs on the first client, but at that time it is the only - therefore every - client.)
-- `OnClientJoined()` Use `JoinedPlayerId` from the lockstep api.
 - `OnClientCaughtUp()` Use `CatchingUpPlayerId` from the lockstep api.
+- `OnClientJoined()` Use `JoinedPlayerId` from the lockstep api.
 - `OnClientLeft()` Use `LeftPlayerId` from the lockstep api.
 - `OnMasterChanged` Use `OldMasterPlayerId` and `MasterPlayerId` from the lockstep api.
 - `OnTick()`
