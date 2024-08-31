@@ -17,6 +17,9 @@ namespace JanSharp {
         /// existing game states. Since <see cref="OnInit"/> is the very first initialization, it is allowed
         /// to use any data to initialize the game state(s). This is natural since there is no previous game
         /// state data to mutate.</para>
+        /// <para>Even though <see cref="OnInit"/> is raised before <see cref="OnClientJoined"/>, the master
+        /// client already exists in the internal client states game state inside of
+        /// <see cref="OnInit"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnInit,
