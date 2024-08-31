@@ -46,6 +46,8 @@ namespace JanSharp {
         /// events raised for/about the joined client.</para>
         /// <para>This event is not raised on the client which joined, since it is raised before late joiner
         /// data is sent to the client.</para>
+        /// <para>The state of the joined client in and after this event is
+        /// <see cref="ClientState.WaitingForLateJoinerSync"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnPreClientJoined,
@@ -59,6 +61,8 @@ namespace JanSharp {
         /// <see cref="OnClientJoined"/> the true "this player has joined" event. As the name implies.</para>
         /// <para>This event is also raised on the client which joined, including the very first client (right
         /// after <see cref="OnInit"/>).</para>
+        /// <para>The state of the joined client in and after this event is
+        /// <see cref="ClientState.CatchingUp"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnClientJoined,
@@ -67,6 +71,8 @@ namespace JanSharp {
         /// caught up.</para>
         /// <para>It is possible for a client to become master before finishing catching up, in which case
         /// <see cref="OnMasterChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
+        /// <para>The state of the catching up client in and after this event is either
+        /// <see cref="ClientState.Normal"/> or <see cref="ClientState.Master"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnClientCaughtUp,
@@ -74,6 +80,8 @@ namespace JanSharp {
         /// <para>Use <see cref="LockstepAPI.LeftPlayerId"/> to get the id of the left client.</para>
         /// <para>It is guaranteed that after this event got raised, not a single input action sent by the
         /// left client shall be received.</para>
+        /// <para>The state of the left client in and after this event is <see cref="ClientState.None"/>, as
+        /// the client is no longer in the internal client states game state.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnClientLeft,
@@ -84,6 +92,9 @@ namespace JanSharp {
         /// (<see cref="LockstepAPI.MasterPlayerId"/> is not limited to the scope of this event.)</para>
         /// <para>It is possible for a client to become master before finishing catching up, in which case
         /// <see cref="OnMasterChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
+        /// <para>The state of the old master client in and after this event is
+        /// <see cref="ClientState.Normal"/>, for the new master it is
+        /// <see cref="ClientState.Master"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnMasterChanged,

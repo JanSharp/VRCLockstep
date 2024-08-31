@@ -363,7 +363,6 @@ TODO: add master preference game state
   - when in the scene, enable a slider for each player in the client states list in the info UI
   - import export support
 TODO: add game state safe prng
-TODO: add note about what state a client changed to in the different client state change related events
 TODO: add "world name" to lockstep which by default gets set to the scene file name but can be overwritten manually. This name would be included in exports and autosaves
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: mention where the returned error message from DeserializeGameState gets displayed
