@@ -36,11 +36,27 @@ namespace JanSharp {
         OnClientBeginCatchUp,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
-        /// <para>This is the first event to be raised for the joined client, and it is also guaranteed to be
-        /// raised before any input actions sent by the joining client are received and run.</para>
-        /// <para>Clients start to exist in the internal game state a little bit before this event gets
-        /// raised, those clients are still waiting on late joiner data and are for all intents and purposes
-        /// not yet loaded into the world.</para>
+        /// <para>This is the very first event to be raised for the joined client, however said client is
+        /// waiting for late joiner data. It cannot send input actions yet, and any input actions sent may or
+        /// may not actually be run on the joined client, depending on which tick the master client decides to
+        /// send late joiner data to the joined client. The timing of this is undefined.</para>
+        /// <para>In less technical terms this is like a notification that a client is about to join, but it
+        /// has not fully joined yet, and should therefore be treated as a not yet joined client.</para>
+        /// <para>From this point forward until <see cref="OnClientJoined"/> there are guaranteed to be no
+        /// events raised for/about the joined client.</para>
+        /// <para>This event is not raised on the client which joined, since it is raised before late joiner
+        /// data is sent to the client.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        OnPreClientJoined,
+        /// <summary>
+        /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
+        /// <para>This event is guaranteed to be raised before any input actions sent by the joining client
+        /// are received and run.</para>
+        /// <para>While this is the second event for/about the joined client - only
+        /// <see cref="OnPreClientJoined"/> comes before <see cref="OnClientJoined"/> - before this event the
+        /// joined client should be treated as though they have not joined yet, making
+        /// <see cref="OnClientJoined"/> the true "this player has joined" event. As the name implies.</para>
         /// <para>This event is also raised on the client which joined, including the very first client (right
         /// after <see cref="OnInit"/>).</para>
         /// <para>Game state safe.</para>

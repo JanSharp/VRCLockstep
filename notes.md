@@ -330,6 +330,7 @@ Only inside of these events, modification of game states is allowed. See [game s
 
 - `OnInit()` (This is [special](#first-client). Also, it only runs on the first client, but at that time it is the only - therefore every - client.)
 - `OnClientCaughtUp()` Use `CatchingUpPlayerId` from the lockstep api.
+- `OnPreClientJoined()` Use `JoinedPlayerId` from the lockstep api.
 - `OnClientJoined()` Use `JoinedPlayerId` from the lockstep api.
 - `OnClientLeft()` Use `LeftPlayerId` from the lockstep api.
 - `OnMasterChanged` Use `OldMasterPlayerId` and `MasterPlayerId` from the lockstep api.
@@ -362,7 +363,6 @@ TODO: add master preference game state
   - when in the scene, enable a slider for each player in the client states list in the info UI
   - import export support
 TODO: add game state safe prng
-TODO: add OnPreClientJoined
 TODO: add note about what state a client changed to in the different client state change related events
 TODO: add "world name" to lockstep which by default gets set to the scene file name but can be overwritten manually. This name would be included in exports and autosaves
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
@@ -401,5 +401,6 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 - [ ] fix that requesting for a client to be master when that client is still waiting for late joiner sync soft locks lockstep
 - [x] fix lockstep AssociateUnassociatedInputActionsWithTicks setting capacity on a data list can set the capacity to be lower than what it currently has as its capacity which throws an exception
 - [ ] fix that spamming Make Master in the clients list back and forth on 2 client entries pretty quickly causes an IA tick association to stay lingering in unique ids by tick. The master change seems to go through successfully, so surely no input action is getting dropped, but this is alarming
+- [ ] make game states list api return null or none state when called before lockstep has been initialized - so before OnInit or OnClientBeginCatchup
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

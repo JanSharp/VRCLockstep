@@ -187,6 +187,10 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
+        [SerializeField] private UdonSharpBehaviour[] onPreClientJoinedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
         [SerializeField] private UdonSharpBehaviour[] onClientCaughtUpListeners;
         #if !LockstepDebug
         [HideInInspector]
@@ -2160,6 +2164,8 @@ namespace JanSharp.Internal
                 float lateJoinerSyncDelay = Mathf.Min(8f, 2.5f + 0.5f * (float)clientsJoinedInTheLastFiveMinutes);
                 SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), lateJoinerSyncDelay);
             }
+
+            RaiseOnPreClientJoined(sendingPlayerId);
         }
 
         public void PlayerJoinedFiveMinutesAgo()
@@ -2806,6 +2812,23 @@ namespace JanSharp.Internal
             if (destroyedCount != 0)
                 onClientBeginCatchUpListeners = CleanUpRemovedListeners(onClientBeginCatchUpListeners, destroyedCount, nameof(LockstepEventType.OnClientBeginCatchUp));
             this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
+        }
+
+        private void RaiseOnPreClientJoined(uint joinedPlayerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnPreClientJoined");
+            #endif
+            this.joinedPlayerId = joinedPlayerId;
+            int destroyedCount = 0;
+            foreach (UdonSharpBehaviour listener in onPreClientJoinedListeners)
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnPreClientJoined));
+            if (destroyedCount != 0)
+                onPreClientJoinedListeners = CleanUpRemovedListeners(onPreClientJoinedListeners, destroyedCount, nameof(LockstepEventType.OnPreClientJoined));
+            this.joinedPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
         private void RaiseOnClientJoined(uint joinedPlayerId)

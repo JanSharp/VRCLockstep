@@ -20,6 +20,7 @@ namespace JanSharp.Internal
         {
             { LockstepEventType.OnInit, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnClientBeginCatchUp, new List<(int order, UdonSharpBehaviour ub)>() },
+            { LockstepEventType.OnPreClientJoined, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnClientJoined, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnClientCaughtUp, new List<(int order, UdonSharpBehaviour ub)>() },
             { LockstepEventType.OnClientLeft, new List<(int order, UdonSharpBehaviour ub)>() },
@@ -48,6 +49,7 @@ namespace JanSharp.Internal
         private static readonly LockstepEventType[] allEventTypes = new LockstepEventType[] {
             LockstepEventType.OnInit,
             LockstepEventType.OnClientBeginCatchUp,
+            LockstepEventType.OnPreClientJoined,
             LockstepEventType.OnClientJoined,
             LockstepEventType.OnClientCaughtUp,
             LockstepEventType.OnClientLeft,

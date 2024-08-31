@@ -39,6 +39,12 @@ namespace JanSharp
             Debug.Log($"<dlt> TestGameState  OnClientBeginCatchUp - {lockstep.CatchingUpPlayerId}");
         }
 
+        [LockstepEvent(LockstepEventType.OnPreClientJoined)]
+        public void OnPreClientJoined()
+        {
+            Debug.Log($"<dlt> TestGameState  OnPreClientJoined - {lockstep.JoinedPlayerId}");
+        }
+
         [LockstepEvent(LockstepEventType.OnClientJoined)]
         public void OnClientJoined()
         {
