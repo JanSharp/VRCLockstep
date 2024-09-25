@@ -228,6 +228,10 @@ namespace JanSharp.Internal
         [HideInInspector]
         #endif
         [SerializeField] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
+        #if !LockstepDebug
+        [HideInInspector]
+        #endif
+        [SerializeField] private UdonSharpBehaviour[] onLockstepNotificationListeners;
 
         #if !LockstepDebug
         [HideInInspector]
@@ -533,6 +537,8 @@ namespace JanSharp.Internal
         public override uint SendingPlayerId => sendingPlayerId;
         private ulong sendingUniqueId;
         public override ulong SendingUniqueId => sendingUniqueId;
+        private string notificationMessage;
+        public override string NotificationMessage => notificationMessage;
 
         // 4 of these are part of the game state, however not part of LJ data because LJ data won't be sent
         // while masterChangeRequestInProcess is true.
@@ -2408,7 +2414,7 @@ namespace JanSharp.Internal
             #endif
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u);
             if (errorMessage != null)
-                SendInfoUINotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
+                RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
             TryMoveToNextLJSerializedGameState();
         }
 
@@ -3046,6 +3052,23 @@ namespace JanSharp.Internal
                 onIsAutosavePausedChangedListeners = CleanUpRemovedListeners(onIsAutosavePausedChangedListeners, destroyedCount, nameof(LockstepEventType.OnIsAutosavePausedChanged));
         }
 
+        public void RaiseOnLockstepNotification(string message)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnLockstepNotification");
+            #endif
+            notificationMessage = message;
+            int destroyedCount = 0;
+            foreach (UdonSharpBehaviour listener in onLockstepNotificationListeners)
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnLockstepNotification));
+            if (destroyedCount != 0)
+                onLockstepNotificationListeners = CleanUpRemovedListeners(onLockstepNotificationListeners, destroyedCount, nameof(LockstepEventType.OnLockstepNotification));
+            notificationMessage = null;
+        }
+
         public override string GetDisplayName(uint playerId)
         {
             #if LockstepDebug
@@ -3458,7 +3481,7 @@ namespace JanSharp.Internal
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion);
             if (importErrorMessage != null)
-                SendInfoUINotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
+                RaiseOnLockstepNotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
             importedGameState = gameState;
             RaiseOnImportedGameState();
             importedGameState = null;
@@ -3716,13 +3739,6 @@ namespace JanSharp.Internal
             if (infoUI == null)
                 return;
             infoUI.ClearClients();
-        }
-
-        private void SendInfoUINotification(string message)
-        {
-            if (infoUI == null)
-                return;
-            infoUI.SendNotification(message);
         }
     }
 }

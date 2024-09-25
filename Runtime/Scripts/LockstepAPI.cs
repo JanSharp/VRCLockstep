@@ -243,6 +243,13 @@ namespace JanSharp
         /// </summary>
         public abstract bool CanSendInputActions { get; }
         /// <summary>
+        /// <para>The message which lockstep sent as a notification with the intent for it to be shown to the
+        /// local player.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnLockstepNotification"/>.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public abstract string NotificationMessage { get; }
+        /// <summary>
         /// <para>Send an input action from one client which, since it is an input action, will then run on
         /// all clients in the same tick in the same order.</para>
         /// <para>To pass data from the sending client to the input action, use <c>Write</c> functions before

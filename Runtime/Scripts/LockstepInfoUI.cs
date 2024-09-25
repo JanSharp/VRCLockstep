@@ -364,7 +364,13 @@ namespace JanSharp.Internal
             UpdateMakeMasterButton(entry);
         }
 
-        public void SendNotification(string message)
+        [LockstepEvent(LockstepEventType.OnLockstepNotification)]
+        public void OnLockstepNotification()
+        {
+            SendNotification(lockstep.NotificationMessage);
+        }
+
+        private void SendNotification(string message)
         {
             GameObject entryGo = Instantiate(notificationEntryPrefab);
             entryGo.transform.SetParent(notificationLogContent, worldPositionStays: false);

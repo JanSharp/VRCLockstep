@@ -350,6 +350,7 @@ These events are not allowed to modify the game states:
 - `OnGameStatesToAutosaveChanged()`
 - `OnAutosaveIntervalSecondsChanged()`
 - `OnIsAutosavePausedChanged()`
+- `OnLockstepNotification()` Use `NotificationMessage` from the lockstep api.
 - Every unity or VRChat event
 
 These 2 aren't really events, but they are called by the Lockstep system.

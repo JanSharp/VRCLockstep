@@ -155,6 +155,13 @@ namespace JanSharp {
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
         OnIsAutosavePausedChanged,
+        /// <summary>
+        /// <para>Use <see cref="LockstepAPI.NotificationMessage"/> to get the message which was sent.</para>
+        /// <para>Notifications are messages sent by lockstep with the intent for them to be shown to the
+        /// local player.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        OnLockstepNotification,
     }
 
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
