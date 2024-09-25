@@ -397,7 +397,7 @@ TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions wit
 - [x] arrange the top panel of the info UI in 2 columns - left labels, right values - to improve readability
 - [ ] maybe add option for other systems to add per client info into the info ui
 - [ ] add api function to check if a player id exists in the internal game state, also mention that function in the docs for SendMasterChangeRequestIA
-- [ ] change info ui to not require any extra hooks inside of lockstep, just using lockstep events and api
+- [x] change info ui to not require any extra hooks inside of lockstep, just using lockstep events and api
 - [ ] fix that requesting for a client to be master when that client is still waiting for late joiner sync soft locks lockstep
 - [x] fix lockstep AssociateUnassociatedInputActionsWithTicks setting capacity on a data list can set the capacity to be lower than what it currently has as its capacity which throws an exception
 - [ ] fix that spamming Make Master in the clients list back and forth on 2 client entries pretty quickly causes an IA tick association to stay lingering in unique ids by tick. The master change seems to go through successfully, so surely no input action is getting dropped, but this is alarming

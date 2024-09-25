@@ -214,20 +214,16 @@ namespace JanSharp.Internal
             vrcMasterNoValueObj.SetActive(newMaster == null);
         }
 
-        public void SetLockstepMaster(string masterName)
+        public void UpdateLockstepMaster()
         {
+            string masterName = lockstep.GetDisplayName(lockstep.MasterPlayerId);
             lockstepMasterText.text = masterName ?? "";
             lockstepMasterNoValueObj.SetActive(masterName == null);
         }
 
-        public void SetLocalClientState(ClientState clientState)
+        public void UpdateClientCount()
         {
-            LocalClientState = clientState;
-        }
-
-        public void SetClientCount(int count)
-        {
-            clientCountText.text = count.ToString();
+            clientCountText.text = lockstep.ClientStatesCount.ToString();
         }
 
         public void OnBecomeMasterClick()
@@ -268,21 +264,60 @@ namespace JanSharp.Internal
             // is still false.
         }
 
+        private void Setup()
+        {
+            foreach (uint clientId in lockstep.AllClientPlayerIds)
+                AddClient(clientId);
+            UpdateLockstepMaster();
+            UpdateBecomeAndMakeMasterButtons();
+        }
+
         [LockstepEvent(LockstepEventType.OnInit)]
         public void OnInit()
         {
-            UpdateBecomeAndMakeMasterButtons();
+            Setup();
         }
 
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp()
         {
-            UpdateBecomeAndMakeMasterButtons();
+            Setup();
+        }
+
+        [LockstepEvent(LockstepEventType.OnPreClientJoined)]
+        public void OnPreClientJoined()
+        {
+            AddClient(lockstep.JoinedPlayerId);
+        }
+
+        [LockstepEvent(LockstepEventType.OnClientJoined)]
+        public void OnClientJoined()
+        {
+            uint joinedPlayerId = lockstep.JoinedPlayerId;
+            if (clientStateEntries.ContainsKey(joinedPlayerId))
+                UpdateClientState(joinedPlayerId);
+            else
+                AddClient(joinedPlayerId);
+        }
+
+        [LockstepEvent(LockstepEventType.OnClientCaughtUp)]
+        public void OnClientCaughtUp()
+        {
+            UpdateClientState(lockstep.JoinedPlayerId);
+        }
+
+        [LockstepEvent(LockstepEventType.OnClientLeft)]
+        public void OnClientLeft()
+        {
+            RemoveClient(lockstep.LeftPlayerId);
         }
 
         [LockstepEvent(LockstepEventType.OnMasterChanged)]
         public void OnMasterChanged()
         {
+            UpdateClientState(lockstep.OldMasterPlayerId);
+            UpdateClientState(lockstep.MasterPlayerId);
+            UpdateLockstepMaster();
             if (!IsChangingMaster)
                 return;
             if (lockstep.MasterPlayerId == desiredNewMasterPlayerId)
@@ -325,20 +360,25 @@ namespace JanSharp.Internal
             return entry;
         }
 
-        public void AddClient(uint clientId, string displayName, ClientState clientState)
+        public void AddClient(uint clientId)
         {
+            ClientState clientState = lockstep.GetClientState(clientId);
+            if (clientId == localPlayerId)
+                LocalClientState = clientState;
             LockstepClientStateEntry entry = GetOrCreateEntry();
             clientStateEntries.Add(clientId, entry);
             entry.playerId = clientId;
-            entry.clientDisplayNameText.text = displayName;
+            entry.clientDisplayNameText.text = lockstep.GetDisplayName(clientId);
             entry.clientStateText.text = lockstep.ClientStateToString(clientState);
             UpdateMakeMasterButton(entry);
+            UpdateClientCount();
         }
 
         public void RemoveClient(uint clientId)
         {
             clientStateEntries.Remove(clientId, out DataToken entryToken);
             DisableClientEntry((LockstepClientStateEntry)entryToken.Reference);
+            UpdateClientCount();
         }
 
         private void DisableClientEntry(LockstepClientStateEntry entry)
@@ -348,17 +388,11 @@ namespace JanSharp.Internal
             ArrList.Add(ref unusedClientStateEntries, ref unusedClientStateEntriesCount, entry);
         }
 
-        public void ClearClients()
+        public void UpdateClientState(uint clientId)
         {
-            DataList entryTokens = clientStateEntries.GetValues();
-            int count = entryTokens.Count;
-            for (int i = 0; i < count; i++)
-                DisableClientEntry((LockstepClientStateEntry)entryTokens[i].Reference);
-            clientStateEntries.Clear();
-        }
-
-        public void SetClientState(uint clientId , ClientState clientState)
-        {
+            ClientState clientState = lockstep.GetClientState(clientId);
+            if (clientId == localPlayerId)
+                LocalClientState = clientState;
             LockstepClientStateEntry entry = (LockstepClientStateEntry)clientStateEntries[clientId].Reference;
             entry.clientStateText.text = lockstep.ClientStateToString(clientState);
             UpdateMakeMasterButton(entry);
