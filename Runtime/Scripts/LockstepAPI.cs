@@ -80,6 +80,17 @@ namespace JanSharp
         /// </summary>
         public abstract int AllGameStatesCount { get; }
         /// <summary>
+        /// <para>Note that <see cref="TryGetClientState(uint, out ClientState)"/> can be used to both get the
+        /// current state and check if the given client exists, making <see cref="ClientStateExists(uint)"/>
+        /// only useful in cases where the only thing being checked is existence.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="playerId">Any player id.</param>
+        /// <returns><see langword="true"/> if the given <paramref name="playerId"/> exists in lockstep's
+        /// internal client states game state.</returns>
+        public abstract bool ClientStateExists(uint playerId);
+        /// <summary>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -302,14 +313,15 @@ namespace JanSharp
         /// cases around players leaving. If it is desired to really force a client to become master then it
         /// may be best to listen to the <see cref="LockstepEventType.OnMasterChanged"/> event to check if the
         /// desired client actually became master, and if not then re send the request. Just make sure to
-        /// check if the desired client is even still in the world.</para>
+        /// check if the desired client is even still in the world, for example using
+        /// <see cref="ClientStateExists(uint)"/>.</para>
         /// <para>Usable any time.</para>
         /// </summary>
         /// <param name="newMasterClientId"><para>The client id which should become the lockstep
         /// master.</para>
         /// <para>If the given client id is already master then no request is sent.</para>
-        /// <para>Giving this a client id which does not exist in the client states internal game state is
-        /// invalid.</para>
+        /// <para>Giving this a client id which does not exist in lockstep's internal client states game state
+        /// is invalid.</para>
         /// </param>
         /// <returns>Returns <see langword="true"/> if the input action was sent successfully. It will only be
         /// sent if <see cref="CanSendInputActions"/> is <see langword="true"/>, if the

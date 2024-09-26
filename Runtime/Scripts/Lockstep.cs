@@ -262,6 +262,17 @@ namespace JanSharp.Internal
             return allClientStates[ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId)];
         }
 
+        public override bool ClientStateExists(uint playerId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  ClientStateExists - playerId: {playerId}");
+            #endif
+            if (allClientStates == null)
+                return false;
+            int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
+            return index >= 0;
+        }
+
         public override ClientState GetClientState(uint playerId)
         {
             #if LockstepDebug
