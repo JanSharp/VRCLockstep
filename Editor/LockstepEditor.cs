@@ -213,8 +213,7 @@ namespace JanSharp.Internal
                 ubProxy = ubProxy ?? new SerializedObject(ub);
                 foreach (var ia in cached.inputActions)
                 {
-                    // uintValue is not a thing in 2019.4. It exists in 2022.1.
-                    ubProxy.FindProperty(ia.fieldName).intValue = allInputActions.Count;
+                    ubProxy.FindProperty(ia.fieldName).uintValue = (uint)allInputActions.Count;
                     allInputActions.Add((ub, ia.iaName));
                 }
             }
