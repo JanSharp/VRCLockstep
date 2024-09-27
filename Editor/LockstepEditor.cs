@@ -42,9 +42,9 @@ namespace JanSharp.Internal
         private static Dictionary<System.Type, TypeCache> cache = new Dictionary<System.Type, TypeCache>();
         private class TypeCache
         {
-            public Dictionary<LockstepEventType, int> eventOrderLut = new Dictionary<LockstepEventType, int>();
-            public List<(string iaName, string fieldName)> inputActions = new List<(string iaName, string fieldName)>();
-            public List<string> lockstepFieldNames = new List<string>();
+            public Dictionary<LockstepEventType, int> eventOrderLut;
+            public List<(string iaName, string fieldName)> inputActions;
+            public List<string> lockstepFieldNames;
         }
 
         private static readonly LockstepEventType[] allEventTypes = new LockstepEventType[] {
@@ -158,6 +158,7 @@ namespace JanSharp.Internal
                     result = false;
                     return;
                 }
+                typeCache.eventOrderLut ??= new Dictionary<LockstepEventType, int>();
                 typeCache.eventOrderLut.Add(attr.EventType, attr.Order);
             }
 
@@ -173,6 +174,7 @@ namespace JanSharp.Internal
                     result = false;
                     return;
                 }
+                typeCache.inputActions ??= new List<(string iaName, string fieldName)>();
                 typeCache.inputActions.Add((method.Name, attr.IdFieldName));
             }
 
@@ -188,7 +190,10 @@ namespace JanSharp.Internal
                 {
                     SerializedObject ubProxy = new SerializedObject(ub);
                     if (ubProxy.FindProperty(field.Name) != null)
+                    {
+                        typeCache.lockstepFieldNames ??= new List<string>();
                         typeCache.lockstepFieldNames.Add(field.Name);
+                    }
                 }
             }
 
@@ -202,13 +207,14 @@ namespace JanSharp.Internal
             if (!TryGetEventTypes(ub, out TypeCache cached))
                 return false;
 
-            foreach (LockstepEventType eventType in allEventTypes)
-                if (cached.eventOrderLut.TryGetValue(eventType, out int order))
-                    allListeners[eventType].Add((order, ub));
+            if (cached.eventOrderLut != null)
+                foreach (LockstepEventType eventType in allEventTypes)
+                    if (cached.eventOrderLut.TryGetValue(eventType, out int order))
+                        allListeners[eventType].Add((order, ub));
 
             SerializedObject ubProxy = null;
 
-            if (cached.inputActions.Any())
+            if (cached.inputActions != null)
             {
                 ubProxy ??= new SerializedObject(ub);
                 foreach (var ia in cached.inputActions)
@@ -218,7 +224,7 @@ namespace JanSharp.Internal
                 }
             }
 
-            if (cached.lockstepFieldNames.Any())
+            if (cached.lockstepFieldNames != null)
             {
                 ubProxy ??= new SerializedObject(ub);
                 foreach (string fieldName in cached.lockstepFieldNames)
