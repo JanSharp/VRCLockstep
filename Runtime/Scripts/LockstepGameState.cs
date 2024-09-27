@@ -91,7 +91,10 @@ namespace JanSharp
         /// since - if implemented properly - every client will fail the same way. As such the error message
         /// can be displayed to the user and the system can continue running. However it is still highly
         /// discouraged to fail this way as the user can do basically nothing about it. This should be a last
-        /// resort.</para></returns>
+        /// resort.</para>
+        /// <para>Either way, whenever an error message is returned, a
+        /// <see cref="LockstepEventType.OnLockstepNotification"/> is sent where the
+        /// <see cref="LockstepAPI.NotificationMessage"/> contains the given error message.</para></returns>
         public abstract string DeserializeGameState(bool isImport, uint importedDataVersion);
     }
 }
