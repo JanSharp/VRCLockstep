@@ -97,7 +97,7 @@ namespace JanSharp.Internal
             foreach (var kvp in allListeners)
             {
                 EditorUtil.SetArrayProperty(
-                    lockstepProxy.FindProperty($"o{kvp.Key.ToString().Substring(1)}Listeners"),
+                    lockstepProxy.FindProperty($"o{kvp.Key.ToString()[1..]}Listeners"),
                     kvp.Value.OrderBy(v => v.order).ToList(),
                     (p, v) => p.objectReferenceValue = v.ub
                 );
@@ -147,7 +147,7 @@ namespace JanSharp.Internal
                 if (method.Name != attr.EventType.ToString())
                 {
                     Debug.LogError($"[Lockstep] The method name {method.Name} does not match the expected "
-                        + $"Lockstep event name {attr.EventType.ToString()} for the {ubType.Name} script.", ub);
+                        + $"Lockstep event name {attr.EventType} for the {ubType.Name} script.", ub);
                     result = false;
                     return;
                 }
@@ -210,7 +210,7 @@ namespace JanSharp.Internal
 
             if (cached.inputActions.Any())
             {
-                ubProxy = ubProxy ?? new SerializedObject(ub);
+                ubProxy ??= new SerializedObject(ub);
                 foreach (var ia in cached.inputActions)
                 {
                     ubProxy.FindProperty(ia.fieldName).uintValue = (uint)allInputActions.Count;
@@ -220,7 +220,7 @@ namespace JanSharp.Internal
 
             if (cached.lockstepFieldNames.Any())
             {
-                ubProxy = ubProxy ?? new SerializedObject(ub);
+                ubProxy ??= new SerializedObject(ub);
                 foreach (string fieldName in cached.lockstepFieldNames)
                     ubProxy.FindProperty(fieldName).objectReferenceValue = lockstep;
             }
