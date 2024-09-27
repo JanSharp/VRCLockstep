@@ -371,7 +371,6 @@ TODO: maybe somehow add some utility to know the amount of time passed in real t
 TODO: ensure that on build handler validation for lock step events happens every time, not just the first time after compilation
 TODO: on nth tick? game state safe.
 TODO: raise event delayed by ticks, game state safe.
-TODO: validate input action id fields being serialized by unity
 TODO: rename OnMasterChanged to OnMasterClientChanged to prevent potential naming collisions with other systems
 TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions with other systems
 

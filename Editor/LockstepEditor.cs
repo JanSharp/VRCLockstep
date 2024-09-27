@@ -174,6 +174,26 @@ namespace JanSharp.Internal
                     result = false;
                     return;
                 }
+                FieldInfo idField = ubType.GetField(attr.IdFieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                bool hasNonSerializedAttribute = idField?.GetCustomAttribute<System.NonSerializedAttribute>(inherit: true) != null;
+                bool hasSerializeFieldAttribute = idField?.GetCustomAttribute<SerializeField>(inherit: true) != null;
+                if (!(idField != null
+                    && idField.FieldType == typeof(uint)
+                    && ((idField.IsPublic && !hasNonSerializedAttribute)
+                        || (!idField.IsPublic && hasSerializeFieldAttribute))
+                    && !(hasNonSerializedAttribute && hasSerializeFieldAttribute)))
+                {
+                    Debug.LogError($"[Lockstep] The id field {ubType.Name}.{attr.IdFieldName} for the input "
+                        + $"action {ubType.Name}.{method.Name} must be a non static (aka instance) field of "
+                        + $"type uint. "
+                        + $"If it is a public field it must not have the System.NonSerializedAttribute. "
+                        + $"If it is a private field it must have the UnityEngine.SerializeField attribute. "
+                        + $"It must not have both of the mentioned attributes at the same time. "
+                        + $"It is recommended to use the UnityEngine.HideInInspector attribute, as the value "
+                        + $"of the variable is set by Lockstep at play mode and build time.", ub);
+                    result = false;
+                    return;
+                }
                 typeCache.inputActions ??= new List<(string iaName, string fieldName)>();
                 typeCache.inputActions.Add((method.Name, attr.IdFieldName));
             }
