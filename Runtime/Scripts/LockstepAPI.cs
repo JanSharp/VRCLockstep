@@ -24,7 +24,7 @@ namespace JanSharp
     {
         /// <summary>
         /// <para>The internal tick rate of lockstep. Also the amount of times
-        /// <see cref="LockstepEventType.OnTick"/> gets raised per second.</para>
+        /// <see cref="LockstepEventType.OnLockstepTick"/> gets raised per second.</para>
         /// </summary>
         public const float TickRate = 10f;
         /// <summary>

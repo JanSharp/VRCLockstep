@@ -82,10 +82,10 @@ namespace JanSharp
             Debug.Log($"<dlt> TestGameState  OnMasterClientChanged - OldMasterPlayerId: {lockstep.OldMasterPlayerId}, MasterPlayerId: {lockstep.MasterPlayerId}, CurrentTick: {lockstep.CurrentTick}");
         }
 
-        [LockstepEvent(LockstepEventType.OnTick)]
-        public void OnTick()
+        [LockstepEvent(LockstepEventType.OnLockstepTick)]
+        public void OnLockstepTick()
         {
-            // Debug.Log("<dlt> TestGameState  OnTick");
+            // Debug.Log("<dlt> TestGameState  OnLockstepTick");
 
             if (prevTick != 0 && lockstep.CurrentTick != (prevTick + 1u))
                 Debug.Log($"<dlt> Expected tick {prevTick + 1u}, got {lockstep.CurrentTick}.");

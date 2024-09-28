@@ -108,11 +108,11 @@ namespace JanSharp {
         /// <summary>
         /// <para>Raised <see cref="LockstepAPI.TickRate"/> times per second.</para>
         /// <para>Raised at the end of a tick. Guaranteed to be the last event in a tick since there are no
-        /// events which could instantly get raised through any actions that any <see cref="OnTick"/> handler
-        /// could take.</para>
+        /// events which could instantly get raised through any actions that any <see cref="OnLockstepTick"/>
+        /// handler could take.</para>
         /// <para>Game state safe.</para>
         /// </summary>
-        OnTick,
+        OnLockstepTick,
         /// <summary>
         /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
         /// started import.</para>

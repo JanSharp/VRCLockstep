@@ -196,7 +196,7 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private UdonSharpBehaviour[] onTickListeners;
+        [SerializeField] private UdonSharpBehaviour[] onLockstepTickListeners;
         #if !LockstepDebug
         [HideInInspector]
         #endif
@@ -2904,13 +2904,13 @@ namespace JanSharp.Internal
             // Debug.Log($"[LockstepDebug] Lockstep  RaiseOnTick");
             // #endif
             int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onTickListeners)
+            foreach (UdonSharpBehaviour listener in onLockstepTickListeners)
                 if (listener == null)
                     destroyedCount++;
                 else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnTick));
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnLockstepTick));
             if (destroyedCount != 0)
-                onTickListeners = CleanUpRemovedListeners(onTickListeners, destroyedCount, nameof(LockstepEventType.OnTick));
+                onLockstepTickListeners = CleanUpRemovedListeners(onLockstepTickListeners, destroyedCount, nameof(LockstepEventType.OnLockstepTick));
         }
 
         private void RaiseOnImportStart()

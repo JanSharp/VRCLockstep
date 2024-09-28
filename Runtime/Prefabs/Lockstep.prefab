@@ -317,7 +317,7 @@ MonoBehaviour:
   onClientCaughtUpListeners: []
   onClientLeftListeners: []
   onMasterClientChangedListeners: []
-  onTickListeners: []
+  onLockstepTickListeners: []
   onImportStartListeners: []
   onImportedGameStateListeners: []
   onImportFinishedListeners: []
