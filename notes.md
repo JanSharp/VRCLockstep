@@ -333,7 +333,7 @@ Only inside of these events, modification of game states is allowed. See [game s
 - `OnPreClientJoined()` Use `JoinedPlayerId` from the lockstep api.
 - `OnClientJoined()` Use `JoinedPlayerId` from the lockstep api.
 - `OnClientLeft()` Use `LeftPlayerId` from the lockstep api.
-- `OnMasterChanged` Use `OldMasterPlayerId` and `MasterPlayerId` from the lockstep api.
+- `OnMasterClientChanged` Use `OldMasterPlayerId` and `MasterPlayerId` from the lockstep api.
 - `OnTick()`
 - `OnImportStart()` Use import related properties on Lockstep inside this event to know more about the import process.
 - `OnImportedGameState()` Use import related properties on Lockstep inside this event to know more about the import process.
@@ -370,7 +370,6 @@ TODO: maybe somehow add some utility to know the amount of time passed in real t
 TODO: ensure that on build handler validation for lock step events happens every time, not just the first time after compilation
 TODO: on nth tick? game state safe.
 TODO: raise event delayed by ticks, game state safe.
-TODO: rename OnMasterChanged to OnMasterClientChanged to prevent potential naming collisions with other systems
 TODO: rename OnTick to OnLockstepTick to prevent potential naming collisions with other systems
 
 - [ ] more consistently send the client joined IA... though looking at it it's already pretty consistent. I don't know how it was possible for the client joined IA to just not get run on the master, as though it wasn't even received...

@@ -73,7 +73,7 @@ namespace JanSharp {
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which has
         /// caught up.</para>
         /// <para>It is possible for a client to become master before finishing catching up, in which case
-        /// <see cref="OnMasterChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
+        /// <see cref="OnMasterClientChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
         /// <para>The state of the catching up client in and after this event is either
         /// <see cref="ClientState.Normal"/> or <see cref="ClientState.Master"/>.</para>
         /// <para>Game state safe.</para>
@@ -98,13 +98,13 @@ namespace JanSharp {
         /// <para>Use <see cref="LockstepAPI.MasterPlayerId"/> to get the id of the new master client.
         /// (<see cref="LockstepAPI.MasterPlayerId"/> is not limited to the scope of this event.)</para>
         /// <para>It is possible for a client to become master before finishing catching up, in which case
-        /// <see cref="OnMasterChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
+        /// <see cref="OnMasterClientChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
         /// <para>The state of the old master client in and after this event is
         /// <see cref="ClientState.Normal"/>, for the new master it is
         /// <see cref="ClientState.Master"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
-        OnMasterChanged,
+        OnMasterClientChanged,
         /// <summary>
         /// <para>Raised <see cref="LockstepAPI.TickRate"/> times per second.</para>
         /// <para>Raised at the end of a tick. Guaranteed to be the last event in a tick since there are no

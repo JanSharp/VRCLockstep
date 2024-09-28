@@ -76,10 +76,10 @@ namespace JanSharp
             ui.UpdateUI();
         }
 
-        [LockstepEvent(LockstepEventType.OnMasterChanged)]
-        public void OnMasterChanged()
+        [LockstepEvent(LockstepEventType.OnMasterClientChanged)]
+        public void OnMasterClientChanged()
         {
-            Debug.Log($"<dlt> TestGameState  OnMasterChanged - OldMasterPlayerId: {lockstep.OldMasterPlayerId}, MasterPlayerId: {lockstep.MasterPlayerId}, CurrentTick: {lockstep.CurrentTick}");
+            Debug.Log($"<dlt> TestGameState  OnMasterClientChanged - OldMasterPlayerId: {lockstep.OldMasterPlayerId}, MasterPlayerId: {lockstep.MasterPlayerId}, CurrentTick: {lockstep.CurrentTick}");
         }
 
         [LockstepEvent(LockstepEventType.OnTick)]

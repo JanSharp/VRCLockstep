@@ -183,7 +183,7 @@ namespace JanSharp
         /// <see cref="RequestLocalClientToBecomeMaster"/> or <see cref="SendMasterChangeRequestIA(uint)"/>.
         /// </para>
         /// <para>If the master leaves, this id remains unchanged until the
-        /// <see cref="LockstepEventType.OnMasterChanged"/> event is raised.</para>
+        /// <see cref="LockstepEventType.OnMasterClientChanged"/> event is raised.</para>
         /// <para><see cref="IsMaster"/> may be <see langword="true"/> even before
         /// <see cref="MasterPlayerId"/> is equal to the local player id.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
@@ -194,7 +194,7 @@ namespace JanSharp
         public abstract uint MasterPlayerId { get; }
         /// <summary>
         /// <para>The id of the client which was the master right before the new master client.</para>
-        /// <para>Usable inside of <see cref="LockstepEventType.OnMasterChanged"/>.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnMasterClientChanged"/>.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -311,9 +311,9 @@ namespace JanSharp
         /// <para>Sends an input action requesting to change the current lockstep master.</para>
         /// <para>It is not guaranteed that it will actually change master to the given client id, due to edge
         /// cases around players leaving. If it is desired to really force a client to become master then it
-        /// may be best to listen to the <see cref="LockstepEventType.OnMasterChanged"/> event to check if the
-        /// desired client actually became master, and if not then re send the request. Just make sure to
-        /// check if the desired client is even still in the world, for example using
+        /// may be best to listen to the <see cref="LockstepEventType.OnMasterClientChanged"/> event to check
+        /// if the desired client actually became master, and if not then re send the request. Just make sure
+        /// to check if the desired client is even still in the world, for example using
         /// <see cref="ClientStateExists(uint)"/>.</para>
         /// <para>Usable any time.</para>
         /// </summary>

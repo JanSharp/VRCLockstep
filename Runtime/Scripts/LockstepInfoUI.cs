@@ -312,8 +312,8 @@ namespace JanSharp.Internal
             RemoveClient(lockstep.LeftPlayerId);
         }
 
-        [LockstepEvent(LockstepEventType.OnMasterChanged)]
-        public void OnMasterChanged()
+        [LockstepEvent(LockstepEventType.OnMasterClientChanged)]
+        public void OnMasterClientChanged()
         {
             UpdateClientState(lockstep.OldMasterPlayerId);
             UpdateClientState(lockstep.MasterPlayerId);

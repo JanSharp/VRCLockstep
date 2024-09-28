@@ -192,7 +192,7 @@ namespace JanSharp.Internal
         #if !LockstepDebug
         [HideInInspector]
         #endif
-        [SerializeField] private UdonSharpBehaviour[] onMasterChangedListeners;
+        [SerializeField] private UdonSharpBehaviour[] onMasterClientChangedListeners;
         #if !LockstepDebug
         [HideInInspector]
         #endif
@@ -1320,7 +1320,7 @@ namespace JanSharp.Internal
             if (oldMasterHasAState)
                 SetClientState(oldMasterPlayerId, ClientState.Normal);
             SetClientState(masterPlayerId, ClientState.Master);
-            RaiseOnMasterChanged(oldMasterPlayerId);
+            RaiseOnMasterClientChanged(oldMasterPlayerId);
         }
 
         private void SetMasterPlayerId(uint newMasterId)
@@ -1600,7 +1600,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  BecomeNewMaster - currentTick: {currentTick}, lastRunnableTick: {lastRunnableTick}");
             #endif
 
-            isMaster = true; // currentlyNoMaster will be set to false in OnMasterChangedIA later.
+            isMaster = true; // currentlyNoMaster will be set to false in OnMasterClientChangedIA later.
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             ignoreIncomingInputActions = false;
@@ -2107,10 +2107,10 @@ namespace JanSharp.Internal
 
         [SerializeField] [HideInInspector] private uint masterChangedIAId;
         [LockstepInputAction(nameof(masterChangedIAId))]
-        public void OnMasterChangedIA()
+        public void OnMasterClientChangedIA()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  OnMasterChangedIA");
+            Debug.Log($"[LockstepDebug] Lockstep  OnMasterClientChangedIA");
             #endif
             UpdateClientStatesForNewMaster(sendingPlayerId);
         }
@@ -2881,20 +2881,20 @@ namespace JanSharp.Internal
         /// <summary>
         /// <para>Make sure to set <see cref="masterPlayerId"/> before raising this event.</para>
         /// </summary>
-        private void RaiseOnMasterChanged(uint oldMasterPlayerId)
+        private void RaiseOnMasterClientChanged(uint oldMasterPlayerId)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnMasterChanged");
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnMasterClientChanged");
             #endif
             this.oldMasterPlayerId = oldMasterPlayerId;
             int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onMasterChangedListeners)
+            foreach (UdonSharpBehaviour listener in onMasterClientChangedListeners)
                 if (listener == null)
                     destroyedCount++;
                 else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnMasterChanged));
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnMasterClientChanged));
             if (destroyedCount != 0)
-                onMasterChangedListeners = CleanUpRemovedListeners(onMasterChangedListeners, destroyedCount, nameof(LockstepEventType.OnMasterChanged));
+                onMasterClientChangedListeners = CleanUpRemovedListeners(onMasterClientChangedListeners, destroyedCount, nameof(LockstepEventType.OnMasterClientChanged));
             this.oldMasterPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
