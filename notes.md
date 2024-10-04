@@ -364,7 +364,6 @@ TODO: add master preference game state
   - when in the scene, enable a slider for each player in the client states list in the info UI
   - import export support
 TODO: add game state safe prng
-TODO: add "world name" to lockstep which by default gets set to the scene file name but can be overwritten manually. This name would be included in exports and autosaves
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received
 TODO: ensure that on build handler validation for lock step events happens every time, not just the first time after compilation

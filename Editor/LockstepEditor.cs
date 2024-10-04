@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Linq;
+using UnityEngine.SceneManagement;
+using UnityEditor.SceneManagement;
 
 namespace JanSharp.Internal
 {
@@ -92,12 +94,14 @@ namespace JanSharp.Internal
 
         private static bool PostOnBuild(Lockstep lockstep)
         {
-            SerializedObject lockstepProxy = new SerializedObject(lockstep);
+            RecheckWorldName(new Lockstep[] { lockstep }, lockstep.gameObject.scene);
+
+            SerializedObject lockstepSo = new SerializedObject(lockstep);
 
             foreach (var kvp in allListeners)
             {
                 EditorUtil.SetArrayProperty(
-                    lockstepProxy.FindProperty($"o{kvp.Key.ToString()[1..]}Listeners"),
+                    lockstepSo.FindProperty($"o{kvp.Key.ToString()[1..]}Listeners"),
                     kvp.Value.OrderBy(v => v.order).ToList(),
                     (p, v) => p.objectReferenceValue = v.ub
                 );
@@ -109,24 +113,24 @@ namespace JanSharp.Internal
                 .ThenBy(gs => gs.GameStateInternalName)
                 .ToList();
             EditorUtil.SetArrayProperty(
-                lockstepProxy.FindProperty("allGameStates"),
+                lockstepSo.FindProperty("allGameStates"),
                 allGameStates,
                 (p, v) => p.objectReferenceValue = v
             );
 
             EditorUtil.SetArrayProperty(
-                lockstepProxy.FindProperty("inputActionHandlerInstances"),
+                lockstepSo.FindProperty("inputActionHandlerInstances"),
                 allInputActions.Select(ia => ia.inst).ToList(),
                 (p, v) => p.objectReferenceValue = v
             );
 
             EditorUtil.SetArrayProperty(
-                lockstepProxy.FindProperty("inputActionHandlerEventNames"),
+                lockstepSo.FindProperty("inputActionHandlerEventNames"),
                 allInputActions.Select(ia => ia.iaName).ToList(),
                 (p, v) => p.stringValue = v
             );
 
-            lockstepProxy.ApplyModifiedProperties();
+            lockstepSo.ApplyModifiedProperties();
             return true;
         }
 
@@ -208,8 +212,8 @@ namespace JanSharp.Internal
             {
                 if (field.FieldType == typeof(LockstepAPI))
                 {
-                    SerializedObject ubProxy = new SerializedObject(ub);
-                    if (ubProxy.FindProperty(field.Name) != null)
+                    SerializedObject ubSo = new SerializedObject(ub);
+                    if (ubSo.FindProperty(field.Name) != null)
                     {
                         typeCache.lockstepFieldNames ??= new List<string>();
                         typeCache.lockstepFieldNames.Add(field.Name);
@@ -232,26 +236,26 @@ namespace JanSharp.Internal
                     if (cached.eventOrderLut.TryGetValue(eventType, out int order))
                         allListeners[eventType].Add((order, ub));
 
-            SerializedObject ubProxy = null;
+            SerializedObject ubSo = null;
 
             if (cached.inputActions != null)
             {
-                ubProxy ??= new SerializedObject(ub);
+                ubSo ??= new SerializedObject(ub);
                 foreach (var ia in cached.inputActions)
                 {
-                    ubProxy.FindProperty(ia.fieldName).uintValue = (uint)allInputActions.Count;
+                    ubSo.FindProperty(ia.fieldName).uintValue = (uint)allInputActions.Count;
                     allInputActions.Add((ub, ia.iaName));
                 }
             }
 
             if (cached.lockstepFieldNames != null)
             {
-                ubProxy ??= new SerializedObject(ub);
+                ubSo ??= new SerializedObject(ub);
                 foreach (string fieldName in cached.lockstepFieldNames)
-                    ubProxy.FindProperty(fieldName).objectReferenceValue = lockstep;
+                    ubSo.FindProperty(fieldName).objectReferenceValue = lockstep;
             }
 
-            ubProxy?.ApplyModifiedProperties();
+            ubSo?.ApplyModifiedProperties();
 
             return true;
         }
@@ -268,6 +272,62 @@ namespace JanSharp.Internal
                 return false;
             }
             return true;
+        }
+
+        public static void RecheckWorldName(Lockstep[] targets, Scene scene)
+        {
+            if (!scene.isLoaded || EditorSceneManager.IsPreviewScene(scene))
+                return;
+            SerializedObject so = new SerializedObject(targets);
+            so.FindProperty("worldName").stringValue = scene.name;
+            so.ApplyModifiedProperties();
+        }
+    }
+
+    [CanEditMultipleObjects]
+    [CustomEditor(typeof(Lockstep))]
+    public class LockstepEditor : Editor
+    {
+        private SerializedObject so;
+        private SerializedProperty useSceneNameAsWorldNameProp;
+        private SerializedProperty worldNameProp;
+
+        private void OnEnable()
+        {
+            so = serializedObject;
+            useSceneNameAsWorldNameProp = serializedObject.FindProperty("useSceneNameAsWorldName");
+            worldNameProp = serializedObject.FindProperty("worldName");
+            RecheckWorldName();
+        }
+
+        public override void OnInspectorGUI()
+        {
+            if (UdonSharpGUI.DrawDefaultUdonSharpBehaviourHeader(targets))
+                return;
+            EditorGUILayout.Space();
+
+            so.Update();
+            EditorGUILayout.PropertyField(useSceneNameAsWorldNameProp);
+            if (so.ApplyModifiedProperties())
+                RecheckWorldName();
+            using (new EditorGUI.DisabledGroupScope(useSceneNameAsWorldNameProp.boolValue))
+                EditorGUILayout.PropertyField(worldNameProp);
+            so.ApplyModifiedProperties();
+
+            #if LockstepDebug
+            EditorGUILayout.Space();
+            GUILayout.Label("Debug", EditorStyles.boldLabel);
+            DrawDefaultInspector();
+            #endif
+        }
+
+        private void RecheckWorldName()
+        {
+            if (!useSceneNameAsWorldNameProp.boolValue)
+                return;
+            foreach (var group in targets.Cast<Lockstep>().GroupBy(l => l.gameObject.scene))
+                LockstepOnBuild.RecheckWorldName(group.ToArray(), group.Key);
+            so.Update();
         }
     }
 }

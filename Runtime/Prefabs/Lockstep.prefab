@@ -306,14 +306,16 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 6658752726484821156}
+  useSceneNameAsWorldName: 1
+  worldName: 
   lateJoinerInputActionSync: {fileID: 7193904039871208266}
   tickSync: {fileID: 4878089997896310911}
-  infoUI: {fileID: 0}
   inputActionHandlerInstances: []
   inputActionHandlerEventNames: []
   onInitListeners: []
-  onClientJoinedListeners: []
   onClientBeginCatchUpListeners: []
+  onClientJoinedListeners: []
+  onPreClientJoinedListeners: []
   onClientCaughtUpListeners: []
   onClientLeftListeners: []
   onMasterClientChangedListeners: []
@@ -324,6 +326,7 @@ MonoBehaviour:
   onGameStatesToAutosaveChangedListeners: []
   onAutosaveIntervalSecondsChangedListeners: []
   onIsAutosavePausedChangedListeners: []
+  onLockstepNotificationListeners: []
   allGameStates: []
   singletonInputActionIAId: 0
   masterChangeRequestIAId: 0

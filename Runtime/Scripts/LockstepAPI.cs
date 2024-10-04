@@ -33,6 +33,19 @@ namespace JanSharp
         /// </summary>
         public const float NetworkTickRate = 10f;
         /// <summary>
+        /// <para>The current name of the world as defined in the inspector for the Lockstep script (on the
+        /// prefab instance). Unless the world creator explicitly set the name it defaults to the scene name,
+        /// which likely is not the same as the VRChat world name.</para>
+        /// <para>Included in the exported data from <see cref="Export(LockstepGameState[], string)"/>.</para>
+        /// <para>There is (naturally) no guarantee for this to uniquely identify a world. Entirely different
+        /// worlds could share the same name.</para>
+        /// <para>Guaranteed to not be <see langword="null"/>, nor be an empty string, nor contain any
+        /// "<c>\n</c>" nor "<c>\r</c>", nor have any leading or trailing space.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract string WorldName { get; }
+        /// <summary>
         /// <para>The first tick is <c>1u</c>, not <c>0u</c>.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
@@ -361,10 +374,10 @@ namespace JanSharp
         /// "<c>\n</c>" nor "<c>\r</c>"; If it does <see langword="null"/> is returned, however it will also
         /// log an error message so this should be treated like an exception.</param>
         /// <returns>A base 64 encoded string containing a bit of metadata such as which game states have been
-        /// exported, their version, the current UTC date and time and then of course exported data retrieved
-        /// from <see cref="LockstepGameState.SerializeGameState(bool)"/>. Returns <see langword="null"/> if
-        /// called at an invalid time or with invalid <paramref name="gameStates"/> or
-        /// <paramref name="exportName"/>.</returns>
+        /// exported, their version, the current UTC date and time, the <see cref="WorldName"/> and then of
+        /// course exported data retrieved from <see cref="LockstepGameState.SerializeGameState(bool)"/>.
+        /// Returns <see langword="null"/> if called at an invalid time or with invalid
+        /// <paramref name="gameStates"/> or <paramref name="exportName"/>.</returns>
         public abstract string Export(LockstepGameState[] gameStates, string exportName);
         /// <summary>
         /// <para>Load and validate a given base 64 exported string, converting it into an array of objects
@@ -383,6 +396,12 @@ namespace JanSharp
         /// previous versions of the world or even completely different worlds.</param>
         /// <param name="exportedDate">The UTC date and time at which the
         /// <see cref="Export(LockstepGameState[], string)"/> call was made.</param>
+        /// <param name="exportWorldName">
+        /// <para>The <see cref="WorldName"/> at the time of exporting. Just like <see cref="WorldName"/> it
+        /// does not uniquely identify worlds.</para>
+        /// <para>Guaranteed to not be <see langword="null"/>, nor be an empty string, nor contain any
+        /// "<c>\n</c>" nor "<c>\r</c>", nor have any leading or trailing space.</para>
+        /// </param>
         /// <param name="exportName">The name which was passed to
         /// <see cref="Export(LockstepGameState[], string)"/> at the time of exporting, which can be
         /// <see langword="null"/>. It is guaranteed to never contain "<c>\n</c>" nor "<c>\r</c>". If the
@@ -393,6 +412,7 @@ namespace JanSharp
         public abstract object[][] ImportPreProcess(
             string exportedString,
             out System.DateTime exportedDate,
+            out string exportWorldName,
             out string exportName);
         /// <summary>
         /// <para>Start importing game states using data obtained from
@@ -404,14 +424,20 @@ namespace JanSharp
         /// </summary>
         /// <param name="exportDate">The UTC date and time obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
+        /// <param name="exportWorldName">The name obtained from
+        /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>. If you provide a
+        /// different value it will be sanitized. "<c>\n</c>" and "<c>\r</c>" get replaced with white spaces,
+        /// leading and trailing spaces are removed, <see langword="null"/> and empty strings get replaced
+        /// with <c>"Unnamed"</c>.</param>
         /// <param name="exportName">The name obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>. If you provide a
-        /// different name and that happens to contain "<c>\n</c>" nor "<c>\r</c>" then those will silently be
+        /// different name and that happens to contain "<c>\n</c>" or "<c>\r</c>" then those will silently be
         /// replaced with white spaces.</param>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
         public abstract void StartImport(
             System.DateTime exportDate,
+            string exportWorldName,
             string exportName,
             object[][] importedGameStates);
         /// <summary>
@@ -427,7 +453,7 @@ namespace JanSharp
         /// <summary>
         /// <para>The player id of the client which initiated the import and has provided the import data.
         /// </para>
-        /// <para>Usable if <see cref="IsImporting"/> is true, or inside of
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
@@ -435,16 +461,26 @@ namespace JanSharp
         public abstract uint ImportingPlayerId { get; }
         /// <summary>
         /// <para>The UTC time of when the currently being imported data was initially exported.</para>
-        /// <para>Usable if <see cref="IsImporting"/> is true, or inside of
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract System.DateTime ImportingFromDate { get; }
         /// <summary>
+        /// <para>The <see cref="WorldName"/> of the world of the currently being imported data.</para>
+        /// <para>Guaranteed to not be <see langword="null"/>, nor be an empty string, nor contain any
+        /// "<c>\n</c>" nor "<c>\r</c>", nor have any leading or trailing space.</para>
+        /// <para>Can be <see langword="null"/>.</para>
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
+        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract string ImportingFromWorldName { get; }
+        /// <summary>
         /// <para>The name that was set during the export of the currently being imported data.</para>
         /// <para>Guaranteed to never contain "<c>\n</c>" nor "<c>\r</c>".</para>
         /// <para>Can be <see langword="null"/>.</para>
-        /// <para>Usable if <see cref="IsImporting"/> is true, or inside of
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>

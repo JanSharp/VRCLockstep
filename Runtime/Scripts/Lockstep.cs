@@ -18,13 +18,31 @@ namespace JanSharp.Internal
         // custom game states will have ids starting at this, ascending
         private const uint LJFirstCustomGameStateIAId = 2;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
+        [Tooltip("This uses the scene name, not the World Name set in the VRChat Control Panel. Sorry, but "
+            + "it's at least better than not having any default.")]
+        [SerializeField] private bool useSceneNameAsWorldName = true;
+        [Tooltip("This is exposed in the Lockstep API as 'WorldName', and is also automatically included in "
+            + "exported game state data/strings. It's intended to be usable in UI, so it should be human "
+            + "readable.\nMust be a single line, non empty, without leading or trailing space. (These "
+            + "requirements are enforced at runtime. If it ends up being empty, 'Unnamed' is used.)")]
+        [SerializeField] private string worldName;
+        private string cachedWorldName = null;
+        private string SanitizeWorldName(string name)
+        {
+            name = (name ?? "").Replace('\n', ' ').Replace('\r', ' ').Trim();
+            return name == "" ? "Unnamed" : name;
+        }
+        public override string WorldName
+        {
+            get
+            {
+                if (cachedWorldName == null) // Cannot use ??= with the current version of UdonSharp.
+                    cachedWorldName = SanitizeWorldName(worldName);
+                return cachedWorldName;
+            }
+        }
+
         [SerializeField] private InputActionSync lateJoinerInputActionSync;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private LockstepTickSync tickSync;
         /// <summary>
         /// <para>On the master this is the currently running tick, as in new input actions are getting
@@ -156,79 +174,25 @@ namespace JanSharp.Internal
         ///<para>uint singletonId => objet[] { uint responsiblePlayerId, byte[] singletonInputActionData }</para></summary>
         private DataDictionary singletonInputActions = new DataDictionary();
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] inputActionHandlerInstances;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private string[] inputActionHandlerEventNames;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onInitListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onClientJoinedListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onPreClientJoinedListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onClientCaughtUpListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onClientLeftListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onMasterClientChangedListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onLockstepTickListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onImportStartListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onImportedGameStateListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onImportFinishedListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onGameStatesToAutosaveChangedListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private UdonSharpBehaviour[] onLockstepNotificationListeners;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private LockstepGameState[] allGameStates;
         // string internalName => LockstepGameState gameState
         private DataDictionary gameStatesByInternalName = new DataDictionary();
@@ -3172,6 +3136,7 @@ namespace JanSharp.Internal
                 return null; // acceptable error case in which again by definition null is returned.
 
             WriteDateTime(System.DateTime.UtcNow);
+            WriteString(WorldName);
             WriteString(exportName);
             WriteSmallUInt(validCount);
 
@@ -3214,12 +3179,13 @@ namespace JanSharp.Internal
             return encoded;
         }
 
-        public override object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate, out string exportName)
+        public override object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate, out string exportWorldName, out string exportName)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess");
             #endif
             exportedDate = System.DateTime.MinValue;
+            exportWorldName = null;
             exportName = null;
 
             if (!Base64.TryDecode(exportedString, out readStream))
@@ -3256,6 +3222,7 @@ namespace JanSharp.Internal
             ResetReadStream();
 
             exportedDate = ReadDateTime();
+            exportWorldName = SanitizeWorldName(ReadString()); // Sanitize to handle fabricated export strings.
             exportName = ReadString();
             if (exportName != null)
             {
@@ -3302,7 +3269,7 @@ namespace JanSharp.Internal
             return importedGameStates;
         }
 
-        public override void StartImport(System.DateTime exportDate, string exportName, object[][] importedGameStates)
+        public override void StartImport(System.DateTime exportDate, string exportWorldName, string exportName, object[][] importedGameStates)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartImport");
@@ -3331,7 +3298,7 @@ namespace JanSharp.Internal
                     validImportedGSs[count++] = importedGS;
             if (exportName != null)
                 exportName = exportName.Replace('\n', ' ').Replace('\r', ' ');
-            SendImportStartIA(exportDate, exportName, validImportedGSs);
+            SendImportStartIA(exportDate, SanitizeWorldName(exportWorldName), exportName, validImportedGSs);
         }
 
         ///<summary>LockstepImportedGS[]</summary>
@@ -3354,12 +3321,14 @@ namespace JanSharp.Internal
                 // To make these properties game state safe.
                 importingPlayerId = 0u;
                 importingFromDate = new System.DateTime();
+                importingFromWorldName = null;
                 importingFromName = null;
                 gameStatesWaitingForImport.Clear(); // And to clean up.
             }
         }
         private uint importingPlayerId;
         private System.DateTime importingFromDate;
+        private string importingFromWorldName;
         private string importingFromName;
         private LockstepGameState importedGameState;
         private string importErrorMessage;
@@ -3368,6 +3337,7 @@ namespace JanSharp.Internal
         public override uint ImportingPlayerId => importingPlayerId;
 
         public override System.DateTime ImportingFromDate => importingFromDate;
+        public override string ImportingFromWorldName => importingFromWorldName;
         public override string ImportingFromName => importingFromName;
         public override LockstepGameState ImportedGameState => importedGameState;
         public override string ImportErrorMessage => importErrorMessage;
@@ -3389,7 +3359,7 @@ namespace JanSharp.Internal
         private DataDictionary gameStatesWaitingForImport = new DataDictionary();
 
         ///<summary>LockstepImportedGS[] importedGSs</summary>
-        private void SendImportStartIA(System.DateTime exportDate, string exportName, object[][] importedGSs)
+        private void SendImportStartIA(System.DateTime exportDate, string exportWorldName, string exportName, object[][] importedGSs)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendImportStartIA");
@@ -3400,6 +3370,7 @@ namespace JanSharp.Internal
                 return;
             }
             WriteDateTime(exportDate);
+            WriteString(exportWorldName);
             WriteString(exportName);
             WriteSmallUInt((uint)importedGSs.Length);
             foreach (object[] importedGS in importedGSs)
@@ -3422,6 +3393,7 @@ namespace JanSharp.Internal
             }
             importingPlayerId = SendingPlayerId;
             importingFromDate = ReadDateTime();
+            importingFromWorldName = ReadString();
             importingFromName = ReadString();
             int importedGSsCount = (int)ReadSmallUInt();
             for (int i = 0; i < importedGSsCount; i++)

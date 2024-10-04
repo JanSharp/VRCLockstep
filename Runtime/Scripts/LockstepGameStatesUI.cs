@@ -159,6 +159,7 @@ namespace JanSharp.Internal
         ///<summary>LockstepImportedGS[]</summary>
         object[][] importedGameStates = null;
         System.DateTime exportDate;
+        string exportWorldName;
         string exportName;
 
         private int importSelectedCount = 0;
@@ -262,6 +263,7 @@ namespace JanSharp.Internal
             importedGameStates = lockstep.ImportPreProcess(
                 importString,
                 out exportDate,
+                out exportWorldName,
                 out exportName);
             if (importedGameStates == null)
             {
@@ -300,8 +302,9 @@ namespace JanSharp.Internal
             int cannotImportCount = importedGameStates.Length - canImportCount;
             importInfoText.text = $"Can import {(cannotImportCount == 0 ? "all " : "")}{canImportCount}"
                 + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}")
-                + $"\n<size=90%>{exportName ?? "<i>unnamed</i>"} "
-                + $"<nobr><size=70%>(from {exportDate.ToLocalTime():yyyy-MM-dd HH:mm})</nobr>";
+                + $"\n<nobr><size=90%>{exportName ?? "<i>unnamed</i>"} "
+                + $"<size=60%>(from <size=75%>{exportWorldName}<size=60%>, "
+                + $"{exportDate.ToLocalTime():yyyy-MM-dd HH:mm})</nobr>";
             importSelectedCount = canImportCount;
             if (canImportCount != 0)
             {
@@ -370,7 +373,7 @@ namespace JanSharp.Internal
             foreach (LockstepImportGSEntry entry in importGSEntries)
                 if (entry.canImport && entry.mainToggle.isOn)
                     gameStatesToImport[i++] = entry.importedGS;
-            lockstep.StartImport(exportDate, exportName, gameStatesToImport);
+            lockstep.StartImport(exportDate, exportWorldName, exportName, gameStatesToImport);
             CloseImportWindow();
         }
 
