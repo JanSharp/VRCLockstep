@@ -366,7 +366,6 @@ TODO: add master preference game state
 TODO: add game state safe prng
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received
-TODO: ensure that on build handler validation for lock step events happens every time, not just the first time after compilation
 TODO: on nth tick? game state safe.
 TODO: raise event delayed by ticks, game state safe.
 

@@ -222,7 +222,11 @@ namespace JanSharp.Internal
             }
 
             cached = typeCache;
-            cache[ubType] = typeCache;
+            // Do not save it in the cache if it failed, otherwise subsequent runs of this logic without
+            // assembly reloads in between would return true instead of logging an error and returning false
+            // like they should.
+            if (result)
+                cache[ubType] = typeCache;
             return result;
         }
 
