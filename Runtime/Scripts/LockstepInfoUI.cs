@@ -303,7 +303,7 @@ namespace JanSharp.Internal
         [LockstepEvent(LockstepEventType.OnClientCaughtUp)]
         public void OnClientCaughtUp()
         {
-            UpdateClientState(lockstep.JoinedPlayerId);
+            UpdateClientState(lockstep.CatchingUpPlayerId);
         }
 
         [LockstepEvent(LockstepEventType.OnClientLeft)]
