@@ -21,7 +21,7 @@ namespace JanSharp.Internal
 
         [Tooltip("This uses the scene name, not the World Name set in the VRChat Control Panel. Sorry, but "
             + "it's at least better than not having any default.")]
-        [SerializeField] private bool useSceneNameAsWorldName = true;
+        public bool useSceneNameAsWorldName = true; // public just to prevent the "unused field" warning in unity.
         [Tooltip("This is exposed in the Lockstep API as 'WorldName', and is also automatically included in "
             + "exported game state data/strings. It's intended to be usable in UI, so it should be human "
             + "readable.\nMust be a single line, non empty, without leading or trailing space. (These "
