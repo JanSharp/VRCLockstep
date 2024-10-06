@@ -17,6 +17,7 @@ namespace JanSharp.Internal
         private const uint LJInternalGameStatesIAId = 1;
         // custom game states will have ids starting at this, ascending
         private const uint LJFirstCustomGameStateIAId = 2;
+        public const float SendTimeForNonTimedIAs = float.NaN;
 
         [Tooltip("This uses the scene name, not the World Name set in the VRChat Control Panel. Sorry, but "
             + "it's at least better than not having any default.")]
@@ -62,6 +63,7 @@ namespace JanSharp.Internal
         /// </summary>
         private uint lastRunnableTick;
         public override uint CurrentTick => currentTick;
+        public override float RealtimeAtTick(uint tick) => tickStartTime + (float)(tick - 1u) / TickRate;
 
         private VRCPlayerApi localPlayer;
         private uint localPlayerId;
@@ -144,7 +146,7 @@ namespace JanSharp.Internal
 
         public const ulong InputActionIndexBits = 0x00000000ffffffffuL;
         public const int PlayerIdKeyShift = 32;
-        // ulong uniqueId => objet[] { uint inputActionId, byte[] inputActionData }
+        // ulong uniqueId => objet[] { uint inputActionId, byte[] inputActionData, float sendTime }
         // uniqueId: pppppppp pppppppp pppppppp pppppppp iiiiiiii iiiiiiii iiiiiiii iiiiiiii
         // (p = player id, i = input action index)
         //
@@ -164,18 +166,23 @@ namespace JanSharp.Internal
         private DataDictionary uniqueIdsByTick = new DataDictionary();
 
         ///cSpell:ignore iatrn
-        ///<summary>(objet[] { uint inputActionId, byte[] inputActionData })[]</summary>
+        ///<summary>(objet[] { uint inputActionId, byte[] inputActionData, ulong uniqueId, float sendTime })[]</summary>
         private object[][] inputActionsToRunNextFrame = new object[ArrList.MinCapacity][];
         private int iatrnCount = 0;
 
         ///<summary>**Internal Game State**</summary>
         private uint nextSingletonId = 0;
-        ///<summary><para>**Internal Game State**</para>
-        ///<para>uint singletonId => objet[] { uint responsiblePlayerId, byte[] singletonInputActionData }</para></summary>
+        ///<summary>
+        ///<para><b>Internal Game State</b></para>
+        ///<para>localSendTime is <b>not</b> part of the game state.</para>
+        ///<para>uint singletonId => objet[] { uint responsiblePlayerId, byte[] singletonInputActionData, bool requiresTimeTracking, uint sendTick, float localSendTime }</para>
+        ///</summary>
         private DataDictionary singletonInputActions = new DataDictionary();
 
         [SerializeField] private UdonSharpBehaviour[] inputActionHandlerInstances;
         [SerializeField] private string[] inputActionHandlerEventNames;
+        public bool[] inputActionHandlersRequireTimeTracking;
+        [System.NonSerialized] public float currentInputActionSendTime;
 
         [SerializeField] private UdonSharpBehaviour[] onInitListeners;
         [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
@@ -496,6 +503,9 @@ namespace JanSharp.Internal
         public override uint SendingPlayerId => sendingPlayerId;
         private ulong sendingUniqueId;
         public override ulong SendingUniqueId => sendingUniqueId;
+        private float sendingTime;
+        public override float SendingTime => sendingTime;
+        public override float RealtimeSinceSending => Time.realtimeSinceStartup - sendingTime;
         private string notificationMessage;
         public override string NotificationMessage => notificationMessage;
 
@@ -769,7 +779,7 @@ namespace JanSharp.Internal
             #endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
-            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId);
+            RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId, (float)inputActionData[2]);
         }
 
         private void RunInputActionsForThisFrame()
@@ -777,7 +787,7 @@ namespace JanSharp.Internal
             for (int i = 0; i < iatrnCount; i++)
             {
                 object[] inputActionData = inputActionsToRunNextFrame[i];
-                RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], (ulong)inputActionData[2]);
+                RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], (ulong)inputActionData[2], (float)inputActionData[3]);
                 inputActionsToRunNextFrame[i] = null;
             }
             iatrnCount = 0;
@@ -790,17 +800,17 @@ namespace JanSharp.Internal
             iatrnCount = 0;
         }
 
-        private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId, bool bypassValidityCheck = false)
+        private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId, float sendTime, bool bypassValidityCheck = false)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputAction");
             #endif
             ResetReadStream();
             readStream = inputActionData;
-            RunInputActionWithCurrentReadStream(inputActionId, uniqueId, bypassValidityCheck);
+            RunInputActionWithCurrentReadStream(inputActionId, uniqueId, sendTime, bypassValidityCheck);
         }
 
-        private void RunInputActionWithCurrentReadStream(uint inputActionId, ulong uniqueId, bool bypassValidityCheck = false)
+        private void RunInputActionWithCurrentReadStream(uint inputActionId, ulong uniqueId, float sendTime, bool bypassValidityCheck = false)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionWithCurrentReadStream");
@@ -808,6 +818,7 @@ namespace JanSharp.Internal
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
             sendingPlayerId = (uint)(uniqueId >> PlayerIdKeyShift);
             sendingUniqueId = uniqueId;
+            sendingTime = sendTime;
             // This provides the guarantee that input actions sent by clients which have left the instance and
             // for which the OnClientLeft event has already been raised will not be run. This is only an
             // incredibly unlikely edge case since the system waits 1 second after the player left until the
@@ -823,8 +834,8 @@ namespace JanSharp.Internal
                 #if LockstepDebug
                 Debug.Log($"[LockStepDebug] The player id {sendingPlayerId} is not in the client states game"
                     + $"state and therefore running input actions sent by this player id is invalid. This "
-                    + $"input action is ignored. This is supposed to be an incredibly rare edge case, so "
-                    + $"so that it should effectively never happen.");
+                    + $"input action is ignored. This is supposed to be an incredibly rare edge case, such "
+                    + $"that it should effectively never happen.");
                 #endif
                 return;
             }
@@ -847,7 +858,7 @@ namespace JanSharp.Internal
             ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             if (!doRunLocally)
                 return;
-            RunInputAction(inputActionId, inputActionData, uniqueId, bypassValidityCheck: true);
+            RunInputAction(inputActionId, inputActionData, uniqueId, SendTimeForNonTimedIAs, bypassValidityCheck: true);
         }
 
         public override ulong SendInputAction(uint inputActionId)
@@ -860,6 +871,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
+            currentInputActionSendTime = Time.realtimeSinceStartup; // As early as possible.
             if (!IsAllowedToSendInputActionId(inputActionId))
             {
                 ResetWriteStream();
@@ -873,13 +885,16 @@ namespace JanSharp.Internal
             return SendInputActionInternal(inputActionId, inputActionData, forceOneFrameDelay);
         }
 
+        /// <summary>
+        /// <para>Expects <see cref="currentInputActionSendTime"/> to have an updated/valid/appropriate value.</para>
+        /// </summary>
         private ulong SendInputActionInternal(uint inputActionId, byte[] inputActionData, bool forceOneFrameDelay)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputActionInternal - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
             if (isSinglePlayer) // Guaranteed to be master while in single player.
-                return TryToInstantlyRunInputActionOnMaster(inputActionId, 0uL, inputActionData, forceOneFrameDelay);
+                return TryToInstantlyRunInputActionOnMaster(inputActionId, 0uL, currentInputActionSendTime, inputActionData, forceOneFrameDelay);
 
             ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             #if LockstepDebug
@@ -900,7 +915,7 @@ namespace JanSharp.Internal
                     + "ignoreLocalInputActions is also true. Continuing as though stillAllowLocalClientJoinedIA was false.");
             }
 
-            inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
+            inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData, currentInputActionSendTime }));
             return uniqueId;
         }
 
@@ -930,6 +945,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendSingletonInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
+            currentInputActionSendTime = Time.realtimeSinceStartup; // As early as possible.
             if (!IsAllowedToSendInputActionId(inputActionId))
             {
                 ResetWriteStream();
@@ -949,12 +965,21 @@ namespace JanSharp.Internal
             System.Array.Copy(writeStream, 0, singletonInputActionData, idsSize, actualInputActionDataSize);
             ResetWriteStream();
 
-            singletonInputActions.Add(singletonId, new DataToken(new object[] { responsiblePlayerId, singletonInputActionData }));
+            bool requiresTimeTracking = inputActionHandlersRequireTimeTracking[inputActionId];
+            singletonInputActions.Add(singletonId, new DataToken(new object[]
+            {
+                responsiblePlayerId,
+                singletonInputActionData,
+                currentInputActionSendTime,
+                currentTick,
+                requiresTimeTracking,
+            }));
 
             if (localPlayerId != responsiblePlayerId)
                 return 0uL;
 
-            return SendInputActionInternal(singletonInputActionIAId, singletonInputActionData, forceOneFrameDelay: true);
+            uint singletonIAId = requiresTimeTracking ? timedSingletonInputActionIAId : singletonInputActionIAId;
+            return SendInputActionInternal(singletonIAId, singletonInputActionData, forceOneFrameDelay: true);
         }
 
         [SerializeField] [HideInInspector] private uint singletonInputActionIAId;
@@ -962,13 +987,17 @@ namespace JanSharp.Internal
         public void OnSingletonInputActionIA()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  OnSingletonInputActionIA");
+            Debug.Log($"[LockstepDebug] Lockstep  OnSingletonInputActionIA - sendingTime: {sendingTime}");
             #endif
             uint singletonId = ReadSmallUInt();
             uint inputActionId = ReadSmallUInt();
             singletonInputActions.Remove(singletonId);
-            RunInputActionWithCurrentReadStream(inputActionId, SendingUniqueId);
+            RunInputActionWithCurrentReadStream(inputActionId, SendingUniqueId, SendTimeForNonTimedIAs);
         }
+
+        [SerializeField] [HideInInspector] private uint timedSingletonInputActionIAId;
+        [LockstepInputAction(nameof(timedSingletonInputActionIAId), TrackTiming = true)]
+        public void OnTimedSingletonInputActionIA() => OnSingletonInputActionIA(); // Exact same handler.
 
         private void CheckIfSingletonInputActionGotDropped(uint leftPlayerId)
         {
@@ -984,8 +1013,15 @@ namespace JanSharp.Internal
                     continue;
                 singletonInputAction[0] = masterPlayerId; // Update responsible player.
                 if (isMaster)
-                    SendInputActionInternal(singletonInputActionIAId, (byte[])singletonInputAction[1], forceOneFrameDelay: true);
+                {
+                    currentInputActionSendTime = (float)singletonInputAction[4];
+                    if (float.IsNaN(currentInputActionSendTime)) // NaN means this entry is from late joiner syncing.
+                        currentInputActionSendTime = RealtimeAtTick((uint)singletonInputAction[3]);
+                    bool requiresTimeTracking = (bool)singletonInputAction[2];
+                    uint singletonIAId = requiresTimeTracking ? timedSingletonInputActionIAId : singletonInputActionIAId;
+                    SendInputActionInternal(singletonIAId, (byte[])singletonInputAction[1], forceOneFrameDelay: true);
                     // forceOneFrameDelay is true to have consistent order in relation to the OnClientLeft event.
+                }
             }
         }
 
@@ -2206,6 +2242,8 @@ namespace JanSharp.Internal
                 byte[] singletonInputActionData = (byte[])inputActionData[1];
                 WriteSmallUInt((uint)singletonInputActionData.Length);
                 WriteBytes(singletonInputActionData);
+                WriteByte((byte)(((bool)inputActionData[2]) ? 1 : 0));
+                WriteSmallUInt((uint)inputActionData[3]);
             }
 
             lateJoinerInputActionSync.SendInputAction(LJInternalGameStatesIAId, writeStream, writeStreamSize);
@@ -2264,7 +2302,16 @@ namespace JanSharp.Internal
                 uint singletonId = ReadSmallUInt();
                 uint inputActionId = ReadSmallUInt();
                 byte[] singletonInputActionData = ReadBytes((int)ReadSmallUInt());
-                singletonInputActions.Add(singletonId, new DataToken(new object[] { inputActionId, singletonInputActionData }));
+                bool requiresTimeTracking = ReadByte() != 0;
+                uint sendTick = ReadSmallUInt();
+                singletonInputActions.Add(singletonId, new DataToken(new object[]
+                {
+                    inputActionId,
+                    singletonInputActionData,
+                    requiresTimeTracking,
+                    sendTick,
+                    float.NaN, // Don't know the tick start time yet, cannot calculate the local send time.
+                }));
             }
         }
 
@@ -2579,7 +2626,7 @@ namespace JanSharp.Internal
                 || inputActionId == acceptedMasterCandidateIAId;
         }
 
-        public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, ulong uniqueId, byte[] inputActionData)
+        public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, ulong uniqueId, float sendTime, byte[] inputActionData)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x16}{(isLateJoinerSync ? "" : $", event name {(inputActionId < inputActionHandlerEventNames.Length ? inputActionHandlerEventNames[inputActionId] : "<id/index out of bounds>")}")}");
@@ -2601,7 +2648,7 @@ namespace JanSharp.Internal
 
             if (IsInstantActionIAId(inputActionId))
             {
-                RunInputAction(inputActionId, inputActionData, uniqueId, bypassValidityCheck: true);
+                RunInputAction(inputActionId, inputActionData, uniqueId, SendTimeForNonTimedIAs, bypassValidityCheck: true);
                 return;
             }
 
@@ -2609,12 +2656,12 @@ namespace JanSharp.Internal
                 return;
 
             if (isMaster)
-                TryToInstantlyRunInputActionOnMaster(inputActionId, uniqueId, inputActionData);
+                TryToInstantlyRunInputActionOnMaster(inputActionId, uniqueId, sendTime, inputActionData);
             else
-                inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
+                inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData, sendTime }));
         }
 
-        private ulong TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, byte[] inputActionData, bool forceOneFrameDelay = false)
+        private ulong TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, float sendTime, byte[] inputActionData, bool forceOneFrameDelay = false)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryToInstantlyRunInputActionOnMaster");
@@ -2627,7 +2674,7 @@ namespace JanSharp.Internal
                     // Received data always has a unique id.
                     uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
                 }
-                inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData }));
+                inputActionsByUniqueId.Add(uniqueId, new DataToken(new object[] { inputActionId, inputActionData, sendTime }));
                 AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
                 return uniqueId;
             }
@@ -2648,9 +2695,9 @@ namespace JanSharp.Internal
                 uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
 
             if (forceOneFrameDelay)
-                ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData, uniqueId });
+                ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData, uniqueId, sendTime });
             else
-                RunInputAction(inputActionId, inputActionData, uniqueId);
+                RunInputAction(inputActionId, inputActionData, uniqueId, sendTime);
             return uniqueId;
         }
 

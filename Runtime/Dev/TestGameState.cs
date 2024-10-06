@@ -141,10 +141,10 @@ namespace JanSharp
         }
 
         [SerializeField] [HideInInspector] private uint setDescriptionNameIAId;
-        [LockstepInputAction(nameof(setDescriptionNameIAId))]
+        [LockstepInputAction(nameof(setDescriptionNameIAId), TrackTiming = true)]
         public void OnSetDescriptionIA()
         {
-            Debug.Log("<dlt> TestGameState  OnSetDescriptionIA");
+            Debug.Log($"<dlt> TestGameState  OnSetDescriptionIA - lockstep.SendingTime: {lockstep.SendingTime}, Time.realtimeSinceStartup: {Time.realtimeSinceStartup}, Time.realtimeSinceStartup - lockstep.SendingTime: {Time.realtimeSinceStartup - lockstep.SendingTime}");
             uint playerId = lockstep.ReadSmallUInt();
             if (!allPlayerData.TryGetValue(playerId, out DataToken playerDataToken))
                 return; // Could hve left already.

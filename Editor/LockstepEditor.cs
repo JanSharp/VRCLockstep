@@ -39,13 +39,13 @@ namespace JanSharp.Internal
         private static List<LockstepGameState> allGameStates = new List<LockstepGameState>();
         public static ReadOnlyCollection<LockstepGameState> AllGameStates => allGameStates.AsReadOnly();
 
-        private static List<(UdonSharpBehaviour inst, string iaName)> allInputActions = new List<(UdonSharpBehaviour inst, string iaName)>();
+        private static List<(UdonSharpBehaviour inst, string iaName, bool timed)> allInputActions = new List<(UdonSharpBehaviour inst, string iaName, bool timed)>();
 
         private static Dictionary<System.Type, TypeCache> cache = new Dictionary<System.Type, TypeCache>();
         private class TypeCache
         {
             public Dictionary<LockstepEventType, int> eventOrderLut;
-            public List<(string iaName, string fieldName)> inputActions;
+            public List<(string iaName, string fieldName, bool timed)> inputActions;
             public List<string> lockstepFieldNames;
         }
 
@@ -130,6 +130,12 @@ namespace JanSharp.Internal
                 (p, v) => p.stringValue = v
             );
 
+            EditorUtil.SetArrayProperty(
+                lockstepSo.FindProperty("inputActionHandlersRequireTimeTracking"),
+                allInputActions.Select(ia => ia.timed).ToList(),
+                (p, v) => p.boolValue = v
+            );
+
             lockstepSo.ApplyModifiedProperties();
             return true;
         }
@@ -198,8 +204,8 @@ namespace JanSharp.Internal
                     result = false;
                     return;
                 }
-                typeCache.inputActions ??= new List<(string iaName, string fieldName)>();
-                typeCache.inputActions.Add((method.Name, attr.IdFieldName));
+                typeCache.inputActions ??= new List<(string iaName, string fieldName, bool timed)>();
+                typeCache.inputActions.Add((method.Name, attr.IdFieldName, attr.TrackTiming));
             }
 
             foreach (MethodInfo method in ubType.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
@@ -248,7 +254,7 @@ namespace JanSharp.Internal
                 foreach (var ia in cached.inputActions)
                 {
                     ubSo.FindProperty(ia.fieldName).uintValue = (uint)allInputActions.Count;
-                    allInputActions.Add((ub, ia.iaName));
+                    allInputActions.Add((ub, ia.iaName, ia.timed));
                 }
             }
 

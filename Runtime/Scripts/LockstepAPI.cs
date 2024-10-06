@@ -53,6 +53,17 @@ namespace JanSharp
         /// </summary>
         public abstract uint CurrentTick { get; }
         /// <summary>
+        /// <para>Calculate an estimate of when a tick got run. Due to lag spikes or other irregularities in
+        /// tick running it is not possible to guarantee this to be accurate, however the majority of the time
+        /// its accuracy should be within 1 or maybe 2 ticks worth of time.</para>
+        /// <para>For reference, 1 tick lasts for (<c>1f</c> divided by <see cref="TickRate"/>)
+        /// seconds.</para>
+        /// </summary>
+        /// <param name="tick"><c>0u</c> is an invalid tick and must not be passed to this function.</param>
+        /// <returns>The approximate <see cref="Time.realtimeSinceStartup"/> at which the given
+        /// <paramref name="tick"/> got run.</returns>
+        public abstract float RealtimeAtTick(uint tick);
+        /// <summary>
         /// <para>While this is <see langword="true"/> this client is rapidly running input actions in order
         /// to catch up to real time.</para>
         /// <para><see langword="true"/> only for the initial catch up period, and stops being true a notable
@@ -256,6 +267,32 @@ namespace JanSharp
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract ulong SendingUniqueId { get; }
+        /// <summary>
+        /// <para>For input actions which have <see cref="LockstepInputActionAttribute.TrackTiming"/> set to
+        /// <see langword="true"/> this will be the point in time at which <see cref="SendInputAction(uint)"/>
+        /// or <see cref="SendSingletonInputAction(uint)"/> got called, in the
+        /// <see cref="Time.realtimeSinceStartup"/> scale.</para>
+        /// <para><see cref="RealtimeSinceSending"/> exists as a shorthand to get the amount of time which has
+        /// passed since sending until now.</para>
+        /// <para>For those with <see cref="LockstepInputActionAttribute.TrackTiming"/> set to
+        /// <see langword="false"/> this will be <see cref="float.NaN"/>.</para>
+        /// <para>Usable inside of input actions.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public abstract float SendingTime { get; }
+        /// <summary>
+        /// <para>For input actions which have <see cref="LockstepInputActionAttribute.TrackTiming"/> set to
+        /// <see langword="true"/> this will be the amount of time which has passed since
+        /// <see cref="SendInputAction(uint)"/> or <see cref="SendSingletonInputAction(uint)"/> got called
+        /// until now, in the <see cref="Time.realtimeSinceStartup"/> scale.</para>
+        /// <para>(It is basically just the current <see cref="Time.realtimeSinceStartup"/> minus
+        /// <see cref="SendingTime"/>.)</para>
+        /// <para>For those with <see cref="LockstepInputActionAttribute.TrackTiming"/> set to
+        /// <see langword="false"/> this will be <see cref="float.NaN"/>.</para>
+        /// <para>Usable inside of input actions.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public abstract float RealtimeSinceSending { get; }
         /// <summary>
         /// <para>Enables easily checking if <see cref="SendInputAction(uint)"/>,
         /// <see cref="SendSingletonInputAction(uint)"/> and its overload would be able to actually send input

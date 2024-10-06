@@ -365,7 +365,6 @@ TODO: add master preference game state
   - import export support
 TODO: add game state safe prng
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
-TODO: maybe somehow add some utility to know the amount of time passed in real time since an input action got sent until it got received
 TODO: on nth tick? game state safe.
 TODO: raise event delayed by ticks, game state safe.
 
@@ -396,5 +395,7 @@ TODO: raise event delayed by ticks, game state safe.
 - [x] fix lockstep AssociateUnassociatedInputActionsWithTicks setting capacity on a data list can set the capacity to be lower than what it currently has as its capacity which throws an exception
 - [ ] fix that spamming Make Master in the clients list back and forth on 2 client entries pretty quickly causes an IA tick association to stay lingering in unique ids by tick. The master change seems to go through successfully, so surely no input action is getting dropped, but this is alarming
 - [ ] make game states list api return null or none state when called before lockstep has been initialized - so before OnInit or OnClientBeginCatchup
+- [ ] make useSceneNameAsWorldName public to get rid of the "unused" warning
+- [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

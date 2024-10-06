@@ -214,5 +214,22 @@ namespace JanSharp {
         {
             this.idFieldName = idFieldName;
         }
+
+        /// <summary>
+        /// <para>Input actions with <see cref="TrackTiming"/> set to <see langword="true"/> will make
+        /// lockstep keep track of the amount of time which passes in the
+        /// <see cref="UnityEngine.Time.realtimeSinceStartup"/> scale from
+        /// <see cref="LockstepAPI.SendInputAction(uint)"/> or
+        /// <see cref="LockstepAPI.SendSingletonInputAction(uint)"/> getting called until the input action
+        /// gets run.</para>
+        /// <para>This is synced, however not game state safe since timing is going to be different on every
+        /// client.</para>
+        /// <para>Inside of the input action handler, <see cref="LockstepAPI.SendingTime"/> and
+        /// <see cref="LockstepAPI.RealtimeSinceSending"/> can be used to obtain this timing
+        /// information.</para>
+        /// <para>WHen timing is needed for late joiners as well, store some tick in your game state and use
+        /// <see cref="LockstepAPI.RealtimeAtTick(uint)"/> on the joined client.</para>
+        /// </summary>
+        public bool TrackTiming { get; set; } = false;
     }
 }

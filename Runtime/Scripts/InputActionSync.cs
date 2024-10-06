@@ -53,6 +53,8 @@ namespace JanSharp.Internal
 
         [UdonSynced] private byte[] syncedData = new byte[1] { ClearedDataMarker }; // Initial value for first sync, which gets ignored.
         private int sendingUniqueIdsCount = 0;
+        private bool syncedDataRequiresTimeTracking = false;
+        private int syncedDataTimeTrackingIndex = 0;
 
         private byte[][] dataQueue = new byte[ArrQueue.MinCapacity][];
         private int dqStartIndex = 0;
@@ -63,20 +65,26 @@ namespace JanSharp.Internal
         private int uicqStartIndex = 0;
         private int uicqCount = 0;
 
+        private int[] timeTrackingIndexQueue = new int[ArrQueue.MinCapacity];
+        private int ttiStartIndex = 0;
+        private int ttiCount = 0;
+
         private byte[] stage = null;
         private int stageSize = 0;
         private int stagedUniqueIdCount = 0;
+        private bool stageRequiresTimeTracking = false;
+        private int stageTimeTrackingIndex = 0;
 
         /// <summary>
-        /// <para>3 * small uint.</para>
+        /// <para>3 * small uint + 2 * float.</para>
         /// </summary>
-        private const int MaxHeaderSize = 3 * 5;
+        private const int MaxHeaderSize = 3 * 5 + 2 * 4;
         private const int PotentialStageSizeOverflowThreshold = MaxSyncedDataSize - MaxHeaderSize;
 
         /// <summary>
         /// <para>Does not contain 0uL uniqueIds.</para>
         /// </summary>
-        private ulong[] uniqueIdQueue = new ulong[ArrList.MinCapacity];
+        private ulong[] uniqueIdQueue = new ulong[ArrQueue.MinCapacity];
         private int uiqStartIndex = 0;
         private int uiqCount = 0;
 
@@ -91,9 +99,12 @@ namespace JanSharp.Internal
         private uint receivedInputActionId;
         private uint receivedInputActionIndex;
         private ulong receivedUniqueId;
+        private float receivedSendTime;
         private byte[] receivedData;
         private int partialContinueIndex;
         private int partialMissingSize;
+        private bool partialRequiresTimeTracking;
+        private float partialSendTime;
 
         // This method will be called on all clients when the object is enabled and the Owner has been assigned.
         public override void _OnOwnerSet()
@@ -128,14 +139,25 @@ namespace JanSharp.Internal
             byte[] stageCopy = new byte[MaxSyncedDataSize];
             stage.CopyTo(stageCopy, 0);
             ArrQueue.Enqueue(ref dataQueue, ref dqStartIndex, ref dqCount, stageCopy);
+            if (stageRequiresTimeTracking)
+            {
+                stagedUniqueIdCount = -stagedUniqueIdCount; // Almost like using the sign bit as a boolean.
+                // Only enqueueing when it's actually needed because Udon is slow, so this is just an optimization.
+                ArrQueue.Enqueue(ref timeTrackingIndexQueue, ref ttiStartIndex, ref ttiCount, stageTimeTrackingIndex);
+            }
             ArrQueue.Enqueue(ref uniqueIdsCountQueue, ref uicqStartIndex, ref uicqCount, stagedUniqueIdCount);
             stageSize = 0;
             stagedUniqueIdCount = 0;
+            stageRequiresTimeTracking = false;
+            stageTimeTrackingIndex = 0;
         }
 
-        ///<summary>
-        ///Returns the uniqueId for the sent input action.
-        ///</summary>
+        /// <summary>
+        /// <para>Uses <see cref="Lockstep.currentInputActionSendTime"/> when <paramref name="inputActionId"/>
+        /// is a timed input action according to
+        /// <see cref="Lockstep.inputActionHandlersRequireTimeTracking"/>.</para>
+        /// </summary>
+        /// <returns>The uniqueId for the sent input action.</returns>
         public ulong SendInputAction(uint inputActionId, byte[] inputActionData, int inputActionDataSize)
         {
             #if LockstepDebug
@@ -169,6 +191,17 @@ namespace JanSharp.Internal
             // Write IA header. This is what MaxHeaderSize correlates to.
             DataStream.WriteSmall(ref stage, ref stageSize, index);
             DataStream.WriteSmall(ref stage, ref stageSize, inputActionId);
+            float sendTime = lockstep.currentInputActionSendTime; // Fetch into local as an optimization.
+            if (lockstep.inputActionHandlersRequireTimeTracking[inputActionId])
+            {
+                if (!stageRequiresTimeTracking)
+                {
+                    stageRequiresTimeTracking = true;
+                    stageTimeTrackingIndex = stageSize;
+                    stageSize += 4; // Reserve 4 bytes, which will be written to right before sending.
+                }
+                DataStream.Write(ref stage, ref stageSize, sendTime);
+            }
             DataStream.WriteSmall(ref stage, ref stageSize, (uint)inputActionDataSize);
 
             int baseIndex = 0;
@@ -223,8 +256,11 @@ namespace JanSharp.Internal
 
             stageSize = 0;
             stagedUniqueIdCount = 0;
+            stageRequiresTimeTracking = false;
+            stageTimeTrackingIndex = 0;
             ArrQueue.Clear(ref dataQueue, ref dqStartIndex, ref dqCount);
             ArrQueue.Clear(ref uniqueIdsCountQueue, ref uicqStartIndex, ref uicqCount);
+            ArrQueue.Clear(ref timeTrackingIndexQueue, ref ttiStartIndex, ref ttiCount);
 
             // Since there was something already in the process of sending, potentially a split input action
             // do still send one set of data indicating that syncing has been aborted, in case any other
@@ -235,6 +271,8 @@ namespace JanSharp.Internal
             // This is using 0xfe as a special value
             syncedData = new byte[1] { ClearedDataMarker };
             sendingUniqueIdsCount = 0;
+            syncedDataRequiresTimeTracking = false;
+            syncedDataTimeTrackingIndex = 0;
             // Abuse retrying because it causes serialization to just send whatever is currently set in the
             // syncedData variable without touching the stage or queue or anything.
             // And by setting sendingUniqueIdCount it also doesn't touch the unique id queue.
@@ -264,12 +302,19 @@ namespace JanSharp.Internal
             if (retrying)
             {
                 retrying = false;
+                if (syncedDataRequiresTimeTracking)
+                {
+                    int temp = syncedDataTimeTrackingIndex; // Do not modify syncedDataTimeTrackingIndex.
+                    DataStream.Write(ref syncedData, ref temp, Time.realtimeSinceStartup); // Fetch time as late as possible.
+                }
                 return;
             }
 
             if (stage == null) // No input actions have been sent yet.
             {
                 syncedData = new byte[1] { ClearedDataMarker };
+                syncedDataRequiresTimeTracking = false;
+                syncedDataTimeTrackingIndex = 0;
                 return;
             }
 
@@ -278,15 +323,32 @@ namespace JanSharp.Internal
                 // Take from the queue.
                 syncedData = ArrQueue.Dequeue(ref dataQueue, ref dqStartIndex, ref dqCount);
                 sendingUniqueIdsCount = ArrQueue.Dequeue(ref uniqueIdsCountQueue, ref uicqStartIndex, ref uicqCount);
+                syncedDataRequiresTimeTracking = sendingUniqueIdsCount < 0;
+                if (syncedDataRequiresTimeTracking)
+                {
+                    sendingUniqueIdsCount = -sendingUniqueIdsCount;
+                    syncedDataTimeTrackingIndex = ArrQueue.Dequeue(ref timeTrackingIndexQueue, ref ttiStartIndex, ref ttiCount);
+                    int temp = syncedDataTimeTrackingIndex; // Do not modify syncedDataTimeTrackingIndex.
+                    DataStream.Write(ref syncedData, ref temp, Time.realtimeSinceStartup); // Fetch time as late as possible.
+                }
                 return;
             }
 
             // Take the current stage and then clear the stage.
             syncedData = new byte[stageSize];
+            syncedDataRequiresTimeTracking = stageRequiresTimeTracking;
+            syncedDataTimeTrackingIndex = stageTimeTrackingIndex;
             System.Array.Copy(stage, syncedData, stageSize);
             sendingUniqueIdsCount = stagedUniqueIdCount;
             stageSize = 0;
             stagedUniqueIdCount = 0;
+            stageRequiresTimeTracking = false;
+            stageTimeTrackingIndex = 0;
+            if (syncedDataRequiresTimeTracking)
+            {
+                int temp = syncedDataTimeTrackingIndex; // Do not modify syncedDataTimeTrackingIndex.
+                DataStream.Write(ref syncedData, ref temp, Time.realtimeSinceStartup); // Fetch time as late as possible.
+            }
         }
 
         public override void OnPostSerialization(SerializationResult result)
@@ -362,7 +424,7 @@ namespace JanSharp.Internal
                 {
                     hasPartialInputAction = false;
                     latestInputActionIndex = receivedInputActionIndex;
-                    lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
+                    lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedSendTime, receivedData);
                 }
             }
             else
@@ -385,6 +447,9 @@ namespace JanSharp.Internal
                 }
             }
 
+            bool didReadSerializationTime = false;
+            float serializationTime = float.NaN;
+
             while (i < syncedDataLength && syncedData[i] != IgnoreRestOfDataMarker)
             {
                 #if LockstepDebug
@@ -394,6 +459,21 @@ namespace JanSharp.Internal
                 receivedInputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref i);
                 receivedUniqueId = shiftedSendingPlayerId | (ulong)receivedInputActionIndex;
                 receivedInputActionId = DataStream.ReadSmallUInt(ref syncedData, ref i);
+                if (!lockstep.inputActionHandlersRequireTimeTracking[receivedInputActionId])
+                    receivedSendTime = Lockstep.SendTimeForNonTimedIAs;
+                else
+                {
+                    if (!didReadSerializationTime)
+                    {
+                        didReadSerializationTime = true;
+                        serializationTime = DataStream.ReadFloat(ref syncedData, ref i);
+                    }
+                    float sendTime = DataStream.ReadFloat(ref syncedData, ref i);
+                    receivedSendTime = result.sendTime - (serializationTime - sendTime);
+                    #if LockstepDebug
+                    Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - receivedSendTime: {receivedSendTime}, sendTime: {sendTime}, serializationTime: {serializationTime}, result.sendTime: {result.sendTime}, result.receiveTime: {result.receiveTime}, Time.realtimeSinceStartup: {Time.realtimeSinceStartup}");
+                    #endif
+                }
                 int dataLength = (int)DataStream.ReadSmallUInt(ref syncedData, ref i);
                 #if LockstepDebug
                 Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  OnDeserialization (inner) - receivedUniqueId: 0x{receivedUniqueId:x16}, receivedInputActionId: {receivedInputActionId}, dataLength: {dataLength}");
@@ -414,7 +494,7 @@ namespace JanSharp.Internal
                 System.Array.Copy(syncedData, i, receivedData, 0, dataLength);
                 i += dataLength;
                 latestInputActionIndex = receivedInputActionIndex;
-                lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedData);
+                lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedSendTime, receivedData);
             }
         }
     }
