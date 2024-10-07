@@ -1360,12 +1360,14 @@ namespace JanSharp.Internal
             #endif
             if (!CanSendInputActions || newMasterClientId == masterPlayerId || masterChangeRequestInProgress)
                 return false;
-            if (!PlayerIdHasClientState(newMasterClientId))
+            if (!TryGetClientState(newMasterClientId, out ClientState clientState))
             {
                 Debug.LogError("[Lockstep] Attempt to send master request with a client id that is not in "
                     + "the client states game state.");
                 return false;
             }
+            if (clientState != ClientState.Normal)
+                return false;
 
             WriteSmallUInt(newMasterClientId);
             SendInputAction(masterChangeRequestIAId);

@@ -375,7 +375,9 @@ namespace JanSharp
         /// </param>
         /// <returns>Returns <see langword="true"/> if the input action was sent successfully. It will only be
         /// sent if <see cref="CanSendInputActions"/> is <see langword="true"/>, if the
-        /// <paramref name="newMasterClientId"/> is different than the <see cref="MasterPlayerId"/> and if
+        /// <paramref name="newMasterClientId"/> is different than the <see cref="MasterPlayerId"/>, if the
+        /// <see cref="ClientState"/> of the <paramref name="newMasterClientId"/> is
+        /// <see cref="ClientState.Normal"/> and if
         /// there is no master change request currently in progress.</returns>
         public abstract bool SendMasterChangeRequestIA(uint newMasterClientId);
         /// <summary>
