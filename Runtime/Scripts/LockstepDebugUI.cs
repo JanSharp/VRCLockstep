@@ -78,7 +78,6 @@ namespace JanSharp.Internal
             "currentTick",
             "lastRunnableTick",
             "firstMutableTick",
-            "startTick",
             "tickStartTime",
             "tickStartTimeShift",
             "byteCountForLatestLJSync",

@@ -397,6 +397,6 @@ TODO: raise event delayed by ticks, game state safe.
 - [x] make game states list api return null or none state when called before lockstep has been initialized - so before OnInit or OnClientBeginCatchup
 - [x] make useSceneNameAsWorldName public to get rid of the "unused" warning
 - [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
-- [ ] pretty sure tick start time is meaningless while catching up, but it's part of the api now...
+- [x] pretty sure tick start time is meaningless while catching up, but it's part of the api now...
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

@@ -58,8 +58,18 @@ namespace JanSharp
         /// its accuracy should be within 1 or maybe 2 ticks worth of time.</para>
         /// <para>For reference, 1 tick lasts for (<c>1f</c> divided by <see cref="TickRate"/>)
         /// seconds.</para>
+        /// <para>While <see cref="IsCatchingUp"/> is <see langword="true"/>, passing
+        /// <see cref="CurrentTick"/> to this function is likely going to return a notably different value
+        /// than <see cref="Time.realtimeSinceStartup"/>. More specifically, it likely returns a smaller
+        /// value, a past point in time. This should help synced timing in particular during the initial
+        /// catching up period.</para>
+        /// <para>Usable inside of <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>, and then
+        /// usable again once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Not game state safe.</para>
         /// </summary>
-        /// <param name="tick"><c>0u</c> is an invalid tick and must not be passed to this function.</param>
+        /// <param name="tick">Even though <c>0u</c> is an invalid tick - Lockstep starts at tick <c>1u</c> -
+        /// this function accepts it.</param>
         /// <returns>The approximate <see cref="Time.realtimeSinceStartup"/> at which the given
         /// <paramref name="tick"/> got run.</returns>
         public abstract float RealtimeAtTick(uint tick);

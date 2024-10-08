@@ -63,7 +63,7 @@ namespace JanSharp.Internal
         /// </summary>
         private uint lastRunnableTick;
         public override uint CurrentTick => currentTick;
-        public override float RealtimeAtTick(uint tick) => tickStartTime + (float)(tick - 1u) / TickRate;
+        public override float RealtimeAtTick(uint tick) => tickStartTime + (float)tick / TickRate;
 
         private VRCPlayerApi localPlayer;
         private uint localPlayerId;
@@ -76,10 +76,6 @@ namespace JanSharp.Internal
         /// </summary>
         private uint masterPlayerId;
         /// <summary>
-        /// <para>The first tick this client actually ran itself, inclusive.</para>
-        /// </summary>
-        private uint startTick;
-        /// <summary>
         /// <para>So long as <see cref="currentTick"/> is less than <i>or equal to</i> the
         /// <see cref="firstMutableTick"/> there can be input actions associated with ticks even on the
         /// master.</para>
@@ -87,7 +83,19 @@ namespace JanSharp.Internal
         /// guaranteed that there are no more input actions associated with ticks on the master.</para>
         /// </summary>
         private uint firstMutableTick = 0u; // Effectively 1 tick past the last immutable tick.
+        /// <summary>
+        /// <para>The <see cref="Time.realtimeSinceStartup"/> for "tick 0". Tick 0 is invalid, but for
+        /// calculations this is just easier than having it start at 1.</para>
+        /// </summary>
         private float tickStartTime;
+        private void SetTickStartTime() => tickStartTime = Time.realtimeSinceStartup - (float)currentTick / TickRate;
+        /// <summary>
+        /// <para>While <see cref="isCatchingUp"/> <see cref="tickStartTime"/> should be dilated for more
+        /// accurate time calculations. If something happened 10 ticks ago, with a tick rate of 10, then
+        /// getting the time for the current tick when it is behind the last runnable tick by 10 ticks should
+        /// be 1 second in the past as well, even though it is the current tick.</para>
+        /// </summary>
+        private void SetDilatedTickStartTime() => tickStartTime = Time.realtimeSinceStartup - (float)lastRunnableTick / TickRate;
         private float tickStartTimeShift;
         private const float MaxTickStartTimeShift = (1f / TickRate) * 0.05f; // At most 5% faster or slower.
         /// <summary>Bit shorter interval to make the system try to run ticks slightly sooner.</summary>
@@ -562,7 +570,7 @@ namespace JanSharp.Internal
                 RunInputActionsForThisFrame();
 
             float timePassed = Time.realtimeSinceStartup - tickStartTime;
-            uint runUntilTick = System.Math.Min(lastRunnableTick, startTick + (uint)(timePassed * TickRate));
+            uint runUntilTick = System.Math.Min(lastRunnableTick, (uint)(timePassed * TickRate));
             for (uint tick = currentTick; tick <= runUntilTick; tick++)
             {
                 if (!TryRunCurrentTick())
@@ -587,7 +595,7 @@ namespace JanSharp.Internal
             this.lastRunnableTick = lastRunnableTick;
             float timeAtNextNetworkTick = Time.realtimeSinceStartup + PredictedTimeUntilNextNetworkTick;
             float timePassed = timeAtNextNetworkTick - tickStartTime;
-            uint runUntilTick = startTick + (uint)(timePassed * TickRate);
+            uint runUntilTick = (uint)(timePassed * TickRate);
             tickStartTimeShift = runUntilTick.CompareTo(lastRunnableTick) * MaxTickStartTimeShift;
         }
 
@@ -598,6 +606,7 @@ namespace JanSharp.Internal
             #endif
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
+            SetDilatedTickStartTime();
             while (currentTick <= lastRunnableTick
                 && TryRunCurrentTick()
                 && stopwatch.ElapsedMilliseconds < MaxMSWhileCatchingUp)
@@ -617,8 +626,7 @@ namespace JanSharp.Internal
                 SendClientCaughtUpIA(); // Uses isInitialCatchUp.
                 isInitialCatchUp = false;
                 StartOrStopAutosave();
-                startTick = currentTick;
-                tickStartTime = Time.realtimeSinceStartup;
+                SetTickStartTime();
                 if (isMaster)
                     FinishCatchingUpOnMaster();
             }
@@ -1234,7 +1242,6 @@ namespace JanSharp.Internal
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
             tickSync.RequestSerialization();
-            startTick = 1u;
             currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
             lastRunnableTick = uint.MaxValue;
             EnterSingePlayerMode();
@@ -1243,8 +1250,8 @@ namespace JanSharp.Internal
             RaiseOnInit();
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
-            tickStartTime = Time.realtimeSinceStartup;
             tickStartTimeShift = 0f;
+            SetTickStartTime();
         }
 
         /// <summary>
@@ -1623,6 +1630,7 @@ namespace JanSharp.Internal
                 // The real reason this is required is for the public IsMaster property to behave correctly.
                 // Leave isInitialCatchUp untouched, as this may in fact still be the initial catch up, if
                 // isCatchingUp was already true.
+                SetDilatedTickStartTime();
             }
             isTickPaused = false;
 
@@ -2415,6 +2423,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}");
             #endif
+            SetDilatedTickStartTime(); // Right before DeserializeGameState.
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u);
             if (errorMessage != null)
                 RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
@@ -2514,7 +2523,8 @@ namespace JanSharp.Internal
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
-            initializedEnoughForImportExport = true;
+            initializedEnoughForImportExport = true; // Close before OnClientBeginCatchUp.
+            SetDilatedTickStartTime(); // Right before OnClientBeginCatchUp.
             RaiseOnClientBeginCatchUp(localPlayerId);
             isTickPaused = false;
             isCatchingUp = true;
