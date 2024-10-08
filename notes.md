@@ -393,9 +393,10 @@ TODO: raise event delayed by ticks, game state safe.
 - [x] change info ui to not require any extra hooks inside of lockstep, just using lockstep events and api
 - [x] fix that requesting for a client to be master when that client is still waiting for late joiner sync soft locks lockstep
 - [x] fix lockstep AssociateUnassociatedInputActionsWithTicks setting capacity on a data list can set the capacity to be lower than what it currently has as its capacity which throws an exception
-- [ ] fix that requesting master changes sometimes causes an IA tick association to stay lingering in unique ids by tick. The master change seems to go through successfully, so surely no input action is getting dropped, but this is alarming. I believe it appears on the client which became master and what is odd is that it appears after the master transfer finished. I think so anyway
+- [x] fix that requesting master changes sometimes causes an IA tick association to stay lingering in unique ids by tick. The master change seems to go through successfully, so surely no input action is getting dropped, but this is alarming. I believe it appears on the client which became master and what is odd is that it appears after the master transfer finished. I think so anyway
 - [x] make game states list api return null or none state when called before lockstep has been initialized - so before OnInit or OnClientBeginCatchup
 - [x] make useSceneNameAsWorldName public to get rid of the "unused" warning
 - [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
+- [ ] pretty sure tick start time is meaningless while catching up, but it's part of the api now...
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

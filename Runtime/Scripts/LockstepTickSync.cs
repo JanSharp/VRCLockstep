@@ -82,6 +82,10 @@ namespace JanSharp.Internal
                 if (bufferSize != bufferSizeToClear)
                     Debug.LogError("[Lockstep] When stopping syncing in tick sync, there must never be any "
                         + "data added to the buffer afterwards, however there was.");
+                // When a client stops being master, and then they become master again, that client should not
+                // resend data that it was sending back when it was master in the past.
+                syncedData = new byte[0];
+                ClearInputActionsToRun();
                 return;
             }
 
