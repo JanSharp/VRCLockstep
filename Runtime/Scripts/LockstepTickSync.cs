@@ -90,6 +90,9 @@ namespace JanSharp.Internal
             }
 
             bufferSize -= bufferSizeToClear;
+            // This could use a flipBuffer so it could then use System.Array.Copy instead of this loop,
+            // however the most common case is bufferSize being 0 at this point, making the for loop approach
+            // faster than the base overhead the Copy call and value flipping would have.
             for (int i = 0; i < bufferSize; i++)
                 buffer[i] = buffer[bufferSizeToClear + i];
 
