@@ -296,6 +296,12 @@ namespace JanSharp.Internal
             if (IsChangingMaster)
                 return;
             IsChangingMaster = lockstep.SendMasterChangeRequestIA(desiredNewMasterPlayerId);
+            if (!MasterPreferenceExists)
+                return;
+            int highestPreference = masterPreference.GetHighestLatencyHiddenPreference();
+            int preference = masterPreference.GetLatencyHiddenPreference(playerId);
+            if (preference < highestPreference)
+                masterPreference.SetPreference(playerId, highestPreference);
         }
 
         private void UpdateBecomeAndMakeMasterButtons()
@@ -385,7 +391,8 @@ namespace JanSharp.Internal
             UpdateLockstepMaster();
             if (!IsChangingMaster)
                 return;
-            if (lockstep.MasterPlayerId == desiredNewMasterPlayerId)
+            if (lockstep.MasterPlayerId == desiredNewMasterPlayerId
+                || (MasterPreferenceExists && masterPreference.GetLatencyHiddenPreference(desiredNewMasterPlayerId) < masterPreference.GetHighestLatencyHiddenPreference()))
             {
                 IsChangingMaster = false;
                 return;

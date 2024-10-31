@@ -103,9 +103,37 @@ namespace JanSharp
             ArrList.RemoveAt(ref latencyHiddenIds, ref latencyHiddenIdsCount, index);
         }
 
+        private int GetHighest(int[] values, int count)
+        {
+            int highest = int.MinValue;
+            for (int i = 0; i < count; i++)
+            {
+                int value = values[i];
+                if (value > highest)
+                    highest = value;
+            }
+            return highest;
+        }
+
+        private int GetLowest(int[] values, int count)
+        {
+            int lowest = int.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                int value = values[i];
+                if (value < lowest)
+                    lowest = value;
+            }
+            return lowest;
+        }
+
         public int GetPreference(uint playerId) => preferences[BinarySearch(playerId)];
+        public int GetHighestPreference() => GetHighest(preferences, preferencesCount);
+        public int GetLowestPreference() => GetLowest(preferences, preferencesCount);
 
         public int GetLatencyHiddenPreference(uint playerId) => latencyPreferences[BinarySearch(playerId)];
+        public int GetHighestLatencyHiddenPreference() => GetHighest(latencyPreferences, latencyPreferencesCount);
+        public int GetLowestLatencyHiddenPreference() => GetLowest(latencyPreferences, latencyPreferencesCount);
 
         /// <summary>
         /// <para>This function <b>must not</b> be called inside of a

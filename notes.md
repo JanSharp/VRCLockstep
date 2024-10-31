@@ -384,9 +384,9 @@ TODO: raise event delayed by ticks, game state safe.
 - [x] add current VRChat master and Lockstep master name to the top panel in the info ui
 - [x] add ClientStateToString function to lockstep api, which uses a string array internally to "convert" the ClientState byte into the associated string.
 - [x] maybe show "become master" button in info ui,
-  - [ ] potentially depending on whether or not the master preference game state is in the scene, or depending on a bool setting on in the ui script
+  - [x] ~~potentially depending on whether or not the master preference game state is in the scene, or depending on a bool setting on in the ui script~~
 - [x] maybe show "make master" button for each client in the info ui.
-- [ ] maybe make become master and make master buttons automatically increase your master preference to match the current highest preference out of all clients
+- [x] maybe make become master and make master buttons automatically increase your master preference to match the current highest preference out of all clients
 - [x] arrange the top panel of the info UI in 2 columns - left labels, right values - to improve readability
 - [ ] maybe add option for other systems to add per client info into the info ui
 - [x] add api function to check if a player id exists in the internal game state, also mention that function in the docs for SendMasterChangeRequestIA
@@ -399,5 +399,8 @@ TODO: raise event delayed by ticks, game state safe.
 - [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
 - [x] pretty sure tick start time is meaningless while catching up, but it's part of the api now...
 - [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
+- [ ] does the local player exist already in the client states game state at the time of OnClientBeginCatchUp being raised?
+- [ ] deduplicate UI updates in info UI now that latency preferences changes raise events
+- [ ] use the new CustomRaisedEvent attribute system for lockstep events
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
