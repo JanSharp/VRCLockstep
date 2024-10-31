@@ -8639,7 +8639,7 @@ PrefabInstance:
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: onClientCaughtUpListeners.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
@@ -8705,10 +8705,15 @@ PrefabInstance:
         type: 3}
       propertyPath: onClientCaughtUpListeners.Array.data[0]
       value: 
-      objectReference: {fileID: 979708581}
+      objectReference: {fileID: 905691166}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: onClientCaughtUpListeners.Array.data[1]
+      value: 
+      objectReference: {fileID: 979708581}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onClientCaughtUpListeners.Array.data[2]
       value: 
       objectReference: {fileID: 1385105837}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
@@ -8799,7 +8804,7 @@ PrefabInstance:
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: onMasterClientChangedListeners.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
@@ -8980,10 +8985,15 @@ PrefabInstance:
         type: 3}
       propertyPath: onMasterClientChangedListeners.Array.data[0]
       value: 
-      objectReference: {fileID: 979708581}
+      objectReference: {fileID: 905691166}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: onMasterClientChangedListeners.Array.data[1]
+      value: 
+      objectReference: {fileID: 979708581}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onMasterClientChangedListeners.Array.data[2]
       value: 
       objectReference: {fileID: 1385105837}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,

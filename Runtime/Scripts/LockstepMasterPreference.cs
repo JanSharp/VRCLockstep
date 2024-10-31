@@ -52,6 +52,9 @@ namespace JanSharp
 
         private uint localPlayerId;
 
+        private uint playerIdWithHighestPreference;
+        private int currentHighestPreference;
+
         private uint[] playerIds = new uint[ArrList.MinCapacity];
         private int playerIdsCount = 0;
         private int[] preferences = new int[ArrList.MinCapacity];
@@ -69,14 +72,89 @@ namespace JanSharp
         }
 
         [LockstepEvent(LockstepEventType.OnInit, Order = -100)]
-        public void OnInit() => AddClient(localPlayerId);
+        public void OnInit()
+        {
+            AddClient(localPlayerId);
+            playerIdWithHighestPreference = localPlayerId;
+            currentHighestPreference = preferences[0];
+        }
 
         [LockstepEvent(LockstepEventType.OnPreClientJoined, Order = -100)]
-        public void OnPreClientJoined() => AddClient(lockstep.JoinedPlayerId);
+        public void OnPreClientJoined()
+        {
+            int preference = AddClient(lockstep.JoinedPlayerId);
+            CheckIfIsNewHighestPreference(lockstep.JoinedPlayerId, preference);
+        }
+
+        [LockstepEvent(LockstepEventType.OnClientCaughtUp)]
+        public void OnClientCaughtUp()
+        {
+            if (!lockstep.IsMaster || lockstep.CatchingUpPlayerId != playerIdWithHighestPreference)
+                return;
+            PotentiallySendMasterChangeRequestIA();
+        }
+
+        [LockstepEvent(LockstepEventType.OnMasterClientChanged)]
+        public void OnMasterClientChanged()
+        {
+            if (!lockstep.IsMaster)
+                return;
+            if (preferences[BinarySearch(lockstep.MasterPlayerId)] == currentHighestPreference)
+            {
+                playerIdWithHighestPreference = lockstep.MasterPlayerId;
+                return;
+            }
+            PotentiallySendMasterChangeRequestIA();
+        }
+
+        private void CheckIfIsNewHighestPreference(uint playerId, int preference)
+        {
+            if (preference <= currentHighestPreference)
+                return;
+            SetNewHighestPreference(playerId, preference);
+        }
+
+        private void CheckForNewHighestPreference()
+        {
+            uint highestPlayerId = 0u;
+            int highest = int.MinValue;
+            for (int i = 0; i < preferencesCount; i++)
+            {
+                int preference = preferences[i];
+                if (preference > highest)
+                {
+                    highestPlayerId = playerIds[i];
+                    highest = preference;
+                }
+            }
+            SetNewHighestPreference(highestPlayerId, highest);
+        }
+
+        private void SetNewHighestPreference(uint playerId, int preference)
+        {
+            currentHighestPreference = preference;
+            playerIdWithHighestPreference = playerId;
+            if (!lockstep.IsMaster)
+                return;
+            PotentiallySendMasterChangeRequestIA();
+        }
+
+        private void PotentiallySendMasterChangeRequestIA()
+        {
+            if (preferences[BinarySearch(lockstep.MasterPlayerId)] == currentHighestPreference)
+            {
+                // The current master also has the same preference as the one that's about to be changed to,
+                // so don't actually change master, just update the player id in this script.
+                playerIdWithHighestPreference = lockstep.MasterPlayerId;
+                return;
+            }
+            // Relies on SendMasterChangeRequestIA performing several checks itself.
+            lockstep.SendMasterChangeRequestIA(playerIdWithHighestPreference);
+        }
 
         private int BinarySearch(uint playerId) => ArrList.BinarySearch(ref playerIds, ref playerIdsCount, playerId);
 
-        private void AddClient(uint playerId)
+        private int AddClient(uint playerId)
         {
             string name = lockstep.GetDisplayName(playerId);
             int preference = 0;
@@ -90,6 +168,7 @@ namespace JanSharp
             ArrList.Insert(ref preferences, ref preferencesCount, preference, index);
             ArrList.Insert(ref latencyPreferences, ref latencyPreferencesCount, preference, index);
             ArrList.Insert(ref latencyHiddenIds, ref latencyHiddenIdsCount, new DataDictionary(), index);
+            return preference;
         }
 
         [LockstepEvent(LockstepEventType.OnClientLeft, Order = 100)]
@@ -101,6 +180,7 @@ namespace JanSharp
             ArrList.RemoveAt(ref preferences, ref preferencesCount, index);
             ArrList.RemoveAt(ref latencyPreferences, ref latencyPreferencesCount, index);
             ArrList.RemoveAt(ref latencyHiddenIds, ref latencyHiddenIdsCount, index);
+            CheckForNewHighestPreference();
         }
 
         private int GetHighest(int[] values, int count)
@@ -128,7 +208,7 @@ namespace JanSharp
         }
 
         public int GetPreference(uint playerId) => preferences[BinarySearch(playerId)];
-        public int GetHighestPreference() => GetHighest(preferences, preferencesCount);
+        public int GetHighestPreference() => currentHighestPreference;
         public int GetLowestPreference() => GetLowest(preferences, preferencesCount);
 
         public int GetLatencyHiddenPreference(uint playerId) => latencyPreferences[BinarySearch(playerId)];
@@ -170,6 +250,11 @@ namespace JanSharp
             int prevPreference = preferences[index];
             preferences[index] = preference;
             persistentPreferences[lockstep.GetDisplayName(playerId)] = preference;
+
+            if (preference < prevPreference)
+                CheckForNewHighestPreference();
+            else
+                CheckIfIsNewHighestPreference(playerId, preference);
 
             DataDictionary hiddenIds = latencyHiddenIds[index];
             hiddenIds.Remove(lockstep.SendingUniqueId);
@@ -215,6 +300,9 @@ namespace JanSharp
         {
             if (!isExport)
             {
+                lockstep.WriteSmallUInt(playerIdWithHighestPreference);
+                lockstep.WriteSmallInt(currentHighestPreference);
+
                 lockstep.WriteSmallUInt((uint)playerIdsCount);
                 for (int i = 0; i < playerIdsCount; i++)
                 {
@@ -238,6 +326,9 @@ namespace JanSharp
         {
             if (!isImport)
             {
+                playerIdWithHighestPreference = lockstep.ReadSmallUInt();
+                currentHighestPreference = lockstep.ReadSmallInt();
+
                 playerIdsCount = (int)lockstep.ReadSmallUInt();
                 preferencesCount = playerIdsCount;
                 latencyPreferencesCount = playerIdsCount;
@@ -291,6 +382,7 @@ namespace JanSharp
                     RaiseOnMasterPreferenceChanged(playerId);
                 }
             }
+            CheckForNewHighestPreference();
         }
     }
 }

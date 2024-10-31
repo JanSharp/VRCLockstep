@@ -358,11 +358,6 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - SerializeState
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
-TODO: add master preference game state
-  - the player with the highest preference to be master will become master
-  - when in the scene, enable a slider for the local player in the info UI
-  - when in the scene, enable a slider for each player in the client states list in the info UI
-  - import export support
 TODO: add game state safe prng
 TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 TODO: on nth tick? game state safe.
