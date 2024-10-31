@@ -135,7 +135,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 1429749133}
+      objectReference: {fileID: 1385105837}
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: gameStatesUI
@@ -155,17 +155,17 @@ PrefabInstance:
     - target: {fileID: 6966933624479165297, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_text
-      value: does not support import/export
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-dummy-1 (ImportGSEntry)
+      value: jansharp.lockstep-test (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_IsOn
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437367, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -270,7 +270,7 @@ PrefabInstance:
     - target: {fileID: 6966933624992006569, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_text
-      value: Dummy Game State 1
+      value: Test Game State
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624992006569, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -280,17 +280,17 @@ PrefabInstance:
     - target: {fileID: 6966933625728936192, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Color.b
-      value: 0
+      value: 0.34901962
       objectReference: {fileID: 0}
     - target: {fileID: 6966933625728936192, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Color.g
-      value: 0
+      value: 0.34901962
       objectReference: {fileID: 0}
     - target: {fileID: 6966933625728936192, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Color.r
-      value: 0.29803923
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1325,7 +1325,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 905691166}
+      objectReference: {fileID: 1862118089}
     - target: {fileID: 4770751837885707019, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: gameStatesUI
@@ -1465,12 +1465,12 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-master-preference (ExportGSEntry)
+      value: jansharp.lockstep-dummy-3 (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_text
-      value: Lockstep Master Preference
+      value: Dummy Game State 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2676,7 +2676,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 1385105837}
+      objectReference: {fileID: 905691166}
     - target: {fileID: 4770751837885707019, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: gameStatesUI
@@ -2806,12 +2806,12 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-test (ExportGSEntry)
+      value: jansharp.lockstep-master-preference (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_text
-      value: Test Game State
+      value: Lockstep Master Preference
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -3488,17 +3488,17 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-dummy-1 (MainGSEntry)
+      value: jansharp.lockstep-test (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_text
-      value: Dummy Game State 1
+      value: Test Game State
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_fontSize
-      value: 17.85
+      value: 19.65
       objectReference: {fileID: 0}
     - target: {fileID: 8958779144156792744, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -3773,12 +3773,12 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-dummy-3 (MainGSEntry)
+      value: jansharp.lockstep-dummy-1 (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_text
-      value: Dummy Game State 3
+      value: Dummy Game State 1
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -3849,7 +3849,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 1862118089}
+      objectReference: {fileID: 1429749133}
     - target: {fileID: 4770751837885707019, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: gameStatesUI
@@ -3994,12 +3994,12 @@ PrefabInstance:
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-dummy-3 (ExportGSEntry)
+      value: jansharp.lockstep-dummy-1 (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_text
-      value: Dummy Game State 3
+      value: Dummy Game State 1
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -5803,7 +5803,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 1385105837}
+      objectReference: {fileID: 905691166}
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: gameStatesUI
@@ -5828,7 +5828,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-test (ImportGSEntry)
+      value: jansharp.lockstep-master-preference (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -5938,7 +5938,7 @@ PrefabInstance:
     - target: {fileID: 6966933624992006569, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_text
-      value: Test Game State
+      value: Lockstep Master Preference
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624992006569, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -6179,7 +6179,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 905691166}
+      objectReference: {fileID: 1862118089}
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: gameStatesUI
@@ -6204,7 +6204,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-master-preference (ImportGSEntry)
+      value: jansharp.lockstep-dummy-3 (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -6314,7 +6314,7 @@ PrefabInstance:
     - target: {fileID: 6966933624992006569, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_text
-      value: Lockstep Master Preference
+      value: Dummy Game State 3
       objectReference: {fileID: 0}
     - target: {fileID: 6966933625728936192, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -6696,17 +6696,17 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-master-preference (MainGSEntry)
+      value: jansharp.lockstep-dummy-3 (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_text
-      value: Lockstep Master Preference
+      value: Dummy Game State 3
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_fontSize
-      value: 14.15
+      value: 17.85
       objectReference: {fileID: 0}
     - target: {fileID: 8958779144156792744, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -7126,7 +7126,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 1862118089}
+      objectReference: {fileID: 1429749133}
     - target: {fileID: 5842175446758788776, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: gameStatesUI
@@ -7151,7 +7151,7 @@ PrefabInstance:
     - target: {fileID: 6966933624843437364, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-dummy-3 (ImportGSEntry)
+      value: jansharp.lockstep-dummy-1 (ImportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624843437366, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -7261,7 +7261,7 @@ PrefabInstance:
     - target: {fileID: 6966933624992006569, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
       propertyPath: m_text
-      value: Dummy Game State 3
+      value: Dummy Game State 1
       objectReference: {fileID: 0}
     - target: {fileID: 6966933624992006569, guid: 9424a074d8a00689f808a4c66aff0960,
         type: 3}
@@ -7490,17 +7490,17 @@ PrefabInstance:
     - target: {fileID: 8496571412903997291, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-test (MainGSEntry)
+      value: jansharp.lockstep-master-preference (MainGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_text
-      value: Test Game State
+      value: Lockstep Master Preference
       objectReference: {fileID: 0}
     - target: {fileID: 8496571412956490156, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
       propertyPath: m_fontSize
-      value: 19.65
+      value: 14.15
       objectReference: {fileID: 0}
     - target: {fileID: 8958779144156792744, guid: 1bd594581ac1adfa7800b38830440a84,
         type: 3}
@@ -7971,7 +7971,7 @@ PrefabInstance:
         type: 3}
       propertyPath: gameState
       value: 
-      objectReference: {fileID: 1429749133}
+      objectReference: {fileID: 1385105837}
     - target: {fileID: 4770751837885707019, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: gameStatesUI
@@ -7986,27 +7986,27 @@ PrefabInstance:
     - target: {fileID: 8137058554309315890, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_text
-      value: does not support import/export
+      value: autosave
       objectReference: {fileID: 0}
     - target: {fileID: 8137058554309315892, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8137058554804990025, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Color.b
-      value: 0
+      value: 0.34901962
       objectReference: {fileID: 0}
     - target: {fileID: 8137058554804990025, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Color.g
-      value: 0
+      value: 0.34901962
       objectReference: {fileID: 0}
     - target: {fileID: 8137058554804990025, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Color.r
-      value: 0.29803923
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8137058554831430150, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -8111,17 +8111,17 @@ PrefabInstance:
     - target: {fileID: 8137058554831430151, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Interactable
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8137058554831430169, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_Name
-      value: jansharp.lockstep-dummy-1 (ExportGSEntry)
+      value: jansharp.lockstep-test (ExportGSEntry)
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
       propertyPath: m_text
-      value: Dummy Game State 1
+      value: Test Game State
       objectReference: {fileID: 0}
     - target: {fileID: 8137058555777278614, guid: f531163005ea3a8b1931819397bd0874,
         type: 3}
@@ -8550,22 +8550,22 @@ PrefabInstance:
         type: 3}
       propertyPath: allGameStates.Array.data[3]
       value: 
-      objectReference: {fileID: 1385105837}
+      objectReference: {fileID: 905691166}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: allGameStates.Array.data[4]
       value: 
-      objectReference: {fileID: 1429749133}
+      objectReference: {fileID: 1385105837}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: allGameStates.Array.data[5]
       value: 
-      objectReference: {fileID: 1862118089}
+      objectReference: {fileID: 1429749133}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: allGameStates.Array.data[6]
       value: 
-      objectReference: {fileID: 905691166}
+      objectReference: {fileID: 1862118089}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: clientGotLateJoinerDataIAId
@@ -9973,7 +9973,7 @@ PrefabInstance:
     - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}
       propertyPath: exportSelectedCount
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2420291585630583800, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}
@@ -10434,7 +10434,7 @@ PrefabInstance:
     - target: {fileID: 8315912741336856138, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}
       propertyPath: m_text
-      value: 'selected: 4'
+      value: 'selected: 5'
       objectReference: {fileID: 0}
     - target: {fileID: 8315912741757726202, guid: 68e56ce69acfed19683fcc88959b5c9f,
         type: 3}

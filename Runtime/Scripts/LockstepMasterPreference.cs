@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -43,7 +43,7 @@ namespace JanSharp
 
         public override string GameStateInternalName => "jansharp.lockstep-master-preference";
         public override string GameStateDisplayName => "Lockstep Master Preference";
-        public override bool GameStateSupportsImportExport => false;
+        public override bool GameStateSupportsImportExport => true;
         public override uint GameStateDataVersion => 0u;
         public override uint GameStateLowestSupportedDataVersion => 0u;
 
@@ -129,35 +129,34 @@ namespace JanSharp
             latencyPreferences[index] = preference;
             latencyHiddenIds[index].Add(id, true);
             if (preference != prevLatencyPreference)
-            {
-                changedPlayerId = playerId;
-                RaiseOnMasterLatencyPreferenceChanged();
-            }
+                RaiseOnMasterLatencyPreferenceChanged(playerId);
         }
 
         [HideInInspector] [SerializeField] private uint onSetPreferenceIAId;
         [LockstepInputAction(nameof(onSetPreferenceIAId))]
         public void OnSetPreferenceIA()
         {
-            changedPlayerId = lockstep.ReadSmallUInt();
+            uint playerId = lockstep.ReadSmallUInt();
             int preference = lockstep.ReadSmallInt();
-            int index = BinarySearch(changedPlayerId);
+            int index = BinarySearch(playerId);
             int prevPreference = preferences[index];
             preferences[index] = preference;
-            persistentPreferences[lockstep.GetDisplayName(changedPlayerId)] = preference;
+            persistentPreferences[lockstep.GetDisplayName(playerId)] = preference;
 
             DataDictionary hiddenIds = latencyHiddenIds[index];
             hiddenIds.Remove(lockstep.SendingUniqueId);
             if (hiddenIds.Count == 0)
             {
                 int prevLatencyPreference = latencyPreferences[index];
-                latencyPreferences[index] = preference;
                 if (preference != prevLatencyPreference)
-                    RaiseOnMasterLatencyPreferenceChanged();
+                {
+                    latencyPreferences[index] = preference;
+                    RaiseOnMasterLatencyPreferenceChanged(playerId);
+                }
             }
 
             if (preference != prevPreference)
-                RaiseOnMasterPreferenceChanged();
+                RaiseOnMasterPreferenceChanged(playerId);
         }
 
         private uint changedPlayerId;
@@ -170,23 +169,30 @@ namespace JanSharp
         /// </summary>
         public uint ChangedPlayerId => changedPlayerId;
 
-        private void RaiseOnMasterPreferenceChanged()
+        private void RaiseOnMasterPreferenceChanged(uint playerId)
         {
+            changedPlayerId = playerId;
             CustomRaisedEvents.Raise(ref onMasterPreferenceChangedListeners, nameof(LockstepMasterPreferenceEventType.OnMasterPreferenceChanged));
+            changedPlayerId = 0u; // To prevent misuse of the API.
         }
 
-        private void RaiseOnMasterLatencyPreferenceChanged()
+        private void RaiseOnMasterLatencyPreferenceChanged(uint playerId)
         {
+            changedPlayerId = playerId;
             CustomRaisedEvents.Raise(ref onLatencyHiddenMasterPreferenceChangedListeners, nameof(LockstepMasterPreferenceEventType.OnLatencyHiddenMasterPreferenceChanged));
+            changedPlayerId = 0u; // To prevent misuse of the API.
         }
 
         public override void SerializeGameState(bool isExport)
         {
-            lockstep.WriteSmallUInt((uint)playerIdsCount);
-            for (int i = 0; i < playerIdsCount; i++)
+            if (!isExport)
             {
-                lockstep.WriteSmallUInt(playerIds[i]);
-                lockstep.WriteSmallInt(preferences[i]);
+                lockstep.WriteSmallUInt((uint)playerIdsCount);
+                for (int i = 0; i < playerIdsCount; i++)
+                {
+                    lockstep.WriteSmallUInt(playerIds[i]);
+                    lockstep.WriteSmallInt(preferences[i]);
+                }
             }
 
             DataList names = persistentPreferences.GetKeys();
@@ -202,21 +208,24 @@ namespace JanSharp
 
         public override string DeserializeGameState(bool isImport, uint importedDataVersion)
         {
-            playerIdsCount = (int)lockstep.ReadSmallUInt();
-            preferencesCount = playerIdsCount;
-            latencyPreferencesCount = playerIdsCount;
-            latencyHiddenIdsCount = playerIdsCount;
-            ArrList.EnsureCapacity(ref playerIds, playerIdsCount);
-            ArrList.EnsureCapacity(ref preferences, preferencesCount);
-            ArrList.EnsureCapacity(ref latencyPreferences, latencyPreferencesCount);
-            ArrList.EnsureCapacity(ref latencyHiddenIds, latencyHiddenIdsCount);
-            for (int i = 0; i < playerIdsCount; i++)
+            if (!isImport)
             {
-                playerIds[i] = lockstep.ReadSmallUInt();
-                int preference = lockstep.ReadSmallInt();
-                preferences[i] = preference;
-                latencyPreferences[i] = preference;
-                latencyHiddenIds[i] = new DataDictionary();
+                playerIdsCount = (int)lockstep.ReadSmallUInt();
+                preferencesCount = playerIdsCount;
+                latencyPreferencesCount = playerIdsCount;
+                latencyHiddenIdsCount = playerIdsCount;
+                ArrList.EnsureCapacity(ref playerIds, playerIdsCount);
+                ArrList.EnsureCapacity(ref preferences, preferencesCount);
+                ArrList.EnsureCapacity(ref latencyPreferences, latencyPreferencesCount);
+                ArrList.EnsureCapacity(ref latencyHiddenIds, latencyHiddenIdsCount);
+                for (int i = 0; i < playerIdsCount; i++)
+                {
+                    playerIds[i] = lockstep.ReadSmallUInt();
+                    int preference = lockstep.ReadSmallInt();
+                    preferences[i] = preference;
+                    latencyPreferences[i] = preference;
+                    latencyHiddenIds[i] = new DataDictionary();
+                }
             }
 
             int persistentCount = (int)lockstep.ReadSmallUInt();
@@ -224,10 +233,36 @@ namespace JanSharp
             {
                 string name = lockstep.ReadString();
                 int preference = lockstep.ReadSmallInt();
-                persistentPreferences.Add(name, preference);
+                persistentPreferences.SetValue(name, preference);
             }
 
+            if (isImport)
+                UpdatePreferencesUsingPersistentPreferences();
+
             return null;
+        }
+
+        private void UpdatePreferencesUsingPersistentPreferences()
+        {
+            for (int i = 0; i < playerIdsCount; i++)
+            {
+                uint playerId = playerIds[i];
+                int importedPreference = persistentPreferences[lockstep.GetDisplayName(playerId)].Int;
+
+                int prevLatencyPreference = latencyPreferences[i];
+                if (importedPreference != prevLatencyPreference)
+                {
+                    latencyPreferences[i] = importedPreference;
+                    RaiseOnMasterLatencyPreferenceChanged(playerId);
+                }
+
+                int prevPreference = preferences[i];
+                if (importedPreference != prevPreference)
+                {
+                    preferences[i] = importedPreference;
+                    RaiseOnMasterPreferenceChanged(playerId);
+                }
+            }
         }
     }
 }
