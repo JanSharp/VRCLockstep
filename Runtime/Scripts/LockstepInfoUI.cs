@@ -16,8 +16,11 @@ namespace JanSharp.Internal
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepInfoUI : UdonSharpBehaviour
     {
-        // Used for easier editor scripting.
         [SerializeField] [HideInInspector] private LockstepAPI lockstep;
+        public LockstepMasterPreference masterPreference;
+        private bool MasterPreferenceExists => masterPreference != null;
+        private const string LocalMasterPreferenceText = "Your Master Preference: ";
+        private const string EntryMasterPreferenceText = "Master Preference: ";
 
         #if !LockstepDebug
         [HideInInspector]
@@ -98,6 +101,7 @@ namespace JanSharp.Internal
 
         private VRCPlayerApi localPlayer;
         private uint localPlayerId;
+        private bool isSetup;
 
         private uint desiredNewMasterPlayerId;
         private bool isChangingMaster = false;
@@ -147,6 +151,8 @@ namespace JanSharp.Internal
         {
             localPlayer = Networking.LocalPlayer;
             localPlayerId = (uint)localPlayer.playerId;
+            if (MasterPreferenceExists)
+                localMasterPreferenceObject.SetActive(true);
 
             if (isCheckVRCMasterLoopRunning)
                 return;
@@ -236,6 +242,54 @@ namespace JanSharp.Internal
             SetDesiredMasterPlayerId(entry.playerId);
         }
 
+        public void OnLocalPreferenceSliderValueChanged()
+        {
+            if (!MasterPreferenceExists)
+                return;
+            int preference = (int)localMasterPreferenceSlider.value;
+            localMasterPreferenceText.text = LocalMasterPreferenceText + preference.ToString();
+            if (!isSetup)
+                return;
+            masterPreference.SetPreference(localPlayerId, preference);
+            LockstepClientStateEntry entry = (LockstepClientStateEntry)clientStateEntries[localPlayerId].Reference;
+            UpdatePreferenceUIForEntry(entry, preference);
+        }
+
+        public void OnPreferenceSliderValueChanged(LockstepClientStateEntry entry)
+        {
+            if (!MasterPreferenceExists)
+                return;
+            int preference = (int)entry.masterPreferenceSlider.value;
+            entry.masterPreferenceText.text = EntryMasterPreferenceText + preference.ToString();
+            masterPreference.SetPreference(entry.playerId, preference);
+            if (entry.playerId == localPlayerId)
+                UpdateLocalPreferenceUI(preference);
+        }
+
+        [LockstepMasterPreferenceEvent(LockstepMasterPreferenceEventType.OnLatencyHiddenMasterPreferenceChanged)]
+        public void OnLatencyHiddenMasterPreferenceChanged()
+        {
+            if (!clientStateEntries.TryGetValue(masterPreference.ChangedPlayerId, out DataToken entryToken))
+                return;
+            int preference = masterPreference.GetLatencyHiddenPreference(masterPreference.ChangedPlayerId);
+            LockstepClientStateEntry entry = (LockstepClientStateEntry)entryToken.Reference;
+            UpdatePreferenceUIForEntry(entry, preference);
+            if (entry.playerId == localPlayerId)
+                UpdateLocalPreferenceUI(preference);
+        }
+
+        private void UpdatePreferenceUIForEntry(LockstepClientStateEntry entry, int preference)
+        {
+            entry.masterPreferenceSlider.SetValueWithoutNotify(preference);
+            entry.masterPreferenceText.text = EntryMasterPreferenceText + preference.ToString();
+        }
+
+        private void UpdateLocalPreferenceUI(int preference)
+        {
+            localMasterPreferenceSlider.SetValueWithoutNotify(preference);
+            localMasterPreferenceText.text = LocalMasterPreferenceText + preference.ToString();
+        }
+
         private void SetDesiredMasterPlayerId(uint playerId)
         {
             desiredNewMasterPlayerId = playerId;
@@ -266,10 +320,21 @@ namespace JanSharp.Internal
 
         private void Setup()
         {
+            if (MasterPreferenceExists)
+            {
+                int preference = (int)localMasterPreferenceSlider.value;
+                if (preference != 0) // Checking if the User hasn't already touched the slider - before Setup.
+                    masterPreference.SetPreference(localPlayerId, preference);
+                else
+                    UpdateLocalPreferenceUI(masterPreference.GetLatencyHiddenPreference(localPlayerId));
+            }
+
             foreach (uint clientId in lockstep.AllClientPlayerIds)
                 AddClient(clientId);
             UpdateLockstepMaster();
             UpdateBecomeAndMakeMasterButtons();
+
+            isSetup = true;
         }
 
         [LockstepEvent(LockstepEventType.OnInit)]
@@ -357,6 +422,11 @@ namespace JanSharp.Internal
             entryGo.transform.SetParent(clientStatesContent, worldPositionStays: false);
             entry = entryGo.GetComponent<LockstepClientStateEntry>();
             entry.infoUI = this;
+            if (MasterPreferenceExists)
+            {
+                entry.masterPreferenceText.gameObject.SetActive(true);
+                entry.masterPreferenceSlider.gameObject.SetActive(true);
+            }
             return entry;
         }
 
@@ -372,6 +442,8 @@ namespace JanSharp.Internal
             entry.clientStateText.text = lockstep.ClientStateToString(clientState);
             UpdateMakeMasterButton(entry);
             UpdateClientCount();
+            if (MasterPreferenceExists)
+                UpdatePreferenceUIForEntry(entry, masterPreference.GetLatencyHiddenPreference(clientId));
         }
 
         public void RemoveClient(uint clientId)

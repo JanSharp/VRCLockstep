@@ -398,5 +398,6 @@ TODO: raise event delayed by ticks, game state safe.
 - [x] make useSceneNameAsWorldName public to get rid of the "unused" warning
 - [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
 - [x] pretty sure tick start time is meaningless while catching up, but it's part of the api now...
+- [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
 
 TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master

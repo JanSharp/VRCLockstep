@@ -38,5 +38,7 @@ namespace JanSharp.Internal
         [System.NonSerialized] public uint playerId;
 
         public void OnMakeMasterClick() => infoUI.OnMakeMasterClick(this);
+
+        public void OnPreferenceSliderValueChanged() => infoUI.OnPreferenceSliderValueChanged(this);
     }
 }
