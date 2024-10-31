@@ -1982,6 +1982,10 @@ namespace JanSharp.Internal
                 foreach (ulong uniqueId in ((ulong[])uniqueIdLists[i].Reference))
                     associatedUniqueIds.Add(uniqueId, true);
 
+            // Must exclude those which are still waiting to be sent by the local client,
+            // otherwise they'll end up being associated with a tick twice.
+            inputActionSyncForLocalPlayer.AddUniqueIdsWaitingToBeSentToHashSet(associatedUniqueIds);
+
             count = inputActionsByUniqueId.Count;
             if (count == associatedUniqueIds.Count) // Every input action is already associated with a tick.
                 return;

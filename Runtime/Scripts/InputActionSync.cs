@@ -233,6 +233,16 @@ namespace JanSharp.Internal
             return uniqueId;
         }
 
+        public void AddUniqueIdsWaitingToBeSentToHashSet(VRC.SDK3.Data.DataDictionary lut)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  AddUniqueIdsWaitingToBeSentToHashSet - uiqCount: {uiqCount}");
+            #endif
+            int length = uniqueIdQueue.Length;
+            for (int i = 0; i < uiqCount; i++)
+                lut.Add(uniqueIdQueue[(uiqStartIndex + i) % length], true);
+        }
+
         public void DequeueEverything(bool doCallback)
         {
             #if LockstepDebug
