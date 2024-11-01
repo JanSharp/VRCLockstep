@@ -250,9 +250,9 @@ namespace JanSharp.Internal
             localMasterPreferenceText.text = LocalMasterPreferenceText + preference.ToString();
             if (!isSetup)
                 return;
-            masterPreference.SetPreference(localPlayerId, preference);
             LockstepClientStateEntry entry = (LockstepClientStateEntry)clientStateEntries[localPlayerId].Reference;
             UpdatePreferenceUIForEntry(entry, preference);
+            entry.WaitBeforeApplyingPreferenceChange();
         }
 
         public void OnPreferenceSliderValueChanged(LockstepClientStateEntry entry)
@@ -261,9 +261,15 @@ namespace JanSharp.Internal
                 return;
             int preference = (int)entry.masterPreferenceSlider.value;
             entry.masterPreferenceText.text = EntryMasterPreferenceText + preference.ToString();
-            masterPreference.SetPreference(entry.playerId, preference);
             if (entry.playerId == localPlayerId)
                 UpdateLocalPreferenceUI(preference);
+            entry.WaitBeforeApplyingPreferenceChange();
+        }
+
+        public void ApplyMasterPreferenceChange(LockstepClientStateEntry entry)
+        {
+            int preference = (int)entry.masterPreferenceSlider.value;
+            masterPreference.SetPreference(entry.playerId, preference);
         }
 
         [LockstepMasterPreferenceEvent(LockstepMasterPreferenceEventType.OnLatencyHiddenMasterPreferenceChanged)]

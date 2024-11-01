@@ -371,6 +371,6 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - [ ] ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
 - [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
 - [x] does the local player exist already in the client states game state at the time of OnClientBeginCatchUp being raised?
-- [ ] deduplicate UI updates in info UI now that latency preferences changes raise events
-- [ ] rate limit updating the master preference when using the slider
+- [x] deduplicate UI updates in info UI now that latency preferences changes raise events
+- [x] rate limit updating the master preference when using the slider
 - [x] use the new CustomRaisedEvent attribute system for lockstep events

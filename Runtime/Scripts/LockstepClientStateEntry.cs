@@ -36,9 +36,24 @@ namespace JanSharp.Internal
 
         [System.NonSerialized] public LockstepInfoUI infoUI;
         [System.NonSerialized] public uint playerId;
+        private int waitingForPreferenceChangeCount = 0;
+        private const float TimeToWaitForPreferenceChange = 0.3f;
 
         public void OnMakeMasterClick() => infoUI.OnMakeMasterClick(this);
 
         public void OnPreferenceSliderValueChanged() => infoUI.OnPreferenceSliderValueChanged(this);
+
+        public void WaitBeforeApplyingPreferenceChange()
+        {
+            waitingForPreferenceChangeCount++;
+            SendCustomEventDelayedSeconds(nameof(FinishedWaitingToApplyPreferenceChange), TimeToWaitForPreferenceChange);
+        }
+
+        public void FinishedWaitingToApplyPreferenceChange()
+        {
+            if ((--waitingForPreferenceChangeCount) != 0)
+                return;
+            infoUI.ApplyMasterPreferenceChange(this);
+        }
     }
 }
