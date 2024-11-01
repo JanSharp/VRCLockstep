@@ -358,44 +358,19 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - SerializeState
 - DeserializeState (Allowed to modify (or initialize) the game state it is associated with)
 
-TODO: add game state safe prng
-TODO: make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
-TODO: on nth tick? game state safe.
-TODO: raise event delayed by ticks, game state safe.
-
 - [ ] more consistently send the client joined IA... though looking at it it's already pretty consistent. I don't know how it was possible for the client joined IA to just not get run on the master, as though it wasn't even received...
 - [ ] maybe handle receiving tick sync data even when we are owner of the tick sync script
-- [x] if candidates are being asked for when we become instance master, either take over that process or reset it and ask again
-- [x] if a candidate has been confirmed to become master, remember that id and wait for them to take master, preventing the local client to become master
-- [x] if the candidate that has been confirmed was already in leftClients then wait a second before cancelling the candidate asking process and run check master change again
-- [x] if the candidate that has been confirmed leaves, wait a second and do the same as above
 - [ ] there's apparently a way for the master client to have the client state "normal"... and it makes no sense... for now I've simply added a log message in the only location where it seems like it would be possible to happen, as well as having handled OnClientJoinedIA running late
-- [x] maybe ignore player left event for local player
-- [x] handle event listeners being null due to being destroyed
-- [x] keep late joiner script always enabled to prevent it from buffering all received data forever
 - [ ] import/export ui needs a settings button for each game state, probably in the root/main list... maybe just in every list. That'll pop up a ui next to the main UI which has game state specific settings
-- [x] clients can fall behind in ticks most likely whenever there is a lag spike... maybe Time.time is not consistent enough and it should use Time.realtimeSinceStartup
-- [x] remove LogBinaryData as I've only used it once to debug something and even then it wasn't really useful, and it's a big waste of debug performance
-- [x] add current VRChat master and Lockstep master name to the top panel in the info ui
-- [x] add ClientStateToString function to lockstep api, which uses a string array internally to "convert" the ClientState byte into the associated string.
-- [x] maybe show "become master" button in info ui,
-  - [x] ~~potentially depending on whether or not the master preference game state is in the scene, or depending on a bool setting on in the ui script~~
-- [x] maybe show "make master" button for each client in the info ui.
-- [x] maybe make become master and make master buttons automatically increase your master preference to match the current highest preference out of all clients
-- [x] arrange the top panel of the info UI in 2 columns - left labels, right values - to improve readability
 - [ ] maybe add option for other systems to add per client info into the info ui
-- [x] add api function to check if a player id exists in the internal game state, also mention that function in the docs for SendMasterChangeRequestIA
-- [x] change info ui to not require any extra hooks inside of lockstep, just using lockstep events and api
-- [x] fix that requesting for a client to be master when that client is still waiting for late joiner sync soft locks lockstep
-- [x] fix lockstep AssociateUnassociatedInputActionsWithTicks setting capacity on a data list can set the capacity to be lower than what it currently has as its capacity which throws an exception
-- [x] fix that requesting master changes sometimes causes an IA tick association to stay lingering in unique ids by tick. The master change seems to go through successfully, so surely no input action is getting dropped, but this is alarming. I believe it appears on the client which became master and what is odd is that it appears after the master transfer finished. I think so anyway
-- [x] make game states list api return null or none state when called before lockstep has been initialized - so before OnInit or OnClientBeginCatchup
-- [x] make useSceneNameAsWorldName public to get rid of the "unused" warning
 - [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
-- [x] pretty sure tick start time is meaningless while catching up, but it's part of the api now...
+- [ ] add game state safe prng
+- [ ] make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
+- [ ] on nth tick? game state safe.
+- [ ] raise event delayed by ticks, game state safe.
+- [ ] ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
 - [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
 - [ ] does the local player exist already in the client states game state at the time of OnClientBeginCatchUp being raised?
 - [ ] deduplicate UI updates in info UI now that latency preferences changes raise events
+- [ ] rate limit updating the master preference when using the slider
 - [ ] use the new CustomRaisedEvent attribute system for lockstep events
-
-TODO: ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
