@@ -10,7 +10,7 @@ namespace JanSharp
     public class TestGameState : LockstepGameState
     {
         [SerializeField] private TestGameStateUI ui;
-        [SerializeField] [HideInInspector] private LockstepAPI lockstep; // Set by Lockstep's OnBuild handler.
+        [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
 
         public override string GameStateInternalName => "jansharp.lockstep-test";
         public override string GameStateDisplayName => "Test Game State";

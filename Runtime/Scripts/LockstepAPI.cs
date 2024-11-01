@@ -20,6 +20,7 @@ namespace JanSharp
         None,
     }
 
+    [SingletonScript]
     public abstract class LockstepAPI : UdonSharpBehaviour
     {
         /// <summary>

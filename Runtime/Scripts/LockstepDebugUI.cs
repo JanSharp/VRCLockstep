@@ -14,7 +14,7 @@ namespace JanSharp.Internal
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepDebugUI : UdonSharpBehaviour
     {
-        [SerializeField] [HideInInspector] private LockstepAPI lockstep;
+        [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
 
         #if !LockstepDebug
         [HideInInspector]

@@ -46,7 +46,6 @@ namespace JanSharp.Internal
         {
             public Dictionary<LockstepEventType, int> eventOrderLut;
             public List<(string iaName, string fieldName, bool timed)> inputActions;
-            public List<string> lockstepFieldNames;
         }
 
         private static readonly LockstepEventType[] allEventTypes = new LockstepEventType[] {
@@ -214,19 +213,6 @@ namespace JanSharp.Internal
                 CheckInputActionAttribute(method);
             }
 
-            foreach (FieldInfo field in ubType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-            {
-                if (field.FieldType == typeof(LockstepAPI))
-                {
-                    SerializedObject ubSo = new SerializedObject(ub);
-                    if (ubSo.FindProperty(field.Name) != null)
-                    {
-                        typeCache.lockstepFieldNames ??= new List<string>();
-                        typeCache.lockstepFieldNames.Add(field.Name);
-                    }
-                }
-            }
-
             cached = typeCache;
             // Do not save it in the cache if it failed, otherwise subsequent runs of this logic without
             // assembly reloads in between would return true instead of logging an error and returning false
@@ -246,26 +232,16 @@ namespace JanSharp.Internal
                     if (cached.eventOrderLut.TryGetValue(eventType, out int order))
                         allListeners[eventType].Add((order, ub));
 
-            SerializedObject ubSo = null;
-
             if (cached.inputActions != null)
             {
-                ubSo ??= new SerializedObject(ub);
+                SerializedObject ubSo = new SerializedObject(ub);
                 foreach (var ia in cached.inputActions)
                 {
                     ubSo.FindProperty(ia.fieldName).uintValue = (uint)allInputActions.Count;
                     allInputActions.Add((ub, ia.iaName, ia.timed));
                 }
+                ubSo.ApplyModifiedProperties();
             }
-
-            if (cached.lockstepFieldNames != null)
-            {
-                ubSo ??= new SerializedObject(ub);
-                foreach (string fieldName in cached.lockstepFieldNames)
-                    ubSo.FindProperty(fieldName).objectReferenceValue = lockstep;
-            }
-
-            ubSo?.ApplyModifiedProperties();
 
             return true;
         }
