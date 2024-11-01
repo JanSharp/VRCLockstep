@@ -34,6 +34,11 @@ namespace JanSharp {
         /// <para>At this point in time, this client - the local client - is not yet part of the game state in
         /// any of the custom game states. <see cref="OnClientJoined"/> eventually gets raised after this
         /// event.</para>
+        /// <para>The state of the local client in and after this event is
+        /// <see cref="ClientState.WaitingForLateJoinerSync"/>. <see cref="LockstepAPI.IsCatchingUp"/> is
+        /// <see langword="true"/> however. It may seem odd that the client state is not
+        /// <see cref="ClientState.CatchingUp"/>, however since the local client is still behind in time, the
+        /// internal client states game state is still in an older state.</para>
         /// <para><b>Not game state safe</b> - only raised on one client, the one beginning catch up.</para>
         /// </summary>
         OnClientBeginCatchUp,
