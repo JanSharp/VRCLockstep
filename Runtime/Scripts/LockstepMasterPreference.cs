@@ -37,6 +37,7 @@ namespace JanSharp
 
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     [CustomRaisedEventsDispatcher(typeof(LockstepMasterPreferenceEventAttribute), typeof(LockstepMasterPreferenceEventType))]
+    [SingletonScript]
     public class LockstepMasterPreference : LockstepGameState
     {
         [HideInInspector] [SerializeField] private LockstepAPI lockstep;

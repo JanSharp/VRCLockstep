@@ -17,7 +17,7 @@ namespace JanSharp.Internal
     public class LockstepInfoUI : UdonSharpBehaviour
     {
         [SerializeField] [HideInInspector] private LockstepAPI lockstep;
-        public LockstepMasterPreference masterPreference;
+        [SerializeField] [HideInInspector] [SingletonReference] private LockstepMasterPreference masterPreference;
         private bool MasterPreferenceExists => masterPreference != null;
         private const string LocalMasterPreferenceText = "Your Master Preference: ";
         private const string EntryMasterPreferenceText = "Master Preference: ";
