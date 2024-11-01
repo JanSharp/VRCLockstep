@@ -373,4 +373,4 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - [ ] does the local player exist already in the client states game state at the time of OnClientBeginCatchUp being raised?
 - [ ] deduplicate UI updates in info UI now that latency preferences changes raise events
 - [ ] rate limit updating the master preference when using the slider
-- [ ] use the new CustomRaisedEvent attribute system for lockstep events
+- [x] use the new CustomRaisedEvent attribute system for lockstep events

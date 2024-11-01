@@ -18,24 +18,6 @@ namespace JanSharp.Internal
     {
         private static Lockstep lockstep = null;
 
-        private static Dictionary<LockstepEventType, List<(int order, UdonSharpBehaviour ub)>> allListeners = new Dictionary<LockstepEventType, List<(int order, UdonSharpBehaviour ub)>>()
-        {
-            { LockstepEventType.OnInit, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnClientBeginCatchUp, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnPreClientJoined, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnClientJoined, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnClientCaughtUp, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnClientLeft, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnMasterClientChanged, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnLockstepTick, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnImportStart, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnImportedGameState, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnImportFinished, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnGameStatesToAutosaveChanged, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnAutosaveIntervalSecondsChanged, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnIsAutosavePausedChanged, new List<(int order, UdonSharpBehaviour ub)>() },
-            { LockstepEventType.OnLockstepNotification, new List<(int order, UdonSharpBehaviour ub)>() },
-        };
         private static List<LockstepGameState> allGameStates = new List<LockstepGameState>();
         public static ReadOnlyCollection<LockstepGameState> AllGameStates => allGameStates.AsReadOnly();
 
@@ -44,34 +26,15 @@ namespace JanSharp.Internal
         private static Dictionary<System.Type, TypeCache> cache = new Dictionary<System.Type, TypeCache>();
         private class TypeCache
         {
-            public Dictionary<LockstepEventType, int> eventOrderLut;
             public List<(string iaName, string fieldName, bool timed)> inputActions;
         }
 
-        private static readonly LockstepEventType[] allEventTypes = new LockstepEventType[] {
-            LockstepEventType.OnInit,
-            LockstepEventType.OnClientBeginCatchUp,
-            LockstepEventType.OnPreClientJoined,
-            LockstepEventType.OnClientJoined,
-            LockstepEventType.OnClientCaughtUp,
-            LockstepEventType.OnClientLeft,
-            LockstepEventType.OnMasterClientChanged,
-            LockstepEventType.OnLockstepTick,
-            LockstepEventType.OnImportStart,
-            LockstepEventType.OnImportedGameState,
-            LockstepEventType.OnImportFinished,
-            LockstepEventType.OnGameStatesToAutosaveChanged,
-            LockstepEventType.OnAutosaveIntervalSecondsChanged,
-            LockstepEventType.OnIsAutosavePausedChanged,
-            LockstepEventType.OnLockstepNotification,
-        };
-
         static LockstepOnBuild()
         {
-            JanSharp.OnBuildUtil.RegisterType<Lockstep>(PreOnBuild, -1);
-            JanSharp.OnBuildUtil.RegisterType<UdonSharpBehaviour>(EventListenersOnBuild, 0);
-            JanSharp.OnBuildUtil.RegisterType<LockstepGameState>(GameStatesOnBuild, 0);
-            JanSharp.OnBuildUtil.RegisterType<Lockstep>(PostOnBuild, 1);
+            OnBuildUtil.RegisterType<Lockstep>(PreOnBuild, -1);
+            OnBuildUtil.RegisterType<UdonSharpBehaviour>(InputActionsOnBuild, 0);
+            OnBuildUtil.RegisterType<LockstepGameState>(GameStatesOnBuild, 0);
+            OnBuildUtil.RegisterType<Lockstep>(PostOnBuild, 1);
         }
 
         private static bool PreOnBuild(Lockstep lockstep)
@@ -84,8 +47,6 @@ namespace JanSharp.Internal
             }
             LockstepOnBuild.lockstep = lockstep;
 
-            foreach (List<(int order, UdonSharpBehaviour ub)> listeners in allListeners.Values)
-                listeners.Clear();
             allGameStates.Clear();
             allInputActions.Clear();
             return true;
@@ -96,15 +57,6 @@ namespace JanSharp.Internal
             RecheckWorldName(new Lockstep[] { lockstep }, lockstep.gameObject.scene);
 
             SerializedObject lockstepSo = new SerializedObject(lockstep);
-
-            foreach (var kvp in allListeners)
-            {
-                EditorUtil.SetArrayProperty(
-                    lockstepSo.FindProperty($"o{kvp.Key.ToString()[1..]}Listeners"),
-                    kvp.Value.OrderBy(v => v.order).ToList(),
-                    (p, v) => p.objectReferenceValue = v.ub
-                );
-            }
 
             allGameStates = allGameStates
                 .OrderByDescending(gs => gs.GameStateSupportsImportExport)
@@ -139,7 +91,7 @@ namespace JanSharp.Internal
             return true;
         }
 
-        private static bool TryGetEventTypes(UdonSharpBehaviour ub, out TypeCache cached)
+        private static bool TryGetTypeCache(UdonSharpBehaviour ub, out TypeCache cached)
         {
             System.Type ubType = ub.GetType();
             if (cache.TryGetValue(ubType, out cached))
@@ -147,29 +99,6 @@ namespace JanSharp.Internal
 
             bool result = true;
             TypeCache typeCache = new TypeCache();
-
-            void CheckEventAttribute(MethodInfo method)
-            {
-                LockstepEventAttribute attr = method.GetCustomAttribute<LockstepEventAttribute>();
-                if (attr == null)
-                    return;
-                if (method.Name != attr.EventType.ToString())
-                {
-                    Debug.LogError($"[Lockstep] The method name {method.Name} does not match the expected "
-                        + $"Lockstep event name {attr.EventType} for the {ubType.Name} script.", ub);
-                    result = false;
-                    return;
-                }
-                if (!method.IsPublic)
-                {
-                    Debug.LogError($"[Lockstep] The method {ubType.Name}.{method.Name} is marked as a Lockstep "
-                        + $"event, however Lockstep event methods must be public.", ub);
-                    result = false;
-                    return;
-                }
-                typeCache.eventOrderLut ??= new Dictionary<LockstepEventType, int>();
-                typeCache.eventOrderLut.Add(attr.EventType, attr.Order);
-            }
 
             void CheckInputActionAttribute(MethodInfo method)
             {
@@ -208,10 +137,7 @@ namespace JanSharp.Internal
             }
 
             foreach (MethodInfo method in ubType.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-            {
-                CheckEventAttribute(method);
                 CheckInputActionAttribute(method);
-            }
 
             cached = typeCache;
             // Do not save it in the cache if it failed, otherwise subsequent runs of this logic without
@@ -222,15 +148,10 @@ namespace JanSharp.Internal
             return result;
         }
 
-        private static bool EventListenersOnBuild(UdonSharpBehaviour ub)
+        private static bool InputActionsOnBuild(UdonSharpBehaviour ub)
         {
-            if (!TryGetEventTypes(ub, out TypeCache cached))
+            if (!TryGetTypeCache(ub, out TypeCache cached))
                 return false;
-
-            if (cached.eventOrderLut != null)
-                foreach (LockstepEventType eventType in allEventTypes)
-                    if (cached.eventOrderLut.TryGetValue(eventType, out int order))
-                        allListeners[eventType].Add((order, ub));
 
             if (cached.inputActions != null)
             {

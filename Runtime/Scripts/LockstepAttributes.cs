@@ -164,12 +164,9 @@ namespace JanSharp {
         OnLockstepNotification,
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-    public class LockstepEventAttribute : System.Attribute
+    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
+    public class LockstepEventAttribute : CustomRaisedEventBaseAttribute
     {
-        private readonly LockstepEventType eventType;
-        public LockstepEventType EventType => eventType;
-
         /// <summary>
         /// <para>The method this attribute gets applied to must be public.</para>
         /// <para>The name of the function this attribute is applied to must have the exact same name as the
@@ -180,19 +177,11 @@ namespace JanSharp {
         /// </summary>
         /// <param name="eventType">The event to register this function as a listener to.</param>
         public LockstepEventAttribute(LockstepEventType eventType)
-        {
-            this.eventType = eventType;
-        }
-
-        /// <summary>
-        /// <para>The lower the order the sooner this event handler shall be called when the event gets
-        /// raised.</para>
-        /// <para>If registrations share the same order then their order of execution is undefined.</para>
-        /// </summary>
-        public int Order { get; set; } = 0;
+            : base((int)eventType)
+        { }
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class LockstepInputActionAttribute : System.Attribute
     {
         private readonly string idFieldName;

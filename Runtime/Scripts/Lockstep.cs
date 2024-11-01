@@ -10,6 +10,7 @@ namespace JanSharp.Internal
     [AddComponentMenu("")]
     #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+    [CustomRaisedEventsDispatcher(typeof(LockstepEventAttribute), typeof(LockstepEventType))]
     public class Lockstep : LockstepAPI
     {
         // LJ = late joiner, IA = input action
