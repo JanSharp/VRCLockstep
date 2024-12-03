@@ -415,6 +415,10 @@ namespace JanSharp
         /// users to copy and save externally such that the exported string can be passed to
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/> at a future point in time,
         /// including in a future/new instance of the world.</para>
+        /// <para>Note that this calls <see cref="ResetWriteStream"/>, which is to say if there were any calls
+        /// to write to the internal write stream such as when sending input actions or serializing game
+        /// states, all data written to the write stream so far will get cleared when calling
+        /// <see cref="Export(LockstepGameState[], string)"/>.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
