@@ -841,7 +841,8 @@ namespace JanSharp
         /// used in conjunction with <see cref="WriteBytes(byte[])"/>, but again said write function does not
         /// write any length information to the write stream, therefore it is up to the caller to know the
         /// length of the data to be read.</param>
-        public abstract byte[] ReadBytes(int byteCount);
+        /// <param name="skip">When <see langword="true"/> it simply returns <see langword="null"/>.</param>
+        public abstract byte[] ReadBytes(int byteCount, bool skip = false);
         /// <inheritdoc cref="ReadSByte"/>
         public abstract short ReadSmallShort();
         /// <inheritdoc cref="ReadSByte"/>

@@ -3155,7 +3155,15 @@ namespace JanSharp.Internal
         public override char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
         public override string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
         public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
-        public override byte[] ReadBytes(int byteCount) => DataStream.ReadBytes(ref readStream, ref readStreamPosition, byteCount);
+        public override byte[] ReadBytes(int byteCount, bool skip = false)
+        {
+            if (skip)
+            {
+                readStreamPosition += byteCount;
+                return null;
+            }
+            return DataStream.ReadBytes(ref readStream, ref readStreamPosition, byteCount);
+        }
         public override short ReadSmallShort() => DataStream.ReadSmallShort(ref readStream, ref readStreamPosition);
         public override ushort ReadSmallUShort() => DataStream.ReadSmallUShort(ref readStream, ref readStreamPosition);
         public override int ReadSmallInt() => DataStream.ReadSmallInt(ref readStream, ref readStreamPosition);
