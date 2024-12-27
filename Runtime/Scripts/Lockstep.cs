@@ -3148,6 +3148,7 @@ namespace JanSharp.Internal
             WriteCustomClass(value, isExport);
         }
         public override void WriteCustomClass(SerializableWannaBeClass value) => WriteCustomClass(value, isSerializingForExport);
+        [RecursiveMethod]
         public override void WriteCustomClass(SerializableWannaBeClass value, bool isExport)
         {
             if (value == null)
@@ -3170,11 +3171,18 @@ namespace JanSharp.Internal
             value.Serialize(isExport: true);
             int customDataSize = writeStreamSize - startPosition - 1;
             int sizeSize = 0;
-            DataStream.WriteSmall(ref serializedSizeBuffer, ref sizeSize, (uint)customDataSize);
+            sizeSize = WriteToSerializedSizeBuffer(sizeSize, (uint)customDataSize);
+            // RecursiveMethod does not support function calls with ref or out.
+            // DataStream.WriteSmall(ref serializedSizeBuffer, ref sizeSize, (uint)customDataSize);
             writeStreamSize = startPosition + sizeSize + customDataSize;
             if (sizeSize > 1)
                 ShiftWriteStream(startPosition + 1, startPosition + sizeSize, customDataSize);
             System.Array.Copy(serializedSizeBuffer, 0, writeStream, startPosition, sizeSize);
+        }
+        private int WriteToSerializedSizeBuffer(int sizeSize, uint customDataSize)
+        {
+            DataStream.WriteSmall(ref serializedSizeBuffer, ref sizeSize, customDataSize);
+            return sizeSize;
         }
         public override void WriteBytes(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
         public override void WriteBytes(byte[] bytes, int startIndex, int length) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes, startIndex, length);
@@ -3218,6 +3226,7 @@ namespace JanSharp.Internal
             return ReadCustomClassDynamic(className, isImport);
         }
         public override SerializableWannaBeClass ReadCustomClassDynamic(string className) => ReadCustomClassDynamic(className, isDeserializingForImport);
+        [RecursiveMethod]
         public override SerializableWannaBeClass ReadCustomClassDynamic(string className, bool isImport)
         {
             SerializableWannaBeClass value;
