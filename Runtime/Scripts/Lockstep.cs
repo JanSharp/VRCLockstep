@@ -44,6 +44,7 @@ namespace JanSharp.Internal
             }
         }
 
+        [SerializeField] [SingletonReference] private WannaBeClassesManager wannaBeClassesManager;
         [SerializeField] private InputActionSync lateJoinerInputActionSync;
         [SerializeField] private LockstepTickSync tickSync;
         /// <summary>
@@ -3104,6 +3105,13 @@ namespace JanSharp.Internal
 
         private byte[] writeStream = new byte[64];
         private int writeStreamSize = 0;
+        private byte[] serializedSizeBuffer = new byte[5];
+
+        public override void ShiftWriteStream(int sourcePosition, int destinationPosition, int count)
+        {
+            ArrList.EnsureCapacity(ref writeStream, destinationPosition + count);
+            System.Array.Copy(writeStream, sourcePosition, writeStream, destinationPosition, count);
+        }
 
         public override void ResetWriteStream() => writeStreamSize = 0;
         public override int WriteStreamPosition { get => writeStreamSize; set => writeStreamSize = value; }
@@ -3124,7 +3132,52 @@ namespace JanSharp.Internal
         public override void WriteChar(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteString(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteDateTime(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteCustomNullableClass(SerializableWannaBeClass value) => WriteCustomNullableClass(value, isSerializingForExport);
+        public override void WriteCustomNullableClass(SerializableWannaBeClass value, bool isExport)
+        {
+            if (value == null)
+            {
+                if (isExport)
+                    WriteSmallUInt(0u);
+                else
+                    WriteByte(0);
+                return;
+            }
+            if (!isExport)
+                WriteByte(1);
+            WriteCustomClass(value, isExport);
+        }
+        public override void WriteCustomClass(SerializableWannaBeClass value) => WriteCustomClass(value, isSerializingForExport);
+        public override void WriteCustomClass(SerializableWannaBeClass value, bool isExport)
+        {
+            if (value == null)
+                Debug.LogError($"[Lockstep] Attempt to WriteCustomClass where value is null. This is invalid and will throw an exception.");
+            if (!isExport)
+            {
+                value.Serialize(isExport: false);
+                return;
+            }
+            if (!value.SupportsImportExport)
+            {
+                WriteSmallUInt(0u);
+                return;
+            }
+            WriteSmallUInt(value.DataVersion + 1u);
+            int startPosition = writeStreamSize;
+            // Shift by one preemptively since the majority of classes will serialize in less than 128 bytes,
+            // saving the ShiftWriteStream call in most cases.
+            writeStreamSize++;
+            value.Serialize(isExport: true);
+            int customDataSize = writeStreamSize - startPosition - 1;
+            int sizeSize = 0;
+            DataStream.WriteSmall(ref serializedSizeBuffer, ref sizeSize, (uint)customDataSize);
+            writeStreamSize = startPosition + sizeSize + customDataSize;
+            if (sizeSize > 1)
+                ShiftWriteStream(startPosition + 1, startPosition + sizeSize, customDataSize);
+            System.Array.Copy(serializedSizeBuffer, 0, writeStream, startPosition, sizeSize);
+        }
         public override void WriteBytes(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
+        public override void WriteBytes(byte[] bytes, int startIndex, int length) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes, startIndex, length);
         public override void WriteSmallShort(short value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
         public override void WriteSmallUShort(ushort value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
         public override void WriteSmallInt(int value) => DataStream.WriteSmall(ref writeStream, ref writeStreamSize, value);
@@ -3155,6 +3208,40 @@ namespace JanSharp.Internal
         public override char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
         public override string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
         public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
+        public override SerializableWannaBeClass ReadCustomNullableClassDynamic(string className) => ReadCustomNullableClassDynamic(className, isDeserializingForImport);
+        public override SerializableWannaBeClass ReadCustomNullableClassDynamic(string className, bool isImport)
+        {
+            if (isImport)
+                return ReadCustomClassDynamic(className, isImport);
+            if (ReadByte() == 0)
+                return null;
+            return ReadCustomClassDynamic(className, isImport);
+        }
+        public override SerializableWannaBeClass ReadCustomClassDynamic(string className) => ReadCustomClassDynamic(className, isDeserializingForImport);
+        public override SerializableWannaBeClass ReadCustomClassDynamic(string className, bool isImport)
+        {
+            SerializableWannaBeClass value;
+            if (!isImport)
+            {
+                value = (SerializableWannaBeClass)wannaBeClassesManager.NewDynamic(className);
+                value.Deserialize(isImport: false, importedDataVersion: 0u);
+                return value;
+            }
+            uint importedDataVersion = ReadSmallUInt();
+            if (importedDataVersion == 0u)
+                return null;
+            importedDataVersion--;
+            int customDataSize = (int)ReadSmallUInt();
+            value = (SerializableWannaBeClass)wannaBeClassesManager.NewDynamic(className);
+            if (!value.SupportsImportExport || value.LowestSupportedDataVersion < importedDataVersion)
+            {
+                readStreamPosition += customDataSize;
+                value.Delete();
+                return null;
+            }
+            value.Deserialize(isImport: true, importedDataVersion);
+            return value;
+        }
         public override byte[] ReadBytes(int byteCount, bool skip = false)
         {
             if (skip)
@@ -3170,6 +3257,9 @@ namespace JanSharp.Internal
         public override uint ReadSmallUInt() => DataStream.ReadSmallUInt(ref readStream, ref readStreamPosition);
         public override long ReadSmallLong() => DataStream.ReadSmallLong(ref readStream, ref readStreamPosition);
         public override ulong ReadSmallULong() => DataStream.ReadSmallULong(ref readStream, ref readStreamPosition);
+
+        private bool isSerializingForExport = false;
+        public override bool IsSerializingForExport => isSerializingForExport;
 
         private uint[] crc32LookupCache;
 
@@ -3212,6 +3302,7 @@ namespace JanSharp.Internal
             WriteString(exportName);
             WriteSmallUInt(validCount);
 
+            isSerializingForExport = true;
             foreach (LockstepGameState gameState in gameStates)
             {
                 if (!gameState.GameStateSupportsImportExport)
@@ -3228,6 +3319,7 @@ namespace JanSharp.Internal
                 WriteInt(stopPosition - sizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
                 writeStreamSize = stopPosition;
             }
+            isSerializingForExport = false;
 
             #if LockstepDebug
             long crcStartMs = exportStopWatch.ElapsedMilliseconds;
@@ -3407,6 +3499,8 @@ namespace JanSharp.Internal
         private uint importedDataVersion;
         public override bool IsImporting => isImporting;
         public override uint ImportingPlayerId => importingPlayerId;
+        private bool isDeserializingForImport = false;
+        public override bool IsDeserializingForImport => isDeserializingForImport;
 
         public override System.DateTime ImportingFromDate => importingFromDate;
         public override string ImportingFromWorldName => importingFromWorldName;
@@ -3513,7 +3607,9 @@ namespace JanSharp.Internal
             }
             importedDataVersion = ReadSmallUInt();
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
+            isDeserializingForImport = true;
             importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion);
+            isDeserializingForImport = false;
             if (importErrorMessage != null)
                 RaiseOnLockstepNotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
             importedGameState = gameState;

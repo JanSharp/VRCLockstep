@@ -437,6 +437,10 @@ namespace JanSharp
         /// <paramref name="gameStates"/> or <paramref name="exportName"/>.</returns>
         public abstract string Export(LockstepGameState[] gameStates, string exportName);
         /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract bool IsSerializingForExport { get; }
+        /// <summary>
         /// <para>Load and validate a given base 64 exported string, converting it into an array of objects
         /// containing all export information within the given string into an actually usable format.</para>
         /// <para>This data can be processed using utilities in the <see cref="LockstepImportedGS"/> class if
@@ -507,6 +511,10 @@ namespace JanSharp
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool IsImporting { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract bool IsDeserializingForImport { get; }
         /// <summary>
         /// <para>The player id of the client which initiated the import and has provided the import data.
         /// </para>
@@ -683,6 +691,13 @@ namespace JanSharp
         public abstract void StopScopedAutosavePause();
 
         /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="sourcePosition"></param>
+        /// <param name="destinationPosition"></param>
+        /// <param name="count"></param>
+        public abstract void ShiftWriteStream(int sourcePosition, int destinationPosition, int count);
+        /// <summary>
         /// <para>When data has already been written to the internal write stream using any of the
         /// <c>Write</c> functions, however the call to <see cref="SendInputAction(uint)"/>,
         /// <see cref="SendSingletonInputAction(uint)"/> or its overload ends up not happening due to an early
@@ -763,10 +778,39 @@ namespace JanSharp
         public abstract void WriteString(string value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteDateTime(System.DateTime value);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="value"></param>
+        public abstract void WriteCustomNullableClass(SerializableWannaBeClass value);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="isExport"></param>
+        public abstract void WriteCustomNullableClass(SerializableWannaBeClass value, bool isExport);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="value"></param>
+        public abstract void WriteCustomClass(SerializableWannaBeClass value);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="isExport"></param>
+        public abstract void WriteCustomClass(SerializableWannaBeClass value, bool isExport);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         /// <param name="bytes">The raw bytes to be written to the byte stream. This does not add any length
         /// information to the binary stream, it just takes these bytes as they are.</param>
         public abstract void WriteBytes(byte[] bytes);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="length"></param>
+        public abstract void WriteBytes(byte[] bytes, int startIndex, int length);
         /// <summary>
         /// <para>When using <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
         /// or its overload or <see cref="LockstepGameState.SerializeGameState(bool)"/>, in order to pass data
@@ -836,6 +880,32 @@ namespace JanSharp
         public abstract string ReadString();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract System.DateTime ReadDateTime();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        public abstract SerializableWannaBeClass ReadCustomNullableClassDynamic(string className);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="className"></param>
+        /// <param name="isImport"></param>
+        /// <returns></returns>
+        public abstract SerializableWannaBeClass ReadCustomNullableClassDynamic(string className, bool isImport);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        public abstract SerializableWannaBeClass ReadCustomClassDynamic(string className);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="className"></param>
+        /// <param name="isImport"></param>
+        /// <returns></returns>
+        public abstract SerializableWannaBeClass ReadCustomClassDynamic(string className, bool isImport);
         /// <inheritdoc cref="ReadSByte"/>
         /// <param name="byteCount">The amount of raw bytes to read from the read stream. Very most likely
         /// used in conjunction with <see cref="WriteBytes(byte[])"/>, but again said write function does not
@@ -855,5 +925,62 @@ namespace JanSharp
         public abstract long ReadSmallLong();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract ulong ReadSmallULong();
+    }
+
+    public static class LockstepAPIExtensions
+    {
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="lockstep"></param>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        public static T ReadCustomNullableClass<T>(this LockstepAPI lockstep, string className)
+            where T : SerializableWannaBeClass
+        {
+            return (T)lockstep.ReadCustomNullableClassDynamic(className);
+        }
+
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="lockstep"></param>
+        /// <param name="className"></param>
+        /// <param name="isImport"></param>
+        /// <returns></returns>
+        public static T ReadCustomNullableClass<T>(this LockstepAPI lockstep, string className, bool isImport)
+            where T : SerializableWannaBeClass
+        {
+            return (T)lockstep.ReadCustomNullableClassDynamic(className, isImport);
+        }
+
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="lockstep"></param>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        public static T ReadCustomClass<T>(this LockstepAPI lockstep, string className)
+            where T : SerializableWannaBeClass
+        {
+            return (T)lockstep.ReadCustomClassDynamic(className);
+        }
+
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="lockstep"></param>
+        /// <param name="className"></param>
+        /// <param name="isImport"></param>
+        /// <returns></returns>
+        public static T ReadCustomClass<T>(this LockstepAPI lockstep, string className, bool isImport)
+            where T : SerializableWannaBeClass
+        {
+            return (T)lockstep.ReadCustomClassDynamic(className, isImport);
+        }
     }
 }
