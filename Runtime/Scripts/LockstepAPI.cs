@@ -839,6 +839,22 @@ namespace JanSharp
         public abstract void WriteSmallULong(ulong value);
 
         /// <summary>
+        /// creates a copy of the section of the array
+        /// TODO: docs
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="length"></param>
+        public abstract void SetReadStream(byte[] stream, int startIndex, int length);
+        /// <summary>
+        /// directly assigns the given stream as the write stream. Do not modify the stream after it has been
+        /// set.
+        /// TODO: docs
+        /// </summary>
+        /// <param name="stream"></param>
+        public abstract void SetReadStream(byte[] stream);
+
+        /// <summary>
         /// <para>Inside of input actions or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>
         /// in order to retrieve the data that was initially written to an internal binary stream, these
         /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
@@ -880,6 +896,21 @@ namespace JanSharp
         public abstract string ReadString();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract System.DateTime ReadDateTime();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="dataVersion"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public abstract bool SkipCustomClass(out uint dataVersion, out byte[] data);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="isImport"></param>
+        /// <param name="dataVersion"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public abstract bool SkipCustomClass(bool isImport, out uint dataVersion, out byte[] data);
         /// <summary>
         /// TODO: docs
         /// </summary>

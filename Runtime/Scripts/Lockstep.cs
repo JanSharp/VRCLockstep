@@ -3132,7 +3132,9 @@ namespace JanSharp.Internal
         public override void WriteChar(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteString(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteDateTime(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        [RecursiveMethod]
         public override void WriteCustomNullableClass(SerializableWannaBeClass value) => WriteCustomNullableClass(value, isSerializingForExport);
+        [RecursiveMethod]
         public override void WriteCustomNullableClass(SerializableWannaBeClass value, bool isExport)
         {
             if (value == null)
@@ -3147,6 +3149,7 @@ namespace JanSharp.Internal
                 WriteByte(1);
             WriteCustomClass(value, isExport);
         }
+        [RecursiveMethod]
         public override void WriteCustomClass(SerializableWannaBeClass value) => WriteCustomClass(value, isSerializingForExport);
         [RecursiveMethod]
         public override void WriteCustomClass(SerializableWannaBeClass value, bool isExport)
@@ -3198,6 +3201,18 @@ namespace JanSharp.Internal
         private byte[] readStream = new byte[0];
         private int readStreamPosition = 0;
 
+        public override void SetReadStream(byte[] stream, int startIndex, int length)
+        {
+            readStream = new byte[length];
+            System.Array.Copy(readStream, startIndex, stream, 0, length);
+            ResetReadStream();
+        }
+        public override void SetReadStream(byte[] stream)
+        {
+            readStream = stream;
+            ResetReadStream();
+        }
+
         private void ResetReadStream() => readStreamPosition = 0;
         public override sbyte ReadSByte() => DataStream.ReadSByte(ref readStream, ref readStreamPosition);
         public override byte ReadByte() => DataStream.ReadByte(ref readStream, ref readStreamPosition);
@@ -3216,7 +3231,9 @@ namespace JanSharp.Internal
         public override char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
         public override string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
         public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
+        [RecursiveMethod]
         public override SerializableWannaBeClass ReadCustomNullableClassDynamic(string className) => ReadCustomNullableClassDynamic(className, isDeserializingForImport);
+        [RecursiveMethod]
         public override SerializableWannaBeClass ReadCustomNullableClassDynamic(string className, bool isImport)
         {
             if (isImport)
@@ -3225,6 +3242,27 @@ namespace JanSharp.Internal
                 return null;
             return ReadCustomClassDynamic(className, isImport);
         }
+        public override bool SkipCustomClass(out uint dataVersion, out byte[] data) => SkipCustomClass(isDeserializingForImport, out dataVersion, out data);
+        public override bool SkipCustomClass(bool isImport, out uint dataVersion, out byte[] data)
+        {
+            if (!isImport)
+            {
+                Debug.LogError("[Lockstep] Attempt to call SkipCustomClass outside of an import, which is not supported.");
+                dataVersion = 0u;
+                data = null;
+                return false;
+            }
+            dataVersion = ReadSmallUInt();
+            if (dataVersion == 0u)
+            {
+                data = null;
+                return false;
+            }
+            dataVersion--;
+            data = ReadBytes((int)ReadSmallUInt());
+            return true;
+        }
+        [RecursiveMethod]
         public override SerializableWannaBeClass ReadCustomClassDynamic(string className) => ReadCustomClassDynamic(className, isDeserializingForImport);
         [RecursiveMethod]
         public override SerializableWannaBeClass ReadCustomClassDynamic(string className, bool isImport)
