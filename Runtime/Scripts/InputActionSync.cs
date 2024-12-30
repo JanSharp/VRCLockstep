@@ -209,9 +209,9 @@ namespace JanSharp.Internal
             int freeSpace = MaxSyncedDataSize - stageSize;
             while (remainingLength > freeSpace)
             {
-                #if LockstepDebug
-                Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
-                #endif
+                // #if LockstepDebug
+                // Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
+                // #endif
                 System.Array.Copy(inputActionData, baseIndex, stage, stageSize, freeSpace);
                 MoveStageToQueue();
                 // Instead of starting with WriteSmall((uint)ownerPlayerId), write SplitDataMarker.
@@ -220,9 +220,9 @@ namespace JanSharp.Internal
                 remainingLength -= freeSpace;
                 freeSpace = MaxSyncedDataSize - stageSize;
             }
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
-            #endif
+            // #if LockstepDebug
+            // Debug.Log($"[LockstepDebug] InputActionSync  {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
+            // #endif
             System.Array.Copy(inputActionData, baseIndex, stage, stageSize, remainingLength);
             stageSize += remainingLength;
 
