@@ -923,7 +923,9 @@ namespace JanSharp
         /// <param name="className"></param>
         /// <param name="isImport"></param>
         /// <returns></returns>
-        public abstract SerializableWannaBeClass ReadCustomNullableClassDynamic(string className, bool isImport);
+        public abstract SerializableWannaBeClass ReadCustomNullableClassDynamic(
+            string className,
+            bool isImport);
         /// <summary>
         /// TODO: docs
         /// </summary>
@@ -937,6 +939,32 @@ namespace JanSharp
         /// <param name="isImport"></param>
         /// <returns></returns>
         public abstract SerializableWannaBeClass ReadCustomClassDynamic(string className, bool isImport);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <returns></returns>
+        public abstract bool ReadCustomNullableClass(SerializableWannaBeClass inst);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="isImport"></param>
+        /// <returns></returns>
+        public abstract bool ReadCustomNullableClass(SerializableWannaBeClass inst, bool isImport);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <returns></returns>
+        public abstract bool ReadCustomClass(SerializableWannaBeClass inst);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="isImport"></param>
+        /// <returns></returns>
+        public abstract bool ReadCustomClass(SerializableWannaBeClass inst, bool isImport);
         /// <inheritdoc cref="ReadSByte"/>
         /// <param name="byteCount">The amount of raw bytes to read from the read stream. Very most likely
         /// used in conjunction with <see cref="WriteBytes(byte[])"/>, but again said write function does not
@@ -960,6 +988,8 @@ namespace JanSharp
 
     public static class LockstepAPIExtensions
     {
+        // TODO: Test calling these recursively, within the same script of course.
+
         /// <summary>
         /// TODO: docs
         /// </summary>

@@ -3289,6 +3289,40 @@ namespace JanSharp.Internal
             value.Deserialize(isImport: true, importedDataVersion);
             return value;
         }
+        [RecursiveMethod]
+        public override bool ReadCustomNullableClass(SerializableWannaBeClass inst) => ReadCustomNullableClass(inst, isDeserializingForImport);
+        [RecursiveMethod]
+        public override bool ReadCustomNullableClass(SerializableWannaBeClass inst, bool isImport)
+        {
+            if (isImport)
+                return ReadCustomClass(inst, isImport);
+            if (ReadByte() == 0)
+                return false;
+            return ReadCustomClass(inst, isImport);
+        }
+        [RecursiveMethod]
+        public override bool ReadCustomClass(SerializableWannaBeClass inst) => ReadCustomClass(inst, isDeserializingForImport);
+        [RecursiveMethod]
+        public override bool ReadCustomClass(SerializableWannaBeClass inst, bool isImport)
+        {
+            if (!isImport)
+            {
+                inst.Deserialize(isImport: false, importedDataVersion: 0u);
+                return true;
+            }
+            uint importedDataVersion = ReadSmallUInt();
+            if (importedDataVersion == 0u)
+                return false;
+            importedDataVersion--;
+            int customDataSize = (int)ReadSmallUInt();
+            if (!inst.SupportsImportExport || inst.LowestSupportedDataVersion < importedDataVersion)
+            {
+                readStreamPosition += customDataSize;
+                return false;
+            }
+            inst.Deserialize(isImport: true, importedDataVersion);
+            return true;
+        }
         public override byte[] ReadBytes(int byteCount, bool skip = false)
         {
             if (skip)
