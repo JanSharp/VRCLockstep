@@ -3180,12 +3180,18 @@ namespace JanSharp.Internal
             writeStreamSize = startPosition + sizeSize + customDataSize;
             if (sizeSize > 1)
                 ShiftWriteStream(startPosition + 1, startPosition + sizeSize, customDataSize);
+            if (customDataSize == 0)
+                EnsureWriteStreamCapacity();
             System.Array.Copy(serializedSizeBuffer, 0, writeStream, startPosition, sizeSize);
         }
         private int WriteToSerializedSizeBuffer(int sizeSize, uint customDataSize)
         {
             DataStream.WriteSmall(ref serializedSizeBuffer, ref sizeSize, customDataSize);
             return sizeSize;
+        }
+        private void EnsureWriteStreamCapacity()
+        {
+            ArrList.EnsureCapacity(ref writeStream, writeStreamSize);
         }
         public override void WriteBytes(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
         public override void WriteBytes(byte[] bytes, int startIndex, int length) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes, startIndex, length);
