@@ -28,7 +28,7 @@ namespace JanSharp
     }
 
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    sealed class LockstepMasterPreferenceEventAttribute : CustomRaisedEventBaseAttribute
+    public sealed class LockstepMasterPreferenceEventAttribute : CustomRaisedEventBaseAttribute
     {
         public LockstepMasterPreferenceEventAttribute(LockstepMasterPreferenceEventType eventType)
             : base((int)eventType)
