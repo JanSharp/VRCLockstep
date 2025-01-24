@@ -469,8 +469,8 @@ namespace JanSharp.Internal
             UpdateExportButton();
         }
 
-        [LockstepEvent(LockstepEventType.OnGameStatesToAutosaveChanged)]
-        public void OnGameStatesToAutosaveChanged()
+        [LockstepEvent(LockstepEventType.OnExportOptionsForAutosaveChanged)]
+        public void OnExportOptionsForAutosaveChanged()
         {
             UpdateAutosaveInfoLabelsReadingFromLockstep();
             InstantAutosaveTimerUpdateLoop();

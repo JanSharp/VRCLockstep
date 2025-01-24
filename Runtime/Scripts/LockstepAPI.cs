@@ -623,6 +623,8 @@ namespace JanSharp
 
         /// <summary>
         /// TODO: docs
+        /// make sure to mention that one should also reassign to this variable after having modified a given
+        /// options class instance, in order to raise the OnExportOptionsForAutosaveChanged event.
         /// </summary>
         public abstract LockstepGameStateOptionsData[] ExportOptionsForAutosave { get; set; }
         // TODO: reuse some of these docs for the above, probably
@@ -648,7 +650,7 @@ namespace JanSharp
         // /// <see cref="AutosaveIntervalSeconds"/>. If <see cref="IsAutosavePaused"/> is <see langword="true"/>
         // /// or <see cref="IsImporting"/> is <see langword="true"/> it will effectively pause the autosave
         // /// timer. Lockstep may also pause the timer at any time internally.</para>
-        // /// <para>Whenever this value changes, <see cref="LockstepEventType.OnGameStatesToAutosaveChanged"/>
+        // /// <para>Whenever this value changes, <see cref="LockstepEventType.OnExportOptionsForAutosaveChanged"/>
         // /// gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
         // /// within a frame the event only gets raised once (you can thank Udon).</para>
         // /// <para>All APIs related to autosaving are local only.</para>

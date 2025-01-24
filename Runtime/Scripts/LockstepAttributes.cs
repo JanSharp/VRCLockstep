@@ -143,7 +143,7 @@ namespace JanSharp {
         /// value may not actually be different from the last time you've read it.</para>
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
-        OnGameStatesToAutosaveChanged,
+        OnExportOptionsForAutosaveChanged,
         /// <summary>
         /// <para>Raised whenever <see cref="LockstepAPI.AutosaveIntervalSeconds"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes

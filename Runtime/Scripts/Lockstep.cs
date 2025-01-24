@@ -207,7 +207,7 @@ namespace JanSharp.Internal
         [SerializeField] private UdonSharpBehaviour[] onImportStartListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportedGameStateListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportFinishedListeners;
-        [SerializeField] private UdonSharpBehaviour[] onGameStatesToAutosaveChangedListeners;
+        [SerializeField] private UdonSharpBehaviour[] onExportOptionsForAutosaveChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onLockstepNotificationListeners;
@@ -3004,32 +3004,32 @@ namespace JanSharp.Internal
                 onImportFinishedListeners = CleanUpRemovedListeners(onImportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnImportFinished));
         }
 
-        private bool markedForOnGameStatesToAutosaveChanged;
-        private void MarkForOnGameStatesToAutosaveChanged() // TODO: change to exportOptionsForAutosave
+        private bool markedForOnExportOptionsForAutosaveChanged;
+        private void MarkForOnExportOptionsForAutosaveChanged()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  MarkForOnGameStatesToAutosaveChanged");
+            Debug.Log($"[LockstepDebug] Lockstep  MarkForOnExportOptionsForAutosaveChanged");
             #endif
-            if (markedForOnGameStatesToAutosaveChanged)
+            if (markedForOnExportOptionsForAutosaveChanged)
                 return;
-            markedForOnGameStatesToAutosaveChanged = true;
-            SendCustomEventDelayedFrames(nameof(RaiseOnGameStatesToAutosaveChanged), 1);
+            markedForOnExportOptionsForAutosaveChanged = true;
+            SendCustomEventDelayedFrames(nameof(RaiseOnExportOptionsForAutosaveChanged), 1);
         }
 
-        public void RaiseOnGameStatesToAutosaveChanged()
+        public void RaiseOnExportOptionsForAutosaveChanged()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnGameStatesToAutosaveChanged");
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportOptionsForAutosaveChanged");
             #endif
-            markedForOnGameStatesToAutosaveChanged = false;
+            markedForOnExportOptionsForAutosaveChanged = false;
             int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onGameStatesToAutosaveChangedListeners)
+            foreach (UdonSharpBehaviour listener in onExportOptionsForAutosaveChangedListeners)
                 if (listener == null)
                     destroyedCount++;
                 else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnGameStatesToAutosaveChanged));
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnExportOptionsForAutosaveChanged));
             if (destroyedCount != 0)
-                onGameStatesToAutosaveChangedListeners = CleanUpRemovedListeners(onGameStatesToAutosaveChangedListeners, destroyedCount, nameof(LockstepEventType.OnGameStatesToAutosaveChanged));
+                onExportOptionsForAutosaveChangedListeners = CleanUpRemovedListeners(onExportOptionsForAutosaveChangedListeners, destroyedCount, nameof(LockstepEventType.OnExportOptionsForAutosaveChanged));
         }
 
         private bool markedForOnAutosaveIntervalSecondsChanged;
@@ -3881,11 +3881,23 @@ namespace JanSharp.Internal
         private LockstepGameStateOptionsData[] exportOptionsForAutosave = null;
         public override LockstepGameStateOptionsData[] ExportOptionsForAutosave
         {
-            get => exportOptionsForAutosave;
+            get
+            {
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] Lockstep  ExportOptionsForAutosave.get");
+                #endif
+                return exportOptionsForAutosave;
+            }
             set
             {
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] Lockstep  ExportOptionsForAutosave.set");
+                #endif
+                if (value == null && exportOptionsForAutosave == null)
+                    return;
                 exportOptionsForAutosave = value;
                 StartOrStopAutosave();
+                MarkForOnExportOptionsForAutosaveChanged();
             }
         }
 

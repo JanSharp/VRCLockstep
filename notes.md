@@ -347,7 +347,7 @@ Non game state safe events are events running on either just one client or every
 These events are not allowed to modify the game states:
 
 - `OnClientBeginCatchUp()` Use `CatchingUpPlayerId` from the lockstep api.
-- `OnGameStatesToAutosaveChanged()`
+- `OnExportOptionsForAutosaveChanged()`
 - `OnAutosaveIntervalSecondsChanged()`
 - `OnIsAutosavePausedChanged()`
 - `OnLockstepNotification()` Use `NotificationMessage` from the lockstep api.

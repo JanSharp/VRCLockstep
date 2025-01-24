@@ -3266,13 +3266,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: onGameStatesToAutosaveChangedListeners
+      Data: onExportOptionsForAutosaveChangedListeners
     - Name: $v
       Entry: 7
       Data: 166|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: onGameStatesToAutosaveChangedListeners
+      Data: onExportOptionsForAutosaveChangedListeners
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 119
@@ -6452,13 +6452,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: markedForOnGameStatesToAutosaveChanged
+      Data: markedForOnExportOptionsForAutosaveChanged
     - Name: $v
       Entry: 7
       Data: 327|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: markedForOnGameStatesToAutosaveChanged
+      Data: markedForOnExportOptionsForAutosaveChanged
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 3
