@@ -41,6 +41,16 @@ namespace JanSharp
         /// </summary>
         public abstract uint GameStateLowestSupportedDataVersion { get; }
         /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract LockstepGameStateOptionsUI ExportUI { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract LockstepGameStateOptionsUI ImportUI { get; }
+
+        /// <summary>
+        /// TODO: docs
         /// <para>This function must call <c>Write</c> functions on <see cref="LockstepAPI"/> just like input
         /// action do before calling <see cref="LockstepAPI.SendInputAction(uint)"/> or the singleton
         /// variant.</para>
@@ -55,8 +65,9 @@ namespace JanSharp
         /// current game state.</para>
         /// <para>Only every <see langword="true"/> if <see cref="GameStateSupportsImportExport"/> is
         /// <see langword="true"/>.</para></param>
-        public abstract void SerializeGameState(bool isExport);
+        public abstract void SerializeGameState(bool isExport, LockstepGameStateOptionsData exportOptions);
         /// <summary>
+        /// TODO: docs
         /// <para>This function must call <c>Read</c> functions on <see cref="LockstepAPI"/> in the same order
         /// as <see cref="SerializeGameState(bool)"/> with matching data types, just like input
         /// actions.</para>
@@ -95,6 +106,6 @@ namespace JanSharp
         /// <para>Either way, whenever an error message is returned, a
         /// <see cref="LockstepEventType.OnLockstepNotification"/> is sent where the
         /// <see cref="LockstepAPI.NotificationMessage"/> contains the given error message.</para></returns>
-        public abstract string DeserializeGameState(bool isImport, uint importedDataVersion);
+        public abstract string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions);
     }
 }

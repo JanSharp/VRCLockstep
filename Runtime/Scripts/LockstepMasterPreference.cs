@@ -47,6 +47,8 @@ namespace JanSharp
         public override bool GameStateSupportsImportExport => true;
         public override uint GameStateDataVersion => 0u;
         public override uint GameStateLowestSupportedDataVersion => 0u;
+        public override LockstepGameStateOptionsUI ExportUI => null;
+        public override LockstepGameStateOptionsUI ImportUI => null;
 
         [HideInInspector] [SerializeField] private UdonSharpBehaviour[] onMasterPreferenceChangedListeners;
         [HideInInspector] [SerializeField] private UdonSharpBehaviour[] onLatencyHiddenMasterPreferenceChangedListeners;
@@ -297,7 +299,7 @@ namespace JanSharp
             changedPlayerId = 0u; // To prevent misuse of the API.
         }
 
-        public override void SerializeGameState(bool isExport)
+        public override void SerializeGameState(bool isExport, LockstepGameStateOptionsData exportOptions)
         {
             if (!isExport)
             {
@@ -323,7 +325,7 @@ namespace JanSharp
             }
         }
 
-        public override string DeserializeGameState(bool isImport, uint importedDataVersion)
+        public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)
         {
             if (!isImport)
             {

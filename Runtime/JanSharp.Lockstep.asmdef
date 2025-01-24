@@ -1,7 +1,9 @@
 {
     "name": "JanSharp.Lockstep",
+    "rootNamespace": "",
     "references": [
         "JanSharp.Common",
+        "JanSharp.GenericValueEditor",
         "UdonSharp.Runtime",
         "Cyan.PlayerObjectPool.UdonSharp",
         "VRC.SDK3",

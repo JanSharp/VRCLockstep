@@ -1,9 +1,11 @@
 {
     "name": "JanSharp.Lockstep.Editor",
+    "rootNamespace": "",
     "references": [
         "JanSharp.Lockstep",
         "JanSharp.Common",
         "JanSharp.Common.Editor",
+        "JanSharp.GenericValueEditor",
         "UdonSharp.Runtime",
         "UdonSharp.Editor",
         "VRC.SDK3",

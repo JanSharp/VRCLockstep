@@ -16,6 +16,8 @@ namespace JanSharp
         [SerializeField] private bool gameStateSupportsImportExport = false;
         [SerializeField] private uint gameStateDataVersion = 0u;
         [SerializeField] private uint gameStateLowestSupportedDataVersion = 0u;
+        public override LockstepGameStateOptionsUI ExportUI => null;
+        public override LockstepGameStateOptionsUI ImportUI => null;
 
         public override string GameStateInternalName => gameStateInternalName;
         public override string GameStateDisplayName => gameStateDisplayName;
@@ -23,12 +25,12 @@ namespace JanSharp
         public override uint GameStateDataVersion => gameStateDataVersion;
         public override uint GameStateLowestSupportedDataVersion => gameStateLowestSupportedDataVersion;
 
-        public override void SerializeGameState(bool isExport)
+        public override void SerializeGameState(bool isExport, LockstepGameStateOptionsData exportOptions)
         {
 
         }
 
-        public override string DeserializeGameState(bool isImport, uint importedDataVersion)
+        public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)
         {
             return null;
         }

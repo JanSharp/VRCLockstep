@@ -68,6 +68,7 @@ namespace JanSharp.Internal
                 allGameStates,
                 (p, v) => p.objectReferenceValue = v
             );
+            lockstepSo.FindProperty("gameStatesCountSupportingExport").intValue = allGameStates.Count(gs => gs.GameStateSupportsImportExport);
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("inputActionHandlerInstances"),

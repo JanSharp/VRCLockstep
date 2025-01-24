@@ -16,165 +16,67 @@ namespace JanSharp.Internal
     {
         [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private GameObject mainGSEntryPrefab;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private GameObject importGSEntryPrefab;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private GameObject exportGSEntryPrefab;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private Transform mainGSList;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private GameObject dimBackground;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private Slider autosaveTimerSlider;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private TextMeshProUGUI autosaveTimerText;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private GameObject importWindow;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private TextMeshProUGUI importSelectedText;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private TMP_InputField serializedInputField;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private TextMeshProUGUI importInfoText;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private Transform importGSList;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private Button importSelectAllButton;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private Button importSelectNoneButton;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
+        [SerializeField] private LockstepOptionsEditorUI importOptionsUI;
         [SerializeField] private Button confirmImportButton;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private TextMeshProUGUI confirmImportButtonText;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private GameObject exportWindow;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private TextMeshProUGUI exportSelectedText;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private Transform exportGSList;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
+        [SerializeField] private LockstepOptionsEditorUI exportOptionsUI;
+        [SerializeField] private Toggle autosaveToggle;
         [SerializeField] private TMP_InputField autosaveIntervalField;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private Slider autosaveIntervalSlider;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private TMP_InputField serializedOutputField;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private TMP_InputField exportNameField;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private Button confirmExportButton;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private TextMeshProUGUI confirmExportButtonText;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
+        [SerializeField] private GameObject exportedDataWindow;
+        [SerializeField] private TMP_InputField serializedOutputField;
+
         [SerializeField] private float minAutosaveInterval;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private float defaultAutosaveInterval;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private float autosaveInterval;
 
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
         [SerializeField] private LockstepMainGSEntry[] mainGSEntries;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private LockstepImportGSEntry[] importGSEntries;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private LockstepExportGSEntry[] exportGSEntries;
 
         private bool isImportInitialized = false;
         private bool isExportInitialized = false;
 
-        private LockstepImportGSEntry[] extraImportGSEntries = new LockstepImportGSEntry[ArrList.MinCapacity];
-        private int extraImportGSEntriesCount = 0;
-        private int extraImportGSEntriesUsedCount = 0;
+        // private LockstepImportGSEntry[] extraImportGSEntries = new LockstepImportGSEntry[ArrList.MinCapacity];
+        // private int extraImportGSEntriesCount = 0;
+        // private int extraImportGSEntriesUsedCount = 0;
 
-        ///<summary>string internalName => LockstepImportGSEntry entry</summary>
-        private DataDictionary importEntriesByInternalName = new DataDictionary();
-        ///<summary>LockstepImportedGS[]</summary>
-        object[][] importedGameStates = null;
+        // ///<summary>string internalName => LockstepImportGSEntry entry</summary>
+        // private DataDictionary importEntriesByInternalName = new DataDictionary();
         System.DateTime exportDate;
         string exportWorldName;
         string exportName;
 
         private int importSelectedCount = 0;
-        #if !LockstepDebug
-        [HideInInspector]
-        #endif
-        [SerializeField] private int exportSelectedCount;
+        // [SerializeField] private int exportSelectedCount;
+        private LockstepGameStateOptionsData[] exportOptions;
 
         private VRCPlayerApi localPlayer;
 
         private void Start()
         {
             localPlayer = Networking.LocalPlayer;
-            foreach (LockstepImportGSEntry entry in importGSEntries)
-                importEntriesByInternalName.Add(entry.gameState.GameStateInternalName, entry);
+            exportOptionsUI.Init();
+            importOptionsUI.Init();
+            exportOptions = lockstep.GetNewExportOptions();
+            // foreach (LockstepImportGSEntry entry in importGSEntries)
+            //     importEntriesByInternalName.Add(entry.gameState.GameStateInternalName, entry);
         }
 
         private void Enable()
@@ -201,8 +103,19 @@ namespace JanSharp.Internal
 
         public void OpenExportWindow()
         {
+            exportOptionsUI.General.ClearChildren();
+            exportOptionsUI.Root.ClearChildren();
+            exportOptionsUI.Root.AddChild(exportOptionsUI.General);
+            lockstep.ShowExportOptionsEditor(exportOptionsUI, exportOptions);
+            exportOptionsUI.Draw();
             dimBackground.SetActive(true);
             exportWindow.SetActive(true);
+        }
+
+        public void OpenExportedDataWindow()
+        {
+            dimBackground.SetActive(true);
+            exportedDataWindow.SetActive(true);
         }
 
         public void CloseImportWindow()
@@ -216,7 +129,14 @@ namespace JanSharp.Internal
         {
             dimBackground.SetActive(false);
             exportWindow.SetActive(false);
-            ResetExport();
+            lockstep.HideExportOptionsEditor(exportOptionsUI, exportOptions);
+        }
+
+        public void CloseExportedDataWindow()
+        {
+            dimBackground.SetActive(false);
+            exportedDataWindow.SetActive(false);
+            serializedOutputField.text = "";
         }
 
         public void CloseOpenWindow()
@@ -225,28 +145,8 @@ namespace JanSharp.Internal
                 CloseImportWindow();
             if (exportWindow.activeSelf)
                 CloseExportWindow();
-        }
-
-        private LockstepImportGSEntry GetImportGSEntry(string internalName, string displayName)
-        {
-            if (importEntriesByInternalName.TryGetValue(internalName, out DataToken entryToken))
-                return (LockstepImportGSEntry)entryToken.Reference;
-            LockstepImportGSEntry entry;
-            if (extraImportGSEntriesUsedCount < extraImportGSEntriesCount)
-            {
-                entry = extraImportGSEntries[extraImportGSEntriesUsedCount++];
-                entry.displayNameText.text = displayName;
-                entry.gameObject.SetActive(true);
-                return entry;
-            }
-            GameObject entryObj = GameObject.Instantiate(importGSEntryPrefab);
-            entryObj.transform.SetParent(importGSList, worldPositionStays: false);
-            entry = entryObj.GetComponent<LockstepImportGSEntry>();
-            entry.gameStatesUI = this;
-            entry.displayNameText.text = displayName;
-            ArrList.Add(ref extraImportGSEntries, ref extraImportGSEntriesCount, entry);
-            extraImportGSEntriesUsedCount++;
-            return entry;
+            if (exportedDataWindow.activeSelf)
+                CloseExportedDataWindow();
         }
 
         // Cannot use TextChanged because pasting text when testing in editor raises text changed for each
@@ -254,94 +154,65 @@ namespace JanSharp.Internal
         // to use EndEdit instead. Because all that logging, decoding and crc calculating ends up lagging.
         public void OnImportSerializedTextEndEdit()
         {
-            // Reset regardless, because 2 consecutive valid yet different imports could be pasted in.
-            ResetImport(leaveInputFieldUntouched: true);
+            // // Reset regardless, because 2 consecutive valid yet different imports could be pasted in.
+            // ResetImport(leaveInputFieldUntouched: true);
 
-            string importString = serializedInputField.text;
-            if (importString == "")
-                return;
-            importedGameStates = lockstep.ImportPreProcess(
-                importString,
-                out exportDate,
-                out exportWorldName,
-                out exportName);
-            if (importedGameStates == null)
-            {
-                importInfoText.text = "Malformed or invalid data.";
-                return;
-            }
+            // string importString = serializedInputField.text;
+            // if (importString == "")
+            //     return;
+            // // LockstepImportedGS[]
+            // object[][] importedGameStates = lockstep.ImportPreProcess(
+            //     importString,
+            //     out exportDate,
+            //     out exportWorldName,
+            //     out exportName);
+            // if (importedGameStates == null)
+            // {
+            //     importInfoText.text = "Malformed or invalid data.";
+            //     return;
+            // }
 
-            int canImportCount = 0;
-            foreach (object[] importedGS in importedGameStates)
-            {
-                string errorMsg = LockstepImportedGS.GetErrorMsg(importedGS);
-                LockstepImportGSEntry entry = GetImportGSEntry(
-                    LockstepImportedGS.GetInternalName(importedGS),
-                    LockstepImportedGS.GetDisplayName(importedGS));
-                if (errorMsg == null)
-                {
-                    canImportCount++;
-                    entry.infoLabel.text = "can import";
-                    entry.toggledImage.color = entry.goodColor;
-                    entry.mainToggle.interactable = true;
-                    entry.canImport = true;
-                }
-                else
-                {
-                    entry.infoLabel.text = errorMsg;
-                    entry.toggledImage.color = entry.badColor;
-                }
-                entry.importedGS = importedGS;
-                entry.mainToggle.SetIsOnWithoutNotify(true);
-            }
+            // int canImportCount = 0;
+            // foreach (object[] importedGS in importedGameStates)
+            // {
+            //     string errorMsg = LockstepImportedGS.GetErrorMsg(importedGS);
+            //     LockstepImportGSEntry entry = GetImportGSEntry(
+            //         LockstepImportedGS.GetInternalName(importedGS),
+            //         LockstepImportedGS.GetDisplayName(importedGS));
+            //     if (errorMsg == null)
+            //     {
+            //         canImportCount++;
+            //         entry.infoLabel.text = "can import";
+            //         entry.toggledImage.color = entry.goodColor;
+            //         entry.mainToggle.interactable = true;
+            //         entry.canImport = true;
+            //     }
+            //     else
+            //     {
+            //         entry.infoLabel.text = errorMsg;
+            //         entry.toggledImage.color = entry.badColor;
+            //     }
+            //     entry.importedGS = importedGS;
+            //     entry.mainToggle.SetIsOnWithoutNotify(true);
+            // }
 
-            foreach (LockstepImportGSEntry entry in importGSEntries)
-                if (!entry.mainToggle.isOn)
-                    entry.infoLabel.text = "not in imported data, unchanged";
+            // foreach (LockstepImportGSEntry entry in importGSEntries)
+            //     if (!entry.mainToggle.isOn)
+            //         entry.infoLabel.text = "not in imported data, unchanged";
 
-            int cannotImportCount = importedGameStates.Length - canImportCount;
-            importInfoText.text = $"Can import {(cannotImportCount == 0 ? "all " : "")}{canImportCount}"
-                + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}")
-                + $"\n<nobr><size=90%>{exportName ?? "<i>unnamed</i>"} "
-                + $"<size=60%>(from <size=75%>{exportWorldName}<size=60%>, "
-                + $"{exportDate.ToLocalTime():yyyy-MM-dd HH:mm})</nobr>";
-            importSelectedCount = canImportCount;
-            if (canImportCount != 0)
-            {
-                importSelectAllButton.interactable = true;
-                importSelectNoneButton.interactable = true;
-            }
-            UpdateImportSelectedCount();
-        }
-
-        public void ImportSelectAll()
-        {
-            importSelectedCount = 0;
-            foreach (LockstepImportGSEntry entry in importGSEntries)
-                if (entry.canImport)
-                {
-                    entry.mainToggle.SetIsOnWithoutNotify(true);
-                    importSelectedCount++;
-                }
-            UpdateImportSelectedCount();
-        }
-
-        public void ImportSelectNone()
-        {
-            foreach (LockstepImportGSEntry entry in importGSEntries)
-                if (entry.canImport)
-                    entry.mainToggle.SetIsOnWithoutNotify(false);
-            importSelectedCount = 0;
-            UpdateImportSelectedCount();
-        }
-
-        public void OnImportEntryToggled()
-        {
-            importSelectedCount = 0;
-            foreach (LockstepImportGSEntry entry in importGSEntries)
-                if (entry.canImport && entry.mainToggle.isOn)
-                    importSelectedCount++;
-            UpdateImportSelectedCount();
+            // int cannotImportCount = importedGameStates.Length - canImportCount;
+            // importInfoText.text = $"Can import {(cannotImportCount == 0 ? "all " : "")}{canImportCount}"
+            //     + (cannotImportCount == 0 ? "" : $", cannot import {cannotImportCount}")
+            //     + $"\n<nobr><size=90%>{exportName ?? "<i>unnamed</i>"} "
+            //     + $"<size=60%>(from <size=75%>{exportWorldName}<size=60%>, "
+            //     + $"{exportDate.ToLocalTime():yyyy-MM-dd HH:mm})</nobr>";
+            // importSelectedCount = canImportCount;
+            // if (canImportCount != 0)
+            // {
+            //     importSelectAllButton.interactable = true;
+            //     importSelectNoneButton.interactable = true;
+            // }
+            // UpdateImportSelectedCount();
         }
 
         private void UpdateImportSelectedCount()
@@ -362,106 +233,85 @@ namespace JanSharp.Internal
 
         public void ConfirmImport()
         {
-            if (!CanImport())
-            {
-                Debug.LogError("[Lockstep] Through means meant to be impossible the import button has been "
-                    + "pressed when it cannot actually import. Someone messed with something.");
-                return;
-            }
-            object[][] gameStatesToImport = new object[importSelectedCount][];
-            int i = 0;
-            foreach (LockstepImportGSEntry entry in importGSEntries)
-                if (entry.canImport && entry.mainToggle.isOn)
-                    gameStatesToImport[i++] = entry.importedGS;
-            lockstep.StartImport(exportDate, exportWorldName, exportName, gameStatesToImport);
-            CloseImportWindow();
+            // if (!CanImport())
+            // {
+            //     Debug.LogError("[Lockstep] Through means meant to be impossible the import button has been "
+            //         + "pressed when it cannot actually import. Someone messed with something.");
+            //     return;
+            // }
+            // object[][] gameStatesToImport = new object[importSelectedCount][];
+            // int i = 0;
+            // foreach (LockstepImportGSEntry entry in importGSEntries)
+            //     if (entry.canImport && entry.mainToggle.isOn)
+            //         gameStatesToImport[i++] = entry.importedGS;
+            // lockstep.StartImport(exportDate, exportWorldName, exportName, gameStatesToImport);
+            // CloseImportWindow();
         }
 
         private void ResetImport(bool leaveInputFieldUntouched = false)
         {
-            if (!leaveInputFieldUntouched)
-            {
-                // Does not raise OnImportSerializedTextEndEdit, because that's end edit, not text changed.
-                serializedInputField.text = "";
-            }
+            // if (!leaveInputFieldUntouched)
+            // {
+            //     // Does not raise OnImportSerializedTextEndEdit, because that's end edit, not text changed.
+            //     serializedInputField.text = "";
+            // }
 
-            foreach (LockstepImportGSEntry entry in importGSEntries)
-            {
-                if (!entry.gameState.GameStateSupportsImportExport)
-                {
-                    entry.infoLabel.text = "does not support import/export";
-                    continue;
-                }
-                entry.infoLabel.text = "";
-                entry.mainToggle.SetIsOnWithoutNotify(false);
-                entry.mainToggle.interactable = false;
-                entry.canImport = false;
-                entry.importedGS = null;
-            }
-            for (int i = 0; i < extraImportGSEntriesUsedCount; i++)
-            {
-                LockstepImportGSEntry entry = extraImportGSEntries[i];
-                entry.gameObject.SetActive(false);
-                entry.mainToggle.SetIsOnWithoutNotify(false);
-                entry.infoLabel.text = "";
-            }
-            extraImportGSEntriesUsedCount = 0;
-            importSelectedCount = 0;
-            importSelectedText.text = "";
-            importInfoText.text = "";
-            importSelectAllButton.interactable = false;
-            importSelectNoneButton.interactable = false;
-            UpdateImportButton();
-        }
-
-        public void ExportSelectAll()
-        {
-            exportSelectedCount = 0;
-            foreach (LockstepExportGSEntry entry in exportGSEntries)
-                if (entry.gameState.GameStateSupportsImportExport)
-                {
-                    entry.mainToggle.SetIsOnWithoutNotify(true);
-                    exportSelectedCount++;
-                }
-            UpdateExportSelectedCount();
-        }
-
-        public void ExportSelectNone()
-        {
-            foreach (LockstepExportGSEntry entry in exportGSEntries)
-                if (entry.gameState.GameStateSupportsImportExport)
-                    entry.mainToggle.SetIsOnWithoutNotify(false);
-            exportSelectedCount = 0;
-            UpdateExportSelectedCount();
+            // foreach (LockstepImportGSEntry entry in importGSEntries)
+            // {
+            //     if (!entry.gameState.GameStateSupportsImportExport)
+            //     {
+            //         entry.infoLabel.text = "does not support import/export";
+            //         continue;
+            //     }
+            //     entry.infoLabel.text = "";
+            //     entry.mainToggle.SetIsOnWithoutNotify(false);
+            //     entry.mainToggle.interactable = false;
+            //     entry.canImport = false;
+            //     entry.importedGS = null;
+            // }
+            // for (int i = 0; i < extraImportGSEntriesUsedCount; i++)
+            // {
+            //     LockstepImportGSEntry entry = extraImportGSEntries[i];
+            //     entry.gameObject.SetActive(false);
+            //     entry.mainToggle.SetIsOnWithoutNotify(false);
+            //     entry.infoLabel.text = "";
+            // }
+            // extraImportGSEntriesUsedCount = 0;
+            // importSelectedCount = 0;
+            // importSelectedText.text = "";
+            // importInfoText.text = "";
+            // importSelectAllButton.interactable = false;
+            // importSelectNoneButton.interactable = false;
+            // UpdateImportButton();
         }
 
         public void SetAutosaveSelected()
         {
-            LockstepGameState[] toAutosave = new LockstepGameState[exportGSEntries.Length];
-            int i = 0;
-            foreach (LockstepExportGSEntry entry in exportGSEntries)
-                if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
-                    toAutosave[i++] = entry.gameState;
-            // The rest are null and that's fine, GameStatesToAutosave will shorten the array when copying.
-            lockstep.GameStatesToAutosave = toAutosave; // Raises OnGameStatesToAutosaveChanged.
+            // LockstepGameState[] toAutosave = new LockstepGameState[exportGSEntries.Length];
+            // int i = 0;
+            // foreach (LockstepExportGSEntry entry in exportGSEntries)
+            //     if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
+            //         toAutosave[i++] = entry.gameState;
+            // // The rest are null and that's fine, GameStatesToAutosave will shorten the array when copying.
+            // lockstep.GameStatesToAutosave = toAutosave; // Raises OnGameStatesToAutosaveChanged.
         }
 
         private void UpdateAutosaveInfoLabelsReadingFromLockstep()
         {
-            LockstepGameState[] toAutosave = lockstep.GameStatesToAutosave;
-            DataDictionary lut = new DataDictionary();
-            foreach (LockstepGameState gs in toAutosave)
-                lut.Add(gs, true);
-            for (int i = 0; i < exportGSEntries.Length; i++)
-            {
-                LockstepExportGSEntry entry = exportGSEntries[i];
-                if (!entry.gameState.GameStateSupportsImportExport)
-                    continue;
-                bool doAutosave = lut.ContainsKey(entry.gameState);
-                entry.doAutosave = doAutosave;
-                entry.infoLabel.gameObject.SetActive(doAutosave);
-                mainGSEntries[i].autosaveText.gameObject.SetActive(doAutosave);
-            }
+            // LockstepGameState[] toAutosave = lockstep.GameStatesToAutosave;
+            // DataDictionary lut = new DataDictionary();
+            // foreach (LockstepGameState gs in toAutosave)
+            //     lut.Add(gs, true);
+            // for (int i = 0; i < exportGSEntries.Length; i++)
+            // {
+            //     LockstepExportGSEntry entry = exportGSEntries[i];
+            //     if (!entry.gameState.GameStateSupportsImportExport)
+            //         continue;
+            //     bool doAutosave = lut.ContainsKey(entry.gameState);
+            //     entry.doAutosave = doAutosave;
+            //     entry.infoLabel.gameObject.SetActive(doAutosave);
+            //     mainGSEntries[i].autosaveText.gameObject.SetActive(doAutosave);
+            // }
         }
 
         public void OnAutosaveIntervalFieldEndEdit()
@@ -507,23 +357,10 @@ namespace JanSharp.Internal
             lockstep.AutosaveIntervalSeconds = autosaveInterval * 60f; // Raises OnAutosaveIntervalSecondsChanged.
         }
 
-        public void OnExportEntryToggled()
+        private bool CanExport()
         {
-            exportSelectedCount = 0;
-            foreach (LockstepExportGSEntry entry in exportGSEntries)
-                if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
-                    exportSelectedCount++;
-            UpdateExportSelectedCount();
+            return isExportInitialized && !lockstep.IsImporting;
         }
-
-        private void UpdateExportSelectedCount()
-        {
-            UpdateExportButton();
-            exportSelectedText.text = $"selected: {exportSelectedCount}";
-            ResetExport();
-        }
-
-        private bool CanExport() => isExportInitialized && exportSelectedCount != 0 && !lockstep.IsImporting;
 
         private void UpdateExportButton()
         {
@@ -541,29 +378,15 @@ namespace JanSharp.Internal
                     + "pressed when it cannot actually export. Someone messed with something.");
                 return;
             }
-            LockstepGameState[] gameStates = new LockstepGameState[exportSelectedCount];
-            int i = 0;
-            foreach (LockstepExportGSEntry entry in exportGSEntries)
-                if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
-                    gameStates[i++] = entry.gameState;
             // It is a single line field so I would expect newlines to be impossible, however since I cannot
             // trust it, just in case they do exist they get removed, because according to lockstep's api they
             // are invalid.
             string exportName = exportNameField.text.Trim().Replace('\n', ' ').Replace('\r', ' ');
             if (exportName == "")
                 exportName = null;
-            serializedOutputField.text = lockstep.Export(gameStates, exportName);
-        }
-
-        private void ResetExport()
-        {
-            // Just clear the output field, leaving the selected state of all the export entries unchanged.
-            // This way closing and reopening the window doesn't actually change anything, however it does
-            // clear the output field as to not confuse the user what that data that's still in the output
-            // field actually contains.
-            // Also reset the output field whenever the selected state changes, for the same reason to not
-            // confuse the user.
-            serializedOutputField.text = "";
+            serializedOutputField.text = lockstep.Export(exportName, lockstep.GetAllCurrentExportOptions());
+            CloseOpenWindow();
+            OpenExportedDataWindow();
         }
 
         private void InstantAutosaveTimerUpdateLoop()
@@ -579,7 +402,7 @@ namespace JanSharp.Internal
             if (autosaveTimerUpdateLoopCounter == 0 || (--autosaveTimerUpdateLoopCounter) != 0)
                 return;
 
-            if (lockstep.GameStatesToAutosaveCount == 0)
+            if (lockstep.ExportOptionsForAutosave == null)
             {
                 autosaveTimerSlider.gameObject.SetActive(false);
                 return;

@@ -411,6 +411,27 @@ namespace JanSharp
         public abstract string GetDisplayName(uint playerId);
 
         /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract GenericValueEditor DummyEditor { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract LockstepGameStateOptionsData[] GetNewExportOptions();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract LockstepGameStateOptionsData[] GetAllCurrentExportOptions();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract void ShowExportOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData[] allExportOptions);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract void HideExportOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData[] allExportOptions);
+        /// <summary>
+        /// TODO: docs
         /// <para>Export the given <paramref name="gameStates"/> into a base 64 encoded string intended for
         /// users to copy and save externally such that the exported string can be passed to
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/> at a future point in time,
@@ -435,7 +456,7 @@ namespace JanSharp
         /// course exported data retrieved from <see cref="LockstepGameState.SerializeGameState(bool)"/>.
         /// Returns <see langword="null"/> if called at an invalid time or with invalid
         /// <paramref name="gameStates"/> or <paramref name="exportName"/>.</returns>
-        public abstract string Export(LockstepGameState[] gameStates, string exportName);
+        public abstract string Export(string exportName, LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
         /// TODO: docs
         /// </summary>
@@ -597,39 +618,43 @@ namespace JanSharp
         public abstract int GameStatesWaitingForImportCount { get; }
 
         /// <summary>
-        /// <para>Autosaves are written to the
-        /// <see href="https://docs.vrchat.com/docs/local-vrchat-storage">log file</see> and can be found by
-        /// searching for "<p>[Lockstep] Export:</p>". Log files are deleted if they are 24 hours old and
-        /// VRChat gets launched, so be sure to extract autosaves shortly after closing VRChat, if they are
-        /// needed.</para>
-        /// <para>When getting this property it will never be <see langword="null"/> and will only contain
-        /// entries with <see cref="LockstepGameState.GameStateSupportsImportExport"/> being
-        /// <see langword="true"/>.</para>
-        /// <para>Reading returns a copy of the internal array to prevent modifications.</para>
-        /// <para>Writing <see langword="null"/> is treated like writing an empty array.</para>
-        /// <para>Writing an array saves a copy of the given array.</para>
-        /// <para>When writing an array, any <see langword="null"/> or entries where
-        /// <see cref="LockstepGameState.GameStateSupportsImportExport"/> is <see langword="false"/> get
-        /// removed from the array. This enables simply taking <see cref="AllGameStates"/> and writing it to
-        /// <see cref="GameStatesToAutosave"/>, without having to filter them. And if one of them shouldn't be
-        /// autosaved it allows simply setting that one to <see langword="null"/> instead of having to create
-        /// another array and moving elements around.</para>
-        /// <para>When this array is non empty it will automatically be autosaving at the specified
-        /// <see cref="AutosaveIntervalSeconds"/>. If <see cref="IsAutosavePaused"/> is <see langword="true"/>
-        /// or <see cref="IsImporting"/> is <see langword="true"/> it will effectively pause the autosave
-        /// timer. Lockstep may also pause the timer at any time internally.</para>
-        /// <para>Whenever this value changes, <see cref="LockstepEventType.OnGameStatesToAutosaveChanged"/>
-        /// gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
-        /// within a frame the event only gets raised once (you can thank Udon).</para>
-        /// <para>All APIs related to autosaving are local only.</para>
-        /// <para>Default: Empty array.</para>
+        /// TODO: docs
         /// </summary>
-        public abstract LockstepGameState[] GameStatesToAutosave { get; set; }
-        /// <summary>
-        /// <para>Get the length of <see cref="GameStatesToAutosave"/> without performing an entire array
-        /// copy.</para>
-        /// </summary>
-        public abstract int GameStatesToAutosaveCount { get; }
+        public abstract LockstepGameStateOptionsData[] ExportOptionsForAutosave { get; set; }
+        // /// <summary>
+        // /// <para>Autosaves are written to the
+        // /// <see href="https://docs.vrchat.com/docs/local-vrchat-storage">log file</see> and can be found by
+        // /// searching for "<p>[Lockstep] Export:</p>". Log files are deleted if they are 24 hours old and
+        // /// VRChat gets launched, so be sure to extract autosaves shortly after closing VRChat, if they are
+        // /// needed.</para>
+        // /// <para>When getting this property it will never be <see langword="null"/> and will only contain
+        // /// entries with <see cref="LockstepGameState.GameStateSupportsImportExport"/> being
+        // /// <see langword="true"/>.</para>
+        // /// <para>Reading returns a copy of the internal array to prevent modifications.</para>
+        // /// <para>Writing <see langword="null"/> is treated like writing an empty array.</para>
+        // /// <para>Writing an array saves a copy of the given array.</para>
+        // /// <para>When writing an array, any <see langword="null"/> or entries where
+        // /// <see cref="LockstepGameState.GameStateSupportsImportExport"/> is <see langword="false"/> get
+        // /// removed from the array. This enables simply taking <see cref="AllGameStates"/> and writing it to
+        // /// <see cref="GameStatesToAutosave"/>, without having to filter them. And if one of them shouldn't be
+        // /// autosaved it allows simply setting that one to <see langword="null"/> instead of having to create
+        // /// another array and moving elements around.</para>
+        // /// <para>When this array is non empty it will automatically be autosaving at the specified
+        // /// <see cref="AutosaveIntervalSeconds"/>. If <see cref="IsAutosavePaused"/> is <see langword="true"/>
+        // /// or <see cref="IsImporting"/> is <see langword="true"/> it will effectively pause the autosave
+        // /// timer. Lockstep may also pause the timer at any time internally.</para>
+        // /// <para>Whenever this value changes, <see cref="LockstepEventType.OnGameStatesToAutosaveChanged"/>
+        // /// gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
+        // /// within a frame the event only gets raised once (you can thank Udon).</para>
+        // /// <para>All APIs related to autosaving are local only.</para>
+        // /// <para>Default: Empty array.</para>
+        // /// </summary>
+        // public abstract LockstepGameState[] GameStatesToAutosave { get; set; }
+        // /// <summary>
+        // /// <para>Get the length of <see cref="GameStatesToAutosave"/> without performing an entire array
+        // /// copy.</para>
+        // /// </summary>
+        // public abstract int GameStatesToAutosaveCount { get; }
         /// <summary>
         /// <para>Negative values get clamped to 0f, which means "autosave every frame" so long as autosaves
         /// are not <see cref="IsAutosavePaused"/> as well as autosaves not being blocked through other means

@@ -370,6 +370,10 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - [ ] raise event delayed by ticks, game state safe.
 - [ ] ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
 - [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
+- [ ] add LockstepAPI lockstep field to LockstepGameState directly
+- [ ] add WriteFlags and ReadFlags with 8 overloads each, allowing to read and write up to 8 booleans
+- [ ] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
+- [ ] must not show import export option UIs before they're initialized - before OnInit or OnClientBeginCatchUp is raised
 - [x] does the local player exist already in the client states game state at the time of OnClientBeginCatchUp being raised?
 - [x] deduplicate UI updates in info UI now that latency preferences changes raise events
 - [x] rate limit updating the master preference when using the slider

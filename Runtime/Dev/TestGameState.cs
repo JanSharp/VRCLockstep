@@ -9,14 +9,20 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class TestGameState : LockstepGameState
     {
-        [SerializeField] private TestGameStateUI ui;
         [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
+        [SerializeField] [HideInInspector] [SingletonReference] private WannaBeClassesManager wannaBeClasses;
+
+        [SerializeField] private TestGameStateUI ui;
+        [SerializeField] private TestGSExportUI exportUI;
+        [SerializeField] private TestGSImportUI importUI;
 
         public override string GameStateInternalName => "jansharp.lockstep-test";
         public override string GameStateDisplayName => "Test Game State";
         public override bool GameStateSupportsImportExport => true;
         public override uint GameStateDataVersion => 0u;
         public override uint GameStateLowestSupportedDataVersion => 0u;
+        public override LockstepGameStateOptionsUI ExportUI => exportUI;
+        public override LockstepGameStateOptionsUI ImportUI => importUI;
 
         /// <summary>uint playerId => PlayerData</summary>
         [System.NonSerialized] public DataDictionary allPlayerData = new DataDictionary();
@@ -154,9 +160,16 @@ namespace JanSharp
             ui.UpdateUI();
         }
 
-        public override void SerializeGameState(bool isExport)
+        public override void SerializeGameState(bool isExport, LockstepGameStateOptionsData exportOptions)
         {
             Debug.Log("<dlt> TestGameState  SerializeGameState");
+            TestGSExportOptions options = (TestGSExportOptions)exportOptions;
+            if (isExport)
+            {
+                lockstep.WriteByte((byte)(options.shouldExport ? 1 : 0));
+                if (!options.shouldExport)
+                    return;
+            }
 
             int count = allPlayerData.Count;
             lockstep.WriteSmallUInt((uint)count);
@@ -170,9 +183,12 @@ namespace JanSharp
             }
         }
 
-        public override string DeserializeGameState(bool isImport, uint importedDataVersion)
+        public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
+            TestGSImportOptions options = (TestGSImportOptions)importOptions;
+            if (isImport && (!options.shouldImport || lockstep.ReadByte() == 0))
+                return null;
 
             int count = (int)lockstep.ReadSmallUInt();
             for (int j = 0; j < count; j++)

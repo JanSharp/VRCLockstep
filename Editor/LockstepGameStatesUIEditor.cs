@@ -31,16 +31,9 @@ namespace JanSharp.Internal
             }
 
             GameObject mainGSEntryPrefab = (GameObject)proxy.FindProperty("mainGSEntryPrefab").objectReferenceValue;
-            GameObject importGSEntryPrefab = (GameObject)proxy.FindProperty("importGSEntryPrefab").objectReferenceValue;
-            GameObject exportGSEntryPrefab = (GameObject)proxy.FindProperty("exportGSEntryPrefab").objectReferenceValue;
             Transform mainGSList = (Transform)proxy.FindProperty("mainGSList").objectReferenceValue;
-            Transform importGSList = (Transform)proxy.FindProperty("importGSList").objectReferenceValue;
-            Transform exportGSList = (Transform)proxy.FindProperty("exportGSList").objectReferenceValue;
-            TextMeshProUGUI exportSelectedText = (TextMeshProUGUI)proxy.FindProperty("exportSelectedText").objectReferenceValue;
             Button confirmExportButton = (Button)proxy.FindProperty("confirmExportButton").objectReferenceValue;
-            if (mainGSEntryPrefab == null || importGSEntryPrefab == null || exportGSEntryPrefab == null
-                || mainGSList == null || importGSList == null || exportGSList == null
-                || exportSelectedText == null || confirmExportButton == null)
+            if (mainGSEntryPrefab == null || mainGSList == null || confirmExportButton == null)
             {
                 Debug.LogError("[Lockstep] The Lockstep Game State UI is missing internal references.", gameStatesUI);
                 return false;
@@ -54,56 +47,8 @@ namespace JanSharp.Internal
                 postfix: " (MainGSEntry)",
                 list: mainGSList,
                 prefab: mainGSEntryPrefab);
-            PopulateList<LockstepImportGSEntry>(
-                allGameStates: allGameStates,
-                proxy: proxy,
-                entriesArrayName: "importGSEntries",
-                postfix: " (ImportGSEntry)",
-                list: importGSList,
-                prefab: importGSEntryPrefab,
-                leaveInteractableUnchanged: true,
-                callback: (inst, gs) => {
-                    SerializedObject instProxy = new SerializedObject(inst);
-                    instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
-                    instProxy.FindProperty("gameState").objectReferenceValue = gs;
-                    instProxy.ApplyModifiedProperties();
-
-                    SerializedObject infoLabelProxy = new SerializedObject(inst.infoLabel);
-                    infoLabelProxy.FindProperty("m_text").stringValue = gs.GameStateSupportsImportExport
-                        ? ""
-                        : "does not support import/export";
-                    infoLabelProxy.ApplyModifiedProperties();
-                });
-            PopulateList<LockstepExportGSEntry>(
-                allGameStates: allGameStates,
-                proxy: proxy,
-                entriesArrayName: "exportGSEntries",
-                postfix: " (ExportGSEntry)",
-                list: exportGSList,
-                prefab: exportGSEntryPrefab,
-                leaveIsOnUnchanged: true,
-                callback: (inst, gs) => {
-                    SerializedObject instProxy = new SerializedObject(inst);
-                    instProxy.FindProperty("gameStatesUI").objectReferenceValue = gameStatesUI;
-                    instProxy.FindProperty("gameState").objectReferenceValue = gs;
-                    instProxy.ApplyModifiedProperties();
-
-                    SerializedObject infoLabelProxy = new SerializedObject(inst.infoLabel);
-                    infoLabelProxy.FindProperty("m_text").stringValue = gs.GameStateSupportsImportExport
-                        ? "autosave"
-                        : "does not support import/export";
-                    infoLabelProxy.ApplyModifiedProperties();
-
-                    SerializedObject infoObjProxy = new SerializedObject(inst.infoLabel.gameObject);
-                    infoObjProxy.FindProperty("m_IsActive").boolValue = !gs.GameStateSupportsImportExport;
-                    infoObjProxy.ApplyModifiedProperties();
-                });
 
             int supportedCount = allGameStates.Count(gs => gs.GameStateSupportsImportExport);
-            proxy.FindProperty("exportSelectedCount").intValue = supportedCount;
-            SerializedObject exportSelectedTextProxy = new SerializedObject(exportSelectedText);
-            exportSelectedTextProxy.FindProperty("m_text").stringValue = $"selected: {supportedCount}";
-            exportSelectedTextProxy.ApplyModifiedProperties();
             SerializedObject confirmExportButtonProxy = new SerializedObject(confirmExportButton);
             confirmExportButtonProxy.FindProperty("m_Interactable").boolValue = supportedCount != 0;
             confirmExportButtonProxy.ApplyModifiedProperties();
@@ -181,6 +126,22 @@ namespace JanSharp.Internal
                 Undo.DestroyObjectImmediate(list.GetChild(list.childCount - 1).gameObject);
 
             EditorUtil.SetArrayProperty(proxy.FindProperty(entriesArrayName), entries, (p, v) => p.objectReferenceValue = v);
+        }
+    }
+
+    [CanEditMultipleObjects]
+    [CustomEditor(typeof(LockstepGameStatesUI))]
+    public class LockstepGameStatesUIEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            if (UdonSharpGUI.DrawDefaultUdonSharpBehaviourHeader(targets))
+                return;
+            #if LockstepDebug
+            EditorGUILayout.Space();
+            GUILayout.Label("Debug", EditorStyles.boldLabel);
+            DrawDefaultInspector();
+            #endif
         }
     }
 }
