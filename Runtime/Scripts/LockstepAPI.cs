@@ -417,6 +417,10 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
+        public abstract bool ExportUIIsShown { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
         public abstract LockstepGameStateOptionsData[] GetNewExportOptions();
         /// <summary>
         /// TODO: docs
@@ -621,6 +625,7 @@ namespace JanSharp
         /// TODO: docs
         /// </summary>
         public abstract LockstepGameStateOptionsData[] ExportOptionsForAutosave { get; set; }
+        // TODO: reuse some of these docs for the above, probably
         // /// <summary>
         // /// <para>Autosaves are written to the
         // /// <see href="https://docs.vrchat.com/docs/local-vrchat-storage">log file</see> and can be found by

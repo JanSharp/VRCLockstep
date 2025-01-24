@@ -373,7 +373,8 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - [ ] add LockstepAPI lockstep field to LockstepGameState directly
 - [ ] add WriteFlags and ReadFlags with 8 overloads each, allowing to read and write up to 8 booleans
 - [ ] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
-- [ ] must not show import export option UIs before they're initialized - before OnInit or OnClientBeginCatchUp is raised
+- [ ] disable import/export buttons in game states UI until OnInit or OnClientBeginCatchUp is raised
+- [x] must not show import export option UIs before they're initialized - before OnInit or OnClientBeginCatchUp is raised
 - [x] does the local player exist already in the client states game state at the time of OnClientBeginCatchUp being raised?
 - [x] deduplicate UI updates in info UI now that latency preferences changes raise events
 - [x] rate limit updating the master preference when using the slider

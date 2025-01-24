@@ -3385,12 +3385,19 @@ namespace JanSharp.Internal
             return allOptions;
         }
 
+        private bool exportUIIsShown = false;
+        public override bool ExportUIIsShown => exportUIIsShown;
+
         public override LockstepGameStateOptionsData[] GetAllCurrentExportOptions()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetAllCurrentExportOptions");
             #endif
-            // TODO: must only be called while export options editor is shown
+            if (!exportUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to GetAllCurrentExportOptions while export UI is not shown.");
+                return null;
+            }
             LockstepGameStateOptionsData[] allOptions = new LockstepGameStateOptionsData[gameStatesCountSupportingExport];
             int i = 0;
             foreach (LockstepGameState gameState in allGameStates)
@@ -3412,7 +3419,16 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ShowExportOptionsEditor");
             #endif
-            // TODO: must only be called while export options editor is hidden
+            if (!initializedEnoughForImportExport)
+            {
+                Debug.LogError($"[Lockstep] Attempt to ShowExportOptionsEditor before InitializedEnoughForImportExport is true.");
+                return;
+            }
+            if (exportUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to ShowExportOptionsEditor while export UI is already shown.");
+                return;
+            }
             int i = 0;
             foreach (LockstepGameState gameState in allGameStates)
                 if (gameState.GameStateSupportsImportExport)
@@ -3432,7 +3448,11 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  HideExportOptionsEditor");
             #endif
-            // TODO: must only be called while export options editor is shown
+            if (!exportUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to HideExportOptionsEditor while export UI is already hidden.");
+                return;
+            }
             int i = 0;
             foreach (LockstepGameState gameState in allGameStates)
                 if (gameState.GameStateSupportsImportExport)
@@ -3868,60 +3888,6 @@ namespace JanSharp.Internal
                 StartOrStopAutosave();
             }
         }
-
-        // private LockstepGameState[] gameStatesToAutosave = new LockstepGameState[0];
-        // public override LockstepGameState[] GameStatesToAutosave // TODO: remove
-        // {
-        //     get
-        //     {
-        //         int length = gameStatesToAutosave.Length;
-        //         LockstepGameState[] result = new LockstepGameState[length];
-        //         gameStatesToAutosave.CopyTo(result, 0);
-        //         return result;
-        //     }
-        //     set
-        //     {
-        //         #if LockstepDebug
-        //         Debug.Log($"[LockstepDebug] Lockstep  GameStatesToAutosave.set");
-        //         #endif
-        //         if (value == null)
-        //         {
-        //             if (gameStatesToAutosave.Length == 0)
-        //                 return;
-        //             gameStatesToAutosave = new LockstepGameState[0];
-        //             StartOrStopAutosave();
-        //             MarkForOnGameStatesToAutosaveChanged();
-        //             return;
-        //         }
-
-        //         int validCount = 0;
-        //         bool identical = true;
-        //         foreach (LockstepGameState gs in value)
-        //             if (gs != null && gs.GameStateSupportsImportExport)
-        //             {
-        //                 if (validCount >= gameStatesToAutosave.Length || gs != gameStatesToAutosave[validCount])
-        //                     identical = false;
-        //                 validCount++;
-        //             }
-        //         if (identical && validCount == gameStatesToAutosave.Length) // To only raise the event if it actually changed.
-        //             return;
-
-        //         gameStatesToAutosave = new LockstepGameState[validCount];
-        //         if (validCount == 0)
-        //         {
-        //             StartOrStopAutosave();
-        //             MarkForOnGameStatesToAutosaveChanged();
-        //             return;
-        //         }
-        //         int i = 0;
-        //         foreach (LockstepGameState gs in value)
-        //             if (gs != null && gs.GameStateSupportsImportExport)
-        //                 gameStatesToAutosave[i++] = gs;
-        //         StartOrStopAutosave();
-        //         MarkForOnGameStatesToAutosaveChanged();
-        //     }
-        // }
-        // public override int GameStatesToAutosaveCount => gameStatesToAutosave.Length;
 
         private float autosaveIntervalSeconds = 300f;
         public override float AutosaveIntervalSeconds
