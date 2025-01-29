@@ -1255,19 +1255,24 @@ namespace JanSharp.Internal
             RaiseOnInit();
             RaiseOnClientJoined(localPlayerId);
             isTickPaused = false;
-            InitAllExportOptionsWidgetData();
+            InitAllImportExportOptionsWidgetData();
             tickStartTimeShift = 0f;
             SetTickStartTime();
         }
 
-        private void InitAllExportOptionsWidgetData()
+        private void InitAllImportExportOptionsWidgetData()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  InitAllExportOptionsWidgetData");
+            Debug.Log($"[LockstepDebug] Lockstep  InitAllImportExportOptionsWidgetData");
             #endif
             foreach (LockstepGameState gameState in allGameStates)
-                if (gameState.GameStateSupportsImportExport && gameState.ExportUI != null)
-                    gameState.ExportUI.InitWidgetData(DummyEditor);
+                if (gameState.GameStateSupportsImportExport)
+                {
+                    if (gameState.ExportUI != null)
+                        gameState.ExportUI.InitWidgetData(DummyEditor);
+                    if (gameState.ImportUI != null)
+                        gameState.ImportUI.InitWidgetData(DummyEditor);
+                }
         }
 
         /// <summary>
@@ -2446,8 +2451,11 @@ namespace JanSharp.Internal
             SetDilatedTickStartTime(); // Right before DeserializeGameState.
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u, null);
             LockstepGameStateOptionsUI exportUI = allGameStates[gameStateIndex].ExportUI;
+            LockstepGameStateOptionsUI importUI = allGameStates[gameStateIndex].ImportUI;
             if (exportUI != null)
                 exportUI.InitWidgetData(DummyEditor);
+            if (importUI != null)
+                importUI.InitWidgetData(DummyEditor);
             if (errorMessage != null)
                 RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
             TryMoveToNextLJSerializedGameState();
@@ -3365,8 +3373,6 @@ namespace JanSharp.Internal
         private bool isSerializingForExport = false;
         public override bool IsSerializingForExport => isSerializingForExport;
 
-        private uint[] crc32LookupCache;
-
         public override LockstepGameStateOptionsData[] GetNewExportOptions()
         {
             #if LockstepDebug
@@ -3407,9 +3413,8 @@ namespace JanSharp.Internal
                     LockstepGameStateOptionsUI exportUI = gameState.ExportUI;
                     if (exportUI == null)
                         continue;
-                    LockstepGameStateOptionsData options = exportUI.CurrentOptionsInternal;
-                    exportUI.UpdateCurrentOptionsFromWidgetsInternal(options);
-                    allOptions[i - 1] = options;
+                    exportUI.UpdateCurrentOptionsFromWidgets();
+                    allOptions[i - 1] = exportUI.CurrentOptionsInternal;
                 }
             return allOptions;
         }
@@ -3429,6 +3434,7 @@ namespace JanSharp.Internal
                 Debug.LogError($"[Lockstep] Attempt to ShowExportOptionsEditor while export UI is already shown.");
                 return;
             }
+            exportUIIsShown = true;
             int i = 0;
             foreach (LockstepGameState gameState in allGameStates)
                 if (gameState.GameStateSupportsImportExport)
@@ -3453,6 +3459,7 @@ namespace JanSharp.Internal
                 Debug.LogError($"[Lockstep] Attempt to HideExportOptionsEditor while export UI is already hidden.");
                 return;
             }
+            exportUIIsShown = false;
             int i = 0;
             foreach (LockstepGameState gameState in allGameStates)
                 if (gameState.GameStateSupportsImportExport)
@@ -3467,6 +3474,105 @@ namespace JanSharp.Internal
                 }
         }
 
+        public override DataDictionary GetNewImportOptions()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetNewImportOptions");
+            #endif
+            DataDictionary allOptions = new DataDictionary();
+            foreach (LockstepGameState gameState in allGameStates)
+                if (gameState.GameStateSupportsImportExport && gameState.ImportUI != null)
+                    allOptions.Add(gameState.GameStateInternalName, gameState.ImportUI.NewOptionsInternal());
+            return allOptions;
+        }
+
+        private bool importUIIsShown = false;
+        public override bool ImportUIIsShown => importUIIsShown;
+
+        public override void UpdateAllCurrentImportOptionsFromWidgets(object[][] importedGameStates)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetAllCurrentImportOptions");
+            #endif
+            if (!importUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to GetAllCurrentImportOptions while import UI is not shown.");
+                return;
+            }
+            foreach (LockstepGameState gameState in allGameStates)
+                if (gameState.GameStateSupportsImportExport && gameState.ImportUI != null)
+                    gameState.ImportUI.UpdateCurrentOptionsFromWidgets();
+        }
+
+        public override void AssociateImportOptionsWithImportedGameStates(object[][] importedGameStates, DataDictionary allImportOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  AssociateImportOptionsWithImportedGameStates");
+            #endif
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
+                if (gameState == null || gameState.ImportUI == null)
+                    continue;
+                LockstepImportedGS.SetImportOptions(
+                    importedGS,
+                    allImportOptions.TryGetValue(gameState.GameStateInternalName, out DataToken optionsToken)
+                        ? (LockstepGameStateOptionsData)optionsToken.Reference
+                        : null);
+            }
+        }
+
+        public override void ShowImportOptionsEditor(LockstepOptionsEditorUI ui, object[][] importedGameStates)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  ShowImportOptionsEditor");
+            #endif
+            if (!initializedEnoughForImportExport)
+            {
+                Debug.LogError($"[Lockstep] Attempt to ShowImportOptionsEditor before InitializedEnoughForImportExport is true.");
+                return;
+            }
+            if (importUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to ShowImportOptionsEditor while import UI is already shown.");
+                return;
+            }
+            importUIIsShown = true;
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
+                LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
+                if (gameState == null || gameState.ImportUI == null || importOptions == null)
+                    continue;
+                gameState.ImportUI.CurrentOptionsInternal = importOptions;
+                SetReadStream(LockstepImportedGS.GetBinaryData(importedGS));
+                gameState.ImportUI.OnOptionsEditorShowInternal(ui, importOptions);
+            }
+        }
+
+        public override void HideImportOptionsEditor(LockstepOptionsEditorUI ui, object[][] importedGameStates)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  HideImportOptionsEditor");
+            #endif
+            if (!importUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to HideImportOptionsEditor while import UI is already hidden.");
+                return;
+            }
+            importUIIsShown = false;
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
+                LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
+                if (gameState == null || gameState.ImportUI != null || importOptions == null)
+                    continue;
+                // gameState.ImportUI.CurrentOptionsInternal = importOptions; // Shouldn't need to, since Show already does it.
+                gameState.ImportUI.OnOptionsEditorHideInternal(ui, importOptions);
+            }
+        }
+
+        private uint[] crc32LookupCache;
         public override string Export(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
             #if LockstepDebug
@@ -3637,7 +3743,7 @@ namespace JanSharp.Internal
             return importedGameStates;
         }
 
-        public override void StartImport(System.DateTime exportDate, string exportWorldName, string exportName, object[][] importedGameStates)
+        public override void StartImport(object[][] importedGameStates, System.DateTime exportDate, string exportWorldName, string exportName)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartImport");
@@ -3789,6 +3895,7 @@ namespace JanSharp.Internal
             #endif
             WriteSmallUInt((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
             WriteSmallUInt(LockstepImportedGS.GetDataVersion(importedGS));
+            WriteCustomNullableClass(LockstepImportedGS.GetImportOptions(importedGS));
             WriteBytes(LockstepImportedGS.GetBinaryData(importedGS));
             SendInputAction(importGameStateIAId);
         }
@@ -3804,15 +3911,18 @@ namespace JanSharp.Internal
             LockstepGameState gameState = allGameStates[gameStateIndex];
             if (!gameStatesWaitingForImport.Remove(gameStateIndex))
             {
-                Debug.LogError($"[Lockstep] Impossible: A game state received import data even though it was "
-                    + $"Not marked as waiting for import. Ignoring incoming data. (Unless we received an "
-                    + "input action from a player for whom we got the player left event over 1 second ago...)");
+                Debug.LogError($"[Lockstep] Impossible: The game state {gameState.GameStateInternalName} "
+                    + $"received import data even though it was not marked as waiting for import. "
+                    + $"Ignoring incoming data. (Unless we received an input action from a player for whom "
+                    + $"we got the player left event over 1 second ago...)");
                 return;
             }
             importedDataVersion = ReadSmallUInt();
+            if (!TryReadImportOptions(gameState, out LockstepGameStateOptionsData importOptions))
+                return;
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             isDeserializingForImport = true;
-            importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion, null); // TODO: import options
+            importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion, importOptions);
             isDeserializingForImport = false;
             if (importErrorMessage != null)
                 RaiseOnLockstepNotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
@@ -3823,6 +3933,25 @@ namespace JanSharp.Internal
             importedDataVersion = 0u;
             if (gameStatesWaitingForImport.Count == 0)
                 SetIsImporting(false);
+        }
+
+        private bool TryReadImportOptions(LockstepGameState gameState, out LockstepGameStateOptionsData importOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  TryReadImportOptions");
+            #endif
+            if (gameState.ImportUI != null)
+            {
+                importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(gameState.ImportUI.OptionsClassName);
+                return true;
+            }
+            importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(nameof(LockstepGameStateOptionsData));
+            if (importOptions == null)
+                return true;
+            Debug.LogError($"[Lockstep] Impossible: The game state {gameState.GameStateInternalName} "
+                + $"received import options even though it does not have an import UI which subsequently "
+                + $"means it does not have an associated import options class name. Ignoring incoming data.");
+            return false;
         }
 
         private void CheckIfImportingPlayerLeft(uint leftPlayerId)

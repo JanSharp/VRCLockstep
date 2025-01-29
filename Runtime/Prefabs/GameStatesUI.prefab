@@ -6174,9 +6174,7 @@ MonoBehaviour:
   autosaveTimerSlider: {fileID: 3970646879236373889}
   autosaveTimerText: {fileID: 5536368933076519069}
   importWindow: {fileID: 8315912741185170229}
-  importSelectedText: {fileID: 4859878675522975124}
   serializedInputField: {fileID: 919755900000159317}
-  importInfoText: {fileID: 8315912740984491370}
   importOptionsUI: {fileID: 3577987253430870966}
   confirmImportButton: {fileID: 8315912742696054417}
   confirmImportButtonText: {fileID: 8315912742193930586}
@@ -8020,7 +8018,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8315912741639554205
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11205,7 +11203,7 @@ PrefabInstance:
     - target: {fileID: 8782087542515302364, guid: db84a2b42bc08f2eead1cec975819c77,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: -149
+      value: -105
       objectReference: {fileID: 0}
     - target: {fileID: 8782087542515302364, guid: db84a2b42bc08f2eead1cec975819c77,
         type: 3}
@@ -11250,7 +11248,7 @@ PrefabInstance:
     - target: {fileID: 8782087542515302364, guid: db84a2b42bc08f2eead1cec975819c77,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -116
+      value: -72
       objectReference: {fileID: 0}
     - target: {fileID: 8782087542515302364, guid: db84a2b42bc08f2eead1cec975819c77,
         type: 3}

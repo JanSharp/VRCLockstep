@@ -18,5 +18,6 @@ return {
     {type = "LockstepGameState", name = "gameState"},
     {type = "int", name = "gameStateIndex"},
     {type = "string", name = "errorMsg"},
+    {type = "LockstepGameStateOptionsData", name = "importOptions"},
   },
 }

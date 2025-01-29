@@ -436,6 +436,38 @@ namespace JanSharp
         public abstract void HideExportOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
         /// TODO: docs
+        /// </summary>
+        public abstract bool ImportUIIsShown { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <returns></returns>
+        public abstract DataDictionary GetNewImportOptions();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="importedGameStates"></param>
+        public abstract void UpdateAllCurrentImportOptionsFromWidgets(object[][] importedGameStates);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="importedGameStates"></param>
+        /// <param name="allImportOptions"></param>
+        public abstract void AssociateImportOptionsWithImportedGameStates(object[][] importedGameStates, DataDictionary allImportOptions);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="ui"></param>
+        /// <param name="allImportOptions"></param>
+        public abstract void ShowImportOptionsEditor(LockstepOptionsEditorUI ui, object[][] importedGameStates);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="ui"></param>
+        /// <param name="allImportOptions"></param>
+        public abstract void HideImportOptionsEditor(LockstepOptionsEditorUI ui, object[][] importedGameStates);
+        /// <summary>
+        /// TODO: docs
         /// <para>Export the given <paramref name="gameStates"/> into a base 64 encoded string intended for
         /// users to copy and save externally such that the exported string can be passed to
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/> at a future point in time,
@@ -501,6 +533,7 @@ namespace JanSharp
             out string exportWorldName,
             out string exportName);
         /// <summary>
+        /// TODO: docs, mentioning associated options
         /// <para>Start importing game states using data obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>. This requires sending of
         /// input actions. It is also only allowed to be called if <see cref="IsImporting"/> is
@@ -508,6 +541,8 @@ namespace JanSharp
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
+        /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
+        /// obtained from <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
         /// <param name="exportDate">The UTC date and time obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
         /// <param name="exportWorldName">The name obtained from
@@ -519,13 +554,11 @@ namespace JanSharp
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>. If you provide a
         /// different name and that happens to contain "<c>\n</c>" or "<c>\r</c>" then those will silently be
         /// replaced with white spaces.</param>
-        /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
-        /// obtained from <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>.</param>
         public abstract void StartImport(
+            object[][] importedGameStates,
             System.DateTime exportDate,
             string exportWorldName,
-            string exportName,
-            object[][] importedGameStates);
+            string exportName);
         /// <summary>
         /// <para>Is an import of game states currently in progress? If yes, other properties with
         /// <c>Import</c> in the name can be used to obtain more information about the ongoing import.</para>

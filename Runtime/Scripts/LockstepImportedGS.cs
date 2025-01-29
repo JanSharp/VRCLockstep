@@ -24,7 +24,9 @@ namespace JanSharp
         public const int GameStateIndex = 5;
         ///<summary>string</summary>
         public const int ErrorMsg = 6;
-        public const int ObjectSize = 7;
+        ///<summary>LockstepGameStateOptionsData</summary>
+        public const int ImportOptions = 7;
+        public const int ObjectSize = 8;
 
         public static object[] New(
             string internalName = default,
@@ -33,7 +35,8 @@ namespace JanSharp
             byte[] binaryData = default,
             LockstepGameState gameState = default,
             int gameStateIndex = default,
-            string errorMsg = default)
+            string errorMsg = default,
+            LockstepGameStateOptionsData importOptions = default)
         {
             object[] lockstepImportedGS = new object[ObjectSize];
             lockstepImportedGS[InternalName] = internalName;
@@ -43,6 +46,7 @@ namespace JanSharp
             lockstepImportedGS[GameState] = gameState;
             lockstepImportedGS[GameStateIndex] = gameStateIndex;
             lockstepImportedGS[ErrorMsg] = errorMsg;
+            lockstepImportedGS[ImportOptions] = importOptions;
             return lockstepImportedGS;
         }
 
@@ -74,5 +78,9 @@ namespace JanSharp
             => (string)lockstepImportedGS[ErrorMsg];
         public static void SetErrorMsg(object[] lockstepImportedGS, string errorMsg)
             => lockstepImportedGS[ErrorMsg] = errorMsg;
+        public static LockstepGameStateOptionsData GetImportOptions(object[] lockstepImportedGS)
+            => (LockstepGameStateOptionsData)lockstepImportedGS[ImportOptions];
+        public static void SetImportOptions(object[] lockstepImportedGS, LockstepGameStateOptionsData importOptions)
+            => lockstepImportedGS[ImportOptions] = importOptions;
     }
 }

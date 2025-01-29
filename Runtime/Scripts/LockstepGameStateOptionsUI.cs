@@ -11,6 +11,7 @@ namespace JanSharp
     public abstract class LockstepGameStateOptionsUI : UdonSharpBehaviour
     {
         [HideInInspector] [SingletonReference] public WannaBeClassesManager wannaBeClasses;
+        public abstract string OptionsClassName { get; }
 
         // HACK: I hate that you have to make a field for this in the deriving class with the correct type.
         public LockstepGameStateOptionsData CurrentOptionsInternal
@@ -32,12 +33,6 @@ namespace JanSharp
             // HACK: I hate that you have to make a field for this in the deriving class with the correct type.
             SetProgramVariable("options", options);
             ValidateOptions();
-        }
-
-        public void UpdateCurrentOptionsFromWidgetsInternal(LockstepGameStateOptionsData options)
-        {
-            SetProgramVariable("options", options);
-            UpdateCurrentOptionsFromWidgets();
         }
 
         public void OnOptionsEditorShowInternal(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData options)

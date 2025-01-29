@@ -11,18 +11,32 @@ namespace JanSharp
         [SerializeField] private GenericValueEditor editor;
         private GroupingWidgetData root;
         private FoldOutWidgetData general;
+        private FoldOutWidgetData info;
         public GenericValueEditor Editor => editor;
         public GroupingWidgetData Root => root;
+        public FoldOutWidgetData Info => info;
         public FoldOutWidgetData General => general;
 
         public void Init()
         {
             root = editor.NewGrouping();
-            general = root.AddChild(editor.NewFoldOutScope("General Options", true));
+            info = editor.NewFoldOutScope("Info", true);
+            general = editor.NewFoldOutScope("General Options", true);
+        }
+
+        public void Clear()
+        {
+            root.ClearChildren();
+            info.ClearChildren();
+            general.ClearChildren();
+            root.AddChild(info);
+            root.AddChild(general);
         }
 
         public void Draw()
         {
+            info.IsVisible = info.childWidgetsCount != 0;
+            general.IsVisible = general.childWidgetsCount != 0;
             editor.Draw(new WidgetData[] { root });
         }
     }
