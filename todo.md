@@ -18,6 +18,7 @@
 - [ ] expose current import/export options on every game state throughout the entire duration of each game state being imported/exported
 - [ ] use masking instead of truncate, I think that way when it does overflow you can still use the End button to get to the end of an input field, requires testing
 - [ ] add autosaving to game states UI again
+- [ ] update notes in regards to import export options and UI events
 - [x] do not sort game states by them supporting import export in lockstep editor scripting
 - [x] think about ValidateOptions again for import and probably also export
 - [x] clear import UI and show info message about pasting exported data into the input field when opening the import UI
