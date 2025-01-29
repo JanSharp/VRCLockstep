@@ -375,8 +375,9 @@ These 2 aren't really events, but they are called by the Lockstep system.
 - [ ] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
 - [ ] disable import/export buttons in game states UI until OnInit or OnClientBeginCatchUp is raised
 - [ ] expose current import/export options on every game state throughout the entire duration of each game state being imported/exported
-- [ ] do not sort game states by them supporting import export in lockstep editor scripting
 - [ ] use masking instead of truncate, I think that way when it does overflow you can still use the End button to get to the end of an input field, requires testing
+- [ ] add autosaving to game states UI again
+- [x] do not sort game states by them supporting import export in lockstep editor scripting
 - [x] think about ValidateOptions again for import and probably also export
 - [x] clear import UI and show info message about pasting exported data into the input field when opening the import UI
 - [x] consecutive imports appear to make custom import options disappear, somehow

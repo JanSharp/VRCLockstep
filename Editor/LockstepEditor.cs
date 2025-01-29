@@ -59,8 +59,7 @@ namespace JanSharp.Internal
             SerializedObject lockstepSo = new SerializedObject(lockstep);
 
             allGameStates = allGameStates
-                .OrderByDescending(gs => gs.GameStateSupportsImportExport)
-                .ThenBy(gs => gs.GameStateDisplayName)
+                .OrderBy(gs => gs.GameStateDisplayName)
                 .ThenBy(gs => gs.GameStateInternalName)
                 .ToList();
             EditorUtil.SetArrayProperty(
