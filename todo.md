@@ -13,7 +13,7 @@
 - [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
 - [ ] add LockstepAPI lockstep field to LockstepGameState directly
 - [ ] add WriteFlags and ReadFlags with 8 overloads each, allowing to read and write up to 8 booleans
-- [ ] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
+- [x] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
 - [ ] disable import/export buttons in game states UI until OnInit or OnClientBeginCatchUp is raised
 - [ ] expose current import/export options on every game state throughout the entire duration of each game state being imported/exported
 - [ ] use masking instead of truncate, I think that way when it does overflow you can still use the End button to get to the end of an input field, requires testing
