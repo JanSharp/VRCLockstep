@@ -31,6 +31,7 @@
 - [x] should there be a get function for current import options?
 - [ ] should setting "use export options" for autosaving overwrite autosave options entirely? I think so, but that requires option data cloning
 - [ ] think about lifetimes for import export options...
+- [ ] remove all state in regards to import export UI being shown or hidden from lockstep. The functions are supposed to just be helpers for using yet another api, they should just be representing that state
 - [x] rename cancel buttons to close, because they really don't cancel anything. They just close, just like the X
 - [x] do not sort game states by them supporting import export in lockstep editor scripting
 - [x] think about ValidateOptions again for import and probably also export
