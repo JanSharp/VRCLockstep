@@ -17,8 +17,20 @@
 - [ ] disable import/export buttons in game states UI until OnInit or OnClientBeginCatchUp is raised
 - [ ] expose current import/export options on every game state throughout the entire duration of each game state being imported/exported
 - [ ] use masking instead of truncate, I think that way when it does overflow you can still use the End button to get to the end of an input field, requires testing
-- [ ] add autosaving to game states UI again
+- [x] add autosaving to game states UI again
 - [ ] update notes in regards to import export options and UI events
+- [ ] add cloning to import export option data classes
+- [ ] an option which simply disables importing a specific game state is pretty wasteful because the entire imported game state still gets sent to all clients, just for each of them to then do nothing with that data
+- [ ] changing the autosave interval causes the timer update loop to run twice each time it updates, and presumably 3 times if it's changed again and so on
+- [x] when autosave is using export options, show all the export options in there however with the root widget's interactable set to false
+  - [x] also add an info note about this in hte generic value editor as a label widget in the info fold out
+- [x] apply changed autosave options upon hiding autosave window? it must apply changes at some point...
+- [x] add info text to autosave generic value editor at the top about how autosaving writes to the log file
+- [x] use validate functions for autosave!
+- [ ] add separate update function for current export options, not just get
+- [ ] should there be a get function for current import options?
+- [ ] should setting "use export options" for autosaving overwrite autosave options entirely? I think so, but that requires option data cloning
+- [ ] rename cancel buttons to close, because they really don't cancel anything. They just close, just like the X
 - [x] do not sort game states by them supporting import export in lockstep editor scripting
 - [x] think about ValidateOptions again for import and probably also export
 - [x] clear import UI and show info message about pasting exported data into the input field when opening the import UI

@@ -429,6 +429,11 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
+        /// <param name="allExportOptions"></param>
+        public abstract void ValidateExportOptions(LockstepGameStateOptionsData[] allExportOptions);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
         public abstract void ShowExportOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
         /// TODO: docs
@@ -454,6 +459,11 @@ namespace JanSharp
         /// <param name="importedGameStates"></param>
         /// <param name="allImportOptions"></param>
         public abstract void AssociateImportOptionsWithImportedGameStates(object[][] importedGameStates, DataDictionary allImportOptions);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="allImportOptions"></param>
+        public abstract void ValidateImportOptions(DataDictionary allImportOptions);
         /// <summary>
         /// TODO: docs
         /// </summary>

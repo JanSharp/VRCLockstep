@@ -31,10 +31,9 @@ namespace JanSharp.Internal
         [SerializeField] private TextMeshProUGUI confirmImportButtonText;
 
         [SerializeField] private GameObject exportWindow;
+        [SerializeField] private RectTransform exportOptionsEditorContainer;
+        [SerializeField] private RectTransform exportOptionsEditorTransform;
         [SerializeField] private LockstepOptionsEditorUI exportOptionsUI;
-        [SerializeField] private Toggle autosaveToggle;
-        [SerializeField] private TMP_InputField autosaveIntervalField;
-        [SerializeField] private Slider autosaveIntervalSlider;
         [SerializeField] private TMP_InputField exportNameField;
         [SerializeField] private Button confirmExportButton;
         [SerializeField] private TextMeshProUGUI confirmExportButtonText;
@@ -42,14 +41,21 @@ namespace JanSharp.Internal
         [SerializeField] private GameObject exportedDataWindow;
         [SerializeField] private TMP_InputField serializedOutputField;
 
+        [SerializeField] private GameObject autosaveWindow;
+        [SerializeField] private RectTransform autosaveOptionsEditorContainer;
+        [SerializeField] private Toggle autosaveUsesExportOptionsToggle; // TODO: impl
+        [SerializeField] private TMP_InputField autosaveIntervalField;
+        [SerializeField] private Slider autosaveIntervalSlider;
+        [SerializeField] private Toggle autosaveToggle;
+        [SerializeField] private TextMeshProUGUI autosaveToggleText;
+
         [SerializeField] private float minAutosaveInterval;
         [SerializeField] private float defaultAutosaveInterval;
         [SerializeField] private float autosaveInterval;
 
         [SerializeField] private LockstepMainGSEntry[] mainGSEntries;
 
-        private bool isImportInitialized = false;
-        private bool isExportInitialized = false;
+        private bool isInitialized = false;
 
         /// <summary>
         /// <para><see cref="LockstepImportedGS"/>[]</para>
@@ -59,9 +65,10 @@ namespace JanSharp.Internal
         private string exportWorldName;
         private string exportName;
 
-        private LockstepGameStateOptionsData[] exportOptions;
         private DataDictionary importOptions;
         private bool anyImportedGSHasNoErrors;
+        private LockstepGameStateOptionsData[] exportOptions;
+        private LockstepGameStateOptionsData[] autosaveOptions;
 
         private VRCPlayerApi localPlayer;
 
@@ -71,12 +78,13 @@ namespace JanSharp.Internal
             exportOptionsUI.Init();
             importOptionsUI.Init();
             exportOptions = lockstep.GetNewExportOptions();
+            autosaveOptions = lockstep.GetNewExportOptions();
             importOptions = lockstep.GetNewImportOptions();
         }
 
         private void Enable()
         {
-            if (isExportInitialized)
+            if (isInitialized)
                 InstantAutosaveTimerUpdateLoop();
         }
 
@@ -92,7 +100,7 @@ namespace JanSharp.Internal
 
         public void OpenImportWindow()
         {
-            if (importWindow.activeSelf)
+            if (!isInitialized || importWindow.activeSelf)
                 return;
             dimBackground.SetActive(true);
             importWindow.SetActive(true);
@@ -104,6 +112,9 @@ namespace JanSharp.Internal
 
         public void OpenExportWindow()
         {
+            if (!isInitialized || exportWindow.activeSelf)
+                return;
+            exportOptionsEditorTransform.SetParent(exportOptionsEditorContainer, worldPositionStays: false);
             exportOptionsUI.Clear();
             lockstep.ShowExportOptionsEditor(exportOptionsUI, exportOptions);
             exportOptionsUI.Draw();
@@ -117,6 +128,16 @@ namespace JanSharp.Internal
             exportedDataWindow.SetActive(true);
         }
 
+        public void OpenAutosaveWindow()
+        {
+            if (!isInitialized || exportWindow.activeSelf)
+                return;
+            exportOptionsEditorTransform.SetParent(autosaveOptionsEditorContainer, worldPositionStays: false);
+            ShowAutosaveOptionsEditor();
+            dimBackground.SetActive(true);
+            autosaveWindow.SetActive(true);
+        }
+
         public void CloseImportWindow()
         {
             dimBackground.SetActive(false);
@@ -126,8 +147,11 @@ namespace JanSharp.Internal
 
         public void CloseExportWindow()
         {
+            if (!exportWindow.activeSelf)
+                return;
             dimBackground.SetActive(false);
             exportWindow.SetActive(false);
+            lockstep.GetAllCurrentExportOptions();
             lockstep.HideExportOptionsEditor(exportOptionsUI, exportOptions);
         }
 
@@ -138,6 +162,15 @@ namespace JanSharp.Internal
             serializedOutputField.text = "";
         }
 
+        public void CloseAutosaveWindow()
+        {
+            if (!autosaveWindow.activeSelf)
+                return;
+            dimBackground.SetActive(false);
+            autosaveWindow.SetActive(false);
+            HideAutosaveOptionsEditor();
+        }
+
         public void CloseOpenWindow()
         {
             if (importWindow.activeSelf)
@@ -146,6 +179,8 @@ namespace JanSharp.Internal
                 CloseExportWindow();
             if (exportedDataWindow.activeSelf)
                 CloseExportedDataWindow();
+            if (autosaveWindow.activeSelf)
+                CloseAutosaveWindow();
         }
 
         // Cannot use TextChanged because pasting text when testing in editor raises text changed for each
@@ -208,12 +243,12 @@ namespace JanSharp.Internal
             UpdateImportButton();
         }
 
-        private bool CanImport() => isImportInitialized && anyImportedGSHasNoErrors && !lockstep.IsImporting;
+        private bool CanImport() => isInitialized && anyImportedGSHasNoErrors && !lockstep.IsImporting;
 
         private void UpdateImportButton()
         {
             confirmImportButton.interactable = CanImport();
-            confirmImportButtonText.text = !isImportInitialized ? "Loading..."
+            confirmImportButtonText.text = !isInitialized ? "Loading..."
                 : lockstep.IsImporting ? "Importing..."
                 : "Import";
         }
@@ -245,36 +280,51 @@ namespace JanSharp.Internal
             UpdateImportButton();
         }
 
-        public void SetAutosaveSelected()
+        public void OnAutosaveUsesExportOptionsToggleValueChanged()
         {
-            // LockstepGameState[] toAutosave = new LockstepGameState[exportGSEntries.Length];
-            // int i = 0;
-            // foreach (LockstepExportGSEntry entry in exportGSEntries)
-            //     if (entry.gameState.GameStateSupportsImportExport && entry.mainToggle.isOn)
-            //         toAutosave[i++] = entry.gameState;
-            // // The rest are null and that's fine, GameStatesToAutosave will shorten the array when copying.
-            // lockstep.GameStatesToAutosave = toAutosave; // Raises OnGameStatesToAutosaveChanged.
+            HideAutosaveOptionsEditor();
+            ShowAutosaveOptionsEditor();
         }
 
-        private void UpdateAutosaveInfoLabelsReadingFromLockstep()
+        private LabelWidgetData autosaveInfoLabel;
+        private LabelWidgetData autosaveUsingExportInfoLabel;
+
+        private void ShowAutosaveOptionsEditor()
         {
-            // LockstepGameState[] toAutosave = lockstep.GameStatesToAutosave;
-            // DataDictionary lut = new DataDictionary();
-            // foreach (LockstepGameState gs in toAutosave)
-            //     lut.Add(gs, true);
-            // for (int i = 0; i < exportGSEntries.Length; i++)
-            // {
-            //     LockstepExportGSEntry entry = exportGSEntries[i];
-            //     if (!entry.gameState.GameStateSupportsImportExport)
-            //         continue;
-            //     bool doAutosave = lut.ContainsKey(entry.gameState);
-            //     entry.doAutosave = doAutosave;
-            //     entry.infoLabel.gameObject.SetActive(doAutosave);
-            //     mainGSEntries[i].autosaveText.gameObject.SetActive(doAutosave);
-            // }
+            exportOptionsUI.Clear();
+            autosaveInfoLabel = autosaveInfoLabel ?? exportOptionsUI.Editor.NewLabel(
+                "Autosaves periodically write exported data to the VRChat log file. Export and autosave log "
+                    + "messages use the prefix '[Lockstep] Export:'.");
+            exportOptionsUI.Info.AddChild(autosaveInfoLabel);
+            if (!autosaveUsesExportOptionsToggle.isOn)
+                lockstep.ShowExportOptionsEditor(exportOptionsUI, autosaveOptions);
+            else
+            {
+                lockstep.ShowExportOptionsEditor(exportOptionsUI, exportOptions);
+                exportOptionsUI.Root.Interactable = false;
+                autosaveUsingExportInfoLabel = autosaveUsingExportInfoLabel ?? exportOptionsUI.Editor.NewLabel(
+                    "Currently using export options for autosaves. Modifying is disabled to prevent "
+                        + "accidentally confusing exports vs autosaves.");
+                exportOptionsUI.Info.AddChild(autosaveUsingExportInfoLabel);
+            }
+            exportOptionsUI.Draw();
         }
 
-        public void OnAutosaveIntervalFieldEndEdit()
+        private void HideAutosaveOptionsEditor()
+        {
+            lockstep.GetAllCurrentExportOptions();
+            lockstep.HideExportOptionsEditor(exportOptionsUI, autosaveOptions);
+            exportOptionsUI.Root.Interactable = true;
+            if (autosaveToggle.isOn)
+                lockstep.ExportOptionsForAutosave = autosaveOptions;
+        }
+
+        public void OnAutosaveToggleValueChanged()
+        {
+            lockstep.ExportOptionsForAutosave = autosaveToggle.isOn ? lockstep.GetAllCurrentExportOptions() : null;
+        }
+
+        public void OnAutosaveIntervalFieldValueChanged()
         {
             if (int.TryParse(autosaveIntervalField.text, out int autosaveIntervalMinutes))
                 autosaveInterval = (float)autosaveIntervalMinutes;
@@ -283,9 +333,7 @@ namespace JanSharp.Internal
             if (autosaveInterval < minAutosaveInterval)
             {
                 autosaveInterval = minAutosaveInterval;
-            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but this only raises the text changed
-            // event, not the end edit, so it's fine.
-                autosaveIntervalField.text = ((int)autosaveInterval).ToString();
+                autosaveIntervalField.SetTextWithoutNotify(((int)autosaveInterval).ToString());
             }
             autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
             SendApplyAutosaveIntervalDelayed();
@@ -294,9 +342,7 @@ namespace JanSharp.Internal
         public void OnAutosaveIntervalSliderChanged()
         {
             autosaveInterval = autosaveIntervalSlider.value;
-            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but this only raises the text changed
-            // event, not the end edit, so it's fine.
-            autosaveIntervalField.text = ((int)autosaveInterval).ToString();
+            autosaveIntervalField.SetTextWithoutNotify(((int)autosaveInterval).ToString());
             SendApplyAutosaveIntervalDelayed();
         }
 
@@ -317,15 +363,12 @@ namespace JanSharp.Internal
             lockstep.AutosaveIntervalSeconds = autosaveInterval * 60f; // Raises OnAutosaveIntervalSecondsChanged.
         }
 
-        private bool CanExport()
-        {
-            return isExportInitialized && !lockstep.IsImporting;
-        }
+        private bool CanExport() => isInitialized && !lockstep.IsImporting;
 
         private void UpdateExportButton()
         {
             confirmExportButton.interactable = CanExport();
-            confirmExportButtonText.text = !isExportInitialized ? "Loading..."
+            confirmExportButtonText.text = !isInitialized ? "Loading..."
                 : lockstep.IsImporting ? "Importing..."
                 : "Export";
         }
@@ -399,12 +442,27 @@ namespace JanSharp.Internal
             SendCustomEventDelayedSeconds(nameof(AutosaveTimerUpdateLoop), delay);
         }
 
-        private void OnInitialized()
+        private bool CanAutosave() => isInitialized && !lockstep.IsImporting;
+
+        private void UpdateAutosaveToggle()
         {
-            isImportInitialized = true;
-            isExportInitialized = true;
+            autosaveToggle.interactable = CanAutosave();
+            autosaveToggleText.text = !isInitialized ? "Loading..."
+                : lockstep.IsImporting ? "Importing..."
+                : "Autosave";
+        }
+
+        private void UpdateAllConfirmButtons()
+        {
             UpdateImportButton();
             UpdateExportButton();
+            UpdateAutosaveToggle();
+        }
+
+        private void OnInitialized()
+        {
+            isInitialized = true;
+            UpdateAllConfirmButtons();
             autosaveTimerUpdateLoopCounter++;
             AutosaveTimerUpdateLoop();
         }
@@ -418,21 +476,18 @@ namespace JanSharp.Internal
         [LockstepEvent(LockstepEventType.OnImportStart)]
         public void OnImportStart()
         {
-            UpdateImportButton();
-            UpdateExportButton();
+            UpdateAllConfirmButtons();
         }
 
         [LockstepEvent(LockstepEventType.OnImportFinished)]
         public void OnImportFinished()
         {
-            UpdateImportButton();
-            UpdateExportButton();
+            UpdateAllConfirmButtons();
         }
 
         [LockstepEvent(LockstepEventType.OnExportOptionsForAutosaveChanged)]
         public void OnExportOptionsForAutosaveChanged()
         {
-            UpdateAutosaveInfoLabelsReadingFromLockstep();
             InstantAutosaveTimerUpdateLoop();
         }
 

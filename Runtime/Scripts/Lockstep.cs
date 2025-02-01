@@ -3419,6 +3419,23 @@ namespace JanSharp.Internal
             return allOptions;
         }
 
+        public override void ValidateExportOptions(LockstepGameStateOptionsData[] allExportOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  ValidateExportOptions");
+            #endif
+            int i = 0;
+            foreach (LockstepGameState gameState in allGameStates)
+                if (gameState.GameStateSupportsImportExport)
+                {
+                    i++;
+                    LockstepGameStateOptionsUI exportUI = gameState.ExportUI;
+                    if (exportUI == null)
+                        continue;
+                    exportUI.ValidateOptionsInternal(allExportOptions[i]);
+                }
+        }
+
         public override void ShowExportOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData[] allExportOptions)
         {
             #if LockstepDebug
@@ -3520,6 +3537,19 @@ namespace JanSharp.Internal
                         ? (LockstepGameStateOptionsData)optionsToken.Reference
                         : null);
             }
+        }
+
+        public override void ValidateImportOptions(DataDictionary allImportOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  ValidateImportOptions");
+            #endif
+            foreach (LockstepGameState gameState in allGameStates)
+                if (gameState.GameStateSupportsImportExport && gameState.ImportUI != null
+                    && allImportOptions.TryGetValue(gameState.GameStateInternalName, out DataToken optionsToken))
+                {
+                    gameState.ImportUI.ValidateOptionsInternal((LockstepGameStateOptionsData)optionsToken.Reference);
+                }
         }
 
         public override void ShowImportOptionsEditor(LockstepOptionsEditorUI ui, object[][] importedGameStates)
@@ -4115,6 +4145,7 @@ namespace JanSharp.Internal
             if (timePassed + 1.5f < autosaveIntervalSeconds) // Accept the event 1.5 seconds early, but if it's
                 return; // earlier than that, nope, too soon, ignore this call. It's caused by duplicate calls.
             string autosaveName = $"autosave {++autosaveCount} (tick: {currentTick})";
+            ValidateExportOptions(exportOptionsForAutosave);
             Export(autosaveName, exportOptionsForAutosave); // Export writes to the log file.
             autosaveTimerStart = Time.realtimeSinceStartup;
             SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
