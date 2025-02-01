@@ -425,6 +425,10 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
+        public abstract void UpdateAllCurrentExportOptionsFromWidgets();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
         public abstract LockstepGameStateOptionsData[] GetAllCurrentExportOptions();
         /// <summary>
         /// TODO: docs

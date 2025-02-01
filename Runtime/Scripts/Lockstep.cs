@@ -3394,6 +3394,21 @@ namespace JanSharp.Internal
         private bool exportUIIsShown = false;
         public override bool ExportUIIsShown => exportUIIsShown;
 
+        public override void UpdateAllCurrentExportOptionsFromWidgets()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  UpdateAllCurrentExportOptionsFromWidgets");
+            #endif
+            if (!exportUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to UpdateAllCurrentExportOptionsFromWidgets while export UI is not shown.");
+                return;
+            }
+            foreach (LockstepGameState gameState in allGameStates)
+                if (gameState.GameStateSupportsImportExport && gameState.ExportUI != null)
+                    gameState.ExportUI.UpdateCurrentOptionsFromWidgets();
+        }
+
         public override LockstepGameStateOptionsData[] GetAllCurrentExportOptions()
         {
             #if LockstepDebug
@@ -3509,11 +3524,11 @@ namespace JanSharp.Internal
         public override void UpdateAllCurrentImportOptionsFromWidgets(object[][] importedGameStates)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  GetAllCurrentImportOptions");
+            Debug.Log($"[LockstepDebug] Lockstep  UpdateAllCurrentImportOptionsFromWidgets");
             #endif
             if (!importUIIsShown)
             {
-                Debug.LogError($"[Lockstep] Attempt to GetAllCurrentImportOptions while import UI is not shown.");
+                Debug.LogError($"[Lockstep] Attempt to UpdateAllCurrentImportOptionsFromWidgets while import UI is not shown.");
                 return;
             }
             foreach (LockstepGameState gameState in allGameStates)
@@ -3526,6 +3541,11 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetAllCurrentImportOptions");
             #endif
+            if (!importUIIsShown)
+            {
+                Debug.LogError($"[Lockstep] Attempt to GetAllCurrentImportOptions while import UI is not shown.");
+                return null;
+            }
             DataDictionary allOptions = new DataDictionary();
             foreach (LockstepGameState gameState in allGameStates)
                 if (gameState.GameStateSupportsImportExport

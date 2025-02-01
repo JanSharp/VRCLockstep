@@ -151,7 +151,7 @@ namespace JanSharp.Internal
                 return;
             dimBackground.SetActive(false);
             exportWindow.SetActive(false);
-            lockstep.GetAllCurrentExportOptions();
+            lockstep.UpdateAllCurrentExportOptionsFromWidgets();
             lockstep.HideExportOptionsEditor(exportOptionsUI, exportOptions);
         }
 
@@ -312,7 +312,7 @@ namespace JanSharp.Internal
 
         private void HideAutosaveOptionsEditor()
         {
-            lockstep.GetAllCurrentExportOptions();
+            lockstep.UpdateAllCurrentExportOptionsFromWidgets();
             lockstep.HideExportOptionsEditor(exportOptionsUI, autosaveOptions);
             exportOptionsUI.Root.Interactable = true;
             if (autosaveToggle.isOn)
