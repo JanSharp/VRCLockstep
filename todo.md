@@ -28,8 +28,9 @@
 - [x] add info text to autosave generic value editor at the top about how autosaving writes to the log file
 - [x] use validate functions for autosave!
 - [ ] add separate update function for current export options, not just get
-- [ ] should there be a get function for current import options?
+- [x] should there be a get function for current import options?
 - [ ] should setting "use export options" for autosaving overwrite autosave options entirely? I think so, but that requires option data cloning
+- [ ] think about lifetimes for import export options...
 - [x] rename cancel buttons to close, because they really don't cancel anything. They just close, just like the X
 - [x] do not sort game states by them supporting import export in lockstep editor scripting
 - [x] think about ValidateOptions again for import and probably also export

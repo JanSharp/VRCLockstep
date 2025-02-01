@@ -3521,6 +3521,22 @@ namespace JanSharp.Internal
                     gameState.ImportUI.UpdateCurrentOptionsFromWidgets();
         }
 
+        public override DataDictionary GetAllCurrentImportOptions()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  GetAllCurrentImportOptions");
+            #endif
+            DataDictionary allOptions = new DataDictionary();
+            foreach (LockstepGameState gameState in allGameStates)
+                if (gameState.GameStateSupportsImportExport
+                    && gameState.ImportUI != null
+                    && gameState.ImportUI.CurrentOptionsInternal != null)
+                {
+                    allOptions.Add(gameState.GameStateInternalName, gameState.ImportUI.CurrentOptionsInternal);
+                }
+            return allOptions;
+        }
+
         public override void AssociateImportOptionsWithImportedGameStates(object[][] importedGameStates, DataDictionary allImportOptions)
         {
             #if LockstepDebug
@@ -3545,7 +3561,8 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  ValidateImportOptions");
             #endif
             foreach (LockstepGameState gameState in allGameStates)
-                if (gameState.GameStateSupportsImportExport && gameState.ImportUI != null
+                if (gameState.GameStateSupportsImportExport
+                    && gameState.ImportUI != null
                     && allImportOptions.TryGetValue(gameState.GameStateInternalName, out DataToken optionsToken))
                 {
                     gameState.ImportUI.ValidateOptionsInternal((LockstepGameStateOptionsData)optionsToken.Reference);

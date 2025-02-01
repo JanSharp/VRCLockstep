@@ -456,6 +456,11 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
+        /// <returns></returns>
+        public abstract DataDictionary GetAllCurrentImportOptions();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
         /// <param name="importedGameStates"></param>
         /// <param name="allImportOptions"></param>
         public abstract void AssociateImportOptionsWithImportedGameStates(object[][] importedGameStates, DataDictionary allImportOptions);
