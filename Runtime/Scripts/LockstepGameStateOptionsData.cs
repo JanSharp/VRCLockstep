@@ -10,6 +10,6 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public abstract class LockstepGameStateOptionsData : SerializableWannaBeClass
     {
-
+        public abstract LockstepGameStateOptionsData Clone();
     }
 }

@@ -3370,6 +3370,17 @@ namespace JanSharp.Internal
         public override long ReadSmallLong() => DataStream.ReadSmallLong(ref readStream, ref readStreamPosition);
         public override ulong ReadSmallULong() => DataStream.ReadSmallULong(ref readStream, ref readStreamPosition);
 
+        public override LockstepGameStateOptionsData[] CloneAllOptions(LockstepGameStateOptionsData[] allOptions)
+        {
+            LockstepGameStateOptionsData[] other = new LockstepGameStateOptionsData[allOptions.Length];
+            for (int i = 0; i < allOptions.Length; i++)
+            {
+                LockstepGameStateOptionsData options = allOptions[i];
+                other[i] = options == null ? null : options.Clone();
+            }
+            return other;
+        }
+
         private bool isSerializingForExport = false;
         public override bool IsSerializingForExport => isSerializingForExport;
 

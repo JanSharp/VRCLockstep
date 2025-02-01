@@ -19,7 +19,7 @@
 - [x] use masking instead of truncate, I think that way when it does overflow you can still use the End button to get to the end of an input field, requires testing
 - [x] add autosaving to game states UI again
 - [ ] update notes in regards to import export options and UI events
-- [ ] add cloning to import export option data classes
+- [x] add cloning to import export option data classes
 - [ ] an option which simply disables importing a specific game state is pretty wasteful because the entire imported game state still gets sent to all clients, just for each of them to then do nothing with that data
 - [ ] changing the autosave interval causes the timer update loop to run twice each time it updates, and presumably 3 times if it's changed again and so on
 - [x] when autosave is using export options, show all the export options in there however with the root widget's interactable set to false

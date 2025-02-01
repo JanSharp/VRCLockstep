@@ -14,6 +14,13 @@ namespace JanSharp
 
         [System.NonSerialized] public bool shouldImport = true;
 
+        public override LockstepGameStateOptionsData Clone()
+        {
+            TestGSImportOptions other = WannaBeClasses.New<TestGSImportOptions>(nameof(TestGSImportOptions));
+            other.shouldImport = shouldImport;
+            return other;
+        }
+
         public override void Serialize(bool isExport)
         {
             #if LockstepDebug
