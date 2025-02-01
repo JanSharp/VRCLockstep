@@ -130,7 +130,7 @@ namespace JanSharp.Internal
 
         public void OpenAutosaveWindow()
         {
-            if (!isInitialized || exportWindow.activeSelf)
+            if (!isInitialized || autosaveWindow.activeSelf)
                 return;
             exportOptionsEditorTransform.SetParent(autosaveOptionsEditorContainer, worldPositionStays: false);
             ShowAutosaveOptionsEditor();
