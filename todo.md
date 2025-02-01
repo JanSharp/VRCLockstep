@@ -16,7 +16,7 @@
 - [x] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
 - [x] disable import/export buttons in game states UI until OnInit or OnClientBeginCatchUp is raised
 - [ ] expose current import/export options on every game state throughout the entire duration of each game state being imported/exported
-- [ ] use masking instead of truncate, I think that way when it does overflow you can still use the End button to get to the end of an input field, requires testing
+- [x] use masking instead of truncate, I think that way when it does overflow you can still use the End button to get to the end of an input field, requires testing
 - [x] add autosaving to game states UI again
 - [ ] update notes in regards to import export options and UI events
 - [ ] add cloning to import export option data classes
