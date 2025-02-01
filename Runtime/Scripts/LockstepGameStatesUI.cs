@@ -24,6 +24,10 @@ namespace JanSharp.Internal
         [SerializeField] private Slider autosaveTimerSlider;
         [SerializeField] private TextMeshProUGUI autosaveTimerText;
 
+        [SerializeField] private Button openImportWindowButton;
+        [SerializeField] private Button openExportWindowButton;
+        [SerializeField] private Button openAutosaveWindowButton;
+
         [SerializeField] private GameObject importWindow;
         [SerializeField] private TMP_InputField serializedInputField;
         [SerializeField] private LockstepOptionsEditorUI importOptionsUI;
@@ -462,6 +466,9 @@ namespace JanSharp.Internal
         private void OnInitialized()
         {
             isInitialized = true;
+            openImportWindowButton.interactable = true;
+            openExportWindowButton.interactable = true;
+            openAutosaveWindowButton.interactable = true;
             UpdateAllConfirmButtons();
             autosaveTimerUpdateLoopCounter++;
             AutosaveTimerUpdateLoop();
