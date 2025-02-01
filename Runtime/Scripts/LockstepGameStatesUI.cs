@@ -73,6 +73,7 @@ namespace JanSharp.Internal
         private bool anyImportedGSHasNoErrors;
         private LockstepGameStateOptionsData[] exportOptions;
         private LockstepGameStateOptionsData[] autosaveOptions;
+        private bool AutosaveUsesExportOptions => autosaveOptions == exportOptions;
 
         private VRCPlayerApi localPlayer;
 
@@ -82,7 +83,7 @@ namespace JanSharp.Internal
             exportOptionsUI.Init();
             importOptionsUI.Init();
             exportOptions = lockstep.GetNewExportOptions();
-            autosaveOptions = lockstep.GetNewExportOptions();
+            autosaveOptions = exportOptions;
             importOptions = lockstep.GetNewImportOptions();
         }
 
@@ -286,6 +287,17 @@ namespace JanSharp.Internal
 
         public void OnAutosaveUsesExportOptionsToggleValueChanged()
         {
+            if (AutosaveUsesExportOptions == autosaveUsesExportOptionsToggle.isOn)
+                return;
+            if (AutosaveUsesExportOptions)
+                autosaveOptions = lockstep.CloneAllOptions(exportOptions);
+            else
+            {
+                foreach (LockstepGameStateOptionsData options in autosaveOptions)
+                    if (options != null)
+                        options.DecrementRefsCount();
+                autosaveOptions = exportOptions;
+            }
             HideAutosaveOptionsEditor();
             ShowAutosaveOptionsEditor();
         }
@@ -300,11 +312,9 @@ namespace JanSharp.Internal
                 "Autosaves periodically write exported data to the VRChat log file. Export and autosave log "
                     + "messages use the prefix '[Lockstep] Export:'.");
             exportOptionsUI.Info.AddChild(autosaveInfoLabel);
-            if (!autosaveUsesExportOptionsToggle.isOn)
-                lockstep.ShowExportOptionsEditor(exportOptionsUI, autosaveOptions);
-            else
+            lockstep.ShowExportOptionsEditor(exportOptionsUI, autosaveOptions);
+            if (autosaveUsesExportOptionsToggle.isOn)
             {
-                lockstep.ShowExportOptionsEditor(exportOptionsUI, exportOptions);
                 exportOptionsUI.Root.Interactable = false;
                 autosaveUsingExportInfoLabel = autosaveUsingExportInfoLabel ?? exportOptionsUI.Editor.NewLabel(
                     "Currently using export options for autosaves. Modifying is disabled to prevent "
@@ -316,7 +326,8 @@ namespace JanSharp.Internal
 
         private void HideAutosaveOptionsEditor()
         {
-            lockstep.UpdateAllCurrentExportOptionsFromWidgets();
+            if (!AutosaveUsesExportOptions)
+                lockstep.UpdateAllCurrentExportOptionsFromWidgets();
             lockstep.HideExportOptionsEditor(exportOptionsUI, autosaveOptions);
             exportOptionsUI.Root.Interactable = true;
             if (autosaveToggle.isOn)
