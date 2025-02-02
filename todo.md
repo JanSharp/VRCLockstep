@@ -11,7 +11,7 @@
 - [ ] raise event delayed by ticks, game state safe.
 - [ ] ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
 - [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
-- [ ] add LockstepAPI lockstep field to LockstepGameState directly
+- [x] add LockstepAPI lockstep field to LockstepGameState directly
 - [ ] add WriteFlags and ReadFlags with 8 overloads each, allowing to read and write up to 8 booleans
 - [x] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
 - [x] disable import/export buttons in game states UI until OnInit or OnClientBeginCatchUp is raised

@@ -40,8 +40,6 @@ namespace JanSharp
     [SingletonScript]
     public class LockstepMasterPreference : LockstepGameState
     {
-        [HideInInspector] [SerializeField] [SingletonReference] private LockstepAPI lockstep;
-
         public override string GameStateInternalName => "jansharp.lockstep-master-preference";
         public override string GameStateDisplayName => "Lockstep Master Preference";
         public override bool GameStateSupportsImportExport => true;

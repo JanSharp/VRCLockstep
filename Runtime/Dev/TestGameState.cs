@@ -10,8 +10,6 @@ namespace JanSharp
     [SingletonScript]
     public class TestGameState : LockstepGameState
     {
-        [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
-
         [SerializeField] private TestGameStateUI ui;
         [SerializeField] private TestGSExportUI exportUI;
         [SerializeField] private TestGSImportUI importUI;

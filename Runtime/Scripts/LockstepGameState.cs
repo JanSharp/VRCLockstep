@@ -8,6 +8,8 @@ namespace JanSharp
 {
     public abstract class LockstepGameState : UdonSharpBehaviour
     {
+        [HideInInspector] [SingletonReference] public LockstepAPI lockstep;
+
         /// <summary>
         /// <para>Must be a completely unique name for this game state. Anything can be used however it is
         /// recommended to use <c>author-name.package-name</c>, everything lower case and using dashes instead
