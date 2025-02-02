@@ -10,7 +10,6 @@ namespace JanSharp
     {
         public override string OptionsClassName => nameof(TestGSExportOptions);
         private TestGSExportOptions currentOptions;
-        private TestGSExportOptions options;
 
         private ToggleFieldWidgetData shouldExportWidget;
 
@@ -22,14 +21,15 @@ namespace JanSharp
             return wannaBeClasses.New<TestGSExportOptions>(nameof(TestGSExportOptions));
         }
 
-        public override void ValidateOptions()
+        private TestGSExportOptions optionsToValidate;
+        protected override void ValidateOptionsImpl()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSExportUI  ValidateOptions");
             #endif
         }
 
-        public override void InitWidgetData(GenericValueEditor dummyEditor)
+        protected override void InitWidgetData(GenericValueEditor dummyEditor)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSExportUI  InitWidgetData");
@@ -37,7 +37,7 @@ namespace JanSharp
             shouldExportWidget = dummyEditor.NewToggleField("Test GS", false);
         }
 
-        public override void UpdateCurrentOptionsFromWidgets()
+        protected override void UpdateCurrentOptionsFromWidgetsImpl()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSExportUI  UpdateCurrentOptionsFromWidgets");
@@ -45,16 +45,16 @@ namespace JanSharp
             currentOptions.shouldExport = shouldExportWidget.Value;
         }
 
-        public override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
+        protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSExportUI  OnOptionsEditorShow");
             #endif
-            shouldExportWidget.Value = options.shouldExport;
+            shouldExportWidget.Value = currentOptions.shouldExport;
             ui.General.AddChild(shouldExportWidget);
         }
 
-        public override void OnOptionsEditorHide(LockstepOptionsEditorUI ui)
+        protected override void OnOptionsEditorHide(LockstepOptionsEditorUI ui)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSExportUI  OnOptionsEditorHide");

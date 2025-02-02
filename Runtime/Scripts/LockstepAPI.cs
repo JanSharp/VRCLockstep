@@ -333,6 +333,10 @@ namespace JanSharp
         /// </summary>
         public abstract bool CanSendInputActions { get; }
         /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract bool InitializedEnoughForImportExport { get; }
+        /// <summary>
         /// <para>The message which lockstep sent as a notification with the intent for it to be shown to the
         /// local player.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnLockstepNotification"/>.</para>
@@ -438,11 +442,12 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
-        public abstract bool ExportUIIsShown { get; }
+        public abstract LockstepGameStateOptionsData[] GetNewExportOptions();
         /// <summary>
         /// TODO: docs
         /// </summary>
-        public abstract LockstepGameStateOptionsData[] GetNewExportOptions();
+        /// <returns></returns>
+        public abstract bool AnyExportOptionsCurrentlyShown();
         /// <summary>
         /// TODO: docs
         /// </summary>
@@ -465,16 +470,17 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
-        public abstract void HideExportOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData[] allExportOptions);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        public abstract bool ImportUIIsShown { get; }
+        public abstract void HideExportOptionsEditor();
         /// <summary>
         /// TODO: docs
         /// </summary>
         /// <returns></returns>
         public abstract DataDictionary GetNewImportOptions();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <returns></returns>
+        public abstract bool AnyImportOptionsCurrentlyShown();
         /// <summary>
         /// TODO: docs
         /// </summary>
@@ -484,12 +490,10 @@ namespace JanSharp
         /// TODO: docs
         /// </summary>
         /// <returns></returns>
-        public abstract DataDictionary GetAllCurrentImportOptions();
+        public abstract DataDictionary GetAllCurrentImportOptions(bool weakReferences);
         /// <summary>
         /// TODO: docs
         /// </summary>
-        /// <param name="importedGameStates"></param>
-        /// <param name="allImportOptions"></param>
         public abstract void AssociateImportOptionsWithImportedGameStates(object[][] importedGameStates, DataDictionary allImportOptions);
         /// <summary>
         /// TODO: docs
@@ -505,9 +509,7 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
-        /// <param name="ui"></param>
-        /// <param name="allImportOptions"></param>
-        public abstract void HideImportOptionsEditor(LockstepOptionsEditorUI ui, object[][] importedGameStates);
+        public abstract void HideImportOptionsEditor();
         /// <summary>
         /// TODO: docs
         /// <para>Export the given <paramref name="gameStates"/> into a base 64 encoded string intended for

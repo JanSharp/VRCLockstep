@@ -12,7 +12,6 @@ namespace JanSharp
 
         public override string OptionsClassName => nameof(TestGSImportOptions);
         private TestGSImportOptions currentOptions;
-        private TestGSImportOptions options;
 
         private ToggleFieldWidgetData shouldImportWidget;
 
@@ -24,14 +23,15 @@ namespace JanSharp
             return wannaBeClasses.New<TestGSImportOptions>(nameof(TestGSImportOptions));
         }
 
-        public override void ValidateOptions()
+        private TestGSImportOptions optionsToValidate;
+        protected override void ValidateOptionsImpl()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportUI  ValidateOptions");
             #endif
         }
 
-        public override void InitWidgetData(GenericValueEditor dummyEditor)
+        protected override void InitWidgetData(GenericValueEditor dummyEditor)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportUI  InitWidgetData");
@@ -39,7 +39,7 @@ namespace JanSharp
             shouldImportWidget = dummyEditor.NewToggleField("Test GS", false);
         }
 
-        public override void UpdateCurrentOptionsFromWidgets()
+        protected override void UpdateCurrentOptionsFromWidgetsImpl()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportUI  UpdateCurrentOptionsFromWidgets");
@@ -47,18 +47,18 @@ namespace JanSharp
             currentOptions.shouldImport = shouldImportWidget.Value;
         }
 
-        public override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
+        protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportUI  OnOptionsEditorShow");
             #endif
             if (!testGameState.HasImportData())
                 return;
-            shouldImportWidget.Value = options.shouldImport;
+            shouldImportWidget.Value = currentOptions.shouldImport;
             ui.General.AddChild(shouldImportWidget);
         }
 
-        public override void OnOptionsEditorHide(LockstepOptionsEditorUI ui)
+        protected override void OnOptionsEditorHide(LockstepOptionsEditorUI ui)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportUI  OnOptionsEditorHide");

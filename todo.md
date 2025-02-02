@@ -31,11 +31,11 @@
 - [x] should there be a get function for current import options?
 - [x] should setting "use export options" for autosaving overwrite autosave options entirely? I think so, but that requires option data cloning
 - [x] think about lifetimes for import export options...
-- [ ] remove all state in regards to import export UI being shown or hidden from lockstep. The functions are supposed to just be helpers for using yet another api, they should just be representing that state
+- [x] remove all state in regards to import export UI being shown or hidden from lockstep. The functions are supposed to just be helpers for using yet another api, they should just be representing that state
 - [x] game state autosave progress bar ultimately causes debug log spam due to the export options for autosave getter having a debug log, probably remove that
 - [ ] probably add lockstep events for when any game state's custom import or export options UI gets shown or hidden
-- [ ] add helper functions to check if any game state's custom import UI is currently shown
-- [ ] null options must be impossible while an options UI is shown
+- [x] add helper functions to check if any game state's custom import UI is currently shown
+- [x] null options must be impossible while an options UI is shown
 - [x] expose gameStatesCountSupportingExport in the lockstep api
 - [x] add gameStatesSupportingExport both to lockstep and its api
 - [x] rename cancel buttons to close, because they really don't cancel anything. They just close, just like the X

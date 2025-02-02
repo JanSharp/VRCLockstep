@@ -147,7 +147,7 @@ namespace JanSharp.Internal
             dimBackground.SetActive(false);
             exportWindow.SetActive(false);
             lockstep.UpdateAllCurrentExportOptionsFromWidgets();
-            lockstep.HideExportOptionsEditor(exportOptionsUI, exportOptions);
+            lockstep.HideExportOptionsEditor();
         }
 
         public void CloseExportedDataWindow()
@@ -268,7 +268,7 @@ namespace JanSharp.Internal
 
             if (importedGameStates != null)
             {
-                lockstep.HideImportOptionsEditor(importOptionsUI, importedGameStates);
+                lockstep.HideImportOptionsEditor();
                 lockstep.CleanupImportedGameStatesData(importedGameStates);
             }
             importedGameStates = null; // Free for GC.
@@ -322,7 +322,7 @@ namespace JanSharp.Internal
         {
             if (!AutosaveUsesExportOptions)
                 lockstep.UpdateAllCurrentExportOptionsFromWidgets();
-            lockstep.HideExportOptionsEditor(exportOptionsUI, autosaveOptions);
+            lockstep.HideExportOptionsEditor();
             exportOptionsUI.Root.Interactable = true;
             if (autosaveToggle.isOn)
                 lockstep.ExportOptionsForAutosave = autosaveOptions;

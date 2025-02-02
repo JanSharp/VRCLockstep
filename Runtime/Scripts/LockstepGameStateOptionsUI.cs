@@ -14,12 +14,23 @@ namespace JanSharp
         [HideInInspector] [SingletonReference] public WannaBeClassesManager wannaBeClasses;
         public abstract string OptionsClassName { get; }
 
+        private bool currentlyShown = false;
+        public bool CurrentlyShown => currentlyShown;
+        private LockstepOptionsEditorUI currentUI;
+        public LockstepOptionsEditorUI CurrentUI => currentUI;
+
         // HACK: I hate that you have to make a field for this in the deriving class with the correct type.
-        public LockstepGameStateOptionsData CurrentOptionsInternal
+        public LockstepGameStateOptionsData CurrentOptions
         {
             get => (LockstepGameStateOptionsData)GetProgramVariable("currentOptions");
             set
             {
+                if (currentlyShown)
+                {
+                    Debug.LogError("[Lockstep] While a LockstepGameStateOptionsUI is shown, its current "
+                        + "options must not be set to a different options instance.");
+                    return;
+                }
                 LockstepGameStateOptionsData prev = (LockstepGameStateOptionsData)GetProgramVariable("currentOptions");
                 if (prev != null)
                     prev.DecrementRefsCount();
@@ -29,30 +40,74 @@ namespace JanSharp
             }
         }
 
-        public abstract LockstepGameStateOptionsData NewOptions();
-        public abstract void ValidateOptions();
-        public abstract void InitWidgetData(GenericValueEditor dummyEditor);
-        public abstract void UpdateCurrentOptionsFromWidgets();
-        public abstract void OnOptionsEditorShow(LockstepOptionsEditorUI ui);
-        public abstract void OnOptionsEditorHide(LockstepOptionsEditorUI ui);
-
-        public void ValidateOptionsInternal(LockstepGameStateOptionsData options)
+        public void SetCurrentOptionsAndHideShowIfNeeded(LockstepGameStateOptionsData options)
         {
-            // HACK: I hate that you have to make a field for this in the deriving class with the correct type.
-            SetProgramVariable("options", options);
-            ValidateOptions();
+            bool mustHideShow = currentlyShown;
+            LockstepOptionsEditorUI ui = currentUI;
+            if (mustHideShow)
+                HideOptionsEditor();
+            CurrentOptions = options;
+            if (mustHideShow)
+                OnOptionsEditorShow(ui);
         }
 
-        public void OnOptionsEditorShowInternal(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData options)
+        public abstract LockstepGameStateOptionsData NewOptions();
+        protected abstract void ValidateOptionsImpl();
+        protected abstract void InitWidgetData(GenericValueEditor dummyEditor);
+        public void InitWidgetDataInternal(GenericValueEditor dummyEditor) => InitWidgetData(dummyEditor);
+        protected abstract void UpdateCurrentOptionsFromWidgetsImpl();
+        protected abstract void OnOptionsEditorShow(LockstepOptionsEditorUI ui);
+        protected abstract void OnOptionsEditorHide(LockstepOptionsEditorUI ui);
+
+        public void ValidateOptions(LockstepGameStateOptionsData options)
         {
-            SetProgramVariable("options", options);
+            if (options == null)
+            {
+                Debug.LogError("[Lockstep] Attempt to call ValidateOptions with null options.");
+                return;
+            }
+            // HACK: I hate that you have to make a field for this in the deriving class with the correct type.
+            SetProgramVariable("optionsToValidate", options);
+            ValidateOptionsImpl();
+        }
+
+        public void UpdateCurrentOptionsFromWidgets()
+        {
+            if (CurrentOptions == null)
+            {
+                Debug.LogError("[Lockstep] Attempt to UpdateCurrentOptionsFromWidgets while CurrentOptions is null.");
+                return;
+            }
+            UpdateCurrentOptionsFromWidgetsImpl();
+        }
+
+        public void ShowOptionsEditor(LockstepOptionsEditorUI ui)
+        {
+            if (!lockstep.InitializedEnoughForImportExport)
+            {
+                Debug.LogError($"[Lockstep] Attempt to ShowOptionsEditor before InitializedEnoughForImportExport is true.");
+                return;
+            }
+            if (currentlyShown)
+            {
+                Debug.LogError("[Lockstep] Attempt to ShowOptionsEditor while the UI is already shown.");
+                return;
+            }
+            currentlyShown = true;
+            currentUI = ui;
             OnOptionsEditorShow(ui);
         }
 
-        public void OnOptionsEditorHideInternal(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData options)
+        public void HideOptionsEditor()
         {
-            SetProgramVariable("options", options);
-            OnOptionsEditorHide(ui);
+            if (!currentlyShown)
+            {
+                Debug.LogError("[Lockstep] Attempt to HideOptionsEditor while the UI is already hidden.");
+                return;
+            }
+            OnOptionsEditorHide(currentUI);
+            currentUI = null;
+            currentlyShown = false;
         }
     }
 }
