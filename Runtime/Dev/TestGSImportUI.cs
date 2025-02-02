@@ -8,6 +8,8 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class TestGSImportUI : LockstepGameStateOptionsUI
     {
+        [SerializeField] [HideInInspector] [SingletonReference] private TestGameState testGameState;
+
         public override string OptionsClassName => nameof(TestGSImportOptions);
         private TestGSImportOptions currentOptions;
         private TestGSImportOptions options;
@@ -50,6 +52,8 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportUI  OnOptionsEditorShow");
             #endif
+            if (!testGameState.HasImportData())
+                return;
             shouldImportWidget.Value = options.shouldImport;
             ui.General.AddChild(shouldImportWidget);
         }

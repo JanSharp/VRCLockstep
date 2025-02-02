@@ -10,6 +10,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public abstract class LockstepGameStateOptionsUI : UdonSharpBehaviour
     {
+        [HideInInspector] [SingletonReference] public LockstepAPI lockstep;
         [HideInInspector] [SingletonReference] public WannaBeClassesManager wannaBeClasses;
         public abstract string OptionsClassName { get; }
 

@@ -7,10 +7,10 @@ using VRC.Udon;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+    [SingletonScript]
     public class TestGameState : LockstepGameState
     {
         [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
-        [SerializeField] [HideInInspector] [SingletonReference] private WannaBeClassesManager wannaBeClasses;
 
         [SerializeField] private TestGameStateUI ui;
         [SerializeField] private TestGSExportUI exportUI;
@@ -183,11 +183,17 @@ namespace JanSharp
             }
         }
 
+        public bool HasImportData()
+        {
+            Debug.Log("<dlt> TestGameState  HasImportData");
+            return lockstep.ReadByte() != 0;
+        }
+
         public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)
         {
             Debug.Log("<dlt> TestGameState  DeserializeGameState");
             TestGSImportOptions options = (TestGSImportOptions)importOptions;
-            if (isImport && (!options.shouldImport || lockstep.ReadByte() == 0))
+            if (isImport && (!options.shouldImport || !HasImportData()))
                 return null;
 
             int count = (int)lockstep.ReadSmallUInt();
