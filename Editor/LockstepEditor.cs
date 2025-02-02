@@ -62,12 +62,22 @@ namespace JanSharp.Internal
                 .OrderBy(gs => gs.GameStateDisplayName)
                 .ThenBy(gs => gs.GameStateInternalName)
                 .ToList();
+            lockstepSo.FindProperty("allGameStatesCount").intValue = allGameStates.Count;
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("allGameStates"),
                 allGameStates,
                 (p, v) => p.objectReferenceValue = v
             );
-            lockstepSo.FindProperty("gameStatesCountSupportingExport").intValue = allGameStates.Count(gs => gs.GameStateSupportsImportExport);
+
+            List<LockstepGameState> gameStatesSupportingExport = allGameStates
+                .Where(gs => gs.GameStateSupportsImportExport)
+                .ToList();
+            lockstepSo.FindProperty("gameStatesSupportingExportCount").intValue = gameStatesSupportingExport.Count;
+            EditorUtil.SetArrayProperty(
+                lockstepSo.FindProperty("gameStatesSupportingExport"),
+                gameStatesSupportingExport,
+                (p, v) => p.objectReferenceValue = v
+            );
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("inputActionHandlerInstances"),

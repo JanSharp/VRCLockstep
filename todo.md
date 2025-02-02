@@ -36,8 +36,8 @@
 - [ ] probably add lockstep events for when any game state's custom import or export options UI gets shown or hidden
 - [ ] add helper functions to check if any game state's custom import UI is currently shown
 - [ ] null options must be impossible while an options UI is shown
-- [ ] expose gameStatesCountSupportingExport in the lockstep api
-- [ ] add gameStatesSupportingExport both to lockstep and its api
+- [x] expose gameStatesCountSupportingExport in the lockstep api
+- [x] add gameStatesSupportingExport both to lockstep and its api
 - [x] rename cancel buttons to close, because they really don't cancel anything. They just close, just like the X
 - [x] do not sort game states by them supporting import export in lockstep editor scripting
 - [x] think about ValidateOptions again for import and probably also export

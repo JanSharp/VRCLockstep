@@ -104,6 +104,13 @@ namespace JanSharp
         /// </summary>
         public abstract bool IsSinglePlayer { get; }
         /// <summary>
+        /// <para>The length of the <see cref="AllGameStates"/> array. To prevent unnecessary array copies for
+        /// when all that's needed is the length/count.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract int AllGameStatesCount { get; }
+        /// <summary>
         /// <para>An effectively static readonly list of all game states in the world. The getter for this
         /// property returns a copy of the internal array to prevent modifications.</para>
         /// <para>Usable any time.</para>
@@ -111,12 +118,20 @@ namespace JanSharp
         /// </summary>
         public abstract LockstepGameState[] AllGameStates { get; }
         /// <summary>
-        /// <para>The length of the <see cref="AllGameStates"/> array. To prevent unnecessary array copies for
-        /// when all that's needed is the length/count.</para>
+        /// <para>The length of the <see cref="GameStatesSupportingExport"/> array. To prevent unnecessary
+        /// array copies for when all that's needed is the length/count.</para>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>
-        public abstract int AllGameStatesCount { get; }
+        public abstract int GameStatesSupportingExportCount { get; }
+        /// <summary>
+        /// <para>An effectively static readonly list of all game states in the world for which
+        /// <see cref="LockstepGameState.GameStateSupportsImportExport"/> is <see langword="true"/>. The
+        /// getter for this property returns a copy of the internal array to prevent modifications.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract LockstepGameState[] GameStatesSupportingExport { get; }
         /// <summary>
         /// <para>Note that <see cref="TryGetClientState(uint, out ClientState)"/> can be used to both get the
         /// current state and check if the given client exists, making <see cref="ClientStateExists(uint)"/>
