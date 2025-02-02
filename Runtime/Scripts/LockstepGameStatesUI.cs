@@ -277,7 +277,10 @@ namespace JanSharp.Internal
                 serializedInputField.SetTextWithoutNotify("");
 
             if (importedGameStates != null)
+            {
                 lockstep.HideImportOptionsEditor(importOptionsUI, importedGameStates);
+                lockstep.CleanupImportedGameStatesData(importedGameStates);
+            }
             importedGameStates = null; // Free for GC.
             importOptionsUI.Clear();
             importOptionsUI.Info.FoldedOut = true;
@@ -287,6 +290,7 @@ namespace JanSharp.Internal
 
         public void OnAutosaveUsesExportOptionsToggleValueChanged()
         {
+            // TODO: if it is autosaving, update the options lockstep is referencing
             if (AutosaveUsesExportOptions == autosaveUsesExportOptionsToggle.isOn)
                 return;
             if (AutosaveUsesExportOptions)
@@ -336,7 +340,9 @@ namespace JanSharp.Internal
 
         public void OnAutosaveToggleValueChanged()
         {
-            lockstep.ExportOptionsForAutosave = autosaveToggle.isOn ? lockstep.GetAllCurrentExportOptions() : null;
+            lockstep.ExportOptionsForAutosave = autosaveToggle.isOn
+                ? lockstep.GetAllCurrentExportOptions(weakReferences: true)
+                : null;
         }
 
         public void OnAutosaveIntervalFieldValueChanged()
@@ -402,7 +408,7 @@ namespace JanSharp.Internal
             string exportName = exportNameField.text.Trim().Replace('\n', ' ').Replace('\r', ' ');
             if (exportName == "")
                 exportName = null;
-            serializedOutputField.text = lockstep.Export(exportName, lockstep.GetAllCurrentExportOptions());
+            serializedOutputField.text = lockstep.Export(exportName, lockstep.GetAllCurrentExportOptions(weakReferences: true));
             CloseOpenWindow();
             OpenExportedDataWindow();
         }

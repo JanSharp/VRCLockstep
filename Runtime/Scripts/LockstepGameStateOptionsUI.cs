@@ -17,7 +17,15 @@ namespace JanSharp
         public LockstepGameStateOptionsData CurrentOptionsInternal
         {
             get => (LockstepGameStateOptionsData)GetProgramVariable("currentOptions");
-            set => SetProgramVariable("currentOptions", value);
+            set
+            {
+                LockstepGameStateOptionsData prev = (LockstepGameStateOptionsData)GetProgramVariable("currentOptions");
+                if (prev != null)
+                    prev.DecrementRefsCount();
+                if (value != null)
+                    value.IncrementRefsCount();
+                SetProgramVariable("currentOptions", value);
+            }
         }
 
         public abstract LockstepGameStateOptionsData NewOptions();
@@ -27,7 +35,6 @@ namespace JanSharp
         public abstract void OnOptionsEditorShow(LockstepOptionsEditorUI ui);
         public abstract void OnOptionsEditorHide(LockstepOptionsEditorUI ui);
 
-        public LockstepGameStateOptionsData NewOptionsInternal() => NewOptions();
         public void ValidateOptionsInternal(LockstepGameStateOptionsData options)
         {
             // HACK: I hate that you have to make a field for this in the deriving class with the correct type.

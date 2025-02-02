@@ -435,7 +435,9 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
-        public abstract LockstepGameStateOptionsData[] GetAllCurrentExportOptions();
+        /// <param name="weakReferences"></param>
+        /// <returns></returns>
+        public abstract LockstepGameStateOptionsData[] GetAllCurrentExportOptions(bool weakReferences);
         /// <summary>
         /// TODO: docs
         /// </summary>
@@ -557,6 +559,11 @@ namespace JanSharp
             out System.DateTime exportedDate,
             out string exportWorldName,
             out string exportName);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="importedGameStates"></param>
+        public abstract void CleanupImportedGameStatesData(object[][] importedGameStates);
         /// <summary>
         /// TODO: docs, mentioning associated options
         /// <para>Start importing game states using data obtained from
