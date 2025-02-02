@@ -3685,6 +3685,9 @@ namespace JanSharp.Internal
             WriteString(exportName);
             WriteSmallUInt((uint)gameStatesSupportingExportCount);
 
+            for (int i = 0; i < gameStatesSupportingExportCount; i++)
+                gameStatesSupportingExport[i].SetProgramVariable("optionsForCurrentExport", allExportOptions[i]);
+
             isSerializingForExport = true;
             for (int i = 0; i < gameStatesSupportingExportCount; i++)
             {
@@ -3702,6 +3705,9 @@ namespace JanSharp.Internal
                 writeStreamSize = stopPosition;
             }
             isSerializingForExport = false;
+
+            for (int i = 0; i < gameStatesSupportingExportCount; i++)
+                gameStatesSupportingExport[i].SetProgramVariable("optionsForCurrentExport", null);
 
             #if LockstepDebug
             long crcStartMs = exportStopWatch.ElapsedMilliseconds;
@@ -3857,7 +3863,7 @@ namespace JanSharp.Internal
                     validImportedGSs[count++] = importedGS;
             if (exportName != null)
                 exportName = exportName.Replace('\n', ' ').Replace('\r', ' ');
-            SendImportStartIA(exportDate, SanitizeWorldName(exportWorldName), exportName, validImportedGSs);
+            SendImportStartIA(validImportedGSs, exportDate, SanitizeWorldName(exportWorldName), exportName);
         }
 
         ///<summary>LockstepImportedGS[]</summary>
@@ -3883,6 +3889,12 @@ namespace JanSharp.Internal
                 importingFromWorldName = null;
                 importingFromName = null;
                 gameStatesWaitingForImport.Clear(); // And to clean up.
+                foreach (LockstepGameState gameState in gameStatesSupportingExport)
+                    if (gameState.OptionsForCurrentImport != null)
+                    {
+                        gameState.OptionsForCurrentImport.DecrementRefsCount();
+                        gameState.SetProgramVariable("optionsForCurrentImport", null);
+                    }
             }
         }
         private uint importingPlayerId;
@@ -3920,7 +3932,7 @@ namespace JanSharp.Internal
         private DataDictionary gameStatesWaitingForImport = new DataDictionary();
 
         ///<summary>LockstepImportedGS[] importedGSs</summary>
-        private void SendImportStartIA(System.DateTime exportDate, string exportWorldName, string exportName, object[][] importedGSs)
+        private void SendImportStartIA(object[][] importedGSs, System.DateTime exportDate, string exportWorldName, string exportName)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendImportStartIA");
@@ -3935,7 +3947,10 @@ namespace JanSharp.Internal
             WriteString(exportName);
             WriteSmallUInt((uint)importedGSs.Length);
             foreach (object[] importedGS in importedGSs)
+            {
                 WriteSmallUInt((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
+                WriteCustomNullableClass(LockstepImportedGS.GetImportOptions(importedGS));
+            }
             importedGSsToSend = importedGSs;
             SendInputAction(importStartIAId);
         }
@@ -3960,7 +3975,11 @@ namespace JanSharp.Internal
             for (int i = 0; i < importedGSsCount; i++)
             {
                 int gameStateIndex = (int)ReadSmallUInt();
-                gameStatesWaitingForImport.Add(gameStateIndex, allGameStates[gameStateIndex]);
+                LockstepGameState gameState = allGameStates[gameStateIndex];
+                if (!TryReadImportOptions(gameState, out LockstepGameStateOptionsData importOptions))
+                    return;
+                gameState.SetProgramVariable("optionsForCurrentImport", importOptions);
+                gameStatesWaitingForImport.Add(gameStateIndex, gameState);
             }
             SetIsImporting(true); // Raises an event, do it last so all the fields are populated.
 
@@ -3972,6 +3991,25 @@ namespace JanSharp.Internal
             importedGSsToSend = null;
         }
 
+        private bool TryReadImportOptions(LockstepGameState gameState, out LockstepGameStateOptionsData importOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  TryReadImportOptions");
+            #endif
+            if (gameState.ImportUI != null)
+            {
+                importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(gameState.ImportUI.OptionsClassName);
+                return true;
+            }
+            importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(nameof(LockstepGameStateOptionsData));
+            if (importOptions == null)
+                return true;
+            Debug.LogError($"[Lockstep] Impossible: The game state {gameState.GameStateInternalName} "
+                + $"received import options even though it does not have an import UI which subsequently "
+                + $"means it does not have an associated import options class name. Ignoring incoming data.");
+            return false;
+        }
+
         ///<summary>LockstepImportedGS importedGS</summary>
         private void SendImportGameStateIA(object[] importedGS)
         {
@@ -3980,7 +4018,6 @@ namespace JanSharp.Internal
             #endif
             WriteSmallUInt((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
             WriteSmallUInt(LockstepImportedGS.GetDataVersion(importedGS));
-            WriteCustomNullableClass(LockstepImportedGS.GetImportOptions(importedGS));
             WriteBytes(LockstepImportedGS.GetBinaryData(importedGS));
             SendInputAction(importGameStateIAId);
         }
@@ -4003,14 +4040,10 @@ namespace JanSharp.Internal
                 return;
             }
             importedDataVersion = ReadSmallUInt();
-            if (!TryReadImportOptions(gameState, out LockstepGameStateOptionsData importOptions))
-                return;
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             isDeserializingForImport = true;
-            importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion, importOptions);
+            importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion, gameState.OptionsForCurrentImport);
             isDeserializingForImport = false;
-            if (importOptions != null)
-                importOptions.DecrementRefsCount();
             if (importErrorMessage != null)
                 RaiseOnLockstepNotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
             importedGameState = gameState;
@@ -4020,25 +4053,6 @@ namespace JanSharp.Internal
             importedDataVersion = 0u;
             if (gameStatesWaitingForImport.Count == 0)
                 SetIsImporting(false);
-        }
-
-        private bool TryReadImportOptions(LockstepGameState gameState, out LockstepGameStateOptionsData importOptions)
-        {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  TryReadImportOptions");
-            #endif
-            if (gameState.ImportUI != null)
-            {
-                importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(gameState.ImportUI.OptionsClassName);
-                return true;
-            }
-            importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(nameof(LockstepGameStateOptionsData));
-            if (importOptions == null)
-                return true;
-            Debug.LogError($"[Lockstep] Impossible: The game state {gameState.GameStateInternalName} "
-                + $"received import options even though it does not have an import UI which subsequently "
-                + $"means it does not have an associated import options class name. Ignoring incoming data.");
-            return false;
         }
 
         private void CheckIfImportingPlayerLeft(uint leftPlayerId)

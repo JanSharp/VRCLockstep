@@ -50,6 +50,23 @@ namespace JanSharp
         public abstract LockstepGameStateOptionsUI ImportUI { get; }
 
         /// <summary>
+        /// <para>Set through <see cref="UdonSharpBehaviour.SetProgramVariable(string, object)"/> by lockstep,
+        /// since this is specifically not meant to be modified by the user, there's just the public
+        /// getter.</para>
+        /// </summary>
+        private LockstepGameStateOptionsData optionsForCurrentExport;
+        /// <inheritdoc cref="optionsForCurrentExport"/>
+        private LockstepGameStateOptionsData optionsForCurrentImport;
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public LockstepGameStateOptionsData OptionsForCurrentExport => optionsForCurrentExport;
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public LockstepGameStateOptionsData OptionsForCurrentImport => optionsForCurrentImport;
+
+        /// <summary>
         /// TODO: docs
         /// <para>This function must call <c>Write</c> functions on <see cref="LockstepAPI"/> just like input
         /// action do before calling <see cref="LockstepAPI.SendInputAction(uint)"/> or the singleton
