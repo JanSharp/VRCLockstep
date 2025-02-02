@@ -2678,19 +2678,19 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: autosaveTimerUpdateLoopCounter
+      Data: autosaveUpdateTImerLoopIsRunning
     - Name: $v
       Entry: 7
       Data: 155|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: autosaveTimerUpdateLoopCounter
+      Data: autosaveUpdateTImerLoopIsRunning
     - Name: <UserType>k__BackingField
       Entry: 9
-      Data: 153
+      Data: 120
     - Name: <SystemType>k__BackingField
       Entry: 9
-      Data: 153
+      Data: 120
     - Name: <SyncMode>k__BackingField
       Entry: 7
       Data: System.Nullable`1[[UdonSharp.UdonSyncMode, UdonSharp.Runtime]], mscorlib

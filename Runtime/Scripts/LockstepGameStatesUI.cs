@@ -87,20 +87,10 @@ namespace JanSharp.Internal
             importOptions = lockstep.GetNewImportOptions();
         }
 
-        private void Enable()
+        private void OnEnable()
         {
             if (isInitialized)
-                InstantAutosaveTimerUpdateLoop();
-        }
-
-        public void Disable()
-        {
-            autosaveTimerUpdateLoopCounter = 0;
-            if (applyAutosaveIntervalDelayedCounter != 0)
-            {
-                applyAutosaveIntervalDelayedCounter = 1;
-                ApplyAutosaveIntervalDelayed();
-            }
+                TryStartAutosaveTimerUpdateLoop();
         }
 
         public void OpenImportWindow()
@@ -413,26 +403,32 @@ namespace JanSharp.Internal
             OpenExportedDataWindow();
         }
 
-        private void InstantAutosaveTimerUpdateLoop()
+        private bool autosaveUpdateTImerLoopIsRunning = false;
+        private void TryStartAutosaveTimerUpdateLoop()
         {
-            autosaveTimerUpdateLoopCounter = 1; // Intentional set instead of increment to force an instant update.
+            if (autosaveUpdateTImerLoopIsRunning)
+                return;
+            autosaveUpdateTImerLoopIsRunning = true;
             AutosaveTimerUpdateLoop();
         }
 
-        private int autosaveTimerUpdateLoopCounter = 0;
         private float nextPlayerDistanceCheckTime = 0f;
         public void AutosaveTimerUpdateLoop()
         {
-            if (autosaveTimerUpdateLoopCounter == 0 || (--autosaveTimerUpdateLoopCounter) != 0)
+            if (!autosaveUpdateTImerLoopIsRunning)
                 return;
 
             if (lockstep.ExportOptionsForAutosave == null)
             {
                 autosaveTimerSlider.gameObject.SetActive(false);
+                autosaveUpdateTImerLoopIsRunning = false;
                 return;
             }
-            if (!localPlayer.IsValid())
+            if (!localPlayer.IsValid() || !this.gameObject.activeInHierarchy)
+            {
+                autosaveUpdateTImerLoopIsRunning = false;
                 return;
+            }
 
             float seconds = lockstep.SecondsUntilNextAutosave;
             float interval = lockstep.AutosaveIntervalSeconds + 0.0625f; // Prevent division by 0.
@@ -459,7 +455,6 @@ namespace JanSharp.Internal
             else
                 delay = Mathf.Clamp(interval / 300f, 0.125f, 4f);
 
-            autosaveTimerUpdateLoopCounter++;
             SendCustomEventDelayedSeconds(nameof(AutosaveTimerUpdateLoop), delay);
         }
 
@@ -487,8 +482,7 @@ namespace JanSharp.Internal
             openExportWindowButton.interactable = true;
             openAutosaveWindowButton.interactable = true;
             UpdateAllConfirmButtons();
-            autosaveTimerUpdateLoopCounter++;
-            AutosaveTimerUpdateLoop();
+            TryStartAutosaveTimerUpdateLoop();
         }
 
         [LockstepEvent(LockstepEventType.OnInit)]
@@ -512,7 +506,7 @@ namespace JanSharp.Internal
         [LockstepEvent(LockstepEventType.OnExportOptionsForAutosaveChanged)]
         public void OnExportOptionsForAutosaveChanged()
         {
-            InstantAutosaveTimerUpdateLoop();
+            TryStartAutosaveTimerUpdateLoop();
         }
 
         [LockstepEvent(LockstepEventType.OnAutosaveIntervalSecondsChanged)]
@@ -523,7 +517,7 @@ namespace JanSharp.Internal
             // event, not the end edit, so it's fine.
             autosaveIntervalField.text = ((int)autosaveInterval).ToString();
             autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
-            InstantAutosaveTimerUpdateLoop();
+            TryStartAutosaveTimerUpdateLoop();
         }
     }
 }

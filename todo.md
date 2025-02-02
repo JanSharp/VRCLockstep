@@ -21,7 +21,7 @@
 - [ ] update notes in regards to import export options and UI events
 - [x] add cloning to import export option data classes
 - [ ] an option which simply disables importing a specific game state is pretty wasteful because the entire imported game state still gets sent to all clients, just for each of them to then do nothing with that data
-- [ ] changing the autosave interval causes the timer update loop to run twice each time it updates, and presumably 3 times if it's changed again and so on
+- [x] changing the autosave interval causes the timer update loop to run twice each time it updates, and presumably 3 times if it's changed again and so on
 - [x] when autosave is using export options, show all the export options in there however with the root widget's interactable set to false
   - [x] also add an info note about this in hte generic value editor as a label widget in the info fold out
 - [x] apply changed autosave options upon hiding autosave window? it must apply changes at some point...
