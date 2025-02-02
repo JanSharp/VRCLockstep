@@ -4097,13 +4097,7 @@ namespace JanSharp.Internal
         private LockstepGameStateOptionsData[] exportOptionsForAutosave = null;
         public override LockstepGameStateOptionsData[] ExportOptionsForAutosave
         {
-            get
-            {
-                #if LockstepDebug
-                Debug.Log($"[LockstepDebug] Lockstep  ExportOptionsForAutosave.get");
-                #endif
-                return exportOptionsForAutosave;
-            }
+            get => exportOptionsForAutosave;
             set
             {
                 #if LockstepDebug
