@@ -47,7 +47,7 @@ namespace JanSharp.Internal
 
         [SerializeField] private GameObject autosaveWindow;
         [SerializeField] private RectTransform autosaveOptionsEditorContainer;
-        [SerializeField] private Toggle autosaveUsesExportOptionsToggle; // TODO: impl
+        [SerializeField] private Toggle autosaveUsesExportOptionsToggle;
         [SerializeField] private TMP_InputField autosaveIntervalField;
         [SerializeField] private Slider autosaveIntervalSlider;
         [SerializeField] private Toggle autosaveToggle;
