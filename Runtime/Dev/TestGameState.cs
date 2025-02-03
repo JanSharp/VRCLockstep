@@ -164,7 +164,7 @@ namespace JanSharp
             TestGSExportOptions options = (TestGSExportOptions)exportOptions;
             if (isExport)
             {
-                lockstep.WriteByte((byte)(options.shouldExport ? 1 : 0));
+                lockstep.WriteFlags(options.shouldExport);
                 if (!options.shouldExport)
                     return;
             }
@@ -184,7 +184,8 @@ namespace JanSharp
         public bool HasImportData()
         {
             Debug.Log("<dlt> TestGameState  HasImportData");
-            return lockstep.ReadByte() != 0;
+            lockstep.ReadFlags(out bool didExport);
+            return didExport;
         }
 
         public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)

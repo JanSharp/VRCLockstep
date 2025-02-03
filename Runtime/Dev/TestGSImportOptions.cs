@@ -26,7 +26,7 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportOptions  Serialize");
             #endif
-            lockstep.WriteByte((byte)(shouldImport ? 1 : 0));
+            lockstep.WriteFlags(shouldImport);
         }
 
         public override void Deserialize(bool isImport, uint importedDataVersion)
@@ -34,7 +34,7 @@ namespace JanSharp
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportOptions  Deserialize");
             #endif
-            shouldImport = lockstep.ReadByte() != 0;
+            lockstep.ReadFlags(out shouldImport);
         }
     }
 }

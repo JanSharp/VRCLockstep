@@ -12,7 +12,7 @@
 - [ ] ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
 - [ ] reconsider adding local player id to the lockstep api. It's needed like all the time
 - [x] add LockstepAPI lockstep field to LockstepGameState directly
-- [ ] add WriteFlags and ReadFlags with 8 overloads each, allowing to read and write up to 8 booleans
+- [x] add WriteFlags and ReadFlags with 8 overloads each, allowing to read and write up to 8 booleans
 - [x] handle null ExportUI and ImportUI, because it is valid for something to support import export but not have option UIs
 - [x] disable import/export buttons in game states UI until OnInit or OnClientBeginCatchUp is raised
 - [x] expose current import/export options on every game state throughout the entire duration of each game state being imported/exported

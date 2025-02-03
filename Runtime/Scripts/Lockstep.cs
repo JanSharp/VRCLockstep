@@ -1915,7 +1915,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  SendAcceptedMasterCandidateIA");
             #endif
             WriteSmallUInt(acceptedPlayerId);
-            WriteByte((byte)(force ? 1u : 0u));
+            WriteFlags(force);
             SendInstantAction(acceptedMasterCandidateIAId, doRunLocally: true);
         }
 
@@ -1927,7 +1927,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnAcceptedMasterCandidateIA");
             #endif
             uint acceptedPlayerId = ReadSmallUInt();
-            bool force = ReadByte() != 0u;
+            ReadFlags(out bool force);
             if (acceptedPlayerId != localPlayerId
                 || !isMaster // This client was already asked to become master previously, ignore another confirmation.
                 || !currentlyNoMaster) // A different client already became master, or this client is getting
@@ -2282,14 +2282,14 @@ namespace JanSharp.Internal
             for (int i = 0; i < keys.Count; i++)
             {
                 DataToken keyToken = keys[i];
-                WriteSmallUInt(keyToken.UInt);
+                WriteSmallUInt(keyToken.UInt); // singletonId
                 object[] inputActionData = (object[])singletonInputActions[keyToken].Reference;
-                WriteSmallUInt((uint)inputActionData[0]);
-                byte[] singletonInputActionData = (byte[])inputActionData[1];
+                WriteSmallUInt((uint)inputActionData[0]); // inputActionId
+                byte[] singletonInputActionData = (byte[])inputActionData[1]; // singletonInputActionData
                 WriteSmallUInt((uint)singletonInputActionData.Length);
                 WriteBytes(singletonInputActionData);
-                WriteByte((byte)(((bool)inputActionData[2]) ? 1 : 0));
-                WriteSmallUInt((uint)inputActionData[3]);
+                WriteFlags((bool)inputActionData[2]); // requiresTimeTracking
+                WriteSmallUInt((uint)inputActionData[3]); // sendTick
             }
 
             lateJoinerInputActionSync.SendInputAction(LJInternalGameStatesIAId, writeStream, writeStreamSize);
@@ -2348,7 +2348,7 @@ namespace JanSharp.Internal
                 uint singletonId = ReadSmallUInt();
                 uint inputActionId = ReadSmallUInt();
                 byte[] singletonInputActionData = ReadBytes((int)ReadSmallUInt());
-                bool requiresTimeTracking = ReadByte() != 0;
+                ReadFlags(out bool requiresTimeTracking);
                 uint sendTick = ReadSmallUInt();
                 singletonInputActions.Add(singletonId, new DataToken(new object[]
                 {
@@ -2655,7 +2655,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientCaughtUpIA");
             #endif
-            WriteByte(isInitialCatchUp ? (byte)1 : (byte)0); // `doRaise`.
+            WriteFlags(isInitialCatchUp); // `doRaise`.
             SendInputAction(clientCaughtUpIAId, forceOneFrameDelay: false);
         }
 
@@ -2666,10 +2666,10 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientCaughtUpIA");
             #endif
-            byte doRaise = ReadByte();
+            ReadFlags(out bool doRaise);
             if (GetClientStateUnsafe(sendingPlayerId) != ClientState.Master)
                 SetClientState(sendingPlayerId, ClientState.Normal);
-            if (doRaise != 0)
+            if (doRaise)
                 RaiseOnClientCaughtUp(sendingPlayerId);
         }
 
@@ -3153,6 +3153,14 @@ namespace JanSharp.Internal
         public override int WriteStreamPosition { get => writeStreamSize; set => writeStreamSize = value; }
         public override void WriteSByte(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteByte(byte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteFlags(bool flag1) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)(flag1 ? 1 : 0));
+        public override void WriteFlags(bool flag1, bool flag2) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0)));
+        public override void WriteFlags(bool flag1, bool flag2, bool flag3) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0)));
+        public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0)));
+        public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0) | (flag5 ? 16 : 0)));
+        public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0) | (flag5 ? 16 : 0) | (flag6 ? 32 : 0)));
+        public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0) | (flag5 ? 16 : 0) | (flag6 ? 32 : 0) | (flag7 ? 64 : 0)));
+        public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7, bool flag8) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0) | (flag5 ? 16 : 0) | (flag6 ? 32 : 0) | (flag7 ? 64 : 0) | (flag8 ? 128 : 0)));
         public override void WriteShort(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteUShort(ushort value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteInt(int value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
@@ -3258,6 +3266,74 @@ namespace JanSharp.Internal
         private void ResetReadStream() => readStreamPosition = 0;
         public override sbyte ReadSByte() => DataStream.ReadSByte(ref readStream, ref readStreamPosition);
         public override byte ReadByte() => DataStream.ReadByte(ref readStream, ref readStreamPosition);
+        public override void ReadFlags(out bool flag1)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+        }
+        public override void ReadFlags(out bool flag1, out bool flag2)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+            flag2 = (value & 2) != 0;
+        }
+        public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+            flag2 = (value & 2) != 0;
+            flag3 = (value & 4) != 0;
+        }
+        public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+            flag2 = (value & 2) != 0;
+            flag3 = (value & 4) != 0;
+            flag4 = (value & 8) != 0;
+        }
+        public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+            flag2 = (value & 2) != 0;
+            flag3 = (value & 4) != 0;
+            flag4 = (value & 8) != 0;
+            flag5 = (value & 16) != 0;
+        }
+        public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+            flag2 = (value & 2) != 0;
+            flag3 = (value & 4) != 0;
+            flag4 = (value & 8) != 0;
+            flag5 = (value & 16) != 0;
+            flag6 = (value & 32) != 0;
+        }
+        public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+            flag2 = (value & 2) != 0;
+            flag3 = (value & 4) != 0;
+            flag4 = (value & 8) != 0;
+            flag5 = (value & 16) != 0;
+            flag6 = (value & 32) != 0;
+            flag7 = (value & 64) != 0;
+        }
+        public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7, out bool flag8)
+        {
+            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            flag1 = (value & 1) != 0;
+            flag2 = (value & 2) != 0;
+            flag3 = (value & 4) != 0;
+            flag4 = (value & 8) != 0;
+            flag5 = (value & 16) != 0;
+            flag6 = (value & 32) != 0;
+            flag7 = (value & 64) != 0;
+            flag8 = (value & 128) != 0;
+        }
         public override short ReadShort() => DataStream.ReadShort(ref readStream, ref readStreamPosition);
         public override ushort ReadUShort() => DataStream.ReadUShort(ref readStream, ref readStreamPosition);
         public override int ReadInt() => DataStream.ReadInt(ref readStream, ref readStreamPosition);

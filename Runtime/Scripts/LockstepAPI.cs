@@ -862,6 +862,25 @@ namespace JanSharp
         public abstract void WriteSByte(sbyte value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteByte(byte value);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="flag1"></param>
+        public abstract void WriteFlags(bool flag1);
+        /// <inheritdoc cref="WriteFlags(bool)"/>
+        public abstract void WriteFlags(bool flag1, bool flag2);
+        /// <inheritdoc cref="WriteFlags(bool)"/>
+        public abstract void WriteFlags(bool flag1, bool flag2, bool flag3);
+        /// <inheritdoc cref="WriteFlags(bool)"/>
+        public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4);
+        /// <inheritdoc cref="WriteFlags(bool)"/>
+        public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5);
+        /// <inheritdoc cref="WriteFlags(bool)"/>
+        public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6);
+        /// <inheritdoc cref="WriteFlags(bool)"/>
+        public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7);
+        /// <inheritdoc cref="WriteFlags(bool)"/>
+        public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7, bool flag8);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteShort(short value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
@@ -980,6 +999,25 @@ namespace JanSharp
         public abstract sbyte ReadSByte();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract byte ReadByte();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="flag1"></param>
+        public abstract void ReadFlags(out bool flag1);
+        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        public abstract void ReadFlags(out bool flag1, out bool flag2);
+        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3);
+        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4);
+        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5);
+        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6);
+        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7);
+        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7, out bool flag8);
         /// <inheritdoc cref="ReadSByte"/>
         public abstract short ReadShort();
         /// <inheritdoc cref="ReadSByte"/>
