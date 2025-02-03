@@ -280,7 +280,6 @@ namespace JanSharp.Internal
 
         public void OnAutosaveUsesExportOptionsToggleValueChanged()
         {
-            // TODO: if it is autosaving, update the options lockstep is referencing
             if (AutosaveUsesExportOptions == autosaveUsesExportOptionsToggle.isOn)
                 return;
             if (AutosaveUsesExportOptions)
