@@ -446,6 +446,11 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
+        /// <param name="allExportOptions"></param>
+        public abstract int FillInMissingExportOptionsWithDefaults(LockstepGameStateOptionsData[] allExportOptions);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
         /// <returns></returns>
         public abstract bool AnyExportOptionsCurrentlyShown();
         /// <summary>
@@ -476,6 +481,17 @@ namespace JanSharp
         /// </summary>
         /// <returns></returns>
         public abstract DataDictionary GetNewImportOptions();
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="allImportOptions"></param>
+        public abstract int FillInMissingImportOptionsWithDefaults(DataDictionary allImportOptions);
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="importedGameStates"></param>
+        /// <returns></returns>
+        public abstract int FillInMissingImportOptionsWithDefaults(object[][] importedGameStates);
         /// <summary>
         /// TODO: docs
         /// </summary>

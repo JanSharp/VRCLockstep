@@ -3459,6 +3459,9 @@ namespace JanSharp.Internal
 
         public override LockstepGameStateOptionsData[] CloneAllOptions(LockstepGameStateOptionsData[] allOptions)
         {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  CloneAllOptions");
+            #endif
             LockstepGameStateOptionsData[] other = new LockstepGameStateOptionsData[allOptions.Length];
             for (int i = 0; i < allOptions.Length; i++)
             {
@@ -3485,6 +3488,24 @@ namespace JanSharp.Internal
                 allOptions[i] = exportUI.NewOptions();
             }
             return allOptions;
+        }
+
+        public override int FillInMissingExportOptionsWithDefaults(LockstepGameStateOptionsData[] allExportOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  FillInMissingExportOptionsWithDefaults");
+            #endif
+            int filledInCount = 0;
+            for (int i = 0; i < gameStatesSupportingExportCount; i++)
+            {
+                LockstepGameStateOptionsUI exportUI = gameStatesSupportingExport[i].ExportUI;
+                if (exportUI != null && allExportOptions[i] == null)
+                {
+                    allExportOptions[i] = exportUI.NewOptions();
+                    filledInCount++;
+                }
+            }
+            return filledInCount;
         }
 
         public override bool AnyExportOptionsCurrentlyShown()
@@ -3586,6 +3607,42 @@ namespace JanSharp.Internal
                 if (gameState.ImportUI != null)
                     allOptions.Add(gameState.GameStateInternalName, gameState.ImportUI.NewOptions());
             return allOptions;
+        }
+
+        public override int FillInMissingImportOptionsWithDefaults(DataDictionary allImportOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  FillInMissingImportOptionsWithDefaults");
+            #endif
+            int filledInCount = 0;
+            foreach (LockstepGameState gameState in gameStatesSupportingExport)
+                if (gameState.ImportUI != null && !allImportOptions.ContainsKey(gameState.GameStateInternalName))
+                {
+                    allImportOptions.Add(gameState.GameStateInternalName, gameState.ImportUI.NewOptions());
+                    filledInCount++;
+                }
+            return filledInCount;
+        }
+
+        public override int FillInMissingImportOptionsWithDefaults(object[][] importedGameStates)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  FillInMissingImportOptionsWithDefaults");
+            #endif
+            int filledInCount = 0;
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
+                if (gameState == null || gameState.ImportUI == null)
+                    continue;
+                LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
+                if (importOptions != null)
+                    continue;
+                importOptions = gameState.ImportUI.NewOptions();
+                LockstepImportedGS.SetImportOptions(importedGS, importOptions);
+                filledInCount++;
+            }
+            return filledInCount;
         }
 
         public override bool AnyImportOptionsCurrentlyShown()
@@ -3734,6 +3791,13 @@ namespace JanSharp.Internal
                     + "for allExportOptions as an argument to Export.");
                 return null;
             }
+            for (int i = 0; i < gameStatesSupportingExportCount; i++)
+                if (gameStatesSupportingExport[i].ExportUI != null && allExportOptions[i] == null)
+                {
+                    Debug.LogError($"[Lockstep] Missing export options for game state "
+                        + $"{gameStatesSupportingExport[i].GameStateInternalName} (index {i}), canceling Export.");
+                    return null;
+                }
             ResetWriteStream();
 
             WriteDateTime(System.DateTime.UtcNow);
@@ -3904,6 +3968,18 @@ namespace JanSharp.Internal
             {
                 Debug.LogError("[Lockstep] Attempt to call StartImport while IsImporting is true, ignoring.");
                 return;
+            }
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
+                if (gameState != null
+                    && gameState.ImportUI != null
+                    && LockstepImportedGS.GetImportOptions(importedGS) == null)
+                {
+                    Debug.LogError($"[Lockstep] Missing import options for game state "
+                        + $"{gameState.GameStateInternalName}, ignoring StartImport attempt.");
+                    continue;
+                }
             }
 
             int count = 0;
@@ -4275,6 +4351,8 @@ namespace JanSharp.Internal
                 return; // earlier than that, nope, too soon, ignore this call. It's caused by duplicate calls.
             string autosaveName = $"autosave {++autosaveCount} (tick: {currentTick})";
             ValidateExportOptions(exportOptionsForAutosave);
+            if (FillInMissingExportOptionsWithDefaults(exportOptionsForAutosave) != 0)
+                MarkForOnExportOptionsForAutosaveChanged();
             Export(autosaveName, exportOptionsForAutosave); // Export writes to the log file.
             autosaveTimerStart = Time.realtimeSinceStartup;
             SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
