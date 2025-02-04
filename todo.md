@@ -35,8 +35,8 @@
 - [x] game state autosave progress bar ultimately causes debug log spam due to the export options for autosave getter having a debug log, probably remove that
 - [ ] probably add lockstep events for when any game state's custom import or export options UI gets shown or hidden
 - [ ] potentially expose MarkForOnExportOptionsForAutosaveChanged, forcing usage of the property setter to inform systems about options having changed is unintuitive
-- [ ] potentially functions which decrement refs count on all export or import options
-- [ ] potentially accept null as all export options for exports
+- [x] ~~potentially functions which decrement refs count on all export or import options~~ uhhh no, I'm not adding a wrapper for all 4 relevant wanna be class methods for export options, import options and imported game states with import options
+- [x] potentially accept null as all export options for exports
 - [x] add helper functions to check if any game state's custom import UI is currently shown
 - [x] null options must be impossible while an options UI is shown
 - [x] expose gameStatesCountSupportingExport in the lockstep api

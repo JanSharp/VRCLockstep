@@ -3778,26 +3778,32 @@ namespace JanSharp.Internal
                     + "and or '\\r' (newline characters), which is forbidden. Ignoring.");
                 return null;
             }
-            if (allExportOptions == null)
-            {
-                Debug.LogError("[Lockstep] Attempt to call Export where allExportOptions is null.");
-                return null;
-            }
             if (gameStatesSupportingExportCount == 0) // No error log here, because this is the only sensible
                 return null; // and by definition acceptable error case in which by definition null is returned.
-            if (allExportOptions.Length != gameStatesSupportingExportCount)
+
+            bool isUsingTemporaryExportOptions = false;
+            if (allExportOptions == null)
             {
-                Debug.LogError($"[Lockstep] Expected length {gameStatesSupportingExportCount}, got {allExportOptions.Length} "
-                    + "for allExportOptions as an argument to Export.");
-                return null;
+                allExportOptions = GetNewExportOptions();
+                isUsingTemporaryExportOptions = true;
             }
-            for (int i = 0; i < gameStatesSupportingExportCount; i++)
-                if (gameStatesSupportingExport[i].ExportUI != null && allExportOptions[i] == null)
+            else
+            {
+                if (allExportOptions.Length != gameStatesSupportingExportCount)
                 {
-                    Debug.LogError($"[Lockstep] Missing export options for game state "
-                        + $"{gameStatesSupportingExport[i].GameStateInternalName} (index {i}), canceling Export.");
+                    Debug.LogError($"[Lockstep] Expected length {gameStatesSupportingExportCount}, got {allExportOptions.Length} "
+                        + "for allExportOptions as an argument to Export.");
                     return null;
                 }
+                for (int i = 0; i < gameStatesSupportingExportCount; i++)
+                    if (gameStatesSupportingExport[i].ExportUI != null && allExportOptions[i] == null)
+                    {
+                        Debug.LogError($"[Lockstep] Missing export options for game state "
+                            + $"{gameStatesSupportingExport[i].GameStateInternalName} (index {i}), canceling Export.");
+                        return null;
+                    }
+            }
+
             ResetWriteStream();
 
             WriteDateTime(System.DateTime.UtcNow);
@@ -3806,7 +3812,12 @@ namespace JanSharp.Internal
             WriteSmallUInt((uint)gameStatesSupportingExportCount);
 
             for (int i = 0; i < gameStatesSupportingExportCount; i++)
-                gameStatesSupportingExport[i].SetProgramVariable("optionsForCurrentExport", allExportOptions[i]);
+            {
+                LockstepGameStateOptionsData exportOptions = allExportOptions[i];
+                gameStatesSupportingExport[i].SetProgramVariable("optionsForCurrentExport", exportOptions);
+                if (!isUsingTemporaryExportOptions && exportOptions != null) // Temporary ones already have a non weak ref
+                    exportOptions.IncrementRefsCount(); // Ensure none get deleted during any SerializeGameState calls
+            }
 
             isSerializingForExport = true;
             for (int i = 0; i < gameStatesSupportingExportCount; i++)
@@ -3827,7 +3838,12 @@ namespace JanSharp.Internal
             isSerializingForExport = false;
 
             for (int i = 0; i < gameStatesSupportingExportCount; i++)
+            {
                 gameStatesSupportingExport[i].SetProgramVariable("optionsForCurrentExport", null);
+                LockstepGameStateOptionsData exportOptions = allExportOptions[i];
+                if (exportOptions != null)
+                    exportOptions.DecrementRefsCount(); // This'll also delete the options if they were temporary ones
+            }
 
             #if LockstepDebug
             long crcStartMs = exportStopWatch.ElapsedMilliseconds;
