@@ -385,7 +385,8 @@ namespace JanSharp
         /// of sending the input action.</param>
         public abstract ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId);
         /// <summary>
-        /// TODO: docs
+        /// TODO: docs, note to take care with delayed events in regards to game state serialization for
+        /// exports, as well as post imports. Delayed events are yet another complication for exports/imports.
         /// </summary>
         /// <param name="inputActionId"></param>
         /// <param name="tickDelay"></param>
