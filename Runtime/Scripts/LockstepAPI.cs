@@ -385,6 +385,12 @@ namespace JanSharp
         /// of sending the input action.</param>
         public abstract ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId);
         /// <summary>
+        /// TODO: docs
+        /// </summary>
+        /// <param name="inputActionId"></param>
+        /// <param name="tickDelay"></param>
+        public abstract void SendEventDelayedTicks(uint inputActionId, uint tickDelay);
+        /// <summary>
         /// <para>Simply a wrapper around <see cref="SendMasterChangeRequestIA(uint)"/> with the local
         /// client's id passed in as the new master client id.</para>
         /// </summary>

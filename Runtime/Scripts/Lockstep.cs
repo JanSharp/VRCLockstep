@@ -178,6 +178,11 @@ namespace JanSharp.Internal
         // ulong[]: unique ids (same as for inputActionsByUniqueId)
         private DataDictionary uniqueIdsByTick = new DataDictionary();
 
+        /// <summary>
+        /// <para>uint tick => DataList(object[] { uint inputActionId, byte[] inputActionData })</para>
+        /// </summary>
+        private DataDictionary delayedEventsByTick = new DataDictionary();
+
         ///cSpell:ignore iatrn
         ///<summary>(objet[] { uint inputActionId, byte[] inputActionData, ulong uniqueId, float sendTime })[]</summary>
         private object[][] inputActionsToRunNextFrame = new object[ArrList.MinCapacity][];
@@ -707,6 +712,9 @@ namespace JanSharp.Internal
             if (uniqueIds != null)
                 RunInputActionsForUniqueIds(uniqueIds);
 
+            if (delayedEventsByTick.Remove(currentTickToken, out DataToken eventDataListToken))
+                RunDelayedEventsForCurrentTick(eventDataListToken.DataList);
+
             RaiseOnTick(); // End of tick.
 
             currentTick++;
@@ -786,6 +794,21 @@ namespace JanSharp.Internal
             }
 
             return true;
+        }
+
+        private void RunDelayedEventsForCurrentTick(DataList eventDataList)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RunDelayedEventsForCurrentTick");
+            #endif
+            int count = eventDataList.Count;
+            for (int i = 0; i < count; i++)
+            {
+                object[] eventData = (object[])eventDataList[i].Reference;
+                uint inputActionId = (uint)eventData[0];
+                byte[] inputActionData = (byte[])eventData[1];
+                RunInputAction(inputActionId, inputActionData, 0uL, 0f, bypassValidityCheck: true);
+            }
         }
 
         private void RunInputActionsForUniqueIds(ulong[] uniqueIds)
@@ -1048,6 +1071,40 @@ namespace JanSharp.Internal
                     // forceOneFrameDelay is true to have consistent order in relation to the OnClientLeft event.
                 }
             }
+        }
+
+        public override void SendEventDelayedTicks(uint inputActionId, uint tickDelay)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendEventDelayedTicks");
+            #endif
+            if (ignoreLocalInputActions)
+            {
+                ResetWriteStream();
+                return;
+            }
+
+            byte[] inputActionData = new byte[writeStreamSize];
+            System.Array.Copy(writeStream, inputActionData, writeStreamSize);
+            ResetWriteStream();
+
+            if (tickDelay == 0u)
+            {
+                ResetWriteStream();
+                RunInputAction(inputActionId, inputActionData, 0uL, 0f, bypassValidityCheck: true);
+                return;
+            }
+
+            uint tick = currentTick + tickDelay;
+            DataList eventDataList;
+            if (delayedEventsByTick.TryGetValue(tick, out DataToken eventDataListToken))
+                eventDataList = eventDataListToken.DataList;
+            else
+            {
+                eventDataList = new DataList();
+                delayedEventsByTick.Add(tick, eventDataList);
+            }
+            eventDataList.Add(new DataToken(new object[] { inputActionId, inputActionData }));
         }
 
         public void InputActionSent(ulong uniqueId)
@@ -2277,9 +2334,10 @@ namespace JanSharp.Internal
 
             // Singleton input actions game state.
             WriteSmallUInt(nextSingletonId);
-            WriteSmallUInt((uint)singletonInputActions.Count);
+            int count = singletonInputActions.Count;
+            WriteSmallUInt((uint)count);
             DataList keys = singletonInputActions.GetKeys();
-            for (int i = 0; i < keys.Count; i++)
+            for (int i = 0; i < count; i++)
             {
                 DataToken keyToken = keys[i];
                 WriteSmallUInt(keyToken.UInt); // singletonId
@@ -2290,6 +2348,27 @@ namespace JanSharp.Internal
                 WriteBytes(singletonInputActionData);
                 WriteFlags((bool)inputActionData[2]); // requiresTimeTracking
                 WriteSmallUInt((uint)inputActionData[3]); // sendTick
+            }
+
+            // Delayed events game state.
+            count = delayedEventsByTick.Count;
+            WriteSmallUInt((uint)count);
+            keys = delayedEventsByTick.GetKeys();
+            for (int i = 0; i < count; i++)
+            {
+                DataToken keyToken = keys[i];
+                WriteSmallUInt(keyToken.UInt); // tick
+                DataList eventDataList = delayedEventsByTick[keyToken].DataList;
+                int eventsCount = eventDataList.Count;
+                WriteSmallUInt((uint)eventsCount);
+                for (int j = 0; j < eventsCount; j++)
+                {
+                    object[] eventData = (object[])eventDataList[i].Reference;
+                    WriteSmallUInt((uint)eventData[0]); // inputActionId
+                    byte[] inputActionData = (byte[])eventData[1]; // inputActionData
+                    WriteSmallUInt((uint)inputActionData.Length);
+                    WriteBytes(inputActionData);
+                }
             }
 
             lateJoinerInputActionSync.SendInputAction(LJInternalGameStatesIAId, writeStream, writeStreamSize);
@@ -2321,6 +2400,7 @@ namespace JanSharp.Internal
             // the beginning, forget about everything that's been received so far.
             ForgetAboutUnprocessedLJSerializedGameSates();
 
+            // Client states game state.
             SetClientStatesToEmpty();
             latestInputActionIndexByPlayerIdForLJ = new DataDictionary();
             int count = (int)ReadSmallUInt();
@@ -2340,6 +2420,7 @@ namespace JanSharp.Internal
 
             RemoveClientsFromLeftClientsWhichAreNotInClientStates();
 
+            // Singleton input actions game state.
             singletonInputActions.Clear();
             nextSingletonId = ReadSmallUInt();
             count = (int)ReadSmallUInt();
@@ -2358,6 +2439,23 @@ namespace JanSharp.Internal
                     sendTick,
                     float.NaN, // Don't know the tick start time yet, cannot calculate the local send time.
                 }));
+            }
+
+            // Delayed events game state.
+            delayedEventsByTick.Clear();
+            count = (int)ReadSmallUInt();
+            for (int i = 0; i < count; i++)
+            {
+                DataList eventDataList = new DataList();
+                uint tick = ReadSmallUInt();
+                int eventsCount = (int)ReadSmallUInt();
+                for (int j = 0; j < eventsCount; j++)
+                {
+                    uint inputActionId = ReadSmallUInt();
+                    byte[] inputActionData = ReadBytes((int)ReadSmallUInt());
+                    eventDataList.Add(new DataToken(new object[] { inputActionId, inputActionData }));
+                }
+                delayedEventsByTick.Add(tick, eventDataList);
             }
         }
 

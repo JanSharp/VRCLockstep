@@ -35,6 +35,18 @@ namespace JanSharp
         public void OnInit()
         {
             Debug.Log($"<dlt> TestGameState  OnInit");
+            lockstep.WriteSmallUInt(1u);
+            lockstep.SendEventDelayedTicks(delayedInputActionId, 50);
+        }
+
+        [SerializeField] [HideInInspector] private uint delayedInputActionId;
+        [LockstepInputAction(nameof(delayedInputActionId))]
+        public void OnDelayedInputAction()
+        {
+            uint counter = lockstep.ReadSmallUInt();
+            Debug.Log($"<dlt> TestGameState  OnDelayedInputAction - lockstep.CurrentTick: {lockstep.CurrentTick}, lockstep.ReadSmallUInt(): {counter}");
+            lockstep.WriteSmallUInt(counter + 1u);
+            lockstep.SendEventDelayedTicks(delayedInputActionId, 50);
         }
 
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
