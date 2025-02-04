@@ -3999,19 +3999,34 @@ namespace JanSharp.Internal
             }
 
             int count = 0;
-            foreach(object[] importedGS in importedGameStates)
+            foreach (object[] importedGS in importedGameStates)
                 if (LockstepImportedGS.GetErrorMsg(importedGS) == null)
                     count++;
             if (count == 0)
                 return;
             object[][] validImportedGSs = new object[count][];
             count = 0;
-            foreach(object[] importedGS in importedGameStates)
+            foreach (object[] importedGS in importedGameStates)
+            {
                 if (LockstepImportedGS.GetErrorMsg(importedGS) == null)
                     validImportedGSs[count++] = importedGS;
+                LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
+                // Nothing _should_ decrement refs count of import options inside of the serialize function
+                // for an instance of import options, but it is custom user code, so technically it is possible
+                // and at that point it would be StartImport's fault for not keeping the import options alive
+                // long enough. So here we are keeping a strong reference, and then immediately releasing it.
+                if (importOptions != null)
+                    importOptions.IncrementRefsCount();
+            }
             if (exportName != null)
                 exportName = exportName.Replace('\n', ' ').Replace('\r', ' ');
             SendImportStartIA(validImportedGSs, exportDate, SanitizeWorldName(exportWorldName), exportName);
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
+                if (importOptions != null)
+                    importOptions.DecrementRefsCount();
+            }
         }
 
         ///<summary>LockstepImportedGS[]</summary>
