@@ -721,10 +721,14 @@ namespace JanSharp
 
         /// <summary>
         /// TODO: docs
-        /// make sure to mention that one should also reassign to this variable after having modified a given
-        /// options class instance, in order to raise the OnExportOptionsForAutosaveChanged event.
+        /// make sure to mention that this clones all options on both read and write
+        /// also note that on write it fills all missing export options using default options
         /// </summary>
         public abstract LockstepGameStateOptionsData[] ExportOptionsForAutosave { get; set; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract bool HasExportOptionsForAutosave { get; }
         // TODO: reuse some of these docs for the above, probably
         // /// <summary>
         // /// <para>Autosaves are written to the

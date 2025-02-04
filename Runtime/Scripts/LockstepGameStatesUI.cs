@@ -148,6 +148,8 @@ namespace JanSharp.Internal
             exportWindow.SetActive(false);
             lockstep.UpdateAllCurrentExportOptionsFromWidgets();
             lockstep.HideExportOptionsEditor();
+            if (!AutosaveUsesExportOptions && autosaveToggle.isOn)
+                lockstep.ExportOptionsForAutosave = exportOptions; // exportOptions == autosaveOptions
         }
 
         public void CloseExportedDataWindow()
@@ -417,7 +419,7 @@ namespace JanSharp.Internal
             if (!autosaveUpdateTImerLoopIsRunning)
                 return;
 
-            if (lockstep.ExportOptionsForAutosave == null)
+            if (!lockstep.HasExportOptionsForAutosave)
             {
                 autosaveTimerSlider.gameObject.SetActive(false);
                 autosaveUpdateTImerLoopIsRunning = false;

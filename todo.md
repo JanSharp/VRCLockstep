@@ -34,7 +34,12 @@
 - [x] remove all state in regards to import export UI being shown or hidden from lockstep. The functions are supposed to just be helpers for using yet another api, they should just be representing that state
 - [x] game state autosave progress bar ultimately causes debug log spam due to the export options for autosave getter having a debug log, probably remove that
 - [ ] probably add lockstep events for when any game state's custom import or export options UI gets shown or hidden
-- [ ] potentially expose MarkForOnExportOptionsForAutosaveChanged, forcing usage of the property setter to inform systems about options having changed is unintuitive
+- [ ] in LockstepGameStatesUI in OnExportOptionsForAutosaveChanged handle other third party code using the lockstep api modifying export options for autosave, making the options saved in LockstepGameStatesUI reflect external changes. An issue here may be that we cannot compare options
+  - [ ] also in OnExportOptionsForAutosaveChanged update the autosave UI if it is currently shown
+  - [ ] additionally if the export window is open while OnExportOptionsForAutosaveChanged gets raised and autosave is using the same options as export then the currently shown UI should be updated, even if the export UI is currently shown, since that shares the same reference
+- [ ] StartImport must keep strong references to import options
+- [x] ~~potentially expose MarkForOnExportOptionsForAutosaveChanged, forcing usage of the property setter to inform systems about options having changed is unintuitive~~
+  - [x] instead of doing that make ExportOptionsForAutosave clone all options on both read and write, as such nothing external to lockstep may hold a reference to options used for autosaving, so long as all options's Clone function has been implemented properly - performing a deep clone rather than shallow
 - [x] ~~potentially functions which decrement refs count on all export or import options~~ uhhh no, I'm not adding a wrapper for all 4 relevant wanna be class methods for export options, import options and imported game states with import options
 - [x] potentially accept null as all export options for exports
 - [x] add helper functions to check if any game state's custom import UI is currently shown

@@ -4259,7 +4259,13 @@ namespace JanSharp.Internal
         private LockstepGameStateOptionsData[] exportOptionsForAutosave = null;
         public override LockstepGameStateOptionsData[] ExportOptionsForAutosave
         {
-            get => exportOptionsForAutosave;
+            get
+            {
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] Lockstep  ExportOptionsForAutosave.get");
+                #endif
+                return CloneAllOptions(exportOptionsForAutosave);
+            }
             set
             {
                 #if LockstepDebug
@@ -4267,19 +4273,22 @@ namespace JanSharp.Internal
                 #endif
                 if (value == null && exportOptionsForAutosave == null)
                     return;
-                if (value != null)
-                    for (int i = 0; i < value.Length; i++)
-                        if (value[i] != null)
-                            value[i].IncrementRefsCount();
                 if (exportOptionsForAutosave != null)
                     for (int i = 0; i < exportOptionsForAutosave.Length; i++)
                         if (exportOptionsForAutosave[i] != null)
                             exportOptionsForAutosave[i].DecrementRefsCount();
-                exportOptionsForAutosave = value;
+                if (value == null)
+                    exportOptionsForAutosave = null;
+                else
+                {
+                    exportOptionsForAutosave = CloneAllOptions(value);
+                    FillInMissingExportOptionsWithDefaults(exportOptionsForAutosave);
+                }
                 StartOrStopAutosave();
                 MarkForOnExportOptionsForAutosaveChanged();
             }
         }
+        public override bool HasExportOptionsForAutosave => exportOptionsForAutosave != null;
 
         private float autosaveIntervalSeconds = 300f;
         public override float AutosaveIntervalSeconds
@@ -4367,8 +4376,6 @@ namespace JanSharp.Internal
                 return; // earlier than that, nope, too soon, ignore this call. It's caused by duplicate calls.
             string autosaveName = $"autosave {++autosaveCount} (tick: {currentTick})";
             ValidateExportOptions(exportOptionsForAutosave);
-            if (FillInMissingExportOptionsWithDefaults(exportOptionsForAutosave) != 0)
-                MarkForOnExportOptionsForAutosaveChanged();
             Export(autosaveName, exportOptionsForAutosave); // Export writes to the log file.
             autosaveTimerStart = Time.realtimeSinceStartup;
             SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
