@@ -226,4 +226,27 @@ namespace JanSharp {
         /// </summary>
         public bool TrackTiming { get; set; } = false;
     }
+
+    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public sealed class LockstepOnNthTickAttribute : System.Attribute
+    {
+        readonly uint interval;
+        public uint Interval => interval;
+
+        /// <summary>
+        /// TODO: docs
+        /// make sure to mention that this only affects order within the same interval
+        /// </summary>
+        public int Order { get; set; }
+
+        /// <summary>
+        /// TODO: docs
+        /// make sure to mention this event in the notes file
+        /// </summary>
+        /// <param name="interval"></param>
+        public LockstepOnNthTickAttribute(uint interval)
+        {
+            this.interval = interval;
+        }
+    }
 }

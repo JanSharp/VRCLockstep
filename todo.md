@@ -7,7 +7,7 @@
 - [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
 - [ ] add game state safe prng
 - [ ] make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
-- [ ] on nth tick? game state safe.
+- [x] on nth tick? game state safe.
 - [x] raise event delayed by ticks, game state safe.
 - [ ] ensure that any functions that previously were guaranteed to only ever run on the master are now checking if the local client is still master
 - [x] ~~reconsider adding local player id to the lockstep api. It's needed like all the time~~ Reconsidered it, not adding it due to order of operation issues. The implementation would have to check if the local player variable inside of lockstep is non null before returning the cached local player id. If the local player is null then that means the start function for lockstep has not run yet, however other scripts's start functions would run before lockstep, therefore this is possible. This overall means that exposing the local player id on lockstep would come with not only the overhead of a property getter which I believe is implemented using a custom event and ultimately at least one get program variable call by UdonSharp, as well as the overhead of checking the local player variable for non null which is a branch. Udon is just too slow to warrant this. The alternative is forcing other scripts to cache their own local player id inside of their script, which removes all of this overhead, replacing it with a variable which already exists in the script that's using the variable, which is like a simple push instruction or whatever in Udon

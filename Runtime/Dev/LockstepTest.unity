@@ -9017,6 +9017,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
+      propertyPath: onNthTickGroupsCount
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
       propertyPath: wannaBeClassesManager
       value: 
       objectReference: {fileID: 1224256707}
@@ -9123,6 +9128,11 @@ PrefabInstance:
       objectReference: {fileID: 8315912742390367728}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
+      propertyPath: onNthTickIntervals.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
       propertyPath: timedSingletonInputActionIAId
       value: 1
       objectReference: {fileID: 0}
@@ -9145,6 +9155,16 @@ PrefabInstance:
         type: 3}
       propertyPath: onClientLeftListeners.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickIntervals.Array.data[0]
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickIntervals.Array.data[1]
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
@@ -9198,6 +9218,11 @@ PrefabInstance:
       objectReference: {fileID: 8315912742390367728}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
+      propertyPath: onNthTickHandlerInstances.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
       propertyPath: responseForBetterMasterCandidateIAId
       value: 6
       objectReference: {fileID: 0}
@@ -9226,6 +9251,16 @@ PrefabInstance:
       propertyPath: onLockstepTickListeners.Array.data[0]
       value: 
       objectReference: {fileID: 1385105837}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerEventNames.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerGroupSizes.Array.size
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
       propertyPath: onPreClientJoinedListeners.Array.size
@@ -9278,6 +9313,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}
+      propertyPath: onNthTickHandlerInstances.Array.data[0]
+      value: 
+      objectReference: {fileID: 1385105837}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerInstances.Array.data[1]
+      value: 
+      objectReference: {fileID: 1385105837}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerInstances.Array.data[2]
+      value: 
+      objectReference: {fileID: 1385105837}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
       propertyPath: gameStatesSupportingExport.Array.data[0]
       value: 
       objectReference: {fileID: 256865522}
@@ -9305,6 +9355,31 @@ PrefabInstance:
         type: 3}
       propertyPath: onClientBeginCatchUpListeners.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerEventNames.Array.data[0]
+      value: On75thTick
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerEventNames.Array.data[1]
+      value: On100thTick
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerEventNames.Array.data[2]
+      value: On100thTickAgain
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerGroupSizes.Array.data[0]
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
+        type: 3}
+      propertyPath: onNthTickHandlerGroupSizes.Array.data[1]
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4728509102619734785, guid: 4f5050760fb932762b18e249c98c7afd,
         type: 3}

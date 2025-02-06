@@ -21,12 +21,14 @@ namespace JanSharp.Internal
         private static List<LockstepGameState> allGameStates = new List<LockstepGameState>();
         public static ReadOnlyCollection<LockstepGameState> AllGameStates => allGameStates.AsReadOnly();
 
-        private static List<(UdonSharpBehaviour inst, string iaName, bool timed)> allInputActions = new List<(UdonSharpBehaviour inst, string iaName, bool timed)>();
+        private static List<(UdonSharpBehaviour inst, string iaName, bool timed)> allInputActions = new();
+        private static List<(UdonSharpBehaviour inst, string listenerName, uint interval, int order)> allOnNthTickListeners = new();
 
-        private static Dictionary<System.Type, TypeCache> cache = new Dictionary<System.Type, TypeCache>();
+        private static Dictionary<System.Type, TypeCache> cache = new();
         private class TypeCache
         {
             public List<(string iaName, string fieldName, bool timed)> inputActions;
+            public List<(string eventName, uint interval, int order)> onNthTickListeners;
         }
 
         static LockstepOnBuild()
@@ -49,6 +51,7 @@ namespace JanSharp.Internal
 
             allGameStates.Clear();
             allInputActions.Clear();
+            allOnNthTickListeners.Clear();
             return true;
         }
 
@@ -97,6 +100,41 @@ namespace JanSharp.Internal
                 (p, v) => p.boolValue = v
             );
 
+
+            allOnNthTickListeners = allOnNthTickListeners
+                .OrderBy(l => l.interval)
+                .ThenBy(l => l.order)
+                .ThenBy(l => l.listenerName)
+                .ToList();
+
+            EditorUtil.SetArrayProperty(
+                lockstepSo.FindProperty("onNthTickHandlerInstances"),
+                allOnNthTickListeners.Select(l => l.inst).ToList(),
+                (p, v) => p.objectReferenceValue = v
+            );
+
+            EditorUtil.SetArrayProperty(
+                lockstepSo.FindProperty("onNthTickHandlerEventNames"),
+                allOnNthTickListeners.Select(l => l.listenerName).ToList(),
+                (p, v) => p.stringValue = v
+            );
+
+            var grouped = allOnNthTickListeners.GroupBy(l => l.interval).ToList();
+
+            lockstepSo.FindProperty("onNthTickGroupsCount").intValue = grouped.Count;
+
+            EditorUtil.SetArrayProperty(
+                lockstepSo.FindProperty("onNthTickHandlerGroupSizes"),
+                grouped.Select(g => g.Count()).ToList(),
+                (p, v) => p.intValue = v
+            );
+
+            EditorUtil.SetArrayProperty(
+                lockstepSo.FindProperty("onNthTickIntervals"),
+                grouped.Select(g => g.Key).ToList(),
+                (p, v) => p.uintValue = v
+            );
+
             lockstepSo.ApplyModifiedProperties();
             return true;
         }
@@ -142,12 +180,39 @@ namespace JanSharp.Internal
                     result = false;
                     return;
                 }
-                typeCache.inputActions ??= new List<(string iaName, string fieldName, bool timed)>();
+                typeCache.inputActions ??= new();
                 typeCache.inputActions.Add((method.Name, attr.IdFieldName, attr.TrackTiming));
             }
 
+            void CheckOnNthTickAttribute(MethodInfo method)
+            {
+                LockstepOnNthTickAttribute attr = method.GetCustomAttribute<LockstepOnNthTickAttribute>();
+                if (attr == null)
+                    return;
+                if (!method.IsPublic)
+                {
+                    Debug.LogError($"[Lockstep] The method {ubType.Name}.{method.Name} is marked as an "
+                        + $"OnNthTick event listener, however such methods must be public.", ub);
+                    result = false;
+                    return;
+                }
+                if (attr.Interval == 0u)
+                {
+                    Debug.LogError($"[Lockstep] The method {ubType.Name}.{method.Name} is marked as an "
+                        + $"OnNthTick event listener with an interval of 0. "
+                        + $"The interval must be greater than 0.", ub);
+                    result = false;
+                    return;
+                }
+                typeCache.onNthTickListeners ??= new();
+                typeCache.onNthTickListeners.Add((method.Name, attr.Interval, attr.Order));
+            }
+
             foreach (MethodInfo method in ubType.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            {
                 CheckInputActionAttribute(method);
+                CheckOnNthTickAttribute(method);
+            }
 
             cached = typeCache;
             // Do not save it in the cache if it failed, otherwise subsequent runs of this logic without
@@ -173,6 +238,10 @@ namespace JanSharp.Internal
                 }
                 ubSo.ApplyModifiedProperties();
             }
+
+            if (cached.onNthTickListeners != null)
+                foreach (var listener in cached.onNthTickListeners)
+                    allOnNthTickListeners.Add((ub, listener.eventName, listener.interval, listener.order));
 
             return true;
         }

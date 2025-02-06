@@ -49,6 +49,24 @@ namespace JanSharp
             lockstep.SendEventDelayedTicks(delayedInputActionId, 50);
         }
 
+        [LockstepOnNthTick(75)]
+        public void On75thTick()
+        {
+            Debug.Log($"<dlt> TestGameState  On75thTick - lockstep.CurrentTick: {lockstep.CurrentTick}");
+        }
+
+        [LockstepOnNthTick(100, Order = 0)]
+        public void On100thTick()
+        {
+            Debug.Log($"<dlt> TestGameState  On100thTick - lockstep.CurrentTick: {lockstep.CurrentTick}");
+        }
+
+        [LockstepOnNthTick(100, Order = 1)]
+        public void On100thTickAgain()
+        {
+            Debug.Log($"<dlt> TestGameState  On100thTickAgain - lockstep.CurrentTick: {lockstep.CurrentTick}");
+        }
+
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp()
         {

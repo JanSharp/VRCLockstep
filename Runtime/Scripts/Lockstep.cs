@@ -55,9 +55,10 @@ namespace JanSharp.Internal
         /// <para>On non master this is the tick input actions will get run in. Once input actions have been
         /// run for this tick it as advanced immediately to the next tick, so you can think of it like input
         /// actions getting run at the end of a tick (as well as on tick).</para>
-        /// <para>Ultimately this means that no matter what client we are on, when TryRunTick runs, the very
-        /// last thing that happens is raising on tick and incrementing currentTick. I hope this makes master
-        /// changes (which happen at the start of a tick) easier to think about.</para>
+        /// <para>Ultimately this means that no matter what client we are on, when
+        /// <see cref="TryRunCurrentTick"/> runs, the very last thing that happens is raising on tick and
+        /// incrementing currentTick. I hope this makes master changes (which happen at the start of a tick)
+        /// easier to think about.</para>
         /// </summary>
         private uint currentTick;
         /// <summary>
@@ -201,6 +202,12 @@ namespace JanSharp.Internal
         [SerializeField] private string[] inputActionHandlerEventNames;
         public bool[] inputActionHandlersRequireTimeTracking;
         [System.NonSerialized] public float currentInputActionSendTime;
+
+        [SerializeField] private UdonSharpBehaviour[] onNthTickHandlerInstances;
+        [SerializeField] private string[] onNthTickHandlerEventNames;
+        [SerializeField] private int onNthTickGroupsCount;
+        [SerializeField] private int[] onNthTickHandlerGroupSizes;
+        [SerializeField] private uint[] onNthTickIntervals;
 
         [SerializeField] private UdonSharpBehaviour[] onInitListeners;
         [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
@@ -715,6 +722,7 @@ namespace JanSharp.Internal
             if (delayedEventsByTick.Remove(currentTickToken, out DataToken eventDataListToken))
                 RunDelayedEventsForCurrentTick(eventDataListToken.DataList);
 
+            RaiseOnNthTicks();
             RaiseOnTick(); // End of tick.
 
             currentTick++;
@@ -808,6 +816,26 @@ namespace JanSharp.Internal
                 uint inputActionId = (uint)eventData[0];
                 byte[] inputActionData = (byte[])eventData[1];
                 RunInputAction(inputActionId, inputActionData, 0uL, 0f, bypassValidityCheck: true);
+            }
+        }
+
+        private void RaiseOnNthTicks()
+        {
+            int handlerIndex = 0;
+            for (int i = 0; i < onNthTickGroupsCount; i++)
+            {
+                int groupSize = onNthTickHandlerGroupSizes[i];
+                uint interval = onNthTickIntervals[i];
+                // Udon only exposes int modulo. No uint, long, etc. Hilariously terribly sad.
+                if (currentTick - ((currentTick / interval) * interval) != 0u)
+                {
+                    handlerIndex += groupSize;
+                    continue;
+                }
+                int startIndex = handlerIndex;
+                handlerIndex += groupSize;
+                for (int j = startIndex; j < handlerIndex; j++)
+                    onNthTickHandlerInstances[j].SendCustomEvent(onNthTickHandlerEventNames[j]);
             }
         }
 
