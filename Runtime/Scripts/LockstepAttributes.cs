@@ -140,7 +140,7 @@ namespace JanSharp {
         /// <para>Raised whenever <see cref="LockstepAPI.GameStatesToAutosave"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
         /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
-        /// value may not actually be different from the last time you've read it.</para>
+        /// value may not actually be different from the last time it was read.</para>
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
         OnExportOptionsForAutosaveChanged,
@@ -148,7 +148,7 @@ namespace JanSharp {
         /// <para>Raised whenever <see cref="LockstepAPI.AutosaveIntervalSeconds"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
         /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
-        /// value may not actually be different from the last time you've read it.</para>
+        /// value may not actually be different from the last time it was read.</para>
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
         OnAutosaveIntervalSecondsChanged,
@@ -156,7 +156,7 @@ namespace JanSharp {
         /// <para>Raised whenever <see cref="LockstepAPI.IsAutosavePaused"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
         /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
-        /// value may not actually be different from the last time you've read it.</para>
+        /// value may not actually be different from the last time it was read.</para>
         /// <para>Not game state safe - autosaving is local only.</para>
         /// </summary>
         OnIsAutosavePausedChanged,
@@ -221,7 +221,7 @@ namespace JanSharp {
         /// <para>Inside of the input action handler, <see cref="LockstepAPI.SendingTime"/> and
         /// <see cref="LockstepAPI.RealtimeSinceSending"/> can be used to obtain this timing
         /// information.</para>
-        /// <para>WHen timing is needed for late joiners as well, store some tick in your game state and use
+        /// <para>When timing is needed for late joiners as well, store some tick in a game state and use
         /// <see cref="LockstepAPI.RealtimeAtTick(uint)"/> on the joined client.</para>
         /// </summary>
         public bool TrackTiming { get; set; } = false;
