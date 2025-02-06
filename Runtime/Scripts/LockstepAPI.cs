@@ -20,7 +20,7 @@ namespace JanSharp
         None,
     }
 
-    [SingletonScript]
+    [SingletonScript("4f5050760fb932762b18e249c98c7afd")] // Runtime/Prefabs/Lockstep.prefab
     public abstract class LockstepAPI : UdonSharpBehaviour
     {
         /// <summary>

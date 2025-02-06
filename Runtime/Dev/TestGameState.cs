@@ -7,7 +7,7 @@ using VRC.Udon;
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    [SingletonScript]
+    [SingletonScript("390fe6d092732ae17bddcb5e4175d7df")] // Runtime/Dev/TestGameState.prefab
     public class TestGameState : LockstepGameState
     {
         [SerializeField] private TestGameStateUI ui;

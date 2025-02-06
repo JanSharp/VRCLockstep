@@ -37,7 +37,7 @@ namespace JanSharp
 
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     [CustomRaisedEventsDispatcher(typeof(LockstepMasterPreferenceEventAttribute), typeof(LockstepMasterPreferenceEventType))]
-    [SingletonScript]
+    [SingletonScript("2fc964357f5582524aa3501a3d87cc61")] // Runtime/Prefabs/LockstepMasterPreference.prefab
     public class LockstepMasterPreference : LockstepGameState
     {
         public override string GameStateInternalName => "jansharp.lockstep-master-preference";
