@@ -170,7 +170,7 @@ namespace JanSharp {
     }
 
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class LockstepEventAttribute : CustomRaisedEventBaseAttribute
+    public sealed class LockstepEventAttribute : CustomRaisedEventBaseAttribute
     {
         /// <summary>
         /// <para>The method this attribute gets applied to must be public.</para>
@@ -187,7 +187,7 @@ namespace JanSharp {
     }
 
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class LockstepInputActionAttribute : System.Attribute
+    public sealed class LockstepInputActionAttribute : System.Attribute
     {
         private readonly string idFieldName;
         public string IdFieldName => idFieldName;
