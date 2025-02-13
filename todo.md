@@ -62,3 +62,4 @@
 - [ ] optimize the functions using RecursiveMethod by putting all the code that won't actually be recursive into separate functions, keeping the body of the RecursiveMethods themselves smaller
 - [ ] add game state dependency attribute, changing the sort order of game states in the all game states array and game states supporting export array ultimately affecting serialization and deserialization order
   - [ ] also force the correct load order when importing
+- [ ] look at VRChat persistence
