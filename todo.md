@@ -56,3 +56,9 @@
 - [x] deduplicate UI updates in info UI now that latency preferences changes raise events
 - [x] rate limit updating the master preference when using the slider
 - [x] use the new CustomRaisedEvent attribute system for lockstep events
+- [ ] maybe collapse can send input actions and initialized enough for import export into one property
+- [ ] add flag to lockstep api indicating whether or not the current event is a game state save event
+- [ ] mention SendEventDelayedTicks everywhere in the docs where send input action and send singleton input action is referenced
+- [ ] optimize the functions using RecursiveMethod by putting all the code that won't actually be recursive into separate functions, keeping the body of the RecursiveMethods themselves smaller
+- [ ] add game state dependency attribute, changing the sort order of game states in the all game states array and game states supporting export array ultimately affecting serialization and deserialization order
+  - [ ] also force the correct load order when importing

@@ -196,7 +196,8 @@ namespace JanSharp {
         /// <para>The method this attribute gets applied to must be public.</para>
         /// <para>The id field must be a <see cref="uint"/>. It is the id to use when calling
         /// <see cref="LockstepAPI.SendInputAction(uint)"/>,
-        /// <see cref="LockstepAPI.SendSingletonInputAction(uint)"/> or its overload.</para>
+        /// <see cref="LockstepAPI.SendSingletonInputAction(uint)"/>, its overload or
+        /// <see cref="LockstepAPI.SendEventDelayedTicks(uint, uint)"/>.</para>
         /// <para>The field must be "serialized" in unity, so it must either be public or have the
         /// [<see cref="UnityEngine.SerializeField"/>] attribute. It should definitely have the
         /// [<see cref="UnityEngine.HideInInspector"/>] attribute, as it is not set from the inspector. It is
@@ -223,6 +224,8 @@ namespace JanSharp {
         /// information.</para>
         /// <para>When timing is needed for late joiners as well, store some tick in a game state and use
         /// <see cref="LockstepAPI.RealtimeAtTick(uint)"/> on the joined client.</para>
+        /// <para><see cref="TrackTiming"/> is ignored by
+        /// <see cref="LockstepAPI.SendEventDelayedTicks(uint, uint)"/>.</para>
         /// </summary>
         public bool TrackTiming { get; set; } = false;
     }
@@ -231,19 +234,32 @@ namespace JanSharp {
     public sealed class LockstepOnNthTickAttribute : System.Attribute
     {
         readonly uint interval;
+        /// <summary>
+        /// <para>On nth tick event handlers are raised whenever <see cref="LockstepAPI.CurrentTick"/> divided
+        /// by <see cref="Interval"/> leaves 0 rest.</para>
+        /// </summary>
         public uint Interval => interval;
 
         /// <summary>
-        /// TODO: docs
-        /// make sure to mention that this only affects order within the same interval
+        /// <para>On nth tick event handlers are executed ordered by <see cref="Interval"/> ascending, then by
+        /// <see cref="Order"/> ascending and then by method name ascending.</para>
+        /// <para>Default: 0.</para>
         /// </summary>
         public int Order { get; set; }
 
         /// <summary>
-        /// TODO: docs
+        /// <para>The method this attribute gets applied to must be public.</para>
+        /// <para>This marks a method as an on nth ick event handler, which is game state safe.</para>
+        /// <para>It is raised at the end of the tick, after delayed events
+        /// (see <see cref="LockstepAPI.SendEventDelayedTicks(uint, uint)"/>) but before
+        /// <see cref="LockstepEventType.OnLockstepTick"/>.</para>
+        /// <para>It is raised every <paramref name="interval"/> ticks, meaning whenever
+        /// <see cref="LockstepAPI.CurrentTick"/> divided by <paramref name="interval"/> leaves 0 rest.</para>
+        /// <para>On nth tick event handlers are executed ordered by <see langword="internal"/> ascending,
+        /// then by <see cref="Order"/> ascending and then by method name ascending.</para>
         /// make sure to mention this event in the notes file
         /// </summary>
-        /// <param name="interval"></param>
+        /// <param name="interval">Must be greater than 0.</param>
         public LockstepOnNthTickAttribute(uint interval)
         {
             this.interval = interval;

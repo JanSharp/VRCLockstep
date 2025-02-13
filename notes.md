@@ -335,6 +335,7 @@ Only inside of these events, modification of game states is allowed. See [game s
 - `OnClientLeft()` Use `LeftPlayerId` from the lockstep api.
 - `OnMasterClientChanged` Use `OldMasterPlayerId` and `MasterPlayerId` from the lockstep api.
 - `OnLockstepTick()`
+- `[LockstepOnNthTickAttribute]`
 - `OnImportStart()` Use import related properties on Lockstep inside this event to know more about the import process.
 - `OnImportedGameState()` Use import related properties on Lockstep inside this event to know more about the import process.
 - `OnImportFinished()` Use import related properties on Lockstep inside this event to know more about the import process.

@@ -70,10 +70,12 @@ namespace JanSharp
 
         /// <summary>
         /// TODO: docs
-        /// <para>This function must call <c>Write</c> functions on <see cref="LockstepAPI"/> just like input
-        /// action do before calling <see cref="LockstepAPI.SendInputAction(uint)"/> or the singleton
-        /// variant.</para>
-        /// <para>This function may be called at any point in time once game states have been initialized, so
+        /// make sure to fix all broken signatures in references to this in other documentation
+        /// <para>This function must call <c>Write</c> functions on <see cref="LockstepAPI"/> just like other
+        /// functions would do before calling <see cref="LockstepAPI.SendInputAction(uint)"/>,
+        /// <see cref="LockstepAPI.SendSingletonInputAction(uint)"/>, its overload or
+        /// <see cref="LockstepAPI.SendEventDelayedTicks(uint, uint)"/>.</para>
+        /// <para>This function may get called at any point in time once game states have been initialized, so
         /// after <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/>.</para>
         /// <para>This function is disallowed to fail serialization of the game state. It must always
@@ -82,18 +84,19 @@ namespace JanSharp
         /// <param name="isExport"><para>When <see langword="true"/> this function shall output all data
         /// necessary for <see cref="DeserializeGameState(bool, uint)"/> to be capable of restoring the
         /// current game state.</para>
-        /// <para>Only every <see langword="true"/> if <see cref="GameStateSupportsImportExport"/> is
+        /// <para>Only ever <see langword="true"/> if <see cref="GameStateSupportsImportExport"/> is
         /// <see langword="true"/>.</para></param>
         public abstract void SerializeGameState(bool isExport, LockstepGameStateOptionsData exportOptions);
         /// <summary>
         /// TODO: docs
+        /// make sure to fix all broken signatures in references to this in other documentation
         /// <para>This function must call <c>Read</c> functions on <see cref="LockstepAPI"/> in the same order
-        /// as <see cref="SerializeGameState(bool)"/> with matching data types, just like input
-        /// actions.</para>
+        /// as <see cref="Serialize(bool)"/> with matching data types, just like input actions or delayed
+        /// events.</para>
         /// <para>Ignoring importing, this function will never be called on the very first client, as on that
         /// client <see cref="LockstepEventType.OnInit"/> gets raised to initialize game states. On every
-        /// other - future - client this function will run exactly once, before any events raised by
-        /// lockstep.</para>
+        /// other - future - client this function will run exactly once, before any game state safe events
+        /// raised by lockstep.</para>
         /// <para>Still ignoring importing, the purpose of this function is to initialize the game state such
         /// that the resulting game state perfectly matches the initially serialized game state coming from
         /// <see cref="SerializeGameState(bool)"/>.</para>

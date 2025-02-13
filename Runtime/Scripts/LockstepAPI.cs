@@ -64,8 +64,9 @@ namespace JanSharp
         /// than <see cref="Time.realtimeSinceStartup"/>. More specifically, it likely returns a smaller
         /// value, a past point in time. This should help synced timing in particular during the initial
         /// catching up period.</para>
-        /// <para>Usable inside of <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>, and then
-        /// usable again once <see cref="LockstepEventType.OnInit"/> or
+        /// <para>Usable inside of
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>,
+        /// and then usable again once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// <para>Not game state safe.</para>
         /// </summary>
@@ -289,7 +290,10 @@ namespace JanSharp
         /// <para>The unique id of the input action that is currently running, which is the same unique id
         /// returned by <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
         /// and its overload.</para>
-        /// <para>Never 0uL, since that is an invalid unique id.</para>
+        /// <para>Never 0uL (see note below), since that is an invalid unique id.</para>
+        /// <para>Note that even though event handlers for <see cref="SendEventDelayedTicks(uint, uint)"/> are
+        /// defined the same way as input actions, <see cref="SendingUniqueId"/> is going to be 0uL in
+        /// those.</para>
         /// <para>The intended purpose is making implementations of latency state and latency hiding easier.
         /// </para>
         /// <para>Usable inside of input actions.</para>
@@ -326,14 +330,22 @@ namespace JanSharp
         /// <para>Enables easily checking if <see cref="SendInputAction(uint)"/>,
         /// <see cref="SendSingletonInputAction(uint)"/> and its overload would be able to actually send input
         /// actions.</para>
-        /// <para>It will be <see langword="true"/> as soon as <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> get raised.</para>
+        /// <para>Similarly <see cref="SendEventDelayedTicks(uint, uint)"/> also only works if this is
+        /// <see langword="true"/>.</para>
+        /// <para>The exact time when this becomes <see langword="true"/> is undefined, however as soon as
+        /// <see cref="LockstepEventType.OnInit"/> or <see cref="LockstepEventType.OnClientBeginCatchUp"/> get
+        /// raised, by then it is guaranteed to be <see langword="true"/>.</para>
         /// <para>Usable any time.</para>
         /// <para>Not game state safe.</para>
         /// </summary>
         public abstract bool CanSendInputActions { get; }
         /// <summary>
-        /// TODO: docs
+        /// <para>Calling <see cref="Export(LockstepGameState[], string)"/> or
+        /// <see cref="StartImport(System.DateTime, string, object[][])"/> requires
+        /// <see cref="LockstepEventType.OnInit"/> or <see cref="LockstepEventType.OnClientBeginCatchUp"/> to
+        /// have been raised. This property can be used to check if exactly that is the case.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool InitializedEnoughForImportExport { get; }
         /// <summary>
@@ -385,11 +397,30 @@ namespace JanSharp
         /// of sending the input action.</param>
         public abstract ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId);
         /// <summary>
-        /// TODO: docs, note to take care with delayed events in regards to game state serialization for
-        /// exports, as well as post imports. Delayed events are yet another complication for exports/imports.
+        /// <para>Send an event from a game state safe event delayed by 1 or more ticks. The event is
+        /// subsequently also going to be a game state save event/</para>
+        /// <para>Delayed events are run in the order in which they get sent.</para>
+        /// <para>Delayed events are raised at the end of a tick, but before
+        /// <see cref="LockstepOnNthTickAttribute"/> and <see cref="LockstepEventType.OnTick"/>.</para>
+        /// <para>To pass data from the sending function to the event handler, use <c>Write</c> functions
+        /// before calling <see cref="SendEventDelayedTicks(uint, uint)"/>. Then in the event handler call
+        /// <c>Read</c> functions with matching types and in matching order.</para>
+        /// <para>Even though delayed events use a lot of the same infrastructure as input actions, <b>the
+        /// data passed from the sending event to the receiving event must be game state safe</b>, unlike
+        /// input actions, because it will not be sent over the network. (Except for clients joining after a
+        /// delayed event got sent, but before it got run, then the delayed event's data will be sent to the
+        /// joining client.)</para>
+        /// <para>When it comes to import export support, unfortunately delayed events further complicate the
+        /// process. Events which got sent before an import occurs, but get run after an import occurs may
+        /// require additional handling, as the state they're related to may no longer exist or be
+        /// mutated making the delayed event irrelevant or even invalid.</para>
+        /// <para>Usable only inside of game state safe events.</para>
         /// </summary>
-        /// <param name="inputActionId"></param>
-        /// <param name="tickDelay"></param>
+        /// <param name="inputActionId">The id associated with a method with the
+        /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
+        /// <param name="tickDelay">The amount of ticks to delay this event by. The given event will run in
+        /// in the <see cref="CurrentTick"/> plus <paramref name="tickDelay"/>. There are
+        /// <see cref="LockstepAPI.TickRate"/> ticks per second.</param>
         public abstract void SendEventDelayedTicks(uint inputActionId, uint tickDelay);
         /// <summary>
         /// <para>Simply a wrapper around <see cref="SendMasterChangeRequestIA(uint)"/> with the local
@@ -556,12 +587,17 @@ namespace JanSharp
         /// log an error message so this should be treated like an exception.</param>
         /// <returns>A base 64 encoded string containing a bit of metadata such as which game states have been
         /// exported, their version, the current UTC date and time, the <see cref="WorldName"/> and then of
-        /// course exported data retrieved from <see cref="LockstepGameState.SerializeGameState(bool)"/>.
-        /// Returns <see langword="null"/> if called at an invalid time or with invalid
+        /// course exported data retrieved from
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>. Returns
+        /// <see langword="null"/> if called at an invalid time or with invalid
         /// <paramref name="gameStates"/> or <paramref name="exportName"/>.</returns>
         public abstract string Export(string exportName, LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
-        /// TODO: docs
+        /// <para><see langword="true"/> inside of
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> when
+        /// performing an export through <see cref="Export(string, LockstepGameStateOptionsData[])"/>.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool IsSerializingForExport { get; }
         /// <summary>
@@ -574,6 +610,7 @@ namespace JanSharp
         /// which only contains some of the imported game states obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>, however modification of
         /// the <see cref="LockstepImportedGS"/> data structures is forbidden.</para>
+        /// TODO: except for the import options
         /// <para>Usable any time.</para>
         /// </summary>
         /// <param name="exportedString">The base 64 encoded string originally obtained from
@@ -642,7 +679,14 @@ namespace JanSharp
         /// </summary>
         public abstract bool IsImporting { get; }
         /// <summary>
-        /// TODO: docs
+        /// <para><see langword="true"/> inside of
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// when performing an import.</para>
+        /// <para>Note that an import could be in progress while other input actions are also being run,
+        /// making <see cref="IsDeserializingForImport"/> be <see langword="false"/> while
+        /// <see cref="IsImporting"/> is <see langword="true"/>.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool IsDeserializingForImport { get; }
         /// <summary>
@@ -687,7 +731,8 @@ namespace JanSharp
         /// </summary>
         public abstract LockstepGameState ImportedGameState { get; }
         /// <summary>
-        /// <para>The return value of <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>.</para>
+        /// <para>The return value of
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>.</para>
         /// <para><see langword="null"/> means there was no error. Otherwise there was an error, however
         /// deserialization is expected to handle errors as gracefully as possible, so the associated system
         /// should still work afterwards.</para>
@@ -698,8 +743,8 @@ namespace JanSharp
         /// <summary>
         /// <para>The version of the data that has just been imported.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/> and
-        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> even though that gets this value
-        /// through the parameter anyway, but why not.</para>
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// even though that gets this value through the parameter anyway, but why not.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint ImportedDataVersion { get; }
@@ -727,50 +772,43 @@ namespace JanSharp
         public abstract int GameStatesWaitingForImportCount { get; }
 
         /// <summary>
-        /// TODO: docs
-        /// make sure to mention that this clones all options on both read and write
-        /// also note that on write it fills all missing export options using default options
+        /// <para>Autosaves are written to the
+        /// <see href="https://docs.vrchat.com/docs/local-vrchat-storage">log file</see> and can be found by
+        /// searching for "<p>[Lockstep] Export:</p>". Log files are deleted if they are 24 hours old and
+        /// VRChat gets launched, so be sure to extract autosaves shortly after closing VRChat, if they are
+        /// needed.</para>
+        /// <para>Options are associated with game states by perfectly matching the order of values in
+        /// <see cref="GameStatesSupportingExport"/>. When a game state in
+        /// <see cref="GameStatesSupportingExport"/> odes not have a <see cref="LockstepGameState.ExportUI"/>
+        /// it's associated value in <see cref="ExportOptionsForAutosave"/> will be
+        /// <see langword="null"/>.</para>
+        /// <para>Both the getter and setter of this property create a new array and
+        /// <see cref="LockstepGameStateOptionsData.Clone"/> each options instance.</para>
+        /// <para>The setter also calls
+        /// <see cref="FillInMissingExportOptionsWithDefaults(LockstepGameStateOptionsData[])"/> on the copied
+        /// array. The array assigned to this property remains unchanged.</para>
+        /// <para>When this is non <see langword="null"/> it will automatically be autosaving at the specified
+        /// <see cref="AutosaveIntervalSeconds"/>. If <see cref="IsAutosavePaused"/> is <see langword="true"/>
+        /// or <see cref="IsImporting"/> is <see langword="true"/> it will effectively pause the autosave
+        /// timer. Lockstep may also pause the timer at any time internally.</para>
+        /// <para>Whenever this value changes,
+        /// <see cref="LockstepEventType.OnExportOptionsForAutosaveChanged"/> gets raised 1 frame delayed to
+        /// prevent recursion, subsequently if there are multiple changes within a frame the event only gets
+        /// raised once (you can thank Udon).</para>
+        /// <para>All APIs related to autosaving are local only.</para>
+        /// <para>Default: <see langword="null"/>.</para>
         /// </summary>
         public abstract LockstepGameStateOptionsData[] ExportOptionsForAutosave { get; set; }
         /// <summary>
-        /// TODO: docs
+        /// <para><see langword="true"/> when <see cref="ExportOptionsForAutosave"/> is non
+        /// <see langword="null"/>.</para>
+        /// <para>Significantly more performant than getting <see cref="ExportOptionsForAutosave"/> and
+        /// comparing that with <see langword="null"/>, since <see cref="ExportOptionsForAutosave"/>'s getter
+        /// performs a <see cref="LockstepGameStateOptionsData.Clone"/> on each options  instance.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
         /// </summary>
         public abstract bool HasExportOptionsForAutosave { get; }
-        // TODO: reuse some of these docs for the above, probably
-        // /// <summary>
-        // /// <para>Autosaves are written to the
-        // /// <see href="https://docs.vrchat.com/docs/local-vrchat-storage">log file</see> and can be found by
-        // /// searching for "<p>[Lockstep] Export:</p>". Log files are deleted if they are 24 hours old and
-        // /// VRChat gets launched, so be sure to extract autosaves shortly after closing VRChat, if they are
-        // /// needed.</para>
-        // /// <para>When getting this property it will never be <see langword="null"/> and will only contain
-        // /// entries with <see cref="LockstepGameState.GameStateSupportsImportExport"/> being
-        // /// <see langword="true"/>.</para>
-        // /// <para>Reading returns a copy of the internal array to prevent modifications.</para>
-        // /// <para>Writing <see langword="null"/> is treated like writing an empty array.</para>
-        // /// <para>Writing an array saves a copy of the given array.</para>
-        // /// <para>When writing an array, any <see langword="null"/> or entries where
-        // /// <see cref="LockstepGameState.GameStateSupportsImportExport"/> is <see langword="false"/> get
-        // /// removed from the array. This enables simply taking <see cref="AllGameStates"/> and writing it to
-        // /// <see cref="GameStatesToAutosave"/>, without having to filter them. And if one of them shouldn't be
-        // /// autosaved it allows simply setting that one to <see langword="null"/> instead of having to create
-        // /// another array and moving elements around.</para>
-        // /// <para>When this array is non empty it will automatically be autosaving at the specified
-        // /// <see cref="AutosaveIntervalSeconds"/>. If <see cref="IsAutosavePaused"/> is <see langword="true"/>
-        // /// or <see cref="IsImporting"/> is <see langword="true"/> it will effectively pause the autosave
-        // /// timer. Lockstep may also pause the timer at any time internally.</para>
-        // /// <para>Whenever this value changes, <see cref="LockstepEventType.OnExportOptionsForAutosaveChanged"/>
-        // /// gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
-        // /// within a frame the event only gets raised once (you can thank Udon).</para>
-        // /// <para>All APIs related to autosaving are local only.</para>
-        // /// <para>Default: Empty array.</para>
-        // /// </summary>
-        // public abstract LockstepGameState[] GameStatesToAutosave { get; set; }
-        // /// <summary>
-        // /// <para>Get the length of <see cref="GameStatesToAutosave"/> without performing an entire array
-        // /// copy.</para>
-        // /// </summary>
-        // public abstract int GameStatesToAutosaveCount { get; }
         /// <summary>
         /// <para>Negative values get clamped to 0f, which means "autosave every frame" so long as autosaves
         /// are not <see cref="IsAutosavePaused"/> as well as autosaves not being blocked through other means
@@ -791,14 +829,18 @@ namespace JanSharp
         /// prevent recursion, subsequently if there are multiple changes within a frame the event only gets
         /// raised once (you can thank Udon).</para>
         /// <para>Default: <p>300f.</p></para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
         /// </summary>
         public abstract float AutosaveIntervalSeconds { get; set; }
         /// <summary>
-        /// <para>When nothing is being autosaved, which means <see cref="GameStatesToAutosave"/> is empty,
-        /// <see cref="float.PositiveInfinity"/> will be returned.</para>
+        /// <para>When nothing is being autosaved, which means <see cref="ExportOptionsForAutosave"/> is
+        /// <see langword="null"/>, <see cref="float.PositiveInfinity"/> will be returned.</para>
         /// <para>When the internal timer is paused for any reason, it naturally also causes this property to
         /// continuously return the same - paused - value.</para>
         /// <para>Never negative, can be zero.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
         /// </summary>
         public abstract float SecondsUntilNextAutosave { get; }
         /// <summary>
@@ -808,41 +850,52 @@ namespace JanSharp
         /// <see cref="StopScopedAutosavePause"/> call. Whenever this internal counter is non zero,
         /// <see cref="IsAutosavePaused"/> is <see langword="true"/>.</para>
         /// <para>Autosaves are automatically started and stopped depending on if
-        /// <see cref="GameStatesToAutosave"/> is empty or not, pausing is separate from that.</para>
+        /// <see cref="ExportOptionsForAutosave"/> is <see langword="null"/> or not, pausing is separate from
+        /// that.</para>
         /// <para>Whenever this value changes, <see cref="LockstepEventType.OnIsAutosavePausedChanged"/> gets
         /// raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes within a
         /// frame the event only gets raised once (you can thank Udon).</para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
         /// </summary>
         public abstract bool IsAutosavePaused { get; }
         /// <summary>
         /// <para>Think of <see cref="StartScopedAutosavePause"/> and <see cref="StopScopedAutosavePause"/>
         /// just like setting a paused <see cref="bool"/> to <see langword="true"/> and
-        /// <see langword="false"/>. The only difference is that multiple systems can set this
+        /// <see langword="false"/>. The only difference is that multiple systems can set this theoretical
         /// "<see cref="bool"/>" to <see langword="true"/> at the same time, without having to worry what the
         /// previous state was, as autosaving will only be unpaused once <see cref="StopScopedAutosavePause"/>
         /// has been called a matching amount of times as <see cref="StartScopedAutosavePause"/>.</para>
-        /// <para>This allows pausing autosaves without touching <see cref="GameStatesToAutosave"/> nor
+        /// <para>This allows pausing autosaves without touching <see cref="ExportOptionsForAutosave"/> nor
         /// <see cref="AutosaveIntervalSeconds"/> and without multiple systems interfering with each other.
         /// </para>
         /// <para><see cref="StopScopedAutosavePause"/> can be called even when the internal counter is zero.
         /// </para>
+        /// <para>Usable any time.</para>
         /// </summary>
         public abstract void StartScopedAutosavePause();
         /// <inheritdoc cref="StartScopedAutosavePause"/>
         public abstract void StopScopedAutosavePause();
 
         /// <summary>
-        /// TODO: docs
+        /// <para>Shifts <paramref name="count"/> bytes starting at <paramref name="sourcePosition"/> to
+        /// <paramref name="destinationPosition"/> inside of the internal write stream.</para>
+        /// <para>Overlap in the source and destination ranges is handled and will not cause any source data
+        /// getting corrupted.</para>
+        /// <para>This is likely only useful for generic functions, like libraries, which must insert some
+        /// data into the write stream. That also involves using <see cref="WriteStreamPosition"/> which is a
+        /// low level api to be used with caution; Make sure to read its documentation.</para>
         /// </summary>
-        /// <param name="sourcePosition"></param>
-        /// <param name="destinationPosition"></param>
-        /// <param name="count"></param>
+        /// <param name="sourcePosition">The start index of the source range.</param>
+        /// <param name="destinationPosition">The start index of the destination range.</param>
+        /// <param name="count">The amount of bytes to be shifted.</param>
         public abstract void ShiftWriteStream(int sourcePosition, int destinationPosition, int count);
         /// <summary>
         /// <para>When data has already been written to the internal write stream using any of the
         /// <c>Write</c> functions, however the call to <see cref="SendInputAction(uint)"/>,
-        /// <see cref="SendSingletonInputAction(uint)"/> or its overload ends up not happening due to an early
-        /// return, it is required to call <see cref="ResetWriteStream"/>.</para>
+        /// <see cref="SendSingletonInputAction(uint)"/>, its overload or
+        /// <see cref="SendEventDelayedTicks(uint, uint)"/> ends up not happening due to an early return, it
+        /// is required to call <see cref="ResetWriteStream"/>.</para>
         /// <para>This cleans up the write stream such that future sent input actions do not get this
         /// unfinished input action data prepended to them, ultimately breaking them.</para>
         /// </summary>
@@ -876,37 +929,46 @@ namespace JanSharp
         /// </summary>
         public abstract int WriteStreamPosition { get; set; }
         /// <summary>
-        /// <para>When using <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
-        /// or its overload or <see cref="LockstepGameState.SerializeGameState(bool)"/>, in order to pass data
-        /// to the input action or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> use this
-        /// function to write data to an internal binary stream which is used by lockstep to perform syncing.
-        /// </para>
-        /// <para>On the note of <see cref="LockstepGameState.SerializeGameState(bool)"/> when exporting the
-        /// same serialization method is used.</para>
+        /// <para>When using <see cref="SendInputAction(uint)"/>,
+        /// <see cref="SendSingletonInputAction(uint)"/>, its overload,
+        /// <see cref="SendEventDelayedTicks(uint, uint)"/> or
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>, in order
+        /// to pass data to the input action, delayed event handler or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// respectively, use this function to write data to an internal binary write stream which is used by
+        /// lockstep to perform syncing.</para>
+        /// <para>On the note of
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> when
+        /// exporting the same serialization technique is used.</para>
         /// <para>Usable any time (technically).</para>
         /// </summary>
-        /// <param name="value">The value to be serialized and written to the byte stream.</param>
+        /// <param name="value">The value to be serialized and written to the internal write stream.</param>
         public abstract void WriteSByte(sbyte value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteByte(byte value);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="flag1"></param>
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        /// <param name="flag1">The first flag (<c>0x01</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1);
         /// <inheritdoc cref="WriteFlags(bool)"/>
+        /// <param name="flag2">The second flag (<c>0x02</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2);
-        /// <inheritdoc cref="WriteFlags(bool)"/>
+        /// <inheritdoc cref="WriteFlags(bool, bool)"/>
+        /// <param name="flag3">The third flag (<c>0x04</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2, bool flag3);
-        /// <inheritdoc cref="WriteFlags(bool)"/>
+        /// <inheritdoc cref="WriteFlags(bool, bool, bool)"/>
+        /// <param name="flag4">The fourth flag (<c>0x08</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4);
-        /// <inheritdoc cref="WriteFlags(bool)"/>
+        /// <inheritdoc cref="WriteFlags(bool, bool, bool, bool)"/>
+        /// <param name="flag5">The fifth flag (<c>0x10</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5);
-        /// <inheritdoc cref="WriteFlags(bool)"/>
+        /// <inheritdoc cref="WriteFlags(bool, bool, bool, bool, bool)"/>
+        /// <param name="flag6">The sixth flag (<c>0x20</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6);
-        /// <inheritdoc cref="WriteFlags(bool)"/>
+        /// <inheritdoc cref="WriteFlags(bool, bool, bool, bool, bool, bool)"/>
+        /// <param name="flag7">The seventh flag (<c>0x40</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7);
-        /// <inheritdoc cref="WriteFlags(bool)"/>
+        /// <inheritdoc cref="WriteFlags(bool, bool, bool, bool, bool, bool, bool)"/>
+        /// <param name="flag8">The eighth flag (<c>0x80</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7, bool flag8);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteShort(short value);
@@ -938,47 +1000,55 @@ namespace JanSharp
         public abstract void WriteString(string value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteDateTime(System.DateTime value);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="value"></param>
-        public abstract void WriteCustomNullableClass(SerializableWannaBeClass value);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="isExport"></param>
-        public abstract void WriteCustomNullableClass(SerializableWannaBeClass value, bool isExport);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="value"></param>
-        public abstract void WriteCustomClass(SerializableWannaBeClass value);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="isExport"></param>
-        public abstract void WriteCustomClass(SerializableWannaBeClass value, bool isExport);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        /// <param name="instance">Can be <see langword="null"/>. Has 1 additional byte of overhead compared
+        /// to <see cref="WriteCustomClass(SerializableWannaBeClass)"/> (except when exporting, no additional
+        /// overhead there). When exporting also writes the
+        /// <see cref="SerializableWannaBeClass.DataVersion"/>. Calls
+        /// <see cref="SerializableWannaBeClass.Serialize(bool)"/>, keeps track of how many bytes were written
+        /// by this call and also writes that length to the write stream, inserting it preceding the custom
+        /// data that was written. Uses <see cref="WriteSmallUInt(uint)"/> to reduce overhead. <b>Can be
+        /// called recursively.</b></param>
+        public abstract void WriteCustomNullableClass(SerializableWannaBeClass instance);
+        /// <inheritdoc cref="WriteCustomNullableClass(SerializableWannaBeClass)"/>
+        /// <param name="isExport">When using the overload without this parameter,
+        /// <see cref="IsSerializingForExport"/> is used.</param>
+        public abstract void WriteCustomNullableClass(SerializableWannaBeClass instance, bool isExport);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        /// <param name="instance">Must not be <see langword="null"/>. When exporting also writes the
+        /// <see cref="SerializableWannaBeClass.DataVersion"/>. Calls
+        /// <see cref="SerializableWannaBeClass.Serialize(bool)"/>, keeps track of how many bytes were written
+        /// by this call and also writes that length to the write stream, inserting it preceding the custom
+        /// data that was written. Uses <see cref="WriteSmallUInt(uint)"/> to reduce overhead. <b>Can be
+        /// called recursively.</b></param>
+        public abstract void WriteCustomClass(SerializableWannaBeClass instance);
+        /// <inheritdoc cref="WriteCustomClass(SerializableWannaBeClass)"/>
+        /// <param name="isExport">When using the overload without this parameter,
+        /// <see cref="IsSerializingForExport"/> is used.</param>
+        public abstract void WriteCustomClass(SerializableWannaBeClass instance, bool isExport);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         /// <param name="bytes">The raw bytes to be written to the byte stream. This does not add any length
-        /// information to the binary stream, it just takes these bytes as they are.</param>
+        /// information to the binary write stream, it just takes these bytes as they are.</param>
         public abstract void WriteBytes(byte[] bytes);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="length"></param>
+        /// <inheritdoc cref="WriteBytes(byte[])"/>
+        /// <param name="startIndex">The start index of the range within <paramref name="bytes"/> to be
+        /// written to the byte stream.</param>
+        /// <param name="length">The length of the range within <paramref name="bytes"/> to be written to the
+        /// byte stream. The <paramref name="length"/> value itself does not get written to the write
+        /// stream.</param>
         public abstract void WriteBytes(byte[] bytes, int startIndex, int length);
         /// <summary>
-        /// <para>When using <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
-        /// or its overload or <see cref="LockstepGameState.SerializeGameState(bool)"/>, in order to pass data
-        /// to the input action or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/> use this
-        /// function to write data to an internal binary stream which is used by lockstep to perform syncing.
-        /// </para>
-        /// <para>On the note of <see cref="LockstepGameState.SerializeGameState(bool)"/> when exporting the
-        /// same serialization method is used.</para>
+        /// <para>When using <see cref="SendInputAction(uint)"/>,
+        /// <see cref="SendSingletonInputAction(uint)"/>, its overload,
+        /// <see cref="SendEventDelayedTicks(uint, uint)"/> or
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>, in order
+        /// to pass data to the input action, delayed event handler or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// respectively, use this function to write data to an internal binary write stream which is used by
+        /// lockstep to perform syncing.</para>
+        /// <para>On the note of
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> when
+        /// exporting the same serialization technique is used.</para>
         /// <para>The <p>WriteSmall</p> variants of these serialization functions use fewer bytes to
         /// serialize given values if the given value is small enough. For the signed variants, small signed
         /// values are also supported and will use fewer bytes, however unsigned variants are slightly more
@@ -998,25 +1068,25 @@ namespace JanSharp
         /// <inheritdoc cref="WriteSmallShort(short)"/>
         public abstract void WriteSmallULong(ulong value);
 
-        /// <summary>
-        /// creates a copy of the section of the array
-        /// TODO: docs
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="length"></param>
+        /// <inheritdoc cref="SetReadStream(byte[])"/>
+        /// <param name="startIndex">The start index inside of <paramref name="stream"/> of the range which
+        /// should be copied and become the new read stream.</param>
+        /// <param name="length">The length of the range which should be copied from the
+        /// <paramref name="stream"/> to a new array which will become the new read stream.</param>
         public abstract void SetReadStream(byte[] stream, int startIndex, int length);
         /// <summary>
-        /// directly assigns the given stream as the write stream. Do not modify the stream after it has been
-        /// set.
-        /// TODO: docs
+        /// <para>Assigns the given stream directly to the internal read stream, overwriting it.</para>
+        /// <para>Sets the read stream position to 0, the start of the new read stream.</para>
+        /// <para>Potentially useful in combination with
+        /// <see cref="SkipCustomClass(out uint, out byte[])"/>.</para>
+        /// <para>Usable any time.</para>
         /// </summary>
-        /// <param name="stream"></param>
+        /// <param name="stream">The new read stream, must not be <see langword="null"/>.</param>
         public abstract void SetReadStream(byte[] stream);
 
         /// <summary>
-        /// <para>Inside of input actions or <see cref="LockstepGameState.DeserializeGameState(bool, uint)"/>
-        /// in order to retrieve the data that was initially written to an internal binary stream, these
+        /// <para>To retrieve data inside of input actions, delayed event handlers or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
         /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
         /// the write stream).</para>
         /// <para>The calls to the <c>Read</c> functions must match the data type and the order in which the
@@ -1026,24 +1096,29 @@ namespace JanSharp
         public abstract sbyte ReadSByte();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract byte ReadByte();
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="flag1"></param>
+        /// <inheritdoc cref="ReadSByte"/>
+        /// <param name="flag1">The first flag (<c>0x01</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1);
         /// <inheritdoc cref="ReadFlags(out bool)"/>
+        /// <param name="flag2">The second flag (<c>0x02</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2);
-        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        /// <inheritdoc cref="ReadFlags(out bool, out bool)"/>
+        /// <param name="flag3">The third flag (<c>0x04</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3);
-        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        /// <inheritdoc cref="ReadFlags(out bool, out bool, out bool)"/>
+        /// <param name="flag4">The fourth flag (<c>0x08</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4);
-        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        /// <inheritdoc cref="ReadFlags(out bool, out bool, out bool, out bool)"/>
+        /// <param name="flag5">The fifth flag (<c>0x10</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5);
-        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        /// <inheritdoc cref="ReadFlags(out bool, out bool, out bool, out bool, out bool)"/>
+        /// <param name="flag6">The sixth flag (<c>0x20</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6);
-        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        /// <inheritdoc cref="ReadFlags(out bool, out bool, out bool, out bool, out bool, out bool)"/>
+        /// <param name="flag7">The seventh flag (<c>0x40</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7);
-        /// <inheritdoc cref="ReadFlags(out bool)"/>
+        /// <inheritdoc cref="ReadFlags(out bool, out bool, out bool, out bool, out bool, out bool, out bool)"/>
+        /// <param name="flag8">The eighth flag (<c>0x80</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7, out bool flag8);
         /// <inheritdoc cref="ReadSByte"/>
         public abstract short ReadShort();
@@ -1076,74 +1151,160 @@ namespace JanSharp
         /// <inheritdoc cref="ReadSByte"/>
         public abstract System.DateTime ReadDateTime();
         /// <summary>
-        /// TODO: docs
+        /// <para>To retrieve data inside of input actions, delayed event handlers or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
+        /// the write stream).</para>
+        /// <para>The calls to the <c>Read</c> functions must match the data type and the order in which the
+        /// values were initially written to the write stream on the sending side.</para>
+        /// <para><b>Can only be used when deserializing for an import.</b></para>
+        /// <para>If a non <see langword="null"/> instance which at the time of the export had
+        /// <see cref="SerializableWannaBeClass.SupportsImportExport"/> being <see langword="true"/>, this
+        /// will advance past the data that was written, while also returning the data through out parameters.
+        /// Could be useful in combination with <see cref="SetReadStream(byte[])"/> once the current
+        /// deserialization has concluded.</para>
         /// </summary>
-        /// <param name="dataVersion"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <param name="dataVersion">The <see cref="SerializableWannaBeClass.DataVersion"/> at the time of
+        /// the export, or 0u when <see langword="false"/> is returned.</param>
+        /// <param name="data">The custom data which was written by
+        /// <see cref="SerializableWannaBeClass.Serialize(bool)"/> at the time of the export, or null when
+        /// <see langword="false"/> is returned.</param>
+        /// <returns><see langword="true"/> when the instance that was written at the time of the export was
+        /// non <see langword="null"/> and <see cref="SerializableWannaBeClass.SupportsImportExport"/> was
+        /// <see langword="true"/>.</returns>
         public abstract bool SkipCustomClass(out uint dataVersion, out byte[] data);
+        /// <inheritdoc cref="SkipCustomClass(out uint, out byte[])"/>
+        /// <param name="isImport">When using the overload without this parameter,
+        /// <see cref="IsDeserializingForImport"/> is used.</param>
+        public abstract bool SkipCustomClass(out uint dataVersion, out byte[] data, bool isImport);
         /// <summary>
-        /// TODO: docs
+        /// <para>To retrieve data inside of input actions, delayed event handlers or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
+        /// the write stream).</para>
+        /// <para>The calls to the <c>Read</c> functions must match the data type and the order in which the
+        /// values were initially written to the write stream on the sending side.</para>
+        /// <para>Creates a new instance of a class with the given <paramref name="className"/> and
+        /// ultimately calls <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/> on it.</para>
+        /// <para>In the case of imports it reads the data version which is stored in the serialized data and
+        /// uses it to determine if importing is possible (see Returns section). If yes the data version is
+        /// passed along to <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/>, otherwise the
+        /// custom serialized data is skipped and discarded.</para>
+        /// <para>Deserializes data which was originally written using
+        /// <see cref="WriteCustomNullableClass(SerializableWannaBeClass)"/> or its overload.</para>
         /// </summary>
-        /// <param name="isImport"></param>
-        /// <param name="dataVersion"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public abstract bool SkipCustomClass(bool isImport, out uint dataVersion, out byte[] data);
+        /// <param name="className">The name of the <see cref="SerializableWannaBeClass"/> which matches the
+        /// one which was used to write initially. In the case of an import, the class name is not required to
+        /// match the one used at the time of export, it could have been renamed. The class name itself is not
+        /// part of the serialized data.</param>
+        /// <returns>The new instance with deserialized data, or <see langword="null"/> if
+        /// <see langword="null"/> was written originally. In the case of imports, also returns
+        /// <see langword="null"/> if <see cref="SerializableWannaBeClass.SupportsImportExport"/> is
+        /// <see langword="false"/> for the class with the given <paramref name="className"/>, similarly if
+        /// <see cref="SerializableWannaBeClass.SupportsImportExport"/> was <see langword="false"/> at the
+        /// time of the export and also returns <see langword="null"/> if the data version in the serialized
+        /// data is lower than <see cref="SerializableWannaBeClass.LowestSupportedDataVersion"/>.</returns>
+        public abstract SerializableWannaBeClass ReadCustomNullableClass(string className);
+        /// <inheritdoc cref="ReadCustomNullableClass(string)"/>
+        /// <param name="isImport">When using the overload without this parameter,
+        /// <see cref="IsDeserializingForImport"/> is used.</param>
+        public abstract SerializableWannaBeClass ReadCustomNullableClass(string className, bool isImport);
         /// <summary>
-        /// TODO: docs
+        /// <para>To retrieve data inside of input actions, delayed event handlers or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
+        /// the write stream).</para>
+        /// <para>The calls to the <c>Read</c> functions must match the data type and the order in which the
+        /// values were initially written to the write stream on the sending side.</para>
+        /// <para>Creates a new instance of a class with the given <paramref name="className"/> and
+        /// ultimately calls <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/> on it.</para>
+        /// <para>In the case of imports it reads the data version which is stored in the serialized data and
+        /// uses it to determine if importing is possible (see Returns section). If yes the data version is
+        /// passed along to <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/>, otherwise the
+        /// custom serialized data is skipped and discarded.</para>
+        /// <para>Deserializes data which was originally written using
+        /// <see cref="WriteCustomClass(SerializableWannaBeClass)"/> or its overload.</para>
         /// </summary>
-        /// <param name="className"></param>
-        /// <returns></returns>
-        public abstract SerializableWannaBeClass ReadCustomNullableClassDynamic(string className);
+        /// <param name="className">The name of the <see cref="SerializableWannaBeClass"/> which matches the
+        /// one which was used to write initially. In the case of an import, the class name is not required to
+        /// match the one used at the time of export, it could have been renamed. The class name itself is not
+        /// part of the serialized data.</param>
+        /// <returns>The new instance with deserialized data. In the case of imports, returns
+        /// <see langword="null"/> if <see cref="SerializableWannaBeClass.SupportsImportExport"/> is
+        /// <see langword="false"/> for the class with the given <paramref name="className"/>, similarly if
+        /// <see cref="SerializableWannaBeClass.SupportsImportExport"/> was <see langword="false"/> at the
+        /// time of the export and also returns <see langword="null"/> if the data version in the serialized
+        /// data is lower than <see cref="SerializableWannaBeClass.LowestSupportedDataVersion"/>.</returns>
+        public abstract SerializableWannaBeClass ReadCustomClass(string className);
+        /// <inheritdoc cref="ReadCustomClass(string)"/>
+        /// <param name="isImport">When using the overload without this parameter,
+        /// <see cref="IsDeserializingForImport"/> is used.</param>
+        public abstract SerializableWannaBeClass ReadCustomClass(string className, bool isImport);
         /// <summary>
-        /// TODO: docs
+        /// <para>To retrieve data inside of input actions, delayed event handlers or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
+        /// the write stream).</para>
+        /// <para>The calls to the <c>Read</c> functions must match the data type and the order in which the
+        /// values were initially written to the write stream on the sending side.</para>
+        /// <para>Ultimately calls <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/> on the given
+        /// <paramref name="instance"/>.</para>
+        /// <para>In the case of imports it reads the data version which is stored in the serialized data and
+        /// uses it to determine if importing is possible (see Returns section). If yes the data version is
+        /// passed along to <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/>, otherwise the
+        /// custom serialized data is skipped and discarded.</para>
+        /// <para>Deserializes data which was originally written using
+        /// <see cref="WriteCustomNullableClass(SerializableWannaBeClass)"/> or its overload.</para>
         /// </summary>
-        /// <param name="className"></param>
-        /// <param name="isImport"></param>
-        /// <returns></returns>
-        public abstract SerializableWannaBeClass ReadCustomNullableClassDynamic(
-            string className,
-            bool isImport);
+        /// <param name="instance">An instance of a <see cref="SerializableWannaBeClass"/> which matches the
+        /// one which was used to write initially. In the case of an import, the class name is not required to
+        /// match the one used at the time of export, it could have been renamed. The class name itself is not
+        /// part of the serialized data. Must not be <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/>
+        /// did get called, or <see langword="false"/> if <see langword="null"/> was written originally. In the
+        /// case of imports, also returns <see langword="false"/> if
+        /// <see cref="SerializableWannaBeClass.SupportsImportExport"/> is
+        /// <see langword="false"/> for the given <paramref name="instance"/>, similarly if
+        /// <see cref="SerializableWannaBeClass.SupportsImportExport"/> was <see langword="false"/> at the
+        /// time of the export and also returns <see langword="false"/> if the data version in the serialized
+        /// data is lower than <see cref="SerializableWannaBeClass.LowestSupportedDataVersion"/>.</returns>
+        public abstract bool ReadCustomNullableClass(SerializableWannaBeClass instance);
+        /// <inheritdoc cref="ReadCustomNullableClass(SerializableWannaBeClass)"/>
+        /// <param name="isImport">When using the overload without this parameter,
+        /// <see cref="IsDeserializingForImport"/> is used.</param>
+        public abstract bool ReadCustomNullableClass(SerializableWannaBeClass instance, bool isImport);
         /// <summary>
-        /// TODO: docs
+        /// <para>To retrieve data inside of input actions, delayed event handlers or
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// <c>Read</c> functions shall be used to read from an internal read stream (a different stream than
+        /// the write stream).</para>
+        /// <para>The calls to the <c>Read</c> functions must match the data type and the order in which the
+        /// values were initially written to the write stream on the sending side.</para>
+        /// <para>Ultimately calls <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/> on the given
+        /// <paramref name="instance"/>.</para>
+        /// <para>In the case of imports it reads the data version which is stored in the serialized data and
+        /// uses it to determine if importing is possible (see Returns section). If yes the data version is
+        /// passed along to <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/>, otherwise the
+        /// custom serialized data is skipped and discarded.</para>
+        /// <para>Deserializes data which was originally written using
+        /// <see cref="WriteCustomClass(SerializableWannaBeClass)"/> or its overload.</para>
         /// </summary>
-        /// <param name="className"></param>
-        /// <returns></returns>
-        public abstract SerializableWannaBeClass ReadCustomClassDynamic(string className);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="className"></param>
-        /// <param name="isImport"></param>
-        /// <returns></returns>
-        public abstract SerializableWannaBeClass ReadCustomClassDynamic(string className, bool isImport);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="inst"></param>
-        /// <returns></returns>
-        public abstract bool ReadCustomNullableClass(SerializableWannaBeClass inst);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="inst"></param>
-        /// <param name="isImport"></param>
-        /// <returns></returns>
-        public abstract bool ReadCustomNullableClass(SerializableWannaBeClass inst, bool isImport);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="inst"></param>
-        /// <returns></returns>
-        public abstract bool ReadCustomClass(SerializableWannaBeClass inst);
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
-        /// <param name="inst"></param>
-        /// <param name="isImport"></param>
-        /// <returns></returns>
-        public abstract bool ReadCustomClass(SerializableWannaBeClass inst, bool isImport);
+        /// <param name="instance">An instance of a <see cref="SerializableWannaBeClass"/> which matches the
+        /// one which was used to write initially. In the case of an import, the class name is not required to
+        /// match the one used at the time of export, it could have been renamed. The class name itself is not
+        /// part of the serialized data. Must not be <see langword="null"/>.</param>
+        /// <returns><see langword="true"/>. In the case of imports
+        /// <see cref="SerializableWannaBeClass.Deserialize(bool, uint)"/> may not get called. Returns
+        /// <see langword="false"/> if <see cref="SerializableWannaBeClass.SupportsImportExport"/> is
+        /// <see langword="false"/> for the given <paramref name="instance"/>, similarly if
+        /// <see cref="SerializableWannaBeClass.SupportsImportExport"/> was <see langword="false"/> at the
+        /// time of the export and also returns <see langword="false"/> if the data version in the serialized
+        /// data is lower than <see cref="SerializableWannaBeClass.LowestSupportedDataVersion"/>.</returns>
+        public abstract bool ReadCustomClass(SerializableWannaBeClass instance);
+        /// <inheritdoc cref="ReadCustomClass(SerializableWannaBeClass)"/>
+        /// <param name="isImport">When using the overload without this parameter,
+        /// <see cref="IsDeserializingForImport"/> is used.</param>
+        public abstract bool ReadCustomClass(SerializableWannaBeClass instance, bool isImport);
         /// <inheritdoc cref="ReadSByte"/>
         /// <param name="byteCount">The amount of raw bytes to read from the read stream. Very most likely
         /// used in conjunction with <see cref="WriteBytes(byte[])"/>, but again said write function does not

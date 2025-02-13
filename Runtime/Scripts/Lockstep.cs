@@ -3303,11 +3303,11 @@ namespace JanSharp.Internal
         public override void WriteString(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteDateTime(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         [RecursiveMethod]
-        public override void WriteCustomNullableClass(SerializableWannaBeClass value) => WriteCustomNullableClass(value, isSerializingForExport);
+        public override void WriteCustomNullableClass(SerializableWannaBeClass instance) => WriteCustomNullableClass(instance, isSerializingForExport);
         [RecursiveMethod]
-        public override void WriteCustomNullableClass(SerializableWannaBeClass value, bool isExport)
+        public override void WriteCustomNullableClass(SerializableWannaBeClass instance, bool isExport)
         {
-            if (value == null)
+            if (instance == null)
             {
                 if (isExport)
                     WriteSmallUInt(0u);
@@ -3317,31 +3317,32 @@ namespace JanSharp.Internal
             }
             if (!isExport)
                 WriteByte(1);
-            WriteCustomClass(value, isExport);
+            WriteCustomClass(instance, isExport);
         }
         [RecursiveMethod]
-        public override void WriteCustomClass(SerializableWannaBeClass value) => WriteCustomClass(value, isSerializingForExport);
+        public override void WriteCustomClass(SerializableWannaBeClass instance) => WriteCustomClass(instance, isSerializingForExport);
         [RecursiveMethod]
-        public override void WriteCustomClass(SerializableWannaBeClass value, bool isExport)
+        public override void WriteCustomClass(SerializableWannaBeClass instance, bool isExport)
         {
-            if (value == null)
-                Debug.LogError($"[Lockstep] Attempt to WriteCustomClass where value is null. This is invalid and will throw an exception.");
+            if (instance == null)
+                Debug.LogError($"[Lockstep] Attempt to WriteCustomClass where instance is null. "
+                    + "This is invalid and will throw an exception.");
             if (!isExport)
             {
-                value.Serialize(isExport: false);
+                instance.Serialize(isExport: false);
                 return;
             }
-            if (!value.SupportsImportExport)
+            if (!instance.SupportsImportExport)
             {
                 WriteSmallUInt(0u);
                 return;
             }
-            WriteSmallUInt(value.DataVersion + 1u);
+            WriteSmallUInt(instance.DataVersion + 1u);
             int startPosition = writeStreamSize;
             // Shift by one preemptively since the majority of classes will serialize in less than 128 bytes,
             // saving the ShiftWriteStream call in most cases.
             writeStreamSize++;
-            value.Serialize(isExport: true);
+            instance.Serialize(isExport: true);
             int customDataSize = writeStreamSize - startPosition - 1;
             int sizeSize = 0;
             sizeSize = WriteToSerializedSizeBuffer(sizeSize, (uint)customDataSize);
@@ -3475,19 +3476,8 @@ namespace JanSharp.Internal
         public override char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
         public override string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
         public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
-        [RecursiveMethod]
-        public override SerializableWannaBeClass ReadCustomNullableClassDynamic(string className) => ReadCustomNullableClassDynamic(className, isDeserializingForImport);
-        [RecursiveMethod]
-        public override SerializableWannaBeClass ReadCustomNullableClassDynamic(string className, bool isImport)
-        {
-            if (isImport)
-                return ReadCustomClassDynamic(className, isImport);
-            if (ReadByte() == 0)
-                return null;
-            return ReadCustomClassDynamic(className, isImport);
-        }
-        public override bool SkipCustomClass(out uint dataVersion, out byte[] data) => SkipCustomClass(isDeserializingForImport, out dataVersion, out data);
-        public override bool SkipCustomClass(bool isImport, out uint dataVersion, out byte[] data)
+        public override bool SkipCustomClass(out uint dataVersion, out byte[] data) => SkipCustomClass(out dataVersion, out data, isDeserializingForImport);
+        public override bool SkipCustomClass(out uint dataVersion, out byte[] data, bool isImport)
         {
             if (!isImport)
             {
@@ -3507,9 +3497,20 @@ namespace JanSharp.Internal
             return true;
         }
         [RecursiveMethod]
-        public override SerializableWannaBeClass ReadCustomClassDynamic(string className) => ReadCustomClassDynamic(className, isDeserializingForImport);
+        public override SerializableWannaBeClass ReadCustomNullableClass(string className) => ReadCustomNullableClass(className, isDeserializingForImport);
         [RecursiveMethod]
-        public override SerializableWannaBeClass ReadCustomClassDynamic(string className, bool isImport)
+        public override SerializableWannaBeClass ReadCustomNullableClass(string className, bool isImport)
+        {
+            if (isImport)
+                return ReadCustomClass(className, isImport);
+            if (ReadByte() == 0)
+                return null;
+            return ReadCustomClass(className, isImport);
+        }
+        [RecursiveMethod]
+        public override SerializableWannaBeClass ReadCustomClass(string className) => ReadCustomClass(className, isDeserializingForImport);
+        [RecursiveMethod]
+        public override SerializableWannaBeClass ReadCustomClass(string className, bool isImport)
         {
             SerializableWannaBeClass value;
             if (!isImport)
@@ -3534,24 +3535,24 @@ namespace JanSharp.Internal
             return value;
         }
         [RecursiveMethod]
-        public override bool ReadCustomNullableClass(SerializableWannaBeClass inst) => ReadCustomNullableClass(inst, isDeserializingForImport);
+        public override bool ReadCustomNullableClass(SerializableWannaBeClass instance) => ReadCustomNullableClass(instance, isDeserializingForImport);
         [RecursiveMethod]
-        public override bool ReadCustomNullableClass(SerializableWannaBeClass inst, bool isImport)
+        public override bool ReadCustomNullableClass(SerializableWannaBeClass instance, bool isImport)
         {
             if (isImport)
-                return ReadCustomClass(inst, isImport);
+                return ReadCustomClass(instance, isImport);
             if (ReadByte() == 0)
                 return false;
-            return ReadCustomClass(inst, isImport);
+            return ReadCustomClass(instance, isImport);
         }
         [RecursiveMethod]
-        public override bool ReadCustomClass(SerializableWannaBeClass inst) => ReadCustomClass(inst, isDeserializingForImport);
+        public override bool ReadCustomClass(SerializableWannaBeClass instance) => ReadCustomClass(instance, isDeserializingForImport);
         [RecursiveMethod]
-        public override bool ReadCustomClass(SerializableWannaBeClass inst, bool isImport)
+        public override bool ReadCustomClass(SerializableWannaBeClass instance, bool isImport)
         {
             if (!isImport)
             {
-                inst.Deserialize(isImport: false, importedDataVersion: 0u);
+                instance.Deserialize(isImport: false, importedDataVersion: 0u);
                 return true;
             }
             uint importedDataVersion = ReadSmallUInt();
@@ -3559,12 +3560,12 @@ namespace JanSharp.Internal
                 return false;
             importedDataVersion--;
             int customDataSize = (int)ReadSmallUInt();
-            if (!inst.SupportsImportExport || inst.LowestSupportedDataVersion < importedDataVersion)
+            if (!instance.SupportsImportExport || instance.LowestSupportedDataVersion < importedDataVersion)
             {
                 readStreamPosition += customDataSize;
                 return false;
             }
-            inst.Deserialize(isImport: true, importedDataVersion);
+            instance.Deserialize(isImport: true, importedDataVersion);
             return true;
         }
         public override byte[] ReadBytes(int byteCount, bool skip = false)
@@ -4287,10 +4288,10 @@ namespace JanSharp.Internal
             #endif
             if (gameState.ImportUI != null)
             {
-                importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(gameState.ImportUI.OptionsClassName);
+                importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClass(gameState.ImportUI.OptionsClassName);
                 return true;
             }
-            importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClassDynamic(nameof(LockstepGameStateOptionsData));
+            importOptions = (LockstepGameStateOptionsData)ReadCustomNullableClass(nameof(LockstepGameStateOptionsData));
             if (importOptions == null)
                 return true;
             Debug.LogError($"[Lockstep] Impossible: The game state {gameState.GameStateInternalName} "
