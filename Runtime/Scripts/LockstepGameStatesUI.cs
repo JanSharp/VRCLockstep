@@ -180,11 +180,24 @@ namespace JanSharp.Internal
                 CloseAutosaveWindow();
         }
 
-        // Cannot use TextChanged because pasting text when testing in editor raises text changed for each
-        // character in the string. It may not do that in VRChat itself, but it doing it in editor is enough
-        // to use EndEdit instead. Because all that logging, decoding and crc calculating ends up lagging.
-        public void OnImportSerializedTextEndEdit()
+        // Cannot use EndEdit because that simply does not get raised in VRChat. We only get value changed.
+        // Which is oh so very great in the editor because value changed gets raised for every character that
+        // gets pasted in, while in VRChat it'll only get raised once.
+        // This handler is expensive, so rerunning it for every character causes exponentially long lag
+        // spikes. In the editor. You know, the thing we use for testing.
+        // https://vrchat.canny.io/sdk-bug-reports/p/worlds-316-vrcinputfield-inputfield-no-longer-sends-onendedit-event
+        public void OnImportSerializedTextValueChanged()
         {
+            if (onImportSerializedTextValueChangedDelayedQueued)
+                return;
+            onImportSerializedTextValueChangedDelayedQueued = true;
+            SendCustomEventDelayedFrames(nameof(OnImportSerializedTextValueChangedDelayed), 1);
+        }
+
+        private bool onImportSerializedTextValueChangedDelayedQueued = false;
+        public void OnImportSerializedTextValueChangedDelayed()
+        {
+            onImportSerializedTextValueChangedDelayedQueued = false;
             // Reset regardless, because 2 consecutive valid yet different imports could be pasted in.
             ResetImport(leaveInputFieldUntouched: true);
 

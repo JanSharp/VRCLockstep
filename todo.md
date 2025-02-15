@@ -63,3 +63,4 @@
 - [ ] add game state dependency attribute, changing the sort order of game states in the all game states array and game states supporting export array ultimately affecting serialization and deserialization order
   - [ ] also force the correct load order when importing
 - [ ] look at VRChat persistence
+- [x] as much as I freaking hate it, change the import input field to respond to value change events 1 frame delayed. Not needed while in VRChat, but for testing in the editor this is effectively required. See also: https://vrchat.canny.io/sdk-bug-reports/p/worlds-316-vrcinputfield-inputfield-no-longer-sends-onendedit-event
