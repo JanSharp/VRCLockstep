@@ -2409,9 +2409,13 @@ namespace JanSharp.Internal
 
             for (int i = 0; i < allGameStatesCount; i++)
             {
+                #if LockstepDebug
+                System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+                sw.Start();
+                #endif
                 allGameStates[i].SerializeGameState(false, null);
                 #if LockstepDebug
-                Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerData (inner) - writeStreamSize: {writeStreamSize}");
+                Debug.Log($"[LockstepDebug] [sw] Lockstep  SendLateJoinerData (inner) - serialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[i].GameStateInternalName}, writeStreamSize: {writeStreamSize}");
                 #endif
                 lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, writeStream, writeStreamSize);
                 ResetWriteStream();
@@ -2588,10 +2592,15 @@ namespace JanSharp.Internal
             ResetReadStream();
             readStream = unprocessedLJSerializedGameStates[gameStateIndex];
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}");
+            Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
             #endif
             SetDilatedTickStartTime(); // Right before DeserializeGameState.
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u, null);
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ProcessNextLJSerializedGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
+            #endif
             LockstepGameStateOptionsUI exportUI = allGameStates[gameStateIndex].ExportUI;
             LockstepGameStateOptionsUI importUI = allGameStates[gameStateIndex].ImportUI;
             if (exportUI != null)
@@ -3961,11 +3970,20 @@ namespace JanSharp.Internal
 
                 int sizePosition = writeStreamSize;
                 writeStreamSize += 4;
+                #if LockstepDebug
+                long serializeStartMs = exportStopWatch.ElapsedMilliseconds;
+                #endif
                 gameState.SerializeGameState(true, allExportOptions[i]);
+                #if LockstepDebug
+                long serializeMs = exportStopWatch.ElapsedMilliseconds - serializeStartMs;
+                #endif
                 int stopPosition = writeStreamSize;
                 writeStreamSize = sizePosition;
                 WriteInt(stopPosition - sizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
                 writeStreamSize = stopPosition;
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization time: {serializeMs}ms, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - sizePosition - 4}");
+                #endif
             }
             isSerializingForExport = false;
 
@@ -4337,7 +4355,14 @@ namespace JanSharp.Internal
             importedDataVersion = ReadSmallUInt();
             // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             isDeserializingForImport = true;
+            #if LockstepDebug
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            #endif
             importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion, gameState.OptionsForCurrentImport);
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  OnImportGameStateIA (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {gameState.GameStateInternalName}");
+            #endif
             isDeserializingForImport = false;
             if (importErrorMessage != null)
                 RaiseOnLockstepNotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
