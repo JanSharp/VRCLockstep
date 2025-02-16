@@ -45,8 +45,6 @@ namespace JanSharp.Internal
         }
 
         [HideInInspector] [SerializeField] [SingletonReference] private WannaBeClassesManager wannaBeClassesManager;
-        [SerializeField] private GenericValueEditor dummyEditor;
-        public override GenericValueEditor DummyEditor => dummyEditor;
         [SerializeField] private InputActionSync lateJoinerInputActionSync;
         [SerializeField] private LockstepTickSync tickSync;
         /// <summary>
@@ -1377,9 +1375,9 @@ namespace JanSharp.Internal
             foreach (LockstepGameState gameState in gameStatesSupportingExport)
             {
                 if (gameState.ExportUI != null)
-                    gameState.ExportUI.InitWidgetDataInternal(DummyEditor);
+                    gameState.ExportUI.InitWidgetDataInternal();
                 if (gameState.ImportUI != null)
-                    gameState.ImportUI.InitWidgetDataInternal(DummyEditor);
+                    gameState.ImportUI.InitWidgetDataInternal();
             }
         }
 
@@ -2613,9 +2611,9 @@ namespace JanSharp.Internal
             LockstepGameStateOptionsUI exportUI = allGameStates[gameStateIndex].ExportUI;
             LockstepGameStateOptionsUI importUI = allGameStates[gameStateIndex].ImportUI;
             if (exportUI != null)
-                exportUI.InitWidgetDataInternal(DummyEditor);
+                exportUI.InitWidgetDataInternal();
             if (importUI != null)
-                importUI.InitWidgetDataInternal(DummyEditor);
+                importUI.InitWidgetDataInternal();
             if (errorMessage != null)
                 RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
             TryMoveToNextLJSerializedGameState();

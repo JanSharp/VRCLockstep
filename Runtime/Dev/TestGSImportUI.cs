@@ -8,7 +8,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class TestGSImportUI : LockstepGameStateOptionsUI
     {
-        [SerializeField] [HideInInspector] [SingletonReference] private TestGameState testGameState;
+        [HideInInspector] [SerializeField] [SingletonReference] private TestGameState testGameState;
 
         public override string OptionsClassName => nameof(TestGSImportOptions);
         private TestGSImportOptions currentOptions;
@@ -31,12 +31,12 @@ namespace JanSharp
             #endif
         }
 
-        protected override void InitWidgetData(GenericValueEditor dummyEditor)
+        protected override void InitWidgetData()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSImportUI  InitWidgetData");
             #endif
-            shouldImportWidget = dummyEditor.NewToggleField("Test GS", false);
+            shouldImportWidget = widgetManager.NewToggleField("Test GS", false);
         }
 
         protected override void UpdateCurrentOptionsFromWidgetsImpl()

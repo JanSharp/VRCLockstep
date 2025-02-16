@@ -29,12 +29,12 @@ namespace JanSharp
             #endif
         }
 
-        protected override void InitWidgetData(GenericValueEditor dummyEditor)
+        protected override void InitWidgetData()
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] TestGSExportUI  InitWidgetData");
             #endif
-            shouldExportWidget = dummyEditor.NewToggleField("Test GS", false);
+            shouldExportWidget = widgetManager.NewToggleField("Test GS", false);
         }
 
         protected override void UpdateCurrentOptionsFromWidgetsImpl()

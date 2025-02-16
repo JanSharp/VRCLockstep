@@ -100,7 +100,7 @@ namespace JanSharp.Internal
             dimBackground.SetActive(true);
             importWindow.SetActive(true);
             ResetImport();
-            importOptionsUI.Info.AddChild((LabelWidgetData)importOptionsUI.Editor.NewLabel(
+            importOptionsUI.Info.AddChild((LabelWidgetData)importOptionsUI.WidgetManager.NewLabel(
                 "Paste text obtained from a previous export into the text field above.").StdMove());
             importOptionsUI.Draw();
         }
@@ -212,12 +212,12 @@ namespace JanSharp.Internal
             if (importedGameStates == null)
             {
                 importOptionsUI.Info.AddChild(
-                    (LabelWidgetData)importOptionsUI.Editor.NewLabel("Malformed or invalid data.").StdMove());
+                    (LabelWidgetData)importOptionsUI.WidgetManager.NewLabel("Malformed or invalid data.").StdMove());
                 importOptionsUI.Draw();
                 return;
             }
 
-            LabelWidgetData mainInfoLabel = importOptionsUI.Info.AddChild(importOptionsUI.Editor.NewLabel(""));
+            LabelWidgetData mainInfoLabel = importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewLabel(""));
 
             int canImportCount = 0;
             foreach (object[] importedGS in importedGameStates)
@@ -230,7 +230,7 @@ namespace JanSharp.Internal
                 }
                 string displayName = LockstepImportedGS.GetDisplayName(importedGS);
                 importOptionsUI.Info.AddChild(
-                    (LabelWidgetData)importOptionsUI.Editor.NewLabel($"{displayName} - {errorMsg}").StdMove());
+                    (LabelWidgetData)importOptionsUI.WidgetManager.NewLabel($"{displayName} - {errorMsg}").StdMove());
             }
             anyImportedGSHasNoErrors = canImportCount != 0;
 
@@ -316,7 +316,7 @@ namespace JanSharp.Internal
         private void ShowAutosaveOptionsEditor()
         {
             exportOptionsUI.Clear();
-            autosaveInfoLabel = autosaveInfoLabel ?? exportOptionsUI.Editor.NewLabel(
+            autosaveInfoLabel = autosaveInfoLabel ?? exportOptionsUI.WidgetManager.NewLabel(
                 "Autosaves periodically write exported data to the VRChat log file. Export and autosave log "
                     + "messages use the prefix '[Lockstep] Export:'.");
             exportOptionsUI.Info.AddChild(autosaveInfoLabel);
@@ -324,7 +324,7 @@ namespace JanSharp.Internal
             if (autosaveUsesExportOptionsToggle.isOn)
             {
                 exportOptionsUI.Root.Interactable = false;
-                autosaveUsingExportInfoLabel = autosaveUsingExportInfoLabel ?? exportOptionsUI.Editor.NewLabel(
+                autosaveUsingExportInfoLabel = autosaveUsingExportInfoLabel ?? exportOptionsUI.WidgetManager.NewLabel(
                     "Currently using export options for autosaves. Modifying is disabled to prevent "
                         + "accidentally confusing exports vs autosaves.");
                 exportOptionsUI.Info.AddChild(autosaveUsingExportInfoLabel);

@@ -12,6 +12,7 @@ namespace JanSharp
     {
         [HideInInspector] [SingletonReference] public LockstepAPI lockstep;
         [HideInInspector] [SingletonReference] public WannaBeClassesManager wannaBeClasses;
+        [HideInInspector] [SingletonReference] public WidgetManager widgetManager;
         public abstract string OptionsClassName { get; }
 
         private bool currentlyShown = false;
@@ -53,8 +54,9 @@ namespace JanSharp
 
         public abstract LockstepGameStateOptionsData NewOptions();
         protected abstract void ValidateOptionsImpl();
-        protected abstract void InitWidgetData(GenericValueEditor dummyEditor);
-        public void InitWidgetDataInternal(GenericValueEditor dummyEditor) => InitWidgetData(dummyEditor);
+        protected abstract void InitWidgetData();
+        // The public function has an Internal prefix since it is not part of the pubic api.
+        public void InitWidgetDataInternal() => InitWidgetData();
         protected abstract void UpdateCurrentOptionsFromWidgetsImpl();
         protected abstract void OnOptionsEditorShow(LockstepOptionsEditorUI ui);
         protected abstract void OnOptionsEditorHide(LockstepOptionsEditorUI ui);

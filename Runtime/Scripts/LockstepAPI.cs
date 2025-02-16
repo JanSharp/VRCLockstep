@@ -476,10 +476,6 @@ namespace JanSharp
         /// <summary>
         /// TODO: docs
         /// </summary>
-        public abstract GenericValueEditor DummyEditor { get; }
-        /// <summary>
-        /// TODO: docs
-        /// </summary>
         /// <param name="allOptions"></param>
         /// <returns></returns>
         public abstract LockstepGameStateOptionsData[] CloneAllOptions(LockstepGameStateOptionsData[] allOptions);

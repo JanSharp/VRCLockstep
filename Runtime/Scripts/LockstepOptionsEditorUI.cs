@@ -5,13 +5,19 @@ using VRC.Udon;
 
 namespace JanSharp
 {
+    /// <summary>
+    /// <para>Just a container for the widgets custom option UIs can add to, as well as a reference to the
+    /// editor that's being drawn to.</para>
+    /// </summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepOptionsEditorUI : UdonSharpBehaviour
     {
+        [HideInInspector] [SerializeField] [SingletonReference] private WidgetManager widgetManager;
         [SerializeField] private GenericValueEditor editor;
         private GroupingWidgetData root;
         private FoldOutWidgetData general;
         private FoldOutWidgetData info;
+        public WidgetManager WidgetManager => widgetManager;
         public GenericValueEditor Editor => editor;
         public GroupingWidgetData Root => root;
         public FoldOutWidgetData Info => info;
@@ -19,9 +25,9 @@ namespace JanSharp
 
         public void Init()
         {
-            root = editor.NewGrouping();
-            info = editor.NewFoldOutScope("Info", true);
-            general = editor.NewFoldOutScope("General Options", true);
+            root = widgetManager.NewGrouping();
+            info = widgetManager.NewFoldOutScope("Info", true);
+            general = widgetManager.NewFoldOutScope("General Options", true);
         }
 
         public void Clear()
