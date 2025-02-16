@@ -349,6 +349,12 @@ namespace JanSharp
         /// </summary>
         public abstract bool InitializedEnoughForImportExport { get; }
         /// <summary>
+        /// <para><see langword="true"/> when the currently running function is in a game state safe context,
+        /// such as input actions, delayed events, game state deserialization, and most other lockstep events.
+        /// Each <see cref="LockstepEventType"/> states whether it is game state safe or not.</para>
+        /// </summary>
+        public abstract bool InGameStateSafeEvent { get; }
+        /// <summary>
         /// <para>The message which lockstep sent as a notification with the intent for it to be shown to the
         /// local player.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnLockstepNotification"/>.</para>
