@@ -431,7 +431,14 @@ namespace JanSharp.Internal
                 entry.gameObject.SetActive(true);
                 return entry;
             }
+            #if LockstepDebug
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            #endif
             GameObject entryGo = Instantiate(clientStateEntryPrefab);
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] LockstepInfoUI  GetOrCreateEntry (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
+            #endif
             entryGo.transform.SetParent(clientStatesContent, worldPositionStays: false);
             entry = entryGo.GetComponent<LockstepClientStateEntry>();
             entry.infoUI = this;
@@ -491,7 +498,14 @@ namespace JanSharp.Internal
 
         private void SendNotification(string message)
         {
+            #if LockstepDebug
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            #endif
             GameObject entryGo = Instantiate(notificationEntryPrefab);
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] LockstepInfoUI  SendNotification (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
+            #endif
             entryGo.transform.SetParent(notificationLogContent, worldPositionStays: false);
             entryGo.transform.SetAsFirstSibling();
             entryGo.GetComponentInChildren<TextMeshProUGUI>().text = message;

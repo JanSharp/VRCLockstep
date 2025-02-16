@@ -532,10 +532,17 @@ namespace JanSharp.Internal
 
             for (int i = elemCount; i < backingDataCount; i++)
             {
+                #if LockstepDebug
+                System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+                sw.Start();
+                #endif
                 elemGameObj = Instantiate(
                     (GameObject)listObj[ListObj_ElemPrefab],
                     (RectTransform)listObj[ListObj_Parent]
                 );
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] [sw] LockstepDebugUI  UpdateList (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
+                #endif
                 SendCustomEvent(createListObjElemEventName);
                 ArrList.Add(ref elems, ref elemCount, listElemObj);
             }

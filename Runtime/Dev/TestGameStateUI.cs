@@ -29,7 +29,14 @@ namespace JanSharp
 
             for (int i = elemsCount; i < count; i++)
             {
+                #if LockstepDebug
+                System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+                sw.Start();
+                #endif
                 GameObject elemObj = Instantiate(elemPrefab, elemsParent);
+                #if LockstepDebug
+                Debug.Log($"[LockstepDebug] [sw] TestGameStateUI  SetActiveCount (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
+                #endif
                 TestGameStateUIElem elem = elemObj.GetComponent<TestGameStateUIElem>();
                 elem.gameState = gameState;
                 ArrList.Add(ref elems, ref elemsCount, elem);

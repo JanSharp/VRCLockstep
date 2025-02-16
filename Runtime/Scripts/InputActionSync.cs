@@ -395,6 +395,8 @@ namespace JanSharp.Internal
             #if LockstepDebug
             // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
             Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization - syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
             #endif
             if ((isLateJoinerSyncInst && !lockstepIsWaitingForLateJoinerSync) || lockstep == null)
             {
@@ -506,6 +508,9 @@ namespace JanSharp.Internal
                 latestInputActionIndex = receivedInputActionIndex;
                 lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedSendTime, receivedData);
             }
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] {this.name}  OnDeserialization (inner) - ms: {sw.Elapsed.TotalMilliseconds}");
+            #endif
         }
     }
 }

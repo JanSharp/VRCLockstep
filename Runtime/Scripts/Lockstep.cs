@@ -890,6 +890,8 @@ namespace JanSharp.Internal
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionWithCurrentReadStream");
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
             #endif
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
             sendingPlayerId = (uint)(uniqueId >> PlayerIdKeyShift);
@@ -916,6 +918,9 @@ namespace JanSharp.Internal
                 return;
             }
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  RunInputActionWithCurrentReadStream (inner) - ms: {sw.Elapsed.TotalMilliseconds}, event name: {inputActionHandlerEventNames[inputActionId]}");
+            #endif
         }
 
         private bool IsAllowedToSendInputActionId(uint inputActionId)
@@ -3989,7 +3994,7 @@ namespace JanSharp.Internal
             Debug.Log("[Lockstep] Export:" + (exportName != null ? $" {exportName}:\n" : "\n") + encoded);
             #if LockstepDebug
             exportStopWatch.Stop();
-            Debug.Log($"[LockstepDebug] Lockstep  Export (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation time: {crcMs}ms, total time: {exportStopWatch.ElapsedMilliseconds}ms");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation time: {crcMs}ms, total time: {exportStopWatch.ElapsedMilliseconds}ms");
             #endif
             return encoded;
         }
@@ -4029,7 +4034,7 @@ namespace JanSharp.Internal
             readStreamPosition = readStream.Length - 4;
             uint expectedCrc = ReadUInt();
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - binary size: {readStream.Length}, expected crc: {expectedCrc}, got crc: {gotCrc}, crc calculation time: {crcStopwatch.ElapsedMilliseconds}ms");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportPreProcess (inner) - binary size: {readStream.Length}, expected crc: {expectedCrc}, got crc: {gotCrc}, crc calculation time: {crcStopwatch.ElapsedMilliseconds}ms");
             #endif
             if (gotCrc != expectedCrc)
                 return null;
