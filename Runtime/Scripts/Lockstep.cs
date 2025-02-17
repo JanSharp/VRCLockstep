@@ -4185,8 +4185,9 @@ namespace JanSharp.Internal
             count = 0;
             foreach (object[] importedGS in importedGameStates)
             {
-                if (LockstepImportedGS.GetErrorMsg(importedGS) == null)
-                    validImportedGSs[count++] = importedGS;
+                if (LockstepImportedGS.GetErrorMsg(importedGS) != null)
+                    continue;
+                validImportedGSs[count++] = importedGS;
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
                 // Nothing _should_ decrement refs count of import options inside of the serialize function
                 // for an instance of import options, but it is custom user code, so technically it is possible
@@ -4198,7 +4199,7 @@ namespace JanSharp.Internal
             if (exportName != null)
                 exportName = exportName.Replace('\n', ' ').Replace('\r', ' ');
             SendImportStartIA(validImportedGSs, exportDate, SanitizeWorldName(exportWorldName), exportName);
-            foreach (object[] importedGS in importedGameStates)
+            foreach (object[] importedGS in validImportedGSs)
             {
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
                 if (importOptions != null)
