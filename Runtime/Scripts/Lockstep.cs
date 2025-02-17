@@ -4176,17 +4176,23 @@ namespace JanSharp.Internal
             }
 
             int count = 0;
+            DataDictionary validImportedGSLut = new DataDictionary();
             foreach (object[] importedGS in importedGameStates)
                 if (LockstepImportedGS.GetErrorMsg(importedGS) == null)
+                {
                     count++;
+                    validImportedGSLut.Add(LockstepImportedGS.GetInternalName(importedGS), new DataToken(importedGS));
+                }
             if (count == 0)
                 return;
             object[][] validImportedGSs = new object[count][];
             count = 0;
-            foreach (object[] importedGS in importedGameStates)
+            // Use gameStatesSupportingExport because that is sorted by game state dependencies, importedGameStates is not.
+            foreach (LockstepGameState gameState in gameStatesSupportingExport)
             {
-                if (LockstepImportedGS.GetErrorMsg(importedGS) != null)
+                if (!validImportedGSLut.TryGetValue(gameState.GameStateInternalName, out DataToken importedGSToken))
                     continue;
+                object[] importedGS = (object[])importedGSToken.Reference;
                 validImportedGSs[count++] = importedGS;
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
                 // Nothing _should_ decrement refs count of import options inside of the serialize function

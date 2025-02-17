@@ -17,6 +17,8 @@ namespace JanSharp.Internal
     public static class LockstepOnBuild
     {
         private static Lockstep lockstep = null;
+        private static string gameStateDependencyTreeErrorMessage = null;
+        private static Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut = null;
 
         private static List<LockstepGameState> allGameStates = new List<LockstepGameState>();
         public static ReadOnlyCollection<LockstepGameState> AllGameStates => allGameStates.AsReadOnly();
@@ -33,10 +35,147 @@ namespace JanSharp.Internal
 
         static LockstepOnBuild()
         {
-            OnBuildUtil.RegisterType<Lockstep>(PreOnBuild, -1);
+            BuildDependencyTree();
+            OnBuildUtil.RegisterAction(PrepareDependencyTreeOnBuild, -2);
+            OnBuildUtil.RegisterType<Lockstep>(PreOnBuild, -1); // TODO: change this to use cumulative.
             OnBuildUtil.RegisterType<UdonSharpBehaviour>(InputActionsOnBuild, 0);
             OnBuildUtil.RegisterType<LockstepGameState>(GameStatesOnBuild, 0);
             OnBuildUtil.RegisterType<Lockstep>(PostOnBuild, 1);
+        }
+
+        private static void DependencyTreeError(string message)
+        {
+            gameStateDependencyTreeErrorMessage = message;
+            Debug.LogError(message);
+        }
+
+        private static void BuildDependencyTree()
+        {
+            gameStateDependencyTreeErrorMessage = null;
+            gsTypeWithDepsLut = null;
+
+            var nonGSTypesWithDepAttr = OnAssemblyLoadUtil.AllUdonSharpBehaviourTypes
+                .Where(t => t.IsDefined(typeof(LockstepGameStateDependencyAttribute), inherit: true)
+                    && !EditorUtil.DerivesFrom(t, typeof(LockstepGameState)))
+                .Select(t => t.Name)
+                .ToList();
+            if (nonGSTypesWithDepAttr.Any())
+            {
+                DependencyTreeError($"[Lockstep] The {nameof(LockstepGameStateDependencyAttribute)} can only "
+                    + $"be applied to classes deriving from {nameof(LockstepGameState)}, however the attribute "
+                    + $"is applied to: {string.Join(", ", nonGSTypesWithDepAttr)}");
+                return;
+            }
+
+            List<GSTypeWithDeps> gameStateTypes = OnAssemblyLoadUtil.AllUdonSharpBehaviourTypes
+                .Where(t => EditorUtil.DerivesFrom(t, typeof(LockstepGameState)))
+                .Select(t => new GSTypeWithDeps(t))
+                .ToList();
+            gsTypeWithDepsLut = gameStateTypes.ToDictionary(t => t.gsType, t => t);
+            foreach (GSTypeWithDeps type in gameStateTypes)
+                if (!type.TryResolveGSTypes(gsTypeWithDepsLut))
+                    return;
+            foreach (GSTypeWithDeps type in gameStateTypes)
+                if (!type.TryPopulateRecursiveDependencies())
+                    return;
+        }
+
+        private class GSTypeWithDeps : System.IComparable<GSTypeWithDeps>
+        {
+            public System.Type gsType;
+            public List<System.Type> rawDependencies;
+            public List<GSTypeWithDeps> dependencies;
+            public List<GSTypeWithDeps> recursiveDependenciesLut;
+
+            public LockstepGameState instance;
+
+            public GSTypeWithDeps(System.Type gsType)
+            {
+                this.gsType = gsType;
+                rawDependencies = gsType.GetCustomAttributes<LockstepGameStateDependencyAttribute>(inherit: true)
+                    .Select(a => a.GameStateType)
+                    .ToList();
+            }
+
+            public bool TryResolveGSTypes(Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut)
+            {
+                if (!ValidateRawDependencyTypes())
+                    return false;
+                dependencies = rawDependencies.Select(t => gsTypeWithDepsLut[t]).ToList();
+                return true;
+            }
+
+            public bool ValidateRawDependencyTypes()
+            {
+                foreach (System.Type depType in rawDependencies)
+                {
+                    if (depType == null)
+                    {
+                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency on 'null'. "
+                            + $"Use 'typeof()' as the argument for {nameof(LockstepGameStateDependencyAttribute)}.");
+                        return false;
+                    }
+                    if (!EditorUtil.DerivesFrom(depType, typeof(LockstepGameState)))
+                    {
+                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
+                            + $"on the type {depType.Name}, however said type does not derive from {nameof(LockstepGameState)}.");
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            public bool TryPopulateRecursiveDependencies()
+            {
+                recursiveDependenciesLut = new();
+                foreach (GSTypeWithDeps dep in dependencies)
+                    if (!Walk(dep))
+                        return false;
+                return true;
+            }
+
+            private bool Walk(GSTypeWithDeps toWalk)
+            {
+                if (toWalk == this)
+                {
+                    DependencyTreeError($"[Lockstep] GameState dependency loop detected for {gsType.Name}.");
+                    return false;
+                }
+                if (recursiveDependenciesLut.Contains(toWalk))
+                    return true;
+                recursiveDependenciesLut.Add(toWalk);
+                foreach (GSTypeWithDeps dep in dependencies)
+                    if (!Walk(dep))
+                        return false;
+                return true;
+            }
+
+            public int CompareTo(GSTypeWithDeps other)
+            {
+                Debug.Log($"Comparing {gsType.Name} with {other.gsType.Name}!");
+                if (instance == null || other.instance == null)
+                    throw new System.Exception("Impossible.");
+                if (recursiveDependenciesLut.Contains(other))
+                    return 1;
+                if (other.recursiveDependenciesLut.Contains(this))
+                    return -1;
+                int result = instance.GameStateDisplayName.CompareTo(other.instance.GameStateDisplayName);
+                if (result != 0)
+                    return result;
+                return instance.GameStateInternalName.CompareTo(other.instance.GameStateInternalName);
+            }
+        }
+
+        private static bool PrepareDependencyTreeOnBuild()
+        {
+            if (gameStateDependencyTreeErrorMessage != null)
+            {
+                Debug.LogError(gameStateDependencyTreeErrorMessage);
+                return false;
+            }
+            foreach (GSTypeWithDeps type in gsTypeWithDepsLut.Values)
+                type.instance = null;
+            return true;
         }
 
         private static bool PreOnBuild(Lockstep lockstep)
@@ -62,8 +201,13 @@ namespace JanSharp.Internal
             SerializedObject lockstepSo = new SerializedObject(lockstep);
 
             allGameStates = allGameStates
-                .OrderBy(gs => gs.GameStateDisplayName)
-                .ThenBy(gs => gs.GameStateInternalName)
+                .Select(gs => {
+                    GSTypeWithDeps type = gsTypeWithDepsLut[gs.GetType()];
+                    type.instance = gs;
+                    return type;
+                })
+                .OrderBy(t => t)
+                .Select(t => t.instance)
                 .ToList();
             lockstepSo.FindProperty("allGameStatesCount").intValue = allGameStates.Count;
             EditorUtil.SetArrayProperty(

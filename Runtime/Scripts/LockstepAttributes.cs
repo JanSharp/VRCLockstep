@@ -265,4 +265,30 @@ namespace JanSharp {
             this.interval = interval;
         }
     }
+
+    [System.AttributeUsage(System.AttributeTargets.Class, Inherited = true, AllowMultiple = true)]
+    public sealed class LockstepGameStateDependencyAttribute : System.Attribute
+    {
+        readonly System.Type gameStateType;
+        /// <summary>
+        /// <para>The type of a <see cref="LockstepGameState"/> which should be ordered before this the
+        /// <see cref="LockstepGameState"/> that the <see cref="LockstepGameStateDependencyAttribute"/> is
+        /// applied to.</para>
+        /// </summary>
+        public System.Type GameStateType => gameStateType;
+
+        /// <summary>
+        /// <para>A game state dependency tells Lockstep that serializing and deserializing of
+        /// <see cref="LockstepGameState"/>s should happen in a specific order.</para>
+        /// <para>The <see cref="LockstepGameState"/> the <see cref="LockstepGameStateDependencyAttribute"/>
+        /// is applied to is going to be ordered after the given <paramref name="gameStateType"/>.</para>
+        /// <para>This does not enforce that a given game state exists in the scene, if that is desired use
+        /// <see cref="SingletonScriptAttribute"/> and <see cref="SingletonReferenceAttribute"/>.</para>
+        /// </summary>
+        /// <param name="gameStateType"></param>
+        public LockstepGameStateDependencyAttribute(System.Type gameStateType)
+        {
+            this.gameStateType = gameStateType;
+        }
+    }
 }
