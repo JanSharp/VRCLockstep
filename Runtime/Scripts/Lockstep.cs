@@ -2805,6 +2805,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnClientLeftIA");
             #endif
             uint playerId = ReadSmallUInt();
+            CheckIfImportingPlayerLeft(playerId); // Can raise an event, must therefore happen before removing the client state.
             RemoveClientState(playerId, out ClientState clientState, out string playerName);
             // leftClients may not contain playerId, and that is fine.
             ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
@@ -2820,7 +2821,6 @@ namespace JanSharp.Internal
 
             CheckIfLateJoinerSyncShouldStop();
             CheckIfSingletonInputActionGotDropped(playerId);
-            CheckIfImportingPlayerLeft(playerId);
             CheckIfRequestedMasterClientLeft(playerId);
             leftClientName = playerName;
             RaiseOnClientLeft(playerId);
