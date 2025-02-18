@@ -1056,9 +1056,9 @@ namespace JanSharp.Internal
             {
                 responsiblePlayerId,
                 singletonInputActionData,
-                currentInputActionSendTime,
-                currentTick,
                 requiresTimeTracking,
+                currentTick,
+                currentInputActionSendTime,
             }));
 
             if (localPlayerId != responsiblePlayerId)
