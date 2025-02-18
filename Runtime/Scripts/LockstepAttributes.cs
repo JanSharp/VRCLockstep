@@ -278,10 +278,15 @@ namespace JanSharp {
         public System.Type GameStateType => gameStateType;
 
         /// <summary>
-        /// <para>A game state dependency tells Lockstep that serializing and deserializing of
-        /// <see cref="LockstepGameState"/>s should happen in a specific order.</para>
+        /// <para>A game state dependency tells Lockstep that serializing and deserializing (including
+        /// exporting and importing) of <see cref="LockstepGameState"/>s should happen in a specific
+        /// order.</para>
         /// <para>The <see cref="LockstepGameState"/> the <see cref="LockstepGameStateDependencyAttribute"/>
-        /// is applied to is going to be ordered after the given <paramref name="gameStateType"/>.</para>
+        /// is applied to is going to be ordered after the given <paramref name="gameStateType"/>. After
+        /// dependencies they are sorted by <see cref="LockstepGameState.GameStateDisplayName"/> (converted to
+        /// lowercase for case insensitivity), and then by
+        /// <see cref="LockstepGameState.GameStateInternalName"/> (not converted to lower case to prevent
+        /// ambiguity).</para>
         /// <para>This does not enforce that a given game state exists in the scene, if that is desired use
         /// <see cref="SingletonScriptAttribute"/> and <see cref="SingletonReferenceAttribute"/>.</para>
         /// </summary>
