@@ -51,8 +51,8 @@ namespace JanSharp.Internal
         /// <para>On the master this is the currently running tick, as in new input actions are getting
         /// associated and run in this tick.</para>
         /// <para>On non master this is the tick input actions will get run in. Once input actions have been
-        /// run for this tick it as advanced immediately to the next tick, so you can think of it like input
-        /// actions getting run at the end of a tick (as well as on tick).</para>
+        /// run for this tick it is advanced immediately to the next tick, so you can think of it like input
+        /// actions getting run at the end of a tick (as well as on nth tick and on tick events).</para>
         /// <para>Ultimately this means that no matter what client we are on, when
         /// <see cref="TryRunCurrentTick"/> runs, the very last thing that happens is raising on tick and
         /// incrementing currentTick. I hope this makes master changes (which happen at the start of a tick)
@@ -86,6 +86,19 @@ namespace JanSharp.Internal
         /// guaranteed that there are no more input actions associated with ticks on the master.</para>
         /// </summary>
         private uint firstMutableTick = 0u; // Effectively 1 tick past the last immutable tick.
+        /// <summary>
+        /// <para>This is only relevant to the master. It expands the meaning of <see cref="firstMutableTick"/>
+        /// because if <see cref="currentTick"/> is equal to <see cref="firstMutableTick"/> then input actions
+        /// still get associated with ticks on the master rather than either instantly running or running one
+        /// frame later.</para>
+        /// <para>However once <see cref="TryRunCurrentTick"/> is running input actions which were associated
+        /// with the <see cref="currentTick"/> then it becomes invalid to associate more input actions with
+        /// the <see cref="currentTick"/>, however it's not been advanced to the next tick yet.</para>
+        /// <para>In this scenario <see cref="disallowAssociatingWithCurrentTick"/> gets set to
+        /// <see langword="true"/>, preventing exactly those kinds of tick associations and instead running
+        /// input actions in the next frame.</para>
+        /// </summary>
+        private bool disallowAssociatingWithCurrentTick = false;
         /// <summary>
         /// <para>The <see cref="Time.realtimeSinceStartup"/> for "tick 0". Tick 0 is invalid, but for
         /// calculations this is just easier than having it start at 1.</para>
@@ -717,6 +730,8 @@ namespace JanSharp.Internal
                     + $"they get received (or once they got sent if the local client was issuing them).");
             #endif
 
+            disallowAssociatingWithCurrentTick = true;
+
             if (uniqueIds != null)
                 RunInputActionsForUniqueIds(uniqueIds);
 
@@ -725,6 +740,8 @@ namespace JanSharp.Internal
 
             RaiseOnNthTicks();
             RaiseOnTick(); // End of tick.
+
+            disallowAssociatingWithCurrentTick = false;
 
             currentTick++;
 
@@ -859,6 +876,16 @@ namespace JanSharp.Internal
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
             RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId, (float)inputActionData[2]);
+        }
+
+        private void RunInputActionForUniqueIdNextFrame(ulong uniqueId)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RunInputActionForUniqueIdNextFrame");
+            #endif
+            inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
+            object[] inputActionData = (object[])inputActionDataToken.Reference;
+            ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { (uint)inputActionData[0], (byte[])inputActionData[1], uniqueId, (float)inputActionData[2] });
         }
 
         private void RunInputActionsForThisFrame()
@@ -1159,7 +1186,10 @@ namespace JanSharp.Internal
             // associated ones.
             if (currentTick <= firstMutableTick)
             {
-                AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
+                if (currentTick == firstMutableTick && !disallowAssociatingWithCurrentTick)
+                    RunInputActionForUniqueIdNextFrame(uniqueId);
+                else
+                    AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
                 return;
             }
 
@@ -2867,8 +2897,11 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryToInstantlyRunInputActionOnMaster");
             #endif
-            if (currentTick <= firstMutableTick) // Can't run it in the current tick. A check for isCatchingUp
-            { // is not needed, because the condition above will always be true when isCatchingUp is true.
+            if (currentTick < firstMutableTick
+                || (currentTick == firstMutableTick && !disallowAssociatingWithCurrentTick))
+            {
+                // Can't run it in the current tick. A check for isCatchingUp is not needed,
+                // because the condition above will always be true when isCatchingUp is true.
                 if (uniqueId == 0uL)
                 {
                     // It'll only be 0 if the local player is the one trying to instantly run it.
