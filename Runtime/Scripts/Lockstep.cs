@@ -890,6 +890,9 @@ namespace JanSharp.Internal
 
         private void RunInputActionsForThisFrame()
         {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RunInputActionsForThisFrame");
+            #endif
             for (int i = 0; i < iatrnCount; i++)
             {
                 object[] inputActionData = inputActionsToRunNextFrame[i];
@@ -901,6 +904,9 @@ namespace JanSharp.Internal
 
         private void ForgetAboutInputActionsForThisFrame()
         {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutInputActionsForThisFrame");
+            #endif
             for (int i = 0; i < iatrnCount; i++)
                 inputActionsToRunNextFrame[i] = null; // Just to ensure that memory can be freed.
             iatrnCount = 0;
