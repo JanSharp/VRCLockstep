@@ -162,7 +162,7 @@ namespace JanSharp.Internal
                 int result = instance.GameStateDisplayName.ToLower().CompareTo(other.instance.GameStateDisplayName.ToLower());
                 if (result != 0)
                     return result;
-                return instance.GameStateInternalName.ToLower().CompareTo(other.instance.GameStateInternalName.ToLower());
+                return instance.GameStateInternalName.CompareTo(other.instance.GameStateInternalName);
             }
         }
 
