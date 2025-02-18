@@ -159,10 +159,10 @@ namespace JanSharp.Internal
                     return 1;
                 if (other.recursiveDependenciesLut.Contains(this))
                     return -1;
-                int result = instance.GameStateDisplayName.CompareTo(other.instance.GameStateDisplayName);
+                int result = instance.GameStateDisplayName.ToLower().CompareTo(other.instance.GameStateDisplayName.ToLower());
                 if (result != 0)
                     return result;
-                return instance.GameStateInternalName.CompareTo(other.instance.GameStateInternalName);
+                return instance.GameStateInternalName.ToLower().CompareTo(other.instance.GameStateInternalName.ToLower());
             }
         }
 

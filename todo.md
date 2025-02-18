@@ -65,4 +65,4 @@
 - [ ] look at VRChat persistence
 - [x] as much as I freaking hate it, change the import input field to respond to value change events 1 frame delayed. Not needed while in VRChat, but for testing in the editor this is effectively required. See also: https://vrchat.canny.io/sdk-bug-reports/p/worlds-316-vrcinputfield-inputfield-no-longer-sends-onendedit-event
 - [x] add stop watches to all game state serialization and deserialization
-- [ ] sort game states using lowercase strings
+- [x] sort game states using lowercase strings
