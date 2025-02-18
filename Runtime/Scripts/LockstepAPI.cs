@@ -752,7 +752,7 @@ namespace JanSharp
         public abstract uint ImportedDataVersion { get; }
         /// <summary>
         /// <para>This returns a new copy of the array every time it is accessed.</para>
-        /// <para>The game stats which are about to be imported, but have not been imported yet.</para>
+        /// <para>The game states which are about to be imported, but have not been imported yet.</para>
         /// <para>Inside of <see cref="LockstepEventType.OnImportedGameState"/>, the
         /// <see cref="ImportedGameState"/> is no longer in this list.</para>
         /// <para>Inside of <see cref="LockstepEventType.OnImportFinished"/> this list may not actually be
