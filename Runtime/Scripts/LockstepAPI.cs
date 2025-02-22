@@ -474,6 +474,34 @@ namespace JanSharp
         public abstract string GetDisplayName(uint playerId);
 
         /// <summary>
+        /// <para>While inside of
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> or
+        /// any input action, singleton input action or delayed action event handler, calling
+        /// <see cref="FlagToContinueNextFrame"/> tells lockstep to pause any and all regular processing, no
+        /// game state safe events will get run, no ticks being advanced, until next frame where the event
+        /// handler which called <see cref="FlagToContinueNextFrame"/> gets called again.
+        /// <see cref="IsContinuationFromPrevFrame"/> is going to be true inside of the event handler in this
+        /// case.</para>
+        /// <para>It may call <see cref="FlagToContinueNextFrame"/> again.</para>
+        /// <para>Once the event handler does not call <see cref="FlagToContinueNextFrame"/>, it indicates
+        /// that it is done processing incoming data and lockstep can resume normal operation.</para>
+        /// <para>Usable only inside of game state safe events which have serialized data to deserialize. So
+        /// notably <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are
+        /// excluded.</para>
+        /// </summary>
+        public abstract void FlagToContinueNextFrame();
+        /// <summary>
+        /// <para><see langword="true"/> when inside of an event handler which interrupted itself by calling
+        /// <see cref="FlagToContinueNextFrame"/> the last time it was called, which was in the previous
+        /// frame.</para>
+        /// <para>Usable only inside of game state safe events which have serialized data to deserialize. So
+        /// notably <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are
+        /// excluded.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract bool IsContinuationFromPrevFrame { get; }
+
+        /// <summary>
         /// TODO: docs
         /// </summary>
         /// <param name="allOptions"></param>

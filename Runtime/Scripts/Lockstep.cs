@@ -3,6 +3,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 using VRC.SDK3.Data;
+using TMPro;
 
 namespace JanSharp.Internal
 {
@@ -133,6 +134,7 @@ namespace JanSharp.Internal
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
         private bool initializedEnoughForImportExport = false;
+        private bool flaggedToContinueNextFrame = false;
         // Only true for the initial catch up to avoid it being true for just a few ticks seemingly randomly
         // (Caused by the master changing which requires catching up to what the previous master had already
         // processed. See IsMaster property.)
@@ -143,6 +145,17 @@ namespace JanSharp.Internal
 
         private bool inGameStateSafeEvent = false;
         public override bool InGameStateSafeEvent => inGameStateSafeEvent;
+
+        public override void FlagToContinueNextFrame()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  FlagToContinueNextFrame");
+            #endif
+            flaggedToContinueNextFrame = true;
+        }
+
+        private bool isContinuationFromPrevFrame = false;
+        public override bool IsContinuationFromPrevFrame => isContinuationFromPrevFrame;
 
         /// <summary>
         /// <para><see langword="true"/> on a single client, the asking client.</para>
@@ -2628,30 +2641,38 @@ namespace JanSharp.Internal
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState");
-            #endif
-            int gameStateIndex = nextLJGameStateToProcess;
-            ResetReadStream();
-            readStream = unprocessedLJSerializedGameStates[gameStateIndex];
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             #endif
-            SetDilatedTickStartTime(); // Right before DeserializeGameState.
+            int gameStateIndex = nextLJGameStateToProcess;
+            if (!flaggedToContinueNextFrame)
+                SetReadStream(unprocessedLJSerializedGameStates[gameStateIndex]);
+            else
+            {
+                flaggedToContinueNextFrame = false;
+                isContinuationFromPrevFrame = true;
+            }
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}, readStreamPosition: {readStreamPosition}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
+            #endif
             inGameStateSafeEvent = true;
+            SetDilatedTickStartTime(); // Right before DeserializeGameState.
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u, null);
             inGameStateSafeEvent = false;
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ProcessNextLJSerializedGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
             #endif
+            isContinuationFromPrevFrame = false;
+            if (errorMessage != null)
+                RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
+            if (flaggedToContinueNextFrame)
+                return;
             LockstepGameStateOptionsUI exportUI = allGameStates[gameStateIndex].ExportUI;
             LockstepGameStateOptionsUI importUI = allGameStates[gameStateIndex].ImportUI;
             if (exportUI != null)
                 exportUI.InitWidgetDataInternal();
             if (importUI != null)
                 importUI.InitWidgetDataInternal();
-            if (errorMessage != null)
-                RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
             TryMoveToNextLJSerializedGameState();
         }
 
@@ -3460,12 +3481,32 @@ namespace JanSharp.Internal
 
         public override void SetReadStream(byte[] stream, int startIndex, int length)
         {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SetReadStream");
+            #endif
+            if (flaggedToContinueNextFrame)
+            {
+                Debug.LogError($"[Lockstep] Attempt to call SetReadStream while flaggedToContinueNextFrame "
+                    + $"is true, indicating that an input action or deserialization has been suspended for "
+                    + $"and extended by one frame. Overwriting the read stream would interrupt this process.");
+                return;
+            }
             readStream = new byte[length];
             System.Array.Copy(readStream, startIndex, stream, 0, length);
             ResetReadStream();
         }
         public override void SetReadStream(byte[] stream)
         {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SetReadStream");
+            #endif
+            if (flaggedToContinueNextFrame)
+            {
+                Debug.LogError($"[Lockstep] Attempt to call SetReadStream while flaggedToContinueNextFrame "
+                    + $"is true, indicating that an input action or deserialization has been suspended for "
+                    + $"and extended by one frame. Overwriting the read stream would interrupt this process.");
+                return;
+            }
             readStream = stream;
             ResetReadStream();
         }
