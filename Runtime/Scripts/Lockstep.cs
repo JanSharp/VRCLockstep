@@ -3624,6 +3624,8 @@ namespace JanSharp.Internal
         ///available to be read, and once assigned to this variable they are immutable.</summary>
         private byte[] readStream = new byte[0];
         private int readStreamPosition = 0;
+        public override int ReadStreamPosition { get => readStreamPosition; set => readStreamPosition = value; }
+        public override int ReadStreamLength => readStream.Length;
 
         public override void SetReadStream(byte[] stream, int startIndex, int length)
         {

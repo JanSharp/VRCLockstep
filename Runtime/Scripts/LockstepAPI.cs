@@ -500,6 +500,7 @@ namespace JanSharp
         /// <para>Usable only inside of game state safe events which have serialized data to deserialize. So
         /// notably <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are
         /// excluded.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool FlaggedToContinueNextFrame { get; }
         /// <summary>
@@ -1111,6 +1112,30 @@ namespace JanSharp
         /// <inheritdoc cref="WriteSmallShort(short)"/>
         public abstract void WriteSmallULong(ulong value);
 
+        /// <summary>
+        /// <para>Be very careful with this, there should effectively never be a reason to write to this
+        /// property. If the desire is to skip some bytes while reading from the read stream, use
+        /// <see cref="ReadBytes(int, bool)"/> with <c>skip: true</c> instead.</para>
+        /// <para>Just like <see cref="WriteStreamPosition"/> this is a very low level api allowing you to
+        /// read and write the current position inside of the read stream, which is the position the next
+        /// <c>Read</c> call would read bytes from, and automatically advance the
+        /// <see cref="ReadStreamPosition"/> of course.</para>
+        /// <para>However unlike <see cref="WriteStreamPosition"/> there's very little reason to use this, so
+        /// little that it took quite some consideration to even expose it. A possible use case is including
+        /// the current read stream position in debug messages to make sure they match what was being written,
+        /// meaning there would likely also be debug log messages which include the current write stream
+        /// position in the serialization functions.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract int ReadStreamPosition { get; set; }
+        /// <summary>
+        /// <para>The current read stream's length. There is no reason to use this in normal code, this is
+        /// just exposed because <see cref="ReadStreamPosition"/> is also exposed.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract int ReadStreamLength { get; }
         /// <inheritdoc cref="SetReadStream(byte[])"/>
         /// <param name="startIndex">The start index inside of <paramref name="stream"/> of the range which
         /// should be copied and become the new read stream.</param>
@@ -1119,9 +1144,10 @@ namespace JanSharp
         public abstract void SetReadStream(byte[] stream, int startIndex, int length);
         /// <summary>
         /// <para>Assigns the given stream directly to the internal read stream, overwriting it.</para>
-        /// <para>Sets the read stream position to 0, the start of the new read stream.</para>
+        /// <para>Sets the <see cref="ReadStreamPosition"/> to 0, the start of the new read stream.</para>
         /// <para>Potentially useful in combination with
         /// <see cref="SkipCustomClass(out uint, out byte[])"/>.</para>
+        /// <para>Be careful not to overwrite the read stream during other ongoing deserialization.</para>
         /// <para>Usable any time.</para>
         /// </summary>
         /// <param name="stream">The new read stream, must not be <see langword="null"/>.</param>
