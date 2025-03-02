@@ -476,6 +476,7 @@ namespace JanSharp
 
         /// <summary>
         /// <para>While inside of
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> or
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> or
         /// any input action, singleton input action or delayed action event handler, calling
         /// <see cref="FlagToContinueNextFrame"/> tells lockstep to pause any and all regular processing, no
@@ -485,10 +486,12 @@ namespace JanSharp
         /// event handler in this case.</para>
         /// <para>It may call <see cref="FlagToContinueNextFrame"/> again.</para>
         /// <para>Once the event handler does not call <see cref="FlagToContinueNextFrame"/>, it indicates
-        /// that it is done processing incoming data and lockstep can resume normal operation.</para>
-        /// <para>Usable only inside of game state safe events which have serialized data to deserialize. So
-        /// notably <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are
-        /// excluded.</para>
+        /// that it is done processing incoming data (or in the case of game state serialization done
+        /// serializing) and lockstep can resume normal operation.</para>
+        /// <para>Usable only inside of
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> and inside
+        /// of game state safe events which have serialized data to deserialize. So notably
+        /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded.</para>
         /// </summary>
         public abstract void FlagToContinueNextFrame();
         /// <summary>
@@ -497,9 +500,10 @@ namespace JanSharp
         /// systems to check if those callbacks called <see cref="FlagToContinueNextFrame"/>.</para>
         /// <para>Though it can of course also be used within the same system, cross system interaction merely
         /// demonstrates the purpose more clearly.</para>
-        /// <para>Usable only inside of game state safe events which have serialized data to deserialize. So
-        /// notably <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are
-        /// excluded.</para>
+        /// <para>Usable only inside of
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> and inside
+        /// of game state safe events which have serialized data to deserialize. So notably
+        /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool FlaggedToContinueNextFrame { get; }
@@ -507,9 +511,10 @@ namespace JanSharp
         /// <para><see langword="true"/> when inside of an event handler which interrupted itself by calling
         /// <see cref="FlagToContinueNextFrame"/> the last time it was called, which was in the previous
         /// frame.</para>
-        /// <para>Usable only inside of game state safe events which have serialized data to deserialize. So
-        /// notably <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are
-        /// excluded.</para>
+        /// <para>Usable only inside of
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> and inside
+        /// of game state safe events which have serialized data to deserialize. So notably
+        /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool IsContinuationFromPrevFrame { get; }

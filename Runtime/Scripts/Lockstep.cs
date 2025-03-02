@@ -162,6 +162,9 @@ namespace JanSharp.Internal
         private DataList suspendedDelayedEventsList = null;
         private ulong[] suspendedUniqueIds = null;
         private bool suspendedInStandaloneIA = false;
+        private bool suspendedInLJSerialization = false;
+        private byte[] suspendedWriteStream = null;
+        private int suspendedWriteStreamSize = 0;
         private int suspendedIndexInArray = 0;
 
         /// <summary>
@@ -622,15 +625,28 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (suspendedInStandaloneIA)
+            if (flaggedToContinueNextFrame)
             {
-                suspendedInStandaloneIA = false;
-                RunInputActionSuspendedPrevFrame();
-                if (flaggedToContinueNextFrame)
+                if (suspendedInStandaloneIA)
                 {
-                    suspendedInStandaloneIA = true;
-                    lastUpdateSW.Stop();
-                    return;
+                    suspendedInStandaloneIA = false;
+                    RunInputActionSuspendedPrevFrame();
+                    if (flaggedToContinueNextFrame)
+                    {
+                        suspendedInStandaloneIA = true;
+                        lastUpdateSW.Stop();
+                        return;
+                    }
+                }
+                else if (suspendedInLJSerialization)
+                {
+                    suspendedInLJSerialization = false;
+                    SendLateJoinerData();
+                    if (flaggedToContinueNextFrame)
+                    {
+                        lastUpdateSW.Stop();
+                        return;
+                    }
                 }
             }
 
@@ -2531,16 +2547,35 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerData");
             #endif
-            if (isImporting)
+            if (!flaggedToContinueNextFrame)
             {
-                Debug.LogError("[Lockstep] Attempt to SendLateJoinerData while an import is still going on "
-                    + "which if it was supported would be complete waste of networking bandwidth. So it isn't "
-                    + "supported, and this call to SendLateJoinerData is ignored.");
-                return;
-            }
-            if (lateJoinerInputActionSync.QueuedBytesCount >= Clamp(byteCountForLatestLJSync / 2, 2048, 2048 * 5))
-                lateJoinerInputActionSync.DequeueEverything(doCallback: false);
+                if (isImporting)
+                {
+                    Debug.LogError("[Lockstep] Attempt to SendLateJoinerData while an import is still going on "
+                        + "which if it was supported would be complete waste of networking bandwidth. So it isn't "
+                        + "supported, and this call to SendLateJoinerData is ignored.");
+                    return;
+                }
+                if (lateJoinerInputActionSync.QueuedBytesCount >= Clamp(byteCountForLatestLJSync / 2, 2048, 2048 * 5))
+                    lateJoinerInputActionSync.DequeueEverything(doCallback: false);
 
+                SendLateJoinerInternalGameStatesIA();
+            }
+
+            SendLateJoinerCustomGameStatesIAs();
+            if (flaggedToContinueNextFrame)
+                return;
+
+            SendLateJoinerCurrentTickIA();
+
+            byteCountForLatestLJSync = lateJoinerInputActionSync.QueuedBytesCount;
+        }
+
+        private void SendLateJoinerInternalGameStatesIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerInternalGameStatesIA");
+            #endif
             // Client states game state.
             WriteSmallUInt((uint)allClientStatesCount);
             for (int i = 0; i < allClientStatesCount; i++)
@@ -2593,26 +2628,59 @@ namespace JanSharp.Internal
 
             lateJoinerInputActionSync.SendInputAction(LJInternalGameStatesIAId, writeStream, writeStreamSize);
             ResetWriteStream();
+        }
 
-            for (int i = 0; i < allGameStatesCount; i++)
+        private void SendLateJoinerCustomGameStatesIAs()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerCustomGameStatesIAs");
+            #endif
+            for (int i = suspendedIndexInArray; i < allGameStatesCount; i++)
             {
                 #if LockstepDebug
                 System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
                 #endif
+                byte[] unsuspendedWriteStream = null;
+                if (flaggedToContinueNextFrame)
+                {
+                    flaggedToContinueNextFrame = false;
+                    unsuspendedWriteStream = writeStream;
+                    writeStream = suspendedWriteStream;
+                    writeStreamSize = suspendedWriteStreamSize;
+                    suspendedWriteStream = null;
+                    suspendedWriteStreamSize = 0;
+                    suspendedIndexInArray = 0;
+                    isContinuationFromPrevFrame = true;
+                }
                 allGameStates[i].SerializeGameState(false, null);
+                isContinuationFromPrevFrame = false;
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedInLJSerialization = true;
+                    suspendedWriteStream = writeStream;
+                    suspendedWriteStreamSize = writeStreamSize;
+                    suspendedIndexInArray = i;
+                    writeStream = unsuspendedWriteStream ?? new byte[MinWriteStreamCapacity];
+                    ResetWriteStream();
+                    return;
+                }
                 #if LockstepDebug
                 Debug.Log($"[LockstepDebug] [sw] Lockstep  SendLateJoinerData (inner) - serialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[i].GameStateInternalName}, writeStreamSize: {writeStreamSize}");
                 #endif
                 lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, writeStream, writeStreamSize);
                 ResetWriteStream();
             }
+        }
 
+        private void SendLateJoinerCurrentTickIA()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerCurrentTickIA");
+            #endif
             WriteSmallUInt(currentTick);
             lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, writeStream, writeStreamSize);
             ResetWriteStream();
-
-            byteCountForLatestLJSync = lateJoinerInputActionSync.QueuedBytesCount;
         }
 
         private void OnLJInternalGameStatesIA()
@@ -3512,7 +3580,8 @@ namespace JanSharp.Internal
             return null;
         }
 
-        private byte[] writeStream = new byte[64];
+        private const int MinWriteStreamCapacity = 256;
+        private byte[] writeStream = new byte[MinWriteStreamCapacity];
         private int writeStreamSize = 0;
         private byte[] serializedSizeBuffer = new byte[5];
 
