@@ -4295,18 +4295,18 @@ namespace JanSharp.Internal
                 int sizePosition = writeStreamSize;
                 writeStreamSize += 4;
                 #if LockstepDebug
-                long serializeStartMs = exportStopWatch.ElapsedMilliseconds;
+                double serializeStartMs = exportStopWatch.Elapsed.TotalMilliseconds;
                 #endif
                 gameState.SerializeGameState(true, allExportOptions[i]);
                 #if LockstepDebug
-                long serializeMs = exportStopWatch.ElapsedMilliseconds - serializeStartMs;
+                double serializeMs = exportStopWatch.Elapsed.TotalMilliseconds - serializeStartMs;
                 #endif
                 int stopPosition = writeStreamSize;
                 writeStreamSize = sizePosition;
                 WriteInt(stopPosition - sizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
                 writeStreamSize = stopPosition;
                 #if LockstepDebug
-                Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization time: {serializeMs}ms, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - sizePosition - 4}");
+                Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - sizePosition - 4}");
                 #endif
             }
             isSerializingForExport = false;
@@ -4320,11 +4320,11 @@ namespace JanSharp.Internal
             }
 
             #if LockstepDebug
-            long crcStartMs = exportStopWatch.ElapsedMilliseconds;
+            double crcStartMs = exportStopWatch.Elapsed.TotalMilliseconds;
             #endif
             uint crc = CRC32.Compute(ref crc32LookupCache, writeStream, 0, writeStreamSize);
             #if LockstepDebug
-            long crcMs = exportStopWatch.ElapsedMilliseconds - crcStartMs;
+            double crcMs = exportStopWatch.Elapsed.TotalMilliseconds - crcStartMs;
             #endif
             WriteUInt(crc);
 
@@ -4336,7 +4336,7 @@ namespace JanSharp.Internal
             Debug.Log("[Lockstep] Export:" + (exportName != null ? $" {exportName}:\n" : "\n") + encoded);
             #if LockstepDebug
             exportStopWatch.Stop();
-            Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation time: {crcMs}ms, total time: {exportStopWatch.ElapsedMilliseconds}ms");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation ms: {crcMs}, total ms: {exportStopWatch.Elapsed.TotalMilliseconds}");
             #endif
             return encoded;
         }
@@ -4376,7 +4376,7 @@ namespace JanSharp.Internal
             readStreamPosition = readStream.Length - 4;
             uint expectedCrc = ReadUInt();
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportPreProcess (inner) - binary size: {readStream.Length}, expected crc: {expectedCrc}, got crc: {gotCrc}, crc calculation time: {crcStopwatch.ElapsedMilliseconds}ms");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportPreProcess (inner) - binary size: {readStream.Length}, expected crc: {expectedCrc}, got crc: {gotCrc}, crc calculation ms: {crcStopwatch.Elapsed.TotalMilliseconds}");
             #endif
             if (gotCrc != expectedCrc)
                 return null;
