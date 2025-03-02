@@ -1322,7 +1322,11 @@ namespace JanSharp.Internal
             if (currentTick <= firstMutableTick)
             {
                 if (currentTick == firstMutableTick && !disallowAssociatingWithCurrentTick)
+                {
+                    if (!isSinglePlayer)
+                        tickSync.AddInputActionToRun(currentTick, uniqueId);
                     RunInputActionForUniqueIdNextFrame(uniqueId);
+                }
                 else
                     AssociateInputActionWithTickOnMaster(firstMutableTick, uniqueId);
                 return;
@@ -1331,6 +1335,8 @@ namespace JanSharp.Internal
             if (iatrnCount != 0 // Must enqueue if there's already a queue to ensure proper order.
                 || flaggedToContinueNextFrame) // An input action is currently suspended, cannot run another one.
             {
+                if (!isSinglePlayer)
+                    tickSync.AddInputActionToRun(currentTick, uniqueId);
                 RunInputActionForUniqueIdNextFrame(uniqueId);
                 return;
             }
