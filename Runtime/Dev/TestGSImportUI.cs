@@ -17,41 +17,31 @@ namespace JanSharp
 
         public override LockstepGameStateOptionsData NewOptions()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportUI  NewOptions");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportUI  NewOptions");
             return wannaBeClasses.New<TestGSImportOptions>(nameof(TestGSImportOptions));
         }
 
         private TestGSImportOptions optionsToValidate;
         protected override void ValidateOptionsImpl()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportUI  ValidateOptions");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportUI  ValidateOptions");
         }
 
         protected override void InitWidgetData()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportUI  InitWidgetData");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportUI  InitWidgetData");
             shouldImportWidget = widgetManager.NewToggleField("Test GS", false);
         }
 
         protected override void UpdateCurrentOptionsFromWidgetsImpl()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportUI  UpdateCurrentOptionsFromWidgets");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportUI  UpdateCurrentOptionsFromWidgets");
             currentOptions.shouldImport = shouldImportWidget.Value;
         }
 
         protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportUI  OnOptionsEditorShow");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportUI  OnOptionsEditorShow");
             if (!testGameState.HasImportData())
                 return;
             shouldImportWidget.Value = currentOptions.shouldImport;
@@ -60,9 +50,7 @@ namespace JanSharp
 
         protected override void OnOptionsEditorHide(LockstepOptionsEditorUI ui)
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportUI  OnOptionsEditorHide");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportUI  OnOptionsEditorHide");
         }
     }
 }

@@ -15,50 +15,38 @@ namespace JanSharp
 
         public override LockstepGameStateOptionsData NewOptions()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSExportUI  NewOptions");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSExportUI  NewOptions");
             return wannaBeClasses.New<TestGSExportOptions>(nameof(TestGSExportOptions));
         }
 
         private TestGSExportOptions optionsToValidate;
         protected override void ValidateOptionsImpl()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSExportUI  ValidateOptions");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSExportUI  ValidateOptions");
         }
 
         protected override void InitWidgetData()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSExportUI  InitWidgetData");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSExportUI  InitWidgetData");
             shouldExportWidget = widgetManager.NewToggleField("Test GS", false);
         }
 
         protected override void UpdateCurrentOptionsFromWidgetsImpl()
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSExportUI  UpdateCurrentOptionsFromWidgets");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSExportUI  UpdateCurrentOptionsFromWidgets");
             currentOptions.shouldExport = shouldExportWidget.Value;
         }
 
         protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSExportUI  OnOptionsEditorShow");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSExportUI  OnOptionsEditorShow");
             shouldExportWidget.Value = currentOptions.shouldExport;
             ui.General.AddChild(shouldExportWidget);
         }
 
         protected override void OnOptionsEditorHide(LockstepOptionsEditorUI ui)
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSExportUI  OnOptionsEditorHide");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSExportUI  OnOptionsEditorHide");
         }
     }
 }

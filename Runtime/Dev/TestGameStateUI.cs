@@ -19,7 +19,7 @@ namespace JanSharp
 
         private void SetActiveCount(int count)
         {
-            Debug.Log($"<dlt> TestGameStateUI  SetCount - count: {count}");
+            Debug.Log($"[LockstepTest] TestGameStateUI  SetCount - count: {count}");
             if (activeCount == count)
                 return;
             activeCount = count;
@@ -29,14 +29,10 @@ namespace JanSharp
 
             for (int i = elemsCount; i < count; i++)
             {
-                #if LockstepDebug
                 System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
-                #endif
                 GameObject elemObj = Instantiate(elemPrefab, elemsParent);
-                #if LockstepDebug
-                Debug.Log($"[LockstepDebug] [sw] TestGameStateUI  SetActiveCount (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
-                #endif
+                Debug.Log($"[LockstepTest] [sw] TestGameStateUI  SetActiveCount (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
                 TestGameStateUIElem elem = elemObj.GetComponent<TestGameStateUIElem>();
                 elem.gameState = gameState;
                 ArrList.Add(ref elems, ref elemsCount, elem);
@@ -45,7 +41,7 @@ namespace JanSharp
 
         public void UpdateUI()
         {
-            Debug.Log($"<dlt> TestGameStateUI  UpdateUI");
+            Debug.Log($"[LockstepTest] TestGameStateUI  UpdateUI");
             DataList values = gameState.allPlayerData.GetValues();
             SetActiveCount(values.Count);
             for (int i = 0; i < values.Count; i++)

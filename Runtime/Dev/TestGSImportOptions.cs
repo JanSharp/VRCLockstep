@@ -23,17 +23,13 @@ namespace JanSharp
 
         public override void Serialize(bool isExport)
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportOptions  Serialize");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportOptions  Serialize");
             lockstep.WriteFlags(shouldImport);
         }
 
         public override void Deserialize(bool isImport, uint importedDataVersion)
         {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] TestGSImportOptions  Deserialize");
-            #endif
+            Debug.Log($"[LockstepTest] TestGSImportOptions  Deserialize");
             lockstep.ReadFlags(out shouldImport);
         }
     }

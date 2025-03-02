@@ -17,7 +17,7 @@ namespace JanSharp
 
         public void OnDescriptionEndEdit()
         {
-            Debug.Log($"<dlt> TestGameStateUIElem  OnDescriptionEndEdit - playerId: {playerId}");
+            Debug.Log($"[LockstepTest] TestGameStateUIElem  OnDescriptionEndEdit - playerId: {playerId}");
             if (!this.gameObject.activeSelf) // Just to make sure.
                 return;
             gameState.SetDescription(playerId, descriptionField.text);
