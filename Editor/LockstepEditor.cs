@@ -395,6 +395,12 @@ namespace JanSharp.Internal
 
         private static bool GameStatesOnBuild(LockstepGameState gameState)
         {
+            if (allGameStates.Any(gs => gs.GameStateInternalName == gameState.GameStateInternalName))
+            {
+                Debug.LogError($"[Lockstep] Multiple game states are attempting to use the "
+                    + $"internal name '{gameState.GameStateInternalName}'.", gameState);
+                return false;
+            }
             allGameStates.Add(gameState);
             if (gameState.GameStateLowestSupportedDataVersion > gameState.GameStateDataVersion)
             {
