@@ -66,3 +66,10 @@
 - [x] as much as I freaking hate it, change the import input field to respond to value change events 1 frame delayed. Not needed while in VRChat, but for testing in the editor this is effectively required. See also: https://vrchat.canny.io/sdk-bug-reports/p/worlds-316-vrcinputfield-inputfield-no-longer-sends-onendedit-event
 - [x] add stop watches to all game state serialization and deserialization
 - [x] sort game states using lowercase strings
+- [ ] spread incoming input actions out to the next frame on master if we've already spent x ms running input actions this frame
+- [ ] spread input actions to be run next frame out to yet again the next frame if we've already spent x ms running input actions this frame
+- [ ] add checks for if we are in game state safe events inside of api functions which must be called from game state safe events, for example sending singleton input actions
+- [ ] change importing to just be one big input action which gets spread out across frames
+- [ ] handle return error messages from game state deserialization which gets spread out across frames. For LJ it might be fine as is, potentially multiple notifications, though for imports there's a property part of the lockstep api for the error message inside of the OnImportedGameState event which as it stands right now is not handled properly. That either needs to be removed, there needs to be a limitation to one error message from deserialization or idk something else
+- [ ] change all prefixes in debug messages in the dev folder to `[LockstepTest]`
+- [ ] expose read stream position

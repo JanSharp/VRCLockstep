@@ -218,9 +218,29 @@ namespace JanSharp
             return didExport;
         }
 
+        private int deserializeStage = 0;
         public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)
         {
             Debug.Log("[LockstepTest] TestGameState  DeserializeGameState");
+            if (deserializeStage == 0)
+            {
+                lockstep.FlagToContinueNextFrame();
+                deserializeStage++;
+                return null;
+            }
+            if (deserializeStage == 1)
+            {
+                lockstep.FlagToContinueNextFrame();
+                deserializeStage++;
+                return null;
+            }
+            if (deserializeStage == 2)
+            {
+                lockstep.FlagToContinueNextFrame();
+                deserializeStage++;
+                return null;
+            }
+
             TestGSImportOptions options = (TestGSImportOptions)importOptions;
             if (isImport && (!options.shouldImport || !HasImportData()))
                 return null;
@@ -236,6 +256,7 @@ namespace JanSharp
                 allPlayerData.Add(playerId, new DataToken(playerData));
             }
 
+            deserializeStage = 0;
             ui.UpdateUI();
 
             return "Hi there! Just wanted to say hello!";

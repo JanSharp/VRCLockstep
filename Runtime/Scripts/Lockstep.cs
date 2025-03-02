@@ -153,9 +153,16 @@ namespace JanSharp.Internal
             #endif
             flaggedToContinueNextFrame = true;
         }
-
         private bool isContinuationFromPrevFrame = false;
+        public override bool FlaggedToContinueNextFrame => flaggedToContinueNextFrame;
         public override bool IsContinuationFromPrevFrame => isContinuationFromPrevFrame;
+        private uint suspendedInputActionId;
+        private uint suspendedSingletonInputActionId;
+        private bool suspendedInInputActionsToRunNextFrame = false;
+        private DataList suspendedDelayedEventsList = null;
+        private ulong[] suspendedUniqueIds = null;
+        private bool suspendedInStandaloneIA = false;
+        private int suspendedIndexInArray = 0;
 
         /// <summary>
         /// <para><see langword="true"/> on a single client, the asking client.</para>
@@ -615,6 +622,18 @@ namespace JanSharp.Internal
                 return;
             }
 
+            if (suspendedInStandaloneIA)
+            {
+                suspendedInStandaloneIA = false;
+                RunInputActionSuspendedPrevFrame();
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedInStandaloneIA = true;
+                    lastUpdateSW.Stop();
+                    return;
+                }
+            }
+
             if (isCatchingUp)
             {
                 CatchUp();
@@ -622,12 +641,19 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (iatrnCount != 0)
+            if (iatrnCount != 0 && (!flaggedToContinueNextFrame || suspendedInInputActionsToRunNextFrame))
+            {
                 RunInputActionsForThisFrame();
+                if (flaggedToContinueNextFrame)
+                {
+                    lastUpdateSW.Stop();
+                    return;
+                }
+            }
 
             float timePassed = Time.realtimeSinceStartup - tickStartTime;
             uint runUntilTick = System.Math.Min(lastRunnableTick, (uint)(timePassed * TickRate));
-            for (uint tick = currentTick; tick <= runUntilTick; tick++)
+            while (currentTick <= runUntilTick)
             {
                 if (!TryRunCurrentTick())
                     break;
@@ -708,8 +734,8 @@ namespace JanSharp.Internal
         private bool TryRunCurrentTick()
         {
             DataToken currentTickToken = currentTick;
-            ulong[] uniqueIds = null;
-            if (uniqueIdsByTick.TryGetValue(currentTickToken, out DataToken uniqueIdsToken))
+            ulong[] uniqueIds = suspendedUniqueIds;
+            if (!flaggedToContinueNextFrame && uniqueIdsByTick.TryGetValue(currentTickToken, out DataToken uniqueIdsToken))
             {
                 uniqueIds = (ulong[])uniqueIdsToken.Reference;
                 foreach (ulong uniqueId in uniqueIds)
@@ -746,10 +772,24 @@ namespace JanSharp.Internal
             disallowAssociatingWithCurrentTick = true;
 
             if (uniqueIds != null)
+            {
                 RunInputActionsForUniqueIds(uniqueIds);
+                if (flaggedToContinueNextFrame)
+                    return false; // Do not unset disallowAssociatingWithCurrentTick since lockstep is now suspended in this tick.
+            }
 
+            if (flaggedToContinueNextFrame)
+            {
+                RunDelayedEventsForCurrentTick(suspendedDelayedEventsList);
+                if (flaggedToContinueNextFrame)
+                    return false; // Do not unset disallowAssociatingWithCurrentTick since lockstep is now suspended in this tick.
+            }
             if (delayedEventsByTick.Remove(currentTickToken, out DataToken eventDataListToken))
+            {
                 RunDelayedEventsForCurrentTick(eventDataListToken.DataList);
+                if (flaggedToContinueNextFrame)
+                    return false; // Do not unset disallowAssociatingWithCurrentTick since lockstep is now suspended in this tick.
+            }
 
             RaiseOnNthTicks();
             RaiseOnTick(); // End of tick.
@@ -841,12 +881,28 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RunDelayedEventsForCurrentTick");
             #endif
             int count = eventDataList.Count;
-            for (int i = 0; i < count; i++)
+            for (int i = suspendedIndexInArray; i < count; i++)
             {
-                object[] eventData = (object[])eventDataList[i].Reference;
-                uint inputActionId = (uint)eventData[0];
-                byte[] inputActionData = (byte[])eventData[1];
-                RunInputAction(inputActionId, inputActionData, 0uL, 0f, bypassValidityCheck: true);
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedDelayedEventsList = null;
+                    suspendedIndexInArray = 0;
+                    RunInputActionSuspendedPrevFrame();
+                }
+                else
+                {
+                    object[] eventData = (object[])eventDataList[i].Reference;
+                    uint inputActionId = (uint)eventData[0];
+                    byte[] inputActionData = (byte[])eventData[1];
+                    RunInputAction(inputActionId, inputActionData, 0uL, 0f, bypassValidityCheck: true);
+                }
+
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedDelayedEventsList = eventDataList;
+                    suspendedIndexInArray = i;
+                    return;
+                }
             }
         }
 
@@ -877,8 +933,25 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionsForUniqueIds");
             #endif
-            foreach (ulong uniqueId in uniqueIds)
-                RunInputActionForUniqueId(uniqueId);
+            int length = uniqueIds.Length;
+            for (int i = suspendedIndexInArray; i < length; i++)
+            {
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedUniqueIds = null;
+                    suspendedIndexInArray = 0;
+                    RunInputActionSuspendedPrevFrame();
+                }
+                else
+                    RunInputActionForUniqueId(uniqueIds[i]);
+
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedUniqueIds = uniqueIds;
+                    suspendedIndexInArray = i;
+                    return;
+                }
+            }
         }
 
         private void RunInputActionForUniqueId(ulong uniqueId)
@@ -906,11 +979,27 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionsForThisFrame");
             #endif
-            for (int i = 0; i < iatrnCount; i++)
+            for (int i = suspendedIndexInArray; i < iatrnCount; i++)
             {
-                object[] inputActionData = inputActionsToRunNextFrame[i];
-                RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], (ulong)inputActionData[2], (float)inputActionData[3]);
-                inputActionsToRunNextFrame[i] = null;
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedInInputActionsToRunNextFrame = false;
+                    suspendedIndexInArray = 0;
+                    RunInputActionSuspendedPrevFrame();
+                }
+                else
+                {
+                    object[] inputActionData = inputActionsToRunNextFrame[i];
+                    inputActionsToRunNextFrame[i] = null;
+                    RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], (ulong)inputActionData[2], (float)inputActionData[3]);
+                }
+
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedInInputActionsToRunNextFrame = true;
+                    suspendedIndexInArray = i;
+                    return;
+                }
             }
             iatrnCount = 0;
         }
@@ -928,20 +1017,12 @@ namespace JanSharp.Internal
         private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId, float sendTime, bool bypassValidityCheck = false)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  RunInputAction");
-            #endif
-            ResetReadStream();
-            readStream = inputActionData;
-            RunInputActionWithCurrentReadStream(inputActionId, uniqueId, sendTime, bypassValidityCheck);
-        }
-
-        private void RunInputActionWithCurrentReadStream(uint inputActionId, ulong uniqueId, float sendTime, bool bypassValidityCheck = false)
-        {
-            #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  RunInputActionWithCurrentReadStream");
+            Debug.Log($"[LockstepDebug] Lockstep  RunInputAction - event name: {inputActionHandlerEventNames[inputActionId]}");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             #endif
+            ResetReadStream();
+            readStream = inputActionData;
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
             sendingPlayerId = (uint)(uniqueId >> PlayerIdKeyShift);
             sendingUniqueId = uniqueId;
@@ -971,6 +1052,28 @@ namespace JanSharp.Internal
             inGameStateSafeEvent = false;
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  RunInputActionWithCurrentReadStream (inner) - ms: {sw.Elapsed.TotalMilliseconds}, event name: {inputActionHandlerEventNames[inputActionId]}");
+            #endif
+            if (flaggedToContinueNextFrame)
+                suspendedInputActionId = inputActionId;
+        }
+
+        private void RunInputActionSuspendedPrevFrame()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RunInputActionSuspendedPrevFrame - event name: {inputActionHandlerEventNames[suspendedInputActionId]}");
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            #endif
+            flaggedToContinueNextFrame = false;
+            UdonSharpBehaviour inst = inputActionHandlerInstances[suspendedInputActionId];
+            // sendingPlayerId, sendingUniqueId, sendingTime are all still set.
+            isContinuationFromPrevFrame = true;
+            inGameStateSafeEvent = true;
+            inst.SendCustomEvent(inputActionHandlerEventNames[suspendedInputActionId]);
+            inGameStateSafeEvent = false;
+            isContinuationFromPrevFrame = false;
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  RunInputActionSuspendedPrevFrame (inner) - ms: {sw.Elapsed.TotalMilliseconds}, event name: {inputActionHandlerEventNames[suspendedInputActionId]}");
             #endif
         }
 
@@ -1121,10 +1224,17 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnSingletonInputActionIA - sendingTime: {sendingTime}");
             #endif
-            uint singletonId = ReadSmallUInt();
-            uint inputActionId = ReadSmallUInt();
-            singletonInputActions.Remove(singletonId);
-            RunInputActionWithCurrentReadStream(inputActionId, SendingUniqueId, SendTimeForNonTimedIAs);
+            if (!isContinuationFromPrevFrame)
+            {
+                uint singletonId = ReadSmallUInt();
+                suspendedSingletonInputActionId = ReadSmallUInt();
+                singletonInputActions.Remove(singletonId);
+            }
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  OnSingletonInputActionIA (inner) - event name: {inputActionHandlerEventNames[suspendedSingletonInputActionId]}");
+            #endif
+            UdonSharpBehaviour inst = inputActionHandlerInstances[suspendedSingletonInputActionId];
+            inst.SendCustomEvent(inputActionHandlerEventNames[suspendedSingletonInputActionId]);
         }
 
         [SerializeField] [HideInInspector] private uint timedSingletonInputActionIAId;
@@ -1174,8 +1284,14 @@ namespace JanSharp.Internal
 
             if (tickDelay == 0u)
             {
+                Debug.LogError($"[Lockstep] Attempt to SendEventDelayedTicks with a tickDelay of 0. This is "
+                    + $"invalid as it can cause input actions to be run inside of other input actions, which "
+                    + $"is not only recursion which Udon will throw a fit about, it also goes against "
+                    + $"Lockstep's design and infrastructure. For example {nameof(FlagToContinueNextFrame)} "
+                    + $"inside of an inner input action would cause the outer input action to be invoked "
+                    + $"next frame expecting it to handle continuation of the inner input action. Which is "
+                    + $"simply a mess.");
                 ResetWriteStream();
-                RunInputAction(inputActionId, inputActionData, 0uL, 0f, bypassValidityCheck: true);
                 return;
             }
 
@@ -1212,9 +1328,18 @@ namespace JanSharp.Internal
                 return;
             }
 
+            if (iatrnCount != 0 // Must enqueue if there's already a queue to ensure proper order.
+                || flaggedToContinueNextFrame) // An input action is currently suspended, cannot run another one.
+            {
+                RunInputActionForUniqueIdNextFrame(uniqueId);
+                return;
+            }
+
             if (!isSinglePlayer)
                 tickSync.AddInputActionToRun(currentTick, uniqueId);
             RunInputActionForUniqueId(uniqueId);
+            if (flaggedToContinueNextFrame)
+                suspendedInStandaloneIA = true;
         }
 
         public void OnInputActionSyncPlayerAssigned(VRCPlayerApi player, InputActionSync inputActionSync)
@@ -2197,7 +2322,10 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  InstantlyRunInputActionsWaitingToBeSent");
             #endif
-            RunInputActionsForThisFrame();
+            // It doesn't really make sense to call RunInputActionsForThisFrame because that has no guarantee
+            // to actually clear the list of input actions to be run this frame. So calling it vs not makes
+            // no difference, aside from running some input actions right now rather than in the next Update
+            // loop.
             inputActionSyncForLocalPlayer.DequeueEverything(doCallback: true);
         }
 
@@ -2227,7 +2355,6 @@ namespace JanSharp.Internal
             // actions to be run instantly, and the OnClientLeftIA handler removes the player id.
             for (int i = leftClientsCount - 1; i >= 0; i--)
                 SendClientLeftIA(leftClients[i]);
-
             ArrList.Clear(ref leftClients, ref leftClientsCount);
         }
 
@@ -2821,7 +2948,11 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  SendClientLeftIA");
             #endif
             WriteSmallUInt(playerId);
-            SendInputAction(clientLeftIAId, forceOneFrameDelay: false);
+            // One of the few internal input actions which forces a frame delay. For two reasons:
+            // To process left players in the order in which they actually left. If the input action were to
+            // run instantly then it would modify the left clients array, breaking the loop which is sending
+            // these left client input actions.
+            SendInputAction(clientLeftIAId, forceOneFrameDelay: true);
         }
 
         [SerializeField] [HideInInspector] private uint clientLeftIAId;
@@ -2877,6 +3008,11 @@ namespace JanSharp.Internal
                 RaiseOnClientCaughtUp(sendingPlayerId);
         }
 
+        /// <summary>
+        /// <para>These must not (and do not) use <see cref="FlagToContinueNextFrame"/>.</para>
+        /// </summary>
+        /// <param name="inputActionId"></param>
+        /// <returns></returns>
         private bool IsInstantActionIAId(uint inputActionId)
         {
             return inputActionId == askForBetterMasterCandidateIAId
@@ -2955,10 +3091,14 @@ namespace JanSharp.Internal
             else if (uniqueId == 0uL) // In single player, do make a unique id.
                 uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
 
-            if (forceOneFrameDelay)
+            if (forceOneFrameDelay || flaggedToContinueNextFrame)
                 ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData, uniqueId, sendTime });
             else
+            {
                 RunInputAction(inputActionId, inputActionData, uniqueId, sendTime);
+                if (flaggedToContinueNextFrame)
+                    suspendedInStandaloneIA = true;
+            }
             return uniqueId;
         }
 
@@ -4456,33 +4596,37 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnImportGameStateIA");
             #endif
-            int gameStateIndex = (int)ReadSmallUInt();
-            LockstepGameState gameState = allGameStates[gameStateIndex];
-            if (!gameStatesWaitingForImport.Remove(gameStateIndex))
+            if (!isContinuationFromPrevFrame)
             {
-                Debug.LogError($"[Lockstep] Impossible: The game state {gameState.GameStateInternalName} "
-                    + $"received import data even though it was not marked as waiting for import. "
-                    + $"Ignoring incoming data. (Unless we received an input action from a player for whom "
-                    + $"we got the player left event over 1 second ago...)");
-                return;
+                int gameStateIndex = (int)ReadSmallUInt();
+                importedGameState = allGameStates[gameStateIndex];
+                if (!gameStatesWaitingForImport.Remove(gameStateIndex))
+                {
+                    Debug.LogError($"[Lockstep] Impossible: The game state {importedGameState.GameStateInternalName} "
+                        + $"received import data even though it was not marked as waiting for import. "
+                        + $"Ignoring incoming data. (Unless we received an input action from a player for whom "
+                        + $"we got the player left event over 1 second ago...)");
+                    return;
+                }
+                importedDataVersion = ReadSmallUInt();
+                // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             }
-            importedDataVersion = ReadSmallUInt();
-            // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             isDeserializingForImport = true;
             inGameStateSafeEvent = true;
             #if LockstepDebug
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             #endif
-            importErrorMessage = gameState.DeserializeGameState(isImport: true, importedDataVersion, gameState.OptionsForCurrentImport);
+            importErrorMessage = importedGameState.DeserializeGameState(isImport: true, importedDataVersion, importedGameState.OptionsForCurrentImport);
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] [sw] Lockstep  OnImportGameStateIA (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {gameState.GameStateInternalName}");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  OnImportGameStateIA (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {importedGameState.GameStateInternalName}");
             #endif
             inGameStateSafeEvent = false;
             isDeserializingForImport = false;
             if (importErrorMessage != null)
-                RaiseOnLockstepNotification($"Importing '{gameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
-            importedGameState = gameState;
+                RaiseOnLockstepNotification($"Importing '{importedGameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
+            if (flaggedToContinueNextFrame)
+                return;
             RaiseOnImportedGameState();
             importedGameState = null;
             importErrorMessage = null;

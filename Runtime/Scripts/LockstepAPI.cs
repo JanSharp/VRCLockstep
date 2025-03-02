@@ -424,9 +424,10 @@ namespace JanSharp
         /// </summary>
         /// <param name="inputActionId">The id associated with a method with the
         /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
-        /// <param name="tickDelay">The amount of ticks to delay this event by. The given event will run in
+        /// <param name="tickDelay"><para><c>0u</c> is an invalid delay.</para>
+        /// <para>The amount of ticks to delay this event by. The given event will run in
         /// in the <see cref="CurrentTick"/> plus <paramref name="tickDelay"/>. There are
-        /// <see cref="LockstepAPI.TickRate"/> ticks per second.</param>
+        /// <see cref="TickRate"/> ticks per second.</para></param>
         public abstract void SendEventDelayedTicks(uint inputActionId, uint tickDelay);
         /// <summary>
         /// <para>Simply a wrapper around <see cref="SendMasterChangeRequestIA(uint)"/> with the local
@@ -480,8 +481,8 @@ namespace JanSharp
         /// <see cref="FlagToContinueNextFrame"/> tells lockstep to pause any and all regular processing, no
         /// game state safe events will get run, no ticks being advanced, until next frame where the event
         /// handler which called <see cref="FlagToContinueNextFrame"/> gets called again.
-        /// <see cref="IsContinuationFromPrevFrame"/> is going to be true inside of the event handler in this
-        /// case.</para>
+        /// <see cref="IsContinuationFromPrevFrame"/> is going to be <see langword="true"/> inside of the
+        /// event handler in this case.</para>
         /// <para>It may call <see cref="FlagToContinueNextFrame"/> again.</para>
         /// <para>Once the event handler does not call <see cref="FlagToContinueNextFrame"/>, it indicates
         /// that it is done processing incoming data and lockstep can resume normal operation.</para>
@@ -490,6 +491,17 @@ namespace JanSharp
         /// excluded.</para>
         /// </summary>
         public abstract void FlagToContinueNextFrame();
+        /// <summary>
+        /// <para>Set to <see langword="true"/> by <see cref="FlagToContinueNextFrame"/>.</para>
+        /// <para>The purpose of this being exposed is to allow systems which wrap around callbacks into other
+        /// systems to check if those callbacks called <see cref="FlagToContinueNextFrame"/>.</para>
+        /// <para>Though it can of course also be used within the same system, cross system interaction merely
+        /// demonstrates the purpose more clearly.</para>
+        /// <para>Usable only inside of game state safe events which have serialized data to deserialize. So
+        /// notably <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are
+        /// excluded.</para>
+        /// </summary>
+        public abstract bool FlaggedToContinueNextFrame { get; }
         /// <summary>
         /// <para><see langword="true"/> when inside of an event handler which interrupted itself by calling
         /// <see cref="FlagToContinueNextFrame"/> the last time it was called, which was in the previous
@@ -756,7 +768,8 @@ namespace JanSharp
         public abstract string ImportingFromName { get; }
         /// <summary>
         /// <para>The game state that has just been imported.</para>
-        /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/>.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/> and
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract LockstepGameState ImportedGameState { get; }
