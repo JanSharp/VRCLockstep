@@ -80,14 +80,12 @@ namespace JanSharp.Internal
                     return;
         }
 
-        private class GSTypeWithDeps : System.IComparable<GSTypeWithDeps>
+        private class GSTypeWithDeps
         {
             public System.Type gsType;
             public List<System.Type> rawDependencies;
             public List<GSTypeWithDeps> dependencies;
             public List<GSTypeWithDeps> recursiveDependenciesLut;
-
-            public LockstepGameState instance;
 
             public GSTypeWithDeps(System.Type gsType)
             {
@@ -149,15 +147,26 @@ namespace JanSharp.Internal
                         return false;
                 return true;
             }
+        }
 
-            public int CompareTo(GSTypeWithDeps other)
+        private class GSTypeWithDepsInstance : System.IComparable<GSTypeWithDepsInstance>
+        {
+            public GSTypeWithDeps typeWithDeps;
+            public LockstepGameState instance;
+
+            public GSTypeWithDepsInstance(GSTypeWithDeps typeWithDeps, LockstepGameState instance)
             {
-                Debug.Log($"Comparing {gsType.Name} with {other.gsType.Name}!");
+                this.typeWithDeps = typeWithDeps;
+                this.instance = instance;
+            }
+
+            public int CompareTo(GSTypeWithDepsInstance other)
+            {
                 if (instance == null || other.instance == null)
                     throw new System.Exception("Impossible.");
-                if (recursiveDependenciesLut.Contains(other))
+                if (typeWithDeps.recursiveDependenciesLut.Contains(other.typeWithDeps))
                     return 1;
-                if (other.recursiveDependenciesLut.Contains(this))
+                if (other.typeWithDeps.recursiveDependenciesLut.Contains(typeWithDeps))
                     return -1;
                 int result = instance.GameStateDisplayName.ToLower().CompareTo(other.instance.GameStateDisplayName.ToLower());
                 if (result != 0)
@@ -173,8 +182,6 @@ namespace JanSharp.Internal
                 Debug.LogError(gameStateDependencyTreeErrorMessage);
                 return false;
             }
-            foreach (GSTypeWithDeps type in gsTypeWithDepsLut.Values)
-                type.instance = null;
             return true;
         }
 
@@ -201,11 +208,7 @@ namespace JanSharp.Internal
             SerializedObject lockstepSo = new SerializedObject(lockstep);
 
             allGameStates = allGameStates
-                .Select(gs => {
-                    GSTypeWithDeps type = gsTypeWithDepsLut[gs.GetType()];
-                    type.instance = gs;
-                    return type;
-                })
+                .Select(gs => new GSTypeWithDepsInstance(gsTypeWithDepsLut[gs.GetType()], gs))
                 .OrderBy(t => t)
                 .Select(t => t.instance)
                 .ToList();
