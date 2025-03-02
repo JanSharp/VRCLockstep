@@ -73,3 +73,4 @@
 - [ ] handle return error messages from game state deserialization which gets spread out across frames. For LJ it might be fine as is, potentially multiple notifications, though for imports there's a property part of the lockstep api for the error message inside of the OnImportedGameState event which as it stands right now is not handled properly. That either needs to be removed, there needs to be a limitation to one error message from deserialization or idk something else
 - [x] change all prefixes in debug messages in the dev folder to `[LockstepTest]`
 - [x] expose read stream position
+- [ ] option to spread game state serialization out across frames. Except that the export api goes from nice to "oh god damn it now we need callbacks"
