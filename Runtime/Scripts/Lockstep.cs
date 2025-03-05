@@ -163,6 +163,9 @@ namespace JanSharp.Internal
         private ulong[] suspendedUniqueIds = null;
         private bool suspendedInStandaloneIA = false;
         private bool suspendedInLJSerialization = false;
+        private bool suspendedInExportPreparation = false;
+        private bool suspendedInExport = false;
+        private int suspendedExportGSSizePosition;
         private byte[] suspendedWriteStream = null;
         private int suspendedWriteStreamSize = 0;
         private int suspendedIndexInArray = 0;
@@ -254,6 +257,8 @@ namespace JanSharp.Internal
         [SerializeField] private UdonSharpBehaviour[] onClientLeftListeners;
         [SerializeField] private UdonSharpBehaviour[] onMasterClientChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onLockstepTickListeners;
+        [SerializeField] private UdonSharpBehaviour[] onExportStartListeners;
+        [SerializeField] private UdonSharpBehaviour[] onExportFinishedListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportStartListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportedGameStateListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportFinishedListeners;
@@ -627,26 +632,25 @@ namespace JanSharp.Internal
 
             if (flaggedToContinueNextFrame)
             {
+                bool relevant = true;
                 if (suspendedInStandaloneIA)
                 {
                     suspendedInStandaloneIA = false;
                     RunInputActionSuspendedPrevFrame();
                     if (flaggedToContinueNextFrame)
-                    {
                         suspendedInStandaloneIA = true;
-                        lastUpdateSW.Stop();
-                        return;
-                    }
                 }
                 else if (suspendedInLJSerialization)
-                {
-                    suspendedInLJSerialization = false;
                     SendLateJoinerData();
-                    if (flaggedToContinueNextFrame)
-                    {
-                        lastUpdateSW.Stop();
-                        return;
-                    }
+                else if (suspendedInExport)
+                    ExportInternal();
+                else
+                    relevant = false;
+
+                if (relevant && flaggedToContinueNextFrame)
+                {
+                    lastUpdateSW.Stop();
+                    return;
                 }
             }
 
@@ -2547,7 +2551,9 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerData");
             #endif
-            if (!flaggedToContinueNextFrame)
+            if (flaggedToContinueNextFrame)
+                suspendedInLJSerialization = false;
+            else
             {
                 if (isImporting)
                 {
@@ -3413,6 +3419,36 @@ namespace JanSharp.Internal
             inGameStateSafeEvent = false;
         }
 
+        private void RaiseOnExportStart()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportStart");
+            #endif
+            int destroyedCount = 0;
+            foreach (UdonSharpBehaviour listener in onExportStartListeners)
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnExportStart));
+            if (destroyedCount != 0)
+                onExportStartListeners = CleanUpRemovedListeners(onExportStartListeners, destroyedCount, nameof(LockstepEventType.OnExportStart));
+        }
+
+        private void RaiseOnExportFinished()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportFinished");
+            #endif
+            int destroyedCount = 0;
+            foreach (UdonSharpBehaviour listener in onExportFinishedListeners)
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnExportFinished));
+            if (destroyedCount != 0)
+                onExportFinishedListeners = CleanUpRemovedListeners(onExportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnExportFinished));
+        }
+
         private void RaiseOnImportStart()
         {
             #if LockstepDebug
@@ -4224,27 +4260,57 @@ namespace JanSharp.Internal
             }
         }
 
-        private uint[] crc32LookupCache;
-        public override string Export(string exportName, LockstepGameStateOptionsData[] allExportOptions)
+        private bool isExporting = false;
+        private string currentExportName;
+        private LockstepGameStateOptionsData[] currentAllExportOptions;
+        private string exportResult = null;
+        public override bool IsExporting => isExporting;
+        public override string ExportName => currentExportName;
+        public override string ExportResult => exportResult;
+
+        public override bool Export(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Export");
-            System.Diagnostics.Stopwatch exportStopWatch = new System.Diagnostics.Stopwatch();
-            exportStopWatch.Start();
+            #endif
+            if (!PrepareForExport(exportName, allExportOptions))
+                return false;
+            currentExportName = exportName;
+            currentAllExportOptions = allExportOptions;
+            isExporting = true;
+            RaiseOnExportStart();
+            suspendedInExportPreparation = true;
+            suspendedInExport = true;
+            FlagToContinueNextFrame();
+            return true;
+        }
+
+        private uint[] crc32LookupCache;
+        private bool PrepareForExport(string exportName, LockstepGameStateOptionsData[] allExportOptions)
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] PrepareForExport");
             #endif
             if (!initializedEnoughForImportExport)
             {
                 Debug.LogError("[Lockstep] Attempt to call Export before OnInit or OnClientBeginCatchUp, ignoring.");
-                return null;
+                return false;
             }
             if (exportName != null && (exportName.Contains("\n") || exportName.Contains("\r")))
             {
                 Debug.LogError("[Lockstep] Attempt to call Export where the given exportName contains '\\n' "
                     + "and or '\\r' (newline characters), which is forbidden. Ignoring.");
-                return null;
+                return false;
             }
             if (gameStatesSupportingExportCount == 0) // No error log here, because this is the only sensible
-                return null; // and by definition acceptable error case in which by definition null is returned.
+                return false; // and by definition acceptable error case in which by definition null is returned.
+
+            if (isExporting)
+            {
+                Debug.LogError($"[Lockstep] Attempt to call Export while another export is currently running. "
+                    + $"Check IsExporting");
+                return false;
+            }
 
             bool isUsingTemporaryExportOptions = false;
             if (allExportOptions == null)
@@ -4258,14 +4324,14 @@ namespace JanSharp.Internal
                 {
                     Debug.LogError($"[Lockstep] Expected length {gameStatesSupportingExportCount}, got {allExportOptions.Length} "
                         + "for allExportOptions as an argument to Export.");
-                    return null;
+                    return false;
                 }
                 for (int i = 0; i < gameStatesSupportingExportCount; i++)
                     if (gameStatesSupportingExport[i].ExportUI != null && allExportOptions[i] == null)
                     {
                         Debug.LogError($"[Lockstep] Missing export options for game state "
                             + $"{gameStatesSupportingExport[i].GameStateInternalName} (index {i}), canceling Export.");
-                        return null;
+                        return false;
                     }
             }
 
@@ -4284,47 +4350,104 @@ namespace JanSharp.Internal
                     exportOptions.IncrementRefsCount(); // Ensure none get deleted during any SerializeGameState calls
             }
 
-            isSerializingForExport = true;
-            for (int i = 0; i < gameStatesSupportingExportCount; i++)
-            {
-                LockstepGameState gameState = gameStatesSupportingExport[i];
-                WriteString(gameState.GameStateInternalName);
-                WriteString(gameState.GameStateDisplayName);
-                WriteSmallUInt(gameState.GameStateDataVersion);
+            return true;
+        }
 
-                int sizePosition = writeStreamSize;
-                writeStreamSize += 4;
+        private void ExportGameStates()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] ExportGameStates");
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            #endif
+            for (int i = suspendedIndexInArray; i < gameStatesSupportingExportCount; i++)
+            {
+                byte[] unsuspendedWriteStream = null;
+                LockstepGameState gameState = gameStatesSupportingExport[i];
+                if (!flaggedToContinueNextFrame)
+                {
+                    WriteString(gameState.GameStateInternalName);
+                    WriteString(gameState.GameStateDisplayName);
+                    WriteSmallUInt(gameState.GameStateDataVersion);
+                    suspendedExportGSSizePosition = writeStreamSize;
+                    writeStreamSize += 4;
+                }
+                else
+                {
+                    flaggedToContinueNextFrame = false;
+                    unsuspendedWriteStream = writeStream;
+                    writeStream = suspendedWriteStream;
+                    writeStreamSize = suspendedWriteStreamSize;
+                    suspendedWriteStream = null;
+                    suspendedWriteStreamSize = 0;
+                    suspendedInExport = false;
+                    suspendedIndexInArray = 0;
+                    isContinuationFromPrevFrame = true;
+                }
                 #if LockstepDebug
-                double serializeStartMs = exportStopWatch.Elapsed.TotalMilliseconds;
+                double serializeStartMs = sw.Elapsed.TotalMilliseconds;
                 #endif
-                gameState.SerializeGameState(true, allExportOptions[i]);
+                gameState.SerializeGameState(true, currentAllExportOptions[i]);
                 #if LockstepDebug
-                double serializeMs = exportStopWatch.Elapsed.TotalMilliseconds - serializeStartMs;
+                double serializeMs = sw.Elapsed.TotalMilliseconds - serializeStartMs;
                 #endif
+                isContinuationFromPrevFrame = false;
+                if (flaggedToContinueNextFrame)
+                {
+                    suspendedInExport = true;
+                    suspendedWriteStream = writeStream;
+                    suspendedWriteStreamSize = writeStreamSize;
+                    suspendedIndexInArray = i;
+                    writeStream = unsuspendedWriteStream ?? new byte[MinWriteStreamCapacity];
+                    ResetWriteStream();
+                    return;
+                }
                 int stopPosition = writeStreamSize;
-                writeStreamSize = sizePosition;
-                WriteInt(stopPosition - sizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
+                writeStreamSize = suspendedExportGSSizePosition;
+                WriteInt(stopPosition - suspendedExportGSSizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
                 writeStreamSize = stopPosition;
                 #if LockstepDebug
-                Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - sizePosition - 4}");
+                Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - suspendedExportGSSizePosition - 4}");
                 #endif
             }
+        }
+
+        private void ExportInternal()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] ExportInternal");
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            #endif
+
+            if (suspendedInExportPreparation)
+            {
+                suspendedInExportPreparation = false;
+                suspendedInExport = false;
+                flaggedToContinueNextFrame = false;
+            }
+
+            isSerializingForExport = true;
+            ExportGameStates();
             isSerializingForExport = false;
+            if (flaggedToContinueNextFrame)
+                return;
 
             for (int i = 0; i < gameStatesSupportingExportCount; i++)
             {
                 gameStatesSupportingExport[i].SetProgramVariable("optionsForCurrentExport", null);
-                LockstepGameStateOptionsData exportOptions = allExportOptions[i];
+                LockstepGameStateOptionsData exportOptions = currentAllExportOptions[i];
                 if (exportOptions != null)
                     exportOptions.DecrementRefsCount(); // This'll also delete the options if they were temporary ones
             }
+            currentAllExportOptions = null;
 
             #if LockstepDebug
-            double crcStartMs = exportStopWatch.Elapsed.TotalMilliseconds;
+            double crcStartMs = sw.Elapsed.TotalMilliseconds;
             #endif
             uint crc = CRC32.Compute(ref crc32LookupCache, writeStream, 0, writeStreamSize);
             #if LockstepDebug
-            double crcMs = exportStopWatch.Elapsed.TotalMilliseconds - crcStartMs;
+            double crcMs = sw.Elapsed.TotalMilliseconds - crcStartMs;
             #endif
             WriteUInt(crc);
 
@@ -4332,13 +4455,16 @@ namespace JanSharp.Internal
             System.Array.Copy(writeStream, exportedData, writeStreamSize);
             ResetWriteStream();
 
-            string encoded = Base64.Encode(exportedData);
-            Debug.Log("[Lockstep] Export:" + (exportName != null ? $" {exportName}:\n" : "\n") + encoded);
+            exportResult = Base64.Encode(exportedData);
+            Debug.Log("[Lockstep] Export:" + (currentExportName != null ? $" {currentExportName}:\n" : "\n") + exportResult);
             #if LockstepDebug
-            exportStopWatch.Stop();
-            Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation ms: {crcMs}, total ms: {exportStopWatch.Elapsed.TotalMilliseconds}");
+            sw.Stop();
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ExportInternal (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation ms: {crcMs}, total ms: {sw.Elapsed.TotalMilliseconds}");
             #endif
-            return encoded;
+            isExporting = false;
+            RaiseOnExportFinished();
+            exportResult = null;
+            currentExportName = null;
         }
 
         public override object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate, out string exportWorldName, out string exportName)

@@ -119,6 +119,18 @@ namespace JanSharp {
         /// </summary>
         OnLockstepTick,
         /// <summary>
+        /// <para>Use "export" related properties on <see cref="LockstepAPI"/> for information about the
+        /// started export.</para>
+        /// <para>Not game state safe - exporting is local only.</para>
+        /// </summary>
+        OnExportStart,
+        /// <summary>
+        /// <para>Use "export" related properties on <see cref="LockstepAPI"/> for information about the
+        /// finished export.</para>
+        /// <para>Not game state safe - exporting is local only.</para>
+        /// </summary>
+        OnExportFinished,
+        /// <summary>
         /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
         /// started import.</para>
         /// <para>Game state safe.</para>

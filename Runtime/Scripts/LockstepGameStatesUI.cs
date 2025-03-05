@@ -68,6 +68,7 @@ namespace JanSharp.Internal
         private System.DateTime exportDate;
         private string exportWorldName;
         private string exportName;
+        private bool waitingForExportToFinish = false;
 
         private DataDictionary importOptions;
         private bool anyImportedGSHasNoErrors;
@@ -388,12 +389,13 @@ namespace JanSharp.Internal
             lockstep.AutosaveIntervalSeconds = autosaveInterval * 60f; // Raises OnAutosaveIntervalSecondsChanged.
         }
 
-        private bool CanExport() => isInitialized && !lockstep.IsImporting;
+        private bool CanExport() => isInitialized && !lockstep.IsExporting && !lockstep.IsImporting;
 
         private void UpdateExportButton()
         {
             confirmExportButton.interactable = CanExport();
             confirmExportButtonText.text = !isInitialized ? "Loading..."
+                : lockstep.IsExporting ? "Exporting..."
                 : lockstep.IsImporting ? "Importing..."
                 : "Export";
         }
@@ -412,9 +414,10 @@ namespace JanSharp.Internal
             string exportName = exportNameField.text.Trim().Replace('\n', ' ').Replace('\r', ' ');
             if (exportName == "")
                 exportName = null;
-            serializedOutputField.text = lockstep.Export(exportName, lockstep.GetAllCurrentExportOptions(weakReferences: true));
-            CloseOpenWindow();
-            OpenExportedDataWindow();
+            if (lockstep.Export(exportName, lockstep.GetAllCurrentExportOptions(weakReferences: true)))
+                waitingForExportToFinish = true;
+            else
+                Debug.LogError("[Lockstep] Export failed to start, this is supposed to be impossible.");
         }
 
         private bool autosaveUpdateTImerLoopIsRunning = false;
@@ -478,6 +481,7 @@ namespace JanSharp.Internal
         {
             autosaveToggle.interactable = CanAutosave();
             autosaveToggleText.text = !isInitialized ? "Loading..."
+                : lockstep.IsExporting ? "Exporting..."
                 : lockstep.IsImporting ? "Importing..."
                 : "Autosave";
         }
@@ -504,6 +508,27 @@ namespace JanSharp.Internal
 
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp() => OnInitialized();
+
+        [LockstepEvent(LockstepEventType.OnExportStart)]
+        public void OnExportStart()
+        {
+            UpdateExportButton();
+            UpdateAutosaveToggle();
+        }
+
+        [LockstepEvent(LockstepEventType.OnExportFinished)]
+        public void OnExportFinished()
+        {
+            UpdateExportButton();
+            UpdateAutosaveToggle();
+            if (!waitingForExportToFinish)
+                return;
+
+            waitingForExportToFinish = false;
+            serializedOutputField.text = lockstep.ExportResult;
+            CloseOpenWindow();
+            OpenExportedDataWindow();
+        }
 
         [LockstepEvent(LockstepEventType.OnImportStart)]
         public void OnImportStart()

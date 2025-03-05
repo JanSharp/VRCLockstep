@@ -489,8 +489,9 @@ namespace JanSharp
         /// that it is done processing incoming data (or in the case of game state serialization done
         /// serializing) and lockstep can resume normal operation.</para>
         /// <para>Usable only inside of
-        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> and inside
-        /// of game state safe events which have serialized data to deserialize. So notably
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>,
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
+        /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded.</para>
         /// </summary>
         public abstract void FlagToContinueNextFrame();
@@ -501,8 +502,9 @@ namespace JanSharp
         /// <para>Though it can of course also be used within the same system, cross system interaction merely
         /// demonstrates the purpose more clearly.</para>
         /// <para>Usable only inside of
-        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> and inside
-        /// of game state safe events which have serialized data to deserialize. So notably
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>,
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
+        /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -512,8 +514,9 @@ namespace JanSharp
         /// <see cref="FlagToContinueNextFrame"/> the last time it was called, which was in the previous
         /// frame.</para>
         /// <para>Usable only inside of
-        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> and inside
-        /// of game state safe events which have serialized data to deserialize. So notably
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>,
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
+        /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -639,7 +642,22 @@ namespace JanSharp
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>. Returns
         /// <see langword="null"/> if called at an invalid time or with invalid
         /// <paramref name="gameStates"/> or <paramref name="exportName"/>.</returns>
-        public abstract string Export(string exportName, LockstepGameStateOptionsData[] allExportOptions);
+        public abstract bool Export(string exportName, LockstepGameStateOptionsData[] allExportOptions);
+        /// <summary>
+        /// TODO: docs
+        /// <para>Set to <see langword="true"/> right before <see cref="LockstepEventType.OnExportStart"/>
+        /// and set to <see langword="false"/> right before <see cref="LockstepEventType.OnExportFinished"/>.
+        /// </para>
+        /// </summary>
+        public abstract bool IsExporting { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract string ExportName { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract string ExportResult { get; }
         /// <summary>
         /// <para><see langword="true"/> inside of
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> when

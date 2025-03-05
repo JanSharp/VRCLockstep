@@ -35,6 +35,7 @@ namespace JanSharp.Internal
             "currentlyNoMaster",
             "checkMasterChangeAfterProcessingLJGameStates",
             "initializedEnoughForImportExport",
+            "isExporting",
             "isImporting",
             "isAskingForMasterCandidates",
             "someoneIsAskingForMasterCandidates",
@@ -42,6 +43,11 @@ namespace JanSharp.Internal
             "masterChangeRequestInProgress",
             "sendMasterChangeConfirmationInFirstMutableTick",
             "finishMasterChangeProcessAtStartOfTick",
+            "suspendedInInputActionsToRunNextFrame",
+            "suspendedInStandaloneIA",
+            "suspendedInLJSerialization",
+            "suspendedInExportPreparation",
+            "suspendedInExport",
         };
         private Toggle[] flagToggles;
         private TextMeshProUGUI[] flagLabels;
