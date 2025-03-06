@@ -69,8 +69,12 @@
 - [ ] spread incoming input actions out to the next frame on master if we've already spent x ms running input actions this frame
 - [ ] spread input actions to be run next frame out to yet again the next frame if we've already spent x ms running input actions this frame
 - [ ] add checks for if we are in game state safe events inside of api functions which must be called from game state safe events, for example sending singleton input actions
-- [ ] change importing to just be one big input action which gets spread out across frames
+- [x] change importing to just be one big input action which gets spread out across frames
+- [ ] maybe change importing to first read all incoming game states into separate arrays and then deserialize those one by one to prevent over-read in one game state breaking the attempt to read the next game state which makes debugging even worse, it's already bad for serialization/deserialization
+- [ ] change exporting to always delay 1 frame between game state serializations
 - [ ] handle return error messages from game state deserialization which gets spread out across frames. For LJ it might be fine as is, potentially multiple notifications, though for imports there's a property part of the lockstep api for the error message inside of the OnImportedGameState event which as it stands right now is not handled properly. That either needs to be removed, there needs to be a limitation to one error message from deserialization or idk something else
 - [x] change all prefixes in debug messages in the dev folder to `[LockstepTest]`
 - [x] expose read stream position
 - [x] option to spread game state serialization out across frames. Except that the export api goes from nice to "oh god damn it now we need callbacks"
+- [ ] change gs waiting for import to an array
+- [ ] change import options to be send as part of the second input action, not the start import IA

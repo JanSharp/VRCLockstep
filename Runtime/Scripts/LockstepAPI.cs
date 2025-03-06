@@ -708,7 +708,7 @@ namespace JanSharp
         /// <param name="importedGameStates"></param>
         public abstract void CleanupImportedGameStatesData(object[][] importedGameStates);
         /// <summary>
-        /// TODO: docs, mentioning associated options
+        /// TODO: docs, mentioning associated options, mention that no other IAs can run while game states are being imported
         /// <para>Start importing game states using data obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string)"/>. This requires sending of
         /// input actions. It is also only allowed to be called if <see cref="IsImporting"/> is
