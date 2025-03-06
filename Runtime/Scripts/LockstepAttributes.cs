@@ -176,6 +176,9 @@ namespace JanSharp {
         /// <para>Use <see cref="LockstepAPI.NotificationMessage"/> to get the message which was sent.</para>
         /// <para>Notifications are messages sent by lockstep with the intent for them to be shown to the
         /// local player.</para>
+        /// <para><see cref="LockstepAPI.InGameStateSafeEvent"/> may be <see langword="true"/> inside of this
+        /// event, however as stated below it generally not game state safe because this is not always the
+        /// case.</para>
         /// <para>Not game state safe.</para>
         /// </summary>
         OnLockstepNotification,

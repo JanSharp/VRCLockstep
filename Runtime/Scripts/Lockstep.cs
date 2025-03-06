@@ -4815,7 +4815,6 @@ namespace JanSharp.Internal
                 // The rest of the input action is the raw imported bytes, ready to be consumed by the function below.
             }
             isDeserializingForImport = true;
-            inGameStateSafeEvent = true;
             #if LockstepDebug
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -4824,7 +4823,6 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  OnImportGameStateIA (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {importedGameState.GameStateInternalName}");
             #endif
-            inGameStateSafeEvent = false;
             isDeserializingForImport = false;
             if (importErrorMessage != null)
                 RaiseOnLockstepNotification($"Importing '{importedGameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
