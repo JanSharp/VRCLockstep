@@ -77,4 +77,4 @@
 - [x] expose read stream position
 - [x] option to spread game state serialization out across frames. Except that the export api goes from nice to "oh god damn it now we need callbacks"
 - [ ] change gs waiting for import to an array
-- [ ] change import options to be send as part of the second input action, not the start import IA
+- [x] change import options to be send as part of the second input action, not the start import IA

@@ -4621,22 +4621,15 @@ namespace JanSharp.Internal
                 object[] importedGS = (object[])importedGSToken.Reference;
                 validImportedGSs[count++] = importedGS;
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
-                // Nothing _should_ decrement refs count of import options inside of the serialize function
-                // for an instance of import options, but it is custom user code, so technically it is possible
-                // and at that point it would be StartImport's fault for not keeping the import options alive
-                // long enough. So here we are keeping a strong reference, and then immediately releasing it.
-                if (importOptions != null)
-                    importOptions.IncrementRefsCount();
+                WriteCustomNullableClass(importOptions);
+                byte[] serializedImportOptions = new byte[writeStreamSize];
+                System.Array.Copy(writeStream, serializedImportOptions, writeStreamSize);
+                ResetWriteStream();
+                LockstepImportedGS.SetSerializedImportOptions(importedGS, serializedImportOptions);
             }
             if (exportName != null)
                 exportName = exportName.Replace('\n', ' ').Replace('\r', ' ');
             SendImportStartIA(validImportedGSs, exportDate, SanitizeWorldName(exportWorldName), exportName);
-            foreach (object[] importedGS in validImportedGSs)
-            {
-                LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
-                if (importOptions != null)
-                    importOptions.DecrementRefsCount();
-            }
         }
 
         ///<summary>LockstepImportedGS[]</summary>
@@ -4722,7 +4715,8 @@ namespace JanSharp.Internal
             foreach (object[] importedGS in importedGSs)
             {
                 WriteSmallUInt((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
-                WriteCustomNullableClass(LockstepImportedGS.GetImportOptions(importedGS));
+                WriteBytes(LockstepImportedGS.GetSerializedImportOptions(importedGS));
+                LockstepImportedGS.SetSerializedImportOptions(importedGS, null); // Make GC happy.
             }
             importedGSsToSend = importedGSs;
             SendInputAction(importStartIAId);

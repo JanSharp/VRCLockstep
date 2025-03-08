@@ -26,7 +26,9 @@ namespace JanSharp
         public const int ErrorMsg = 6;
         ///<summary>LockstepGameStateOptionsData</summary>
         public const int ImportOptions = 7;
-        public const int ObjectSize = 8;
+        ///<summary>byte[]</summary>
+        public const int SerializedImportOptions = 8;
+        public const int ObjectSize = 9;
 
         public static object[] New(
             string internalName = default,
@@ -36,7 +38,8 @@ namespace JanSharp
             LockstepGameState gameState = default,
             int gameStateIndex = default,
             string errorMsg = default,
-            LockstepGameStateOptionsData importOptions = default)
+            LockstepGameStateOptionsData importOptions = default,
+            byte[] serializedImportOptions = default)
         {
             object[] lockstepImportedGS = new object[ObjectSize];
             lockstepImportedGS[InternalName] = internalName;
@@ -47,6 +50,7 @@ namespace JanSharp
             lockstepImportedGS[GameStateIndex] = gameStateIndex;
             lockstepImportedGS[ErrorMsg] = errorMsg;
             lockstepImportedGS[ImportOptions] = importOptions;
+            lockstepImportedGS[SerializedImportOptions] = serializedImportOptions;
             return lockstepImportedGS;
         }
 
@@ -82,5 +86,9 @@ namespace JanSharp
             => (LockstepGameStateOptionsData)lockstepImportedGS[ImportOptions];
         public static void SetImportOptions(object[] lockstepImportedGS, LockstepGameStateOptionsData importOptions)
             => lockstepImportedGS[ImportOptions] = importOptions;
+        public static byte[] GetSerializedImportOptions(object[] lockstepImportedGS)
+            => (byte[])lockstepImportedGS[SerializedImportOptions];
+        public static void SetSerializedImportOptions(object[] lockstepImportedGS, byte[] serializedImportOptions)
+            => lockstepImportedGS[SerializedImportOptions] = serializedImportOptions;
     }
 }

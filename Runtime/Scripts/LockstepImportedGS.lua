@@ -19,5 +19,6 @@ return {
     {type = "int", name = "gameStateIndex"},
     {type = "string", name = "errorMsg"},
     {type = "LockstepGameStateOptionsData", name = "importOptions"},
+    {type = "byte[]", name = "serializedImportOptions"},
   },
 }
