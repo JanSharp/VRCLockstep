@@ -170,6 +170,8 @@ namespace JanSharp.Internal
         private byte[] suspendedWriteStream = null;
         private int suspendedWriteStreamSize = 0;
         private int suspendedIndexInArray = 0;
+        private int currentIncomingGSDataIndex;
+        private object[][] incomingGameStateData;
 
         /// <summary>
         /// <para><see langword="true"/> on a single client, the asking client.</para>
@@ -4790,7 +4792,9 @@ namespace JanSharp.Internal
             {
                 WriteSmallUInt((uint)LockstepImportedGS.GetGameStateIndex(importedGS));
                 WriteSmallUInt(LockstepImportedGS.GetDataVersion(importedGS));
-                WriteBytes(LockstepImportedGS.GetBinaryData(importedGS));
+                byte[] bytes = LockstepImportedGS.GetBinaryData(importedGS);
+                WriteSmallUInt((uint)bytes.Length);
+                WriteBytes(bytes);
             }
             SendInputAction(importGameStatesIAId);
         }
@@ -4802,11 +4806,36 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnImportGameStatesIA");
             #endif
+
+            if (!isContinuationFromPrevFrame)
+            {
+                currentIncomingGSDataIndex = 0;
+                int count = gameStatesWaitingForImport.Count;
+                incomingGameStateData = new object[count][];
+                for (int i = 0; i < count; i++)
+                {
+                    int index = (int)ReadSmallUInt();
+                    uint dataVersion = ReadSmallUInt();
+                    int length = (int)ReadSmallUInt();
+                    byte[] bytes = ReadBytes(length);
+                    incomingGameStateData[i] = new object[]
+                    {
+                        index,
+                        dataVersion,
+                        bytes,
+                    };
+                }
+            }
+
             ImportGameState();
             if (flaggedToContinueNextFrame)
                 return;
             if (gameStatesWaitingForImport.Count != 0)
+            {
                 FlagToContinueNextFrame();
+                return;
+            }
+            incomingGameStateData = null; // Make GC happy.
         }
 
         private void ImportGameState()
@@ -4816,17 +4845,13 @@ namespace JanSharp.Internal
             #endif
             if (!flaggedToContinueInsideOfGSImport)
             {
-                int gameStateIndex = (int)ReadSmallUInt();
+                object[] incomingData = incomingGameStateData[currentIncomingGSDataIndex++];
+                int gameStateIndex = (int)incomingData[0];
+                importedDataVersion = (uint)incomingData[1];
+                SetReadStream((byte[])incomingData[2]);
                 importedGameState = allGameStates[gameStateIndex];
                 if (!gameStatesWaitingForImport.Remove(gameStateIndex))
-                {
-                    Debug.LogError($"[Lockstep] Impossible: The game state {importedGameState.GameStateInternalName} "
-                        + $"received import data even though it was not marked as waiting for import. "
-                        + $"Ignoring incoming data. (Unless we received an input action from a player for whom "
-                        + $"we got the player left event over 1 second ago...)");
-                    return;
-                }
-                importedDataVersion = ReadSmallUInt();
+                    Debug.LogError($"[Lockstep] Impossible. The GS indexes in the 2 import IAs must match, there's no way they don't.");
             }
             isContinuationFromPrevFrame = isContinuationFromPrevFrame && flaggedToContinueInsideOfGSImport;
             flaggedToContinueInsideOfGSImport = false;
