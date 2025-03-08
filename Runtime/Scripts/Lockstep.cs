@@ -170,6 +170,7 @@ namespace JanSharp.Internal
         private byte[] suspendedWriteStream = null;
         private int suspendedWriteStreamSize = 0;
         private int suspendedIndexInArray = 0;
+        private int suspendedGSIndexInExport = 0;
         private int currentIncomingGSDataIndex;
         private object[][] incomingGameStateData;
 
@@ -4274,7 +4275,7 @@ namespace JanSharp.Internal
         public override bool Export(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Export");
+            Debug.Log($"[LockstepDebug] Lockstep  Export");
             #endif
             if (!PrepareForExport(exportName, allExportOptions))
                 return false;
@@ -4292,7 +4293,7 @@ namespace JanSharp.Internal
         private bool PrepareForExport(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] PrepareForExport");
+            Debug.Log($"[LockstepDebug] Lockstep  PrepareForExport");
             #endif
             if (!initializedEnoughForImportExport)
             {
@@ -4359,66 +4360,68 @@ namespace JanSharp.Internal
         private void ExportGameStates()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] ExportGameStates");
+            Debug.Log($"[LockstepDebug] Lockstep  ExportGameStates");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             #endif
-            for (int i = suspendedIndexInArray; i < gameStatesSupportingExportCount; i++)
+            byte[] unsuspendedWriteStream = null;
+            LockstepGameState gameState = gameStatesSupportingExport[suspendedGSIndexInExport];
+            if (!flaggedToContinueNextFrame)
             {
-                byte[] unsuspendedWriteStream = null;
-                LockstepGameState gameState = gameStatesSupportingExport[i];
-                if (!flaggedToContinueNextFrame)
-                {
-                    WriteString(gameState.GameStateInternalName);
-                    WriteString(gameState.GameStateDisplayName);
-                    WriteSmallUInt(gameState.GameStateDataVersion);
-                    suspendedExportGSSizePosition = writeStreamSize;
-                    writeStreamSize += 4;
-                }
-                else
-                {
-                    flaggedToContinueNextFrame = false;
-                    unsuspendedWriteStream = writeStream;
-                    writeStream = suspendedWriteStream;
-                    writeStreamSize = suspendedWriteStreamSize;
-                    suspendedWriteStream = null;
-                    suspendedWriteStreamSize = 0;
-                    suspendedInExport = false;
-                    suspendedIndexInArray = 0;
-                    isContinuationFromPrevFrame = true;
-                }
-                #if LockstepDebug
-                double serializeStartMs = sw.Elapsed.TotalMilliseconds;
-                #endif
-                gameState.SerializeGameState(true, currentAllExportOptions[i]);
-                #if LockstepDebug
-                double serializeMs = sw.Elapsed.TotalMilliseconds - serializeStartMs;
-                #endif
-                isContinuationFromPrevFrame = false;
-                if (flaggedToContinueNextFrame)
-                {
-                    suspendedInExport = true;
-                    suspendedWriteStream = writeStream;
-                    suspendedWriteStreamSize = writeStreamSize;
-                    suspendedIndexInArray = i;
-                    writeStream = unsuspendedWriteStream ?? new byte[MinWriteStreamCapacity];
-                    ResetWriteStream();
-                    return;
-                }
-                int stopPosition = writeStreamSize;
-                writeStreamSize = suspendedExportGSSizePosition;
-                WriteInt(stopPosition - suspendedExportGSSizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
-                writeStreamSize = stopPosition;
-                #if LockstepDebug
-                Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - suspendedExportGSSizePosition - 4}");
-                #endif
+                WriteString(gameState.GameStateInternalName);
+                WriteString(gameState.GameStateDisplayName);
+                WriteSmallUInt(gameState.GameStateDataVersion);
+                suspendedExportGSSizePosition = writeStreamSize;
+                writeStreamSize += 4;
             }
+            else
+            {
+                flaggedToContinueNextFrame = false;
+                unsuspendedWriteStream = writeStream;
+                writeStream = suspendedWriteStream;
+                writeStreamSize = suspendedWriteStreamSize;
+                suspendedWriteStream = null;
+                suspendedWriteStreamSize = 0;
+                suspendedInExport = false;
+                isContinuationFromPrevFrame = true;
+            }
+            #if LockstepDebug
+            double serializeStartMs = sw.Elapsed.TotalMilliseconds;
+            #endif
+            gameState.SerializeGameState(true, currentAllExportOptions[suspendedGSIndexInExport]);
+            #if LockstepDebug
+            double serializeMs = sw.Elapsed.TotalMilliseconds - serializeStartMs;
+            #endif
+            isContinuationFromPrevFrame = false;
+            if (flaggedToContinueNextFrame)
+            {
+                suspendedInExport = true;
+                suspendedWriteStream = writeStream;
+                suspendedWriteStreamSize = writeStreamSize;
+                writeStream = unsuspendedWriteStream ?? new byte[MinWriteStreamCapacity];
+                ResetWriteStream();
+                return;
+            }
+            int stopPosition = writeStreamSize;
+            writeStreamSize = suspendedExportGSSizePosition;
+            WriteInt(stopPosition - suspendedExportGSSizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
+            writeStreamSize = stopPosition;
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - suspendedExportGSSizePosition - 4}");
+            #endif
+
+            suspendedGSIndexInExport++;
+            if (suspendedGSIndexInExport == gameStatesSupportingExportCount)
+                return;
+            FlagToContinueNextFrame();
+            suspendedInExport = true;
+            suspendedInExportPreparation = true;
         }
 
         private void ExportInternal()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] ExportInternal");
+            Debug.Log($"[LockstepDebug] Lockstep  ExportInternal");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             #endif
@@ -4435,6 +4438,7 @@ namespace JanSharp.Internal
             isSerializingForExport = false;
             if (flaggedToContinueNextFrame)
                 return;
+            suspendedGSIndexInExport = 0;
 
             for (int i = 0; i < gameStatesSupportingExportCount; i++)
             {
