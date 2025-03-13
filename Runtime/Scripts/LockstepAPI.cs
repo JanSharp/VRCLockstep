@@ -816,6 +816,7 @@ namespace JanSharp
         /// </summary>
         public abstract uint ImportedDataVersion { get; }
         /// <summary>
+        /// TODO: docs
         /// <para>This returns a new copy of the array every time it is accessed.</para>
         /// <para>The game states which are about to be imported, but have not been imported yet.</para>
         /// <para>Inside of <see cref="LockstepEventType.OnImportedGameState"/>, the
@@ -829,6 +830,7 @@ namespace JanSharp
         /// </summary>
         public abstract LockstepGameState[] GameStatesWaitingForImport { get; }
         /// <summary>
+        /// TODO: docs
         /// <para>Returns just the length of <see cref="GameStatesWaitingForImport"/> such that when all
         /// that's needed is the length there isn't an entire array being constructed and copied just to be
         /// thrown away again immediately afterwards.</para>
@@ -837,6 +839,10 @@ namespace JanSharp
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract int GameStatesWaitingForImportCount { get; }
+        /// <summary>
+        /// TODO: docs
+        /// </summary>
+        public abstract int GameStatesWaitingForImportFinishedCount { get; }
 
         /// <summary>
         /// <para>Autosaves are written to the

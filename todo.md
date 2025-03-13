@@ -76,5 +76,7 @@
 - [x] change all prefixes in debug messages in the dev folder to `[LockstepTest]`
 - [x] expose read stream position
 - [x] option to spread game state serialization out across frames. Except that the export api goes from nice to "oh god damn it now we need callbacks"
-- [ ] change gs waiting for import to an array
+- [x] change gs waiting for import to an array
 - [x] change import options to be send as part of the second input action, not the start import IA
+- [ ] remove the serialized options from importedGS because it needs to be part of an input action before IsImporting gets set to true and the event for it is raised, and adding another IA to the import process makes the api worse so import options need to be part of the start import IA
+- [ ] mess with read streams so import option deserialization can start reading the associated game state already
