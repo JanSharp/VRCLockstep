@@ -831,6 +831,10 @@ namespace JanSharp
         public abstract LockstepGameState[] GameStatesWaitingForImport { get; }
         /// <summary>
         /// TODO: docs
+        /// </summary>
+        public abstract uint[] GameStatesWaitingForImportDataVersions { get; }
+        /// <summary>
+        /// TODO: docs
         /// <para>Returns just the length of <see cref="GameStatesWaitingForImport"/> such that when all
         /// that's needed is the length there isn't an entire array being constructed and copied just to be
         /// thrown away again immediately afterwards.</para>

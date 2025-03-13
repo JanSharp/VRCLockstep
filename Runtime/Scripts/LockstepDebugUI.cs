@@ -43,11 +43,15 @@ namespace JanSharp.Internal
             "masterChangeRequestInProgress",
             "sendMasterChangeConfirmationInFirstMutableTick",
             "finishMasterChangeProcessAtStartOfTick",
+            "flaggedToContinueNextFrame",
+            "flaggedToContinueInsideOfGSImport",
+            "isContinuationFromPrevFrame",
             "suspendedInInputActionsToRunNextFrame",
             "suspendedInStandaloneIA",
             "suspendedInLJSerialization",
             "suspendedInExportPreparation",
             "suspendedInExport",
+            "suspendedInImportOptionsDeserialization",
         };
         private Toggle[] flagToggles;
         private TextMeshProUGUI[] flagLabels;
@@ -94,6 +98,12 @@ namespace JanSharp.Internal
             "clientIdAskingForCandidates",
             "acceptingCandidatesCount",
             "acceptForcedCandidateFromPlayerId",
+            "suspendedInputActionId",
+            "suspendedSingletonInputActionId",
+            "suspendedExportGSSizePosition",
+            "suspendedIndexInArray",
+            "suspendedGSIndexInExport",
+            "currentIncomingGSDataIndex",
         };
         private TextMeshProUGUI[] numbersValues;
         private TextMeshProUGUI[] numbersLabels;

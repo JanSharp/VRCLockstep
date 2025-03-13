@@ -73,10 +73,13 @@
 - [x] maybe change importing to first read all incoming game states into separate arrays and then deserialize those one by one to prevent over-read in one game state breaking the attempt to read the next game state which makes debugging even worse, it's already bad for serialization/deserialization
 - [x] change exporting to always delay 1 frame between game state serializations
 - [ ] handle return error messages from game state deserialization which gets spread out across frames. For LJ it might be fine as is, potentially multiple notifications, though for imports there's a property part of the lockstep api for the error message inside of the OnImportedGameState event which as it stands right now is not handled properly. That either needs to be removed, there needs to be a limitation to one error message from deserialization or idk something else
+  - [ ] probably the best way to handle this is to treat it as though the game state finished importing at this point, and if it flagged to continue next frame while also returning an error message that is invalid and lockstep raises an error and ignores the flag
 - [x] change all prefixes in debug messages in the dev folder to `[LockstepTest]`
 - [x] expose read stream position
 - [x] option to spread game state serialization out across frames. Except that the export api goes from nice to "oh god damn it now we need callbacks"
 - [x] change gs waiting for import to an array
 - [x] change import options to be send as part of the second input action, not the start import IA
-- [ ] remove the serialized options from importedGS because it needs to be part of an input action before IsImporting gets set to true and the event for it is raised, and adding another IA to the import process makes the api worse so import options need to be part of the start import IA
-- [ ] mess with read streams so import option deserialization can start reading the associated game state already
+- [x] ~~remove the serialized options from importedGS because it needs to be part of an input action before IsImporting gets set to true and the event for it is raised, and adding another IA to the import process makes the api worse so import options need to be part of the start import IA~~ never mind, import options data is now part of the second input action and this is required anyway because
+- [x] mess with read streams so import option deserialization can start reading the associated game state already
+- [ ] several raise event function should not touch the is in game state safe event flag because that flag is already true when those events get raised
+- [ ] in the deserialization docs for import options mention that it can also start deserializing the game state data itself after deserializing import options data. And then depending on the implementation it can also set the read stream position to 0 in the actual deserialization of the game state itself, depending on if the data that was deserialized got saved separately in variables or read and discarded.

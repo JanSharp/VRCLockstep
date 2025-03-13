@@ -139,6 +139,12 @@ namespace JanSharp
             Debug.Log($"[LockstepTest] TestGameState  OnImportStart - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromWorldName: {lockstep.ImportingFromWorldName}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GameStatesWaitingForImportCount: {lockstep.GameStatesWaitingForImportCount}");
         }
 
+        [LockstepEvent(LockstepEventType.OnImportOptionsDeserialized)]
+        public void OnImportOptionsDeserialized()
+        {
+            Debug.Log($"[LockstepTest] TestGameState  OnImportOptionsDeserialized - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromWorldName: {lockstep.ImportingFromWorldName}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GameStatesWaitingForImportCount: {lockstep.GameStatesWaitingForImportCount}");
+        }
+
         [LockstepEvent(LockstepEventType.OnImportedGameState)]
         public void OnImportedGameState()
         {

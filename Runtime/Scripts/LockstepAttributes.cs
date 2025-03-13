@@ -133,23 +133,50 @@ namespace JanSharp {
         /// <summary>
         /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
         /// started import.</para>
+        /// <para><see cref="LockstepAPI.IsImporting"/> gets set to <see langword="true"/> right before this
+        /// event gets raised.</para>
+        /// <para>All <see cref="LockstepGameState.OptionsForCurrentImport"/> are still going to be
+        /// <see langword="null"/> in this event, use <see cref="OnImportOptionsDeserialized"/> instead if
+        /// those are required.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportStart,
         /// <summary>
         /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
+        /// started import.</para>
+        /// <para>Gets raised right after all <see cref="LockstepGameState.OptionsForCurrentImport"/> have
+        /// been populated and right before
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// gets run for each game state.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        OnImportOptionsDeserialized,
+        /// <summary>
+        /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
         /// imported game state.</para>
+        /// <para>Gets raised right after
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> got
+        /// run for a game state. <see cref="LockstepAPI.GameStatesWaitingForImportFinishedCount"/> gets
+        /// incremented right before this event. To get the game state which just got imported
+        /// <see cref="LockstepAPI.ImportedGameState"/> can be used, does not require accessing
+        /// <see cref="LockstepAPI.GameStatesWaitingForImport"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportedGameState,
         /// <summary>
         /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
         /// finished import.</para>
+        /// <para><see cref="LockstepAPI.IsImporting"/> gets set to <see langword="false"/> right before this
+        /// event gets raised, all other import related properties get reset after this event ran.</para>
+        /// <para>Could be raised without any import actually having happened, in which case
+        /// <see cref="OnImportOptionsDeserialized"/> did not get raised and
+        /// <see cref="LockstepAPI.GameStatesWaitingForImportFinishedCount"/> is <c>0</c>. Additionally the
+        /// <see cref="OnClientLeft"/> event gets raised shortly after.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportFinished,
         /// <summary>
-        /// <para>Raised whenever <see cref="LockstepAPI.GameStatesToAutosave"/> changed.</para>
+        /// <para>Raised whenever <see cref="LockstepAPI.ExportOptionsForAutosave"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
         /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
         /// value may not actually be different from the last time it was read.</para>
