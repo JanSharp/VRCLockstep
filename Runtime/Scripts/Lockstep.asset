@@ -5131,13 +5131,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: gameStatesSupportingExport
+      Data: gameStatesSupportingImportExport
     - Name: $v
       Entry: 7
       Data: 255|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: gameStatesSupportingExport
+      Data: gameStatesSupportingImportExport
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 249
@@ -5186,13 +5186,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: gameStatesSupportingExportCount
+      Data: gameStatesSupportingImportExportCount
     - Name: $v
       Entry: 7
       Data: 258|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: gameStatesSupportingExportCount
+      Data: gameStatesSupportingImportExportCount
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 53
@@ -9279,13 +9279,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: gameStatesWaitingForImport
+      Data: gameStatesBeingImported
     - Name: $v
       Entry: 7
       Data: 453|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: gameStatesWaitingForImport
+      Data: gameStatesBeingImported
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 249
@@ -9328,13 +9328,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: gameStatesWaitingForImportDataVersions
+      Data: gameStatesBeingImportedDataVersions
     - Name: $v
       Entry: 7
       Data: 455|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: gameStatesWaitingForImportDataVersions
+      Data: gameStatesBeingImportedDataVersions
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 138
@@ -9377,13 +9377,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: gameStatesWaitingForImportFinishedCount
+      Data: gameStatesBeingImportedFinishedCount
     - Name: $v
       Entry: 7
       Data: 457|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: gameStatesWaitingForImportFinishedCount
+      Data: gameStatesBeingImportedFinishedCount
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 53

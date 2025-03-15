@@ -83,6 +83,7 @@ namespace JanSharp.Internal
             localPlayer = Networking.LocalPlayer;
             exportOptionsUI.Init();
             importOptionsUI.Init();
+            // TODO: do this on init / on client begin catch up
             exportOptions = lockstep.GetNewExportOptions();
             autosaveOptions = exportOptions;
             importOptions = lockstep.GetNewImportOptions();
@@ -139,6 +140,7 @@ namespace JanSharp.Internal
             dimBackground.SetActive(false);
             importWindow.SetActive(false);
             ResetImport();
+            importOptionsUI.Draw(); // Return widgets to the pool.
         }
 
         public void CloseExportWindow()
@@ -151,6 +153,8 @@ namespace JanSharp.Internal
             lockstep.HideExportOptionsEditor();
             if (!AutosaveUsesExportOptions && autosaveToggle.isOn)
                 lockstep.ExportOptionsForAutosave = exportOptions; // exportOptions == autosaveOptions
+            exportOptionsUI.Clear();
+            exportOptionsUI.Draw(); // Return widgets to the pool.
         }
 
         public void CloseExportedDataWindow()
@@ -167,6 +171,8 @@ namespace JanSharp.Internal
             dimBackground.SetActive(false);
             autosaveWindow.SetActive(false);
             HideAutosaveOptionsEditor();
+            exportOptionsUI.Clear();
+            exportOptionsUI.Draw(); // Return widgets to the pool.
         }
 
         public void CloseOpenWindow()
@@ -272,7 +278,7 @@ namespace JanSharp.Internal
                     + "pressed when it cannot actually import. Someone messed with something.");
                 return;
             }
-            lockstep.UpdateAllCurrentImportOptionsFromWidgets(importedGameStates);
+            lockstep.UpdateAllCurrentImportOptionsFromWidgets();
             lockstep.StartImport(importedGameStates, exportDate, exportWorldName, exportName);
             CloseImportWindow();
         }

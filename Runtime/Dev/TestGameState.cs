@@ -136,13 +136,13 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnImportStart)]
         public void OnImportStart()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnImportStart - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromWorldName: {lockstep.ImportingFromWorldName}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GameStatesWaitingForImportCount: {lockstep.GameStatesWaitingForImportCount}");
+            Debug.Log($"[LockstepTest] TestGameState  OnImportStart - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromWorldName: {lockstep.ImportingFromWorldName}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GameStatesWaitingForImportCount: {lockstep.GameStatesBeingImportedCount}");
         }
 
         [LockstepEvent(LockstepEventType.OnImportOptionsDeserialized)]
         public void OnImportOptionsDeserialized()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnImportOptionsDeserialized - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromWorldName: {lockstep.ImportingFromWorldName}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GameStatesWaitingForImportCount: {lockstep.GameStatesWaitingForImportCount}");
+            Debug.Log($"[LockstepTest] TestGameState  OnImportOptionsDeserialized - ImportingPlayerId: {lockstep.ImportingPlayerId}, ImportingFromWorldName: {lockstep.ImportingFromWorldName}, ImportingFromName: {lockstep.ImportingFromName ?? "<null>"}, ImportingFromDate: {lockstep.ImportingFromDate:yyyy-MM-dd HH:mm}, GameStatesWaitingForImportCount: {lockstep.GameStatesBeingImportedCount}");
         }
 
         [LockstepEvent(LockstepEventType.OnImportedGameState)]
@@ -154,7 +154,7 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnImportFinished)]
         public void OnImportFinished()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnImportFinished - GameStatesWaitingForImportCount: {lockstep.GameStatesWaitingForImportCount}");
+            Debug.Log($"[LockstepTest] TestGameState  OnImportFinished - GameStatesWaitingForImportCount: {lockstep.GameStatesBeingImportedCount}");
         }
 
         [SerializeField] [HideInInspector] private uint singletonTestIAId;

@@ -219,13 +219,13 @@ namespace JanSharp.Internal
                 (p, v) => p.objectReferenceValue = v
             );
 
-            List<LockstepGameState> gameStatesSupportingExport = allGameStates
+            List<LockstepGameState> gameStatesSupportingImportExport = allGameStates
                 .Where(gs => gs.GameStateSupportsImportExport)
                 .ToList();
-            lockstepSo.FindProperty("gameStatesSupportingExportCount").intValue = gameStatesSupportingExport.Count;
+            lockstepSo.FindProperty("gameStatesSupportingImportExportCount").intValue = gameStatesSupportingImportExport.Count;
             EditorUtil.SetArrayProperty(
-                lockstepSo.FindProperty("gameStatesSupportingExport"),
-                gameStatesSupportingExport,
+                lockstepSo.FindProperty("gameStatesSupportingImportExport"),
+                gameStatesSupportingImportExport,
                 (p, v) => p.objectReferenceValue = v
             );
 
