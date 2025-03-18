@@ -40,6 +40,7 @@ namespace JanSharp
         /// <para>The class name of a class deriving from <see cref="LockstepGameStateOptionsData"/> which is
         /// the class this options UI uses. <see cref="CurrentOptions"/>, <see cref="NewOptions"/> and
         /// <see cref="ValidateOptions(LockstepGameStateOptionsData)"/> all use this class.</para>
+        /// <para>Use <c>nameof(MyClassName)</c> to define this property.</para>
         /// <para>When deriving from <see cref="LockstepGameStateOptionsUI"/>, there must be
         /// <c>currentOptions</c> and <c>optionsToValidate</c> fields with the same type as specified by
         /// <see cref="OptionsClassName"/> defined in the deriving class.</para>
