@@ -82,7 +82,7 @@
 - [x] change import options to be send as part of the second input action, not the start import IA
 - [x] ~~remove the serialized options from importedGS because it needs to be part of an input action before IsImporting gets set to true and the event for it is raised, and adding another IA to the import process makes the api worse so import options need to be part of the start import IA~~ never mind, import options data is now part of the second input action and this is required anyway because
 - [x] mess with read streams so import option deserialization can start reading the associated game state already
-- [ ] several raise event function should not touch the is in game state safe event flag because that flag is already true when those events get raised
+- [x] several raise event function should not touch the is in game state safe event flag because that flag is already true when those events get raised
 - [x] ~~in the deserialization docs for import options mention that it can also start deserializing the game state data itself after deserializing import options data. And then depending on the implementation it can also set the read stream position to 0 in the actual deserialization of the game state itself, depending on if the data that was deserialized got saved separately in variables or read and discarded.~~
   - [ ] remove this stupid useless feature that I thought was needed for whatever reason which is import options deserialization having the ability to continue reading past its end at which point it is reading the associated game state data. This is stupid, stop it
 - [ ] in the info section for imports after a valid string has been pasted into the text field only list the game states which will be imported. Either
@@ -91,3 +91,4 @@
 - [ ] make all the options ui apis only usable once on init or on client begin catch up have been raised
 - [x] rename Export to StartExport
 - [x] make sure all doc `see` references are well formed. Some have been broken due to signature changes
+- [ ] if in single player, is it possible for the system to get stuck infinitely running input actions to be run in the next frame if those input actions send input actions themselves which send input actions which send input actions... infinitely?

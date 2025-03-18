@@ -3282,12 +3282,12 @@ namespace JanSharp.Internal
             return newListeners;
         }
 
-        private void RaiseOnInit()
+        private void RaiseOnInit() // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnInit");
             #endif
-            inGameStateSafeEvent = true;
+            inGameStateSafeEvent = true; // Calling function is not an IA.
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onInitListeners)
                 if (listener == null)
@@ -3299,7 +3299,7 @@ namespace JanSharp.Internal
             inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnClientBeginCatchUp(uint catchingUpPlayerId)
+        private void RaiseOnClientBeginCatchUp(uint catchingUpPlayerId) // Not game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientBeginCatchUp");
@@ -3316,12 +3316,11 @@ namespace JanSharp.Internal
             this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 
-        private void RaiseOnPreClientJoined(uint joinedPlayerId)
+        private void RaiseOnPreClientJoined(uint joinedPlayerId) // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnPreClientJoined");
             #endif
-            inGameStateSafeEvent = true;
             this.joinedPlayerId = joinedPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onPreClientJoinedListeners)
@@ -3332,15 +3331,14 @@ namespace JanSharp.Internal
             if (destroyedCount != 0)
                 onPreClientJoinedListeners = CleanUpRemovedListeners(onPreClientJoinedListeners, destroyedCount, nameof(LockstepEventType.OnPreClientJoined));
             this.joinedPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
-            inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnClientJoined(uint joinedPlayerId)
+        private void RaiseOnClientJoined(uint joinedPlayerId) // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientJoined");
             #endif
-            inGameStateSafeEvent = true;
+            inGameStateSafeEvent = true; // Calling function is potentially not an IA.
             this.joinedPlayerId = joinedPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientJoinedListeners)
@@ -3354,12 +3352,11 @@ namespace JanSharp.Internal
             inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnClientCaughtUp(uint catchingUpPlayerId)
+        private void RaiseOnClientCaughtUp(uint catchingUpPlayerId) // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientCaughtUp");
             #endif
-            inGameStateSafeEvent = true;
             this.catchingUpPlayerId = catchingUpPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientCaughtUpListeners)
@@ -3370,15 +3367,13 @@ namespace JanSharp.Internal
             if (destroyedCount != 0)
                 onClientCaughtUpListeners = CleanUpRemovedListeners(onClientCaughtUpListeners, destroyedCount, nameof(LockstepEventType.OnClientCaughtUp));
             this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
-            inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnClientLeft(uint leftPlayerId)
+        private void RaiseOnClientLeft(uint leftPlayerId) // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientLeft");
             #endif
-            inGameStateSafeEvent = true;
             this.leftPlayerId = leftPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientLeftListeners)
@@ -3389,18 +3384,17 @@ namespace JanSharp.Internal
             if (destroyedCount != 0)
                 onClientLeftListeners = CleanUpRemovedListeners(onClientLeftListeners, destroyedCount, nameof(LockstepEventType.OnClientLeft));
             this.leftPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
-            inGameStateSafeEvent = false;
         }
 
         /// <summary>
         /// <para>Make sure to set <see cref="masterPlayerId"/> before raising this event.</para>
         /// </summary>
-        private void RaiseOnMasterClientChanged(uint oldMasterPlayerId)
+        private void RaiseOnMasterClientChanged(uint oldMasterPlayerId) // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnMasterClientChanged");
             #endif
-            inGameStateSafeEvent = true;
+            inGameStateSafeEvent = true; // Calling function is potentially not an IA.
             this.oldMasterPlayerId = oldMasterPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onMasterClientChangedListeners)
@@ -3414,12 +3408,12 @@ namespace JanSharp.Internal
             inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnTick()
+        private void RaiseOnTick() // Game state safe.
         {
             // #if LockstepDebug
             // Debug.Log($"[LockstepDebug] Lockstep  RaiseOnTick");
             // #endif
-            inGameStateSafeEvent = true;
+            inGameStateSafeEvent = true; // Calling function is not an IA.
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onLockstepTickListeners)
                 if (listener == null)
@@ -3431,7 +3425,7 @@ namespace JanSharp.Internal
             inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnExportStart()
+        private void RaiseOnExportStart() // Not game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportStart");
@@ -3446,7 +3440,7 @@ namespace JanSharp.Internal
                 onExportStartListeners = CleanUpRemovedListeners(onExportStartListeners, destroyedCount, nameof(LockstepEventType.OnExportStart));
         }
 
-        private void RaiseOnExportFinished()
+        private void RaiseOnExportFinished() // Not game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportFinished");
@@ -3461,12 +3455,11 @@ namespace JanSharp.Internal
                 onExportFinishedListeners = CleanUpRemovedListeners(onExportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnExportFinished));
         }
 
-        private void RaiseOnImportStart()
+        private void RaiseOnImportStart() // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportStart");
             #endif
-            inGameStateSafeEvent = true;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportStartListeners)
                 if (listener == null)
@@ -3475,15 +3468,13 @@ namespace JanSharp.Internal
                     listener.SendCustomEvent(nameof(LockstepEventType.OnImportStart));
             if (destroyedCount != 0)
                 onImportStartListeners = CleanUpRemovedListeners(onImportStartListeners, destroyedCount, nameof(LockstepEventType.OnImportStart));
-            inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnImportOptionsDeserialized()
+        private void RaiseOnImportOptionsDeserialized() // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportOptionsDeserialized");
             #endif
-            inGameStateSafeEvent = true;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportOptionsDeserializedListeners)
                 if (listener == null)
@@ -3492,15 +3483,13 @@ namespace JanSharp.Internal
                     listener.SendCustomEvent(nameof(LockstepEventType.OnImportOptionsDeserialized));
             if (destroyedCount != 0)
                 onImportOptionsDeserializedListeners = CleanUpRemovedListeners(onImportOptionsDeserializedListeners, destroyedCount, nameof(LockstepEventType.OnImportOptionsDeserialized));
-            inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnImportedGameState()
+        private void RaiseOnImportedGameState() // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportedGameState");
             #endif
-            inGameStateSafeEvent = true;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportedGameStateListeners)
                 if (listener == null)
@@ -3509,15 +3498,13 @@ namespace JanSharp.Internal
                     listener.SendCustomEvent(nameof(LockstepEventType.OnImportedGameState));
             if (destroyedCount != 0)
                 onImportedGameStateListeners = CleanUpRemovedListeners(onImportedGameStateListeners, destroyedCount, nameof(LockstepEventType.OnImportedGameState));
-            inGameStateSafeEvent = false;
         }
 
-        private void RaiseOnImportFinished()
+        private void RaiseOnImportFinished() // Game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportFinished");
             #endif
-            inGameStateSafeEvent = true;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportFinishedListeners)
                 if (listener == null)
@@ -3526,7 +3513,6 @@ namespace JanSharp.Internal
                     listener.SendCustomEvent(nameof(LockstepEventType.OnImportFinished));
             if (destroyedCount != 0)
                 onImportFinishedListeners = CleanUpRemovedListeners(onImportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnImportFinished));
-            inGameStateSafeEvent = false;
         }
 
         private bool markedForOnExportOptionsForAutosaveChanged;
@@ -3541,7 +3527,7 @@ namespace JanSharp.Internal
             SendCustomEventDelayedFrames(nameof(RaiseOnExportOptionsForAutosaveChanged), 1);
         }
 
-        public void RaiseOnExportOptionsForAutosaveChanged()
+        public void RaiseOnExportOptionsForAutosaveChanged() // Not game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportOptionsForAutosaveChanged");
@@ -3569,7 +3555,7 @@ namespace JanSharp.Internal
             SendCustomEventDelayedFrames(nameof(RaiseOnAutosaveIntervalSecondsChanged), 1);
         }
 
-        public void RaiseOnAutosaveIntervalSecondsChanged()
+        public void RaiseOnAutosaveIntervalSecondsChanged() // Not game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnAutosaveIntervalSecondsChanged");
@@ -3597,7 +3583,7 @@ namespace JanSharp.Internal
             SendCustomEventDelayedFrames(nameof(RaiseOnIsAutosavePausedChanged), 1);
         }
 
-        public void RaiseOnIsAutosavePausedChanged()
+        public void RaiseOnIsAutosavePausedChanged() // Not game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnIsAutosavePausedChanged");
@@ -3613,7 +3599,7 @@ namespace JanSharp.Internal
                 onIsAutosavePausedChangedListeners = CleanUpRemovedListeners(onIsAutosavePausedChangedListeners, destroyedCount, nameof(LockstepEventType.OnIsAutosavePausedChanged));
         }
 
-        public void RaiseOnLockstepNotification(string message)
+        public void RaiseOnLockstepNotification(string message) // Not game state safe.
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnLockstepNotification");
