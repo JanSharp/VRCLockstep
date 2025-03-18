@@ -4551,6 +4551,9 @@ namespace JanSharp.Internal
             exportWorldName = null;
             exportName = null;
 
+            byte[] suspendedReadStream = readStream;
+            int suspendedReadPosition = readStreamPosition;
+
             if (!Base64.TryDecode(exportedString, out readStream))
             {
                 #if LockstepDebug
@@ -4582,7 +4585,6 @@ namespace JanSharp.Internal
             if (gotCrc != expectedCrc)
                 return null;
 
-            // TODO: preserve suspended read stream
             ResetReadStream();
 
             exportedDate = ReadDateTime();
@@ -4628,6 +4630,12 @@ namespace JanSharp.Internal
                     else if (dataVersion < gameState.GameStateLowestSupportedDataVersion)
                         LockstepImportedGS.SetErrorMsg(importedGS, "imported version too old");
                 }
+            }
+
+            if (flaggedToContinueNextFrame)
+            {
+                readStream = suspendedReadStream;
+                readStreamPosition = suspendedReadPosition;
             }
 
             return importedGameStates;
