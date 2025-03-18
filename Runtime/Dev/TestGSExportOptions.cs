@@ -8,7 +8,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class TestGSExportOptions : LockstepGameStateOptionsData
     {
-        public override bool SupportsImportExport => false;
+        public override bool SupportsImportExport => true;
         public override uint DataVersion => 0;
         public override uint LowestSupportedDataVersion => 0;
 

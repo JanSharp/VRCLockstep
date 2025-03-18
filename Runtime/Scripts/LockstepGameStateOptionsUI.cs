@@ -14,6 +14,9 @@ namespace JanSharp
     /// Then create an instance of this custom class in the scene and reference it in the inspector for
     /// <see cref="LockstepGameState"/> for either <see cref="LockstepGameState.ExportUI"/> or
     /// <see cref="LockstepGameState.ImportUI"/>.</para>
+    /// <para>A suggested naming convention is to use the name of the associated game state (potentially
+    /// abbreviated if it's getting a bit long) plus either <c>ExportUI</c> or <c>ImportUI</c> as a
+    /// postfix.</para>
     /// <para>As <see cref="OptionsClassName"/> mentions, there must also be a different class deriving from
     /// <see cref="LockstepGameStateOptionsData"/>. This is a <see cref="WannaBeClass"/>, do not create an
     /// instance of it in the scene, rather pretend like it is an actual custom class. Use the
