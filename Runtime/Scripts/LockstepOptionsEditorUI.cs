@@ -90,7 +90,7 @@ namespace JanSharp
         /// <see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> rather than before.</para>
         /// <para>Likely also good to be called before an options editor is opened/shown, before calling
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
-        /// LockstepGameStateOptionsData)"/>.</para>
+        /// LockstepGameStateOptionsData, uint)"/>.</para>
         /// </summary>
         public void Clear()
         {

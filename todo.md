@@ -90,4 +90,4 @@
   - [ ] or put them in a fold out, which is not folded out by default
 - [ ] make all the options ui apis only usable once on init or on client begin catch up have been raised
 - [ ] rename Export to StartExport
-- [ ] make sure all doc `see` references are well formed. Some have been broken due to signature changes
+- [x] make sure all doc `see` references are well formed. Some have been broken due to signature changes

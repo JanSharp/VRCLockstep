@@ -408,7 +408,8 @@ namespace JanSharp
         /// subsequently also going to be a game state save event/</para>
         /// <para>Delayed events are run in the order in which they get sent.</para>
         /// <para>Delayed events are raised at the end of a tick, but before
-        /// <see cref="LockstepOnNthTickAttribute"/> and <see cref="LockstepEventType.OnTick"/>.</para>
+        /// <see cref="LockstepOnNthTickAttribute"/> and
+        /// <see cref="LockstepEventType.OnLockstepTick"/>.</para>
         /// <para>To pass data from the sending function to the event handler, use <c>Write</c> functions
         /// before calling <see cref="SendEventDelayedTicks(uint, uint)"/>. Then in the event handler call
         /// <c>Read</c> functions with matching types and in matching order.</para>
@@ -644,7 +645,7 @@ namespace JanSharp
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> editor UIs and calls
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
-        /// LockstepGameStateOptionsData)"/> for each non <see langword="null"/> entry in
+        /// LockstepGameStateOptionsData, uint)"/> for each non <see langword="null"/> entry in
         /// <paramref name="allExportOptions"/> using the matching (and also non <see langword="null"/>)
         /// <see cref="LockstepGameState.ExportUI"/> from
         /// <see cref="GameStatesSupportingImportExport"/>.</para>
@@ -653,7 +654,7 @@ namespace JanSharp
         /// </summary>
         /// <param name="ui">The ui instance which gets passed along to
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
-        /// LockstepGameStateOptionsData)"/>.</param>
+        /// LockstepGameStateOptionsData, uint)"/>.</param>
         /// <param name="allExportOptions">Must not be <see langword="null"/>.</param>
         public abstract void ShowExportOptionsEditor(
             LockstepOptionsEditorUI ui,
@@ -789,7 +790,7 @@ namespace JanSharp
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> editor UIs and calls
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
-        /// LockstepGameStateOptionsData)"/> for each non
+        /// LockstepGameStateOptionsData, uint)"/> for each non
         /// <see langword="null"/> <see cref="LockstepImportedGS.GetImportOptions(object[])"/> in
         /// <paramref name="importedGameStates"/> using the matching (and also
         /// non <see langword="null"/>) <see cref="LockstepGameState.ImportUI"/> from
@@ -797,15 +798,15 @@ namespace JanSharp
         /// <para>Importantly it also <see cref="SetReadStream(byte[])"/> the
         /// <see cref="LockstepImportedGS.GetBinaryData(object[])"/> before calling
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
-        /// LockstepGameStateOptionsData)"/>, which is required by the specification of the ShowOptionsEditor
-        /// api in order to allow import options to read data from the associated serialized game state to
-        /// populate dynamic options depending on the data to be imported.</para>
+        /// LockstepGameStateOptionsData, uint)"/>, which is required by the specification of the
+        /// <c>ShowOptionsEditor</c> api in order to allow import options to read data from the associated
+        /// serialized game state to populate dynamic options depending on the data to be imported.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
         /// <param name="ui">The ui instance which gets passed along to
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
-        /// LockstepGameStateOptionsData)"/>.</param>
+        /// LockstepGameStateOptionsData, uint)"/>.</param>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>.</param>

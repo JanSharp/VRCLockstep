@@ -53,10 +53,11 @@ namespace JanSharp
         /// <summary>
         /// <para>Whether this UI is currently shown to the user through the
         /// <see cref="LockstepOptionsEditorUI.Editor"/> or not. <see cref="CurrentlyShown"/> is modified
-        /// through <see cref="ShowOptionsEditor(LockstepOptionsEditorUI, LockstepGameStateOptionsData)"/> and
+        /// through
+        /// <see cref="ShowOptionsEditor(LockstepOptionsEditorUI, LockstepGameStateOptionsData, uint)"/> and
         /// <see cref="HideOptionsEditor"/>.</para>
         /// <para>Gets set to <see langword="true"/> right before
-        /// <see cref="OnOptionsEditorShow(LockstepOptionsEditorUI)"/> gets raised, gets set to
+        /// <see cref="OnOptionsEditorShow(LockstepOptionsEditorUI, uint)"/> gets raised, gets set to
         /// <see langword="false"/> right before <see cref="OnOptionsEditorHide(LockstepOptionsEditorUI)"/>
         /// gets raised.</para>
         /// <para>While <see langword="true"/> <see cref="CurrentUI"/> is never <see langword="null"/>, while
@@ -73,10 +74,10 @@ namespace JanSharp
         private LockstepOptionsEditorUI currentUI;
         /// <summary>
         /// <para>The UI instance which was passed to
-        /// <see cref="ShowOptionsEditor(LockstepOptionsEditorUI, LockstepGameStateOptionsData)"/> and
-        /// <see cref="OnOptionsEditorShow(LockstepOptionsEditorUI)"/>.</para>
+        /// <see cref="ShowOptionsEditor(LockstepOptionsEditorUI, LockstepGameStateOptionsData, uint)"/> and
+        /// <see cref="OnOptionsEditorShow(LockstepOptionsEditorUI, uint)"/>.</para>
         /// <para>Gets set to the UI instance right before
-        /// <see cref="OnOptionsEditorShow(LockstepOptionsEditorUI)"/> gets raised, set to
+        /// <see cref="OnOptionsEditorShow(LockstepOptionsEditorUI, uint)"/> gets raised, set to
         /// <see langword="null"/> right before <see cref="OnOptionsEditorHide(LockstepOptionsEditorUI)"/>
         /// gets raised.</para>
         /// <para><see langword="null"/> when <see cref="CurrentlyShown"/> is <see langword="false"/>.</para>
