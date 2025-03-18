@@ -4340,10 +4340,10 @@ namespace JanSharp.Internal
         public override string ExportName => currentExportName;
         public override string ExportResult => exportResult;
 
-        public override bool Export(string exportName, LockstepGameStateOptionsData[] allExportOptions)
+        public override bool StartExport(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  Export");
+            Debug.Log($"[LockstepDebug] Lockstep  StartExport");
             #endif
             if (!PrepareForExport(exportName, allExportOptions))
                 return false;
@@ -5180,7 +5180,7 @@ namespace JanSharp.Internal
                 return; // earlier than that, nope, too soon, ignore this call. It's caused by duplicate calls.
             string autosaveName = $"autosave {++autosaveCount} (tick: {currentTick})";
             ValidateExportOptions(exportOptionsForAutosave);
-            Export(autosaveName, exportOptionsForAutosave); // Export writes to the log file.
+            StartExport(autosaveName, exportOptionsForAutosave); // Export writes to the log file.
             autosaveTimerStart = Time.realtimeSinceStartup;
             SendCustomEventDelayedSeconds(nameof(AutosaveLoop), autosaveIntervalSeconds);
         }

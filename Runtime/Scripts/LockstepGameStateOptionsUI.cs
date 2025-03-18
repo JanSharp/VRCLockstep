@@ -8,7 +8,7 @@ namespace JanSharp
     /// <summary>
     /// <para>In order to have custom UI for options for the user to configure how a
     /// <see cref="LockstepGameState"/> should be exported or imported (through
-    /// <see cref="LockstepAPI.Export(string, LockstepGameStateOptionsData[])"/> or
+    /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
     /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>), derive from this
     /// class and implement each abstract function as they describe themselves through annotations.<br/>
     /// Then create an instance of this custom class in the scene and reference it in the inspector for
@@ -113,7 +113,7 @@ namespace JanSharp
         /// <summary>
         /// <para>Create an new options instance which is valid in the context of the current state of the
         /// game state, would would make it already ready for
-        /// <see cref="LockstepAPI.Export(string, LockstepGameStateOptionsData[])"/> or
+        /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>, depending on
         /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
         /// accordingly.</para>
@@ -128,7 +128,7 @@ namespace JanSharp
         /// defined in the deriving class.</para>
         /// <para>This function must update the <c>optionsToValidate</c> such that they are valid with the
         /// current game state, ready for potential use with
-        /// <see cref="LockstepAPI.Export(string, LockstepGameStateOptionsData[])"/> or
+        /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>.</para>
         /// </summary>
         protected abstract void ValidateOptionsImpl();
@@ -149,8 +149,8 @@ namespace JanSharp
         /// <summary>
         /// <para>Similar to <see cref="ValidateOptionsImpl"/> This function must update the
         /// <see cref="CurrentOptions"/> such that they are valid with the current game state, ready for
-        /// potential use with <see cref="LockstepAPI.Export(string, LockstepGameStateOptionsData[])"/> or
-        /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>.</para>
+        /// potential use with <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/>
+        /// or <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>.</para>
         /// <para>Difference is however that this function only gets called while
         /// <see cref="CurrentlyShown"/> is <see langword="true"/> and it should use all the custom
         /// <see cref="WidgetData"/> to make <see cref="CurrentOptions"/> reflect the current state of the
@@ -201,7 +201,7 @@ namespace JanSharp
 
         /// <summary>
         /// <para>Updates/Validates the given <paramref name="options"/> instance ensuring that it can be used
-        /// for an <see cref="LockstepAPI.Export(string, LockstepGameStateOptionsData[])"/> or
+        /// for an <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/> for the current
         /// state the game state is in, depending on if this is an <see cref="LockstepGameState.ExportUI"/> or
         /// <see cref="LockstepGameState.ImportUI"/> accordingly.</para>
@@ -235,7 +235,7 @@ namespace JanSharp
         /// <summary>
         /// <para>Both updates the <see cref="CurrentOptions"/> to match the current state of active
         /// <see cref="WidgetData"/> and ensures that <see cref="CurrentOptions"/> is in a valid state for
-        /// use with an <see cref="LockstepAPI.Export(string, LockstepGameStateOptionsData[])"/> or
+        /// use with an <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>, depending on
         /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
         /// accordingly.</para>

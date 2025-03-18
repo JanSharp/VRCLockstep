@@ -89,5 +89,5 @@
   - [ ] do not mention the game states which cannot be imported because they are not in the world at all
   - [ ] or put them in a fold out, which is not folded out by default
 - [ ] make all the options ui apis only usable once on init or on client begin catch up have been raised
-- [ ] rename Export to StartExport
+- [x] rename Export to StartExport
 - [x] make sure all doc `see` references are well formed. Some have been broken due to signature changes

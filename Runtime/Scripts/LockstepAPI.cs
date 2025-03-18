@@ -38,7 +38,7 @@ namespace JanSharp
         /// prefab instance). Unless the world creator explicitly set the name it defaults to the scene name,
         /// which likely is not the same as the VRChat world name.</para>
         /// <para>Included in the exported data from
-        /// <see cref="Export(string, LockstepGameStateOptionsData[])"/>.</para>
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/>.</para>
         /// <para>There is (naturally) no guarantee for this to uniquely identify a world. Entirely different
         /// worlds could share the same name.</para>
         /// <para>Guaranteed to not be <see langword="null"/>, nor be an empty string, nor contain any
@@ -341,7 +341,7 @@ namespace JanSharp
         /// </summary>
         public abstract bool CanSendInputActions { get; }
         /// <summary>
-        /// <para>Calling <see cref="Export(string, LockstepGameStateOptionsData[])"/> or
+        /// <para>Calling <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="StartImport(object[][], System.DateTime, string, string)"/> requires
         /// <see cref="LockstepEventType.OnInit"/> or <see cref="LockstepEventType.OnClientBeginCatchUp"/> to
         /// have been raised. This property can be used to check if exactly that is the case.</para>
@@ -830,7 +830,7 @@ namespace JanSharp
         /// <para>Note that this calls <see cref="ResetWriteStream"/>, which is to say if there were any calls
         /// to write to the internal write stream such as when sending input actions, all data written to the
         /// write stream so far will get cleared when calling
-        /// <see cref="Export(string, LockstepGameStateOptionsData[])"/>.</para>
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/>.</para>
         /// <para>Even though exporting naturally uses the internal write stream as it is calling
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>, it is safe
         /// to use <c>Write</c> functions to write the the internal write stream even while
@@ -855,7 +855,7 @@ namespace JanSharp
         /// <see cref="LockstepGameStateOptionsData"/> provided, matching the
         /// <see cref="LockstepGameStateOptionsUI.OptionsClassName"/>. The bare minimum would be to use
         /// <see cref="GetNewExportOptions"/> before calling
-        /// <see cref="Export(string, LockstepGameStateOptionsData[])"/> and calling
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> and calling
         /// <see cref="CleanupAllExportOptions(LockstepGameStateOptionsData[])"/> afterwards.</param>
         /// <returns><para>A base 64 encoded string containing a bit of metadata such as which game states
         /// have been exported, their version, the current UTC date and time, the <see cref="WorldName"/> and
@@ -867,7 +867,7 @@ namespace JanSharp
         /// <see langword="false"/> without an error. An error is logged when
         /// <see cref="InitializedEnoughForImportExport"/> is <see langword="false"/> or when given an invalid
         /// <paramref name="exportName"/> or <paramref name="allExportOptions"/>.</para></returns>
-        public abstract bool Export(string exportName, LockstepGameStateOptionsData[] allExportOptions);
+        public abstract bool StartExport(string exportName, LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
         /// <para>During exports running input actions is suspended, which guarantees that the game state does
         /// not get mutated throughout the process.</para>
@@ -883,7 +883,7 @@ namespace JanSharp
         public abstract bool IsExporting { get; }
         /// <summary>
         /// <para>The export name which was passed to
-        /// <see cref="Export(string, LockstepGameStateOptionsData[])"/> for the currently running
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> for the currently running
         /// export.</para>
         /// <para>Usable if <see cref="IsExporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
@@ -899,7 +899,8 @@ namespace JanSharp
         /// <summary>
         /// <para><see langword="true"/> inside of
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> when
-        /// performing an export through <see cref="Export(string, LockstepGameStateOptionsData[])"/>.</para>
+        /// performing an export through
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/>.</para>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -920,10 +921,10 @@ namespace JanSharp
         /// <para>Usable any time.</para>
         /// </summary>
         /// <param name="exportedString">The base 64 encoded string originally obtained from
-        /// <see cref="Export(string, LockstepGameStateOptionsData[])"/>. Can originate from previous
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/>. Can originate from previous
         /// instances or even previous versions of the world or even completely different worlds.</param>
         /// <param name="exportedDate">The UTC date and time at which the
-        /// <see cref="Export(string, LockstepGameStateOptionsData[])"/> call was made.</param>
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> call was made.</param>
         /// <param name="exportWorldName">
         /// <para>The <see cref="WorldName"/> at the time of exporting. Just like <see cref="WorldName"/> it
         /// does not uniquely identify worlds.</para>
@@ -931,10 +932,10 @@ namespace JanSharp
         /// "<c>\n</c>" nor "<c>\r</c>", nor have any leading or trailing space.</para>
         /// </param>
         /// <param name="exportName">The name which was passed to
-        /// <see cref="Export(string, LockstepGameStateOptionsData[])"/> at the time of exporting, which can
-        /// be <see langword="null"/>. It is guaranteed to never contain "<c>\n</c>" nor "<c>\r</c>". If the
-        /// imported string was manually fabricated and it did contain newlines then those will silently get
-        /// replaced with white spaces.</param>
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> at the time of exporting, which
+        /// can be <see langword="null"/>. It is guaranteed to never contain "<c>\n</c>" nor "<c>\r</c>". If
+        /// the imported string was manually fabricated and it did contain newlines then those will silently
+        /// get replaced with white spaces.</param>
         /// <returns><see cref="LockstepImportedGS"/>[] importedGameStates, or <see langword="null"/> when the
         /// given <paramref name="exportedString"/> was invalid.</returns>
         public abstract object[][] ImportPreProcess(

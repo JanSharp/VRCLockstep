@@ -89,8 +89,8 @@ namespace JanSharp
         private LockstepGameStateOptionsData optionsForCurrentImport;
         /// <summary>
         /// <para>The instance of export options used for the current
-        /// <see cref="LockstepAPI.Export(string, LockstepGameStateOptionsData[])"/> for this game state. In
-        /// the export process these options get set on each game state before any call to
+        /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> for this game state.
+        /// In the export process these options get set on each game state before any call to
         /// <see cref="SerializeGameState(bool, LockstepGameStateOptionsData)"/>.</para>
         /// <para>Class type is defined by <see cref="LockstepGameStateOptionsUI.OptionsClassName"/> on the
         /// <see cref="ExportUI"/>. Cast it to that type in order to access the actual options.</para>

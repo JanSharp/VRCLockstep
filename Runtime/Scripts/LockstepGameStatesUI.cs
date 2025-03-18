@@ -422,7 +422,7 @@ namespace JanSharp.Internal
             string exportName = exportNameField.text.Trim().Replace('\n', ' ').Replace('\r', ' ');
             if (exportName == "")
                 exportName = null;
-            if (lockstep.Export(exportName, lockstep.GetAllCurrentExportOptions(weakReferences: true)))
+            if (lockstep.StartExport(exportName, lockstep.GetAllCurrentExportOptions(weakReferences: true)))
                 waitingForExportToFinish = true;
             else
                 Debug.LogError("[Lockstep] Export failed to start, this is supposed to be impossible.");
