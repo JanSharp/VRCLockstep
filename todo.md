@@ -45,7 +45,7 @@
 - [x] add helper functions to check if any game state's custom import UI is currently shown
 - [x] null options must be impossible while an options UI is shown
 - [x] expose gameStatesCountSupportingExport in the lockstep api
-- [x] add gameStatesSupportingExport both to lockstep and its api
+- [x] add gameStatesSupportingImportExport both to lockstep and its api
 - [x] rename cancel buttons to close, because they really don't cancel anything. They just close, just like the X
 - [x] do not sort game states by them supporting import export in lockstep editor scripting
 - [x] think about ValidateOptions again for import and probably also export
@@ -74,6 +74,7 @@
 - [x] change exporting to always delay 1 frame between game state serializations
 - [ ] handle return error messages from game state deserialization which gets spread out across frames. For LJ it might be fine as is, potentially multiple notifications, though for imports there's a property part of the lockstep api for the error message inside of the OnImportedGameState event which as it stands right now is not handled properly. That either needs to be removed, there needs to be a limitation to one error message from deserialization or idk something else
   - [ ] probably the best way to handle this is to treat it as though the game state finished importing at this point, and if it flagged to continue next frame while also returning an error message that is invalid and lockstep raises an error and ignores the flag
+  - [ ] or ignore the error message until it's no longer flagged to continue next frame. Also a very reasonable approach
 - [x] change all prefixes in debug messages in the dev folder to `[LockstepTest]`
 - [x] expose read stream position
 - [x] option to spread game state serialization out across frames. Except that the export api goes from nice to "oh god damn it now we need callbacks"
@@ -82,7 +83,10 @@
 - [x] ~~remove the serialized options from importedGS because it needs to be part of an input action before IsImporting gets set to true and the event for it is raised, and adding another IA to the import process makes the api worse so import options need to be part of the start import IA~~ never mind, import options data is now part of the second input action and this is required anyway because
 - [x] mess with read streams so import option deserialization can start reading the associated game state already
 - [ ] several raise event function should not touch the is in game state safe event flag because that flag is already true when those events get raised
-- [ ] in the deserialization docs for import options mention that it can also start deserializing the game state data itself after deserializing import options data. And then depending on the implementation it can also set the read stream position to 0 in the actual deserialization of the game state itself, depending on if the data that was deserialized got saved separately in variables or read and discarded.
+- [x] ~~in the deserialization docs for import options mention that it can also start deserializing the game state data itself after deserializing import options data. And then depending on the implementation it can also set the read stream position to 0 in the actual deserialization of the game state itself, depending on if the data that was deserialized got saved separately in variables or read and discarded.~~
+  - [ ] remove this stupid useless feature that I thought was needed for whatever reason which is import options deserialization having the ability to continue reading past its end at which point it is reading the associated game state data. This is stupid, stop it
 - [ ] in the info section for imports after a valid string has been pasted into the text field only list the game states which will be imported. Either
   - [ ] do not mention the game states which cannot be imported because they are not in the world at all
+  - [ ] or put them in a fold out, which is not folded out by default
 - [ ] make all the options ui apis only usable once on init or on client begin catch up have been raised
+- [ ] rename Export to StartExport

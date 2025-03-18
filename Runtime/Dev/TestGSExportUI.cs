@@ -37,7 +37,7 @@ namespace JanSharp
             currentOptions.shouldExport = shouldExportWidget.Value;
         }
 
-        protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
+        protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui, uint importedDataVersion)
         {
             Debug.Log($"[LockstepTest] TestGSExportUI  OnOptionsEditorShow");
             shouldExportWidget.Value = currentOptions.shouldExport;

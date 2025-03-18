@@ -39,7 +39,7 @@ namespace JanSharp
             currentOptions.shouldImport = shouldImportWidget.Value;
         }
 
-        protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui)
+        protected override void OnOptionsEditorShow(LockstepOptionsEditorUI ui, uint importedDataVersion)
         {
             Debug.Log($"[LockstepTest] TestGSImportUI  OnOptionsEditorShow");
             if (!testGameState.HasImportData())

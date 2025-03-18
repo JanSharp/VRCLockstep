@@ -4148,9 +4148,8 @@ namespace JanSharp.Internal
                 if (exportUI.CurrentlyShown)
                     exportUI.HideOptionsEditor();
                 LockstepGameStateOptionsData options = allExportOptions[i];
-                exportUI.CurrentOptions = options;
                 if (options != null)
-                    exportUI.ShowOptionsEditor(ui);
+                    exportUI.ShowOptionsEditor(ui, options);
             }
         }
 
@@ -4166,7 +4165,6 @@ namespace JanSharp.Internal
                     continue;
                 if (exportUI.CurrentlyShown)
                     exportUI.HideOptionsEditor();
-                exportUI.CurrentOptions = null;
             }
         }
 
@@ -4313,13 +4311,10 @@ namespace JanSharp.Internal
                     continue;
                 LockstepGameStateOptionsUI importUI = gameState.ImportUI;
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
-                if (importUI == null)
-                    continue;
-                importUI.CurrentOptions = importOptions;
-                if (importOptions == null)
+                if (importUI == null || importOptions == null)
                     continue;
                 SetReadStream(LockstepImportedGS.GetBinaryData(importedGS));
-                importUI.ShowOptionsEditor(ui);
+                importUI.ShowOptionsEditor(ui, importOptions);
             }
         }
 
@@ -4334,7 +4329,6 @@ namespace JanSharp.Internal
                 if (importUI == null || !importUI.CurrentlyShown)
                     continue;
                 importUI.HideOptionsEditor();
-                importUI.CurrentOptions = null;
             }
         }
 

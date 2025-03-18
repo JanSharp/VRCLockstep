@@ -643,18 +643,17 @@ namespace JanSharp
         /// <summary>
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> editor UIs and calls
-        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI)"/> for each non
-        /// <see langword="null"/> entry in <paramref name="allExportOptions"/> using the matching (and also
-        /// non <see langword="null"/>) <see cref="LockstepGameState.ExportUI"/> from
+        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
+        /// LockstepGameStateOptionsData)"/> for each non <see langword="null"/> entry in
+        /// <paramref name="allExportOptions"/> using the matching (and also non <see langword="null"/>)
+        /// <see cref="LockstepGameState.ExportUI"/> from
         /// <see cref="GameStatesSupportingImportExport"/>.</para>
-        /// <para>Updates each <see cref="LockstepGameStateOptionsUI.CurrentOptions"/> to be either
-        /// <see langword="null"/> if it is not shown, or sets it to the associated options data from
-        /// <paramref name="allExportOptions"/>.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
-        /// <param name="ui">The ui instances which gets passed along to
-        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI)"/>.</param>
+        /// <param name="ui">The ui instance which gets passed along to
+        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
+        /// LockstepGameStateOptionsData)"/>.</param>
         /// <param name="allExportOptions">Must not be <see langword="null"/>.</param>
         public abstract void ShowExportOptionsEditor(
             LockstepOptionsEditorUI ui,
@@ -662,9 +661,7 @@ namespace JanSharp
         /// <summary>
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> non <see langword="null"/>
-        /// <see cref="LockstepGameState.ExportUI"/> in <see cref="GameStatesSupportingImportExport"/> and
-        /// sets every <see cref="LockstepGameStateOptionsUI.CurrentOptions"/> to
-        /// <see langword="null"/>.</para>
+        /// <see cref="LockstepGameState.ExportUI"/> in <see cref="GameStatesSupportingImportExport"/>.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
@@ -791,19 +788,24 @@ namespace JanSharp
         /// <summary>
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> editor UIs and calls
-        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI)"/> for each non
+        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
+        /// LockstepGameStateOptionsData)"/> for each non
         /// <see langword="null"/> <see cref="LockstepImportedGS.GetImportOptions(object[])"/> in
         /// <paramref name="importedGameStates"/> using the matching (and also
         /// non <see langword="null"/>) <see cref="LockstepGameState.ImportUI"/> from
         /// <see cref="GameStatesSupportingImportExport"/>.</para>
-        /// <para>Updates each <see cref="LockstepGameStateOptionsUI.CurrentOptions"/> to be either
-        /// <see langword="null"/> if it is not shown, or sets it to the associated options data from
-        /// <paramref name="importedGameStates"/>.</para>
+        /// <para>Importantly it also <see cref="SetReadStream(byte[])"/> the
+        /// <see cref="LockstepImportedGS.GetBinaryData(object[])"/> before calling
+        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
+        /// LockstepGameStateOptionsData)"/>, which is required by the specification of the ShowOptionsEditor
+        /// api in order to allow import options to read data from the associated serialized game state to
+        /// populate dynamic options depending on the data to be imported.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
-        /// <param name="ui">The ui instances which gets passed along to
-        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI)"/>.</param>
+        /// <param name="ui">The ui instance which gets passed along to
+        /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
+        /// LockstepGameStateOptionsData)"/>.</param>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>.</param>
@@ -813,9 +815,7 @@ namespace JanSharp
         /// <summary>
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> non <see langword="null"/>
-        /// <see cref="LockstepGameState.ImportUI"/> in <see cref="GameStatesSupportingImportExport"/> and
-        /// sets every <see cref="LockstepGameStateOptionsUI.CurrentOptions"/> to
-        /// <see langword="null"/>.</para>
+        /// <see cref="LockstepGameState.ImportUI"/> in <see cref="GameStatesSupportingImportExport"/>.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
@@ -835,6 +835,12 @@ namespace JanSharp
         /// to use <c>Write</c> functions to write the the internal write stream even while
         /// <see cref="IsExporting"/> is <see langword="true"/> (outside of SerializeGameState itself),
         /// because lockstep uses an effectively separate write stream for exporting.</para>
+        /// <para>Before any
+        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> calls,
+        /// <see cref="LockstepGameState.OptionsForCurrentExport"/> for each game state in
+        /// <see cref="GameStatesSupportingImportExport"/> gets set to the associated
+        /// <see cref="LockstepGameStateOptionsData"/> from <paramref name="allExportOptions"/>. For further
+        /// information about export options read <paramref name="allExportOptions"/> annotations.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
@@ -940,23 +946,31 @@ namespace JanSharp
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>. This requires
         /// <see cref="InitializedEnoughForImportExport"/> being <see langword="true"/>, as well as
         /// <see cref="IsImporting"/> being <see langword="false"/>.</para>
-        /// <para>The given <paramref name="importedGameStates"/> must be populated with
-        /// <see cref="LockstepGameStateOptionsData"/> for all game states where
+        /// <para>All <see cref="LockstepImportedGS"/> in <paramref name="importedGameStates"/> which have a
+        /// non <see langword="null"/> <see cref="LockstepImportedGS.GetErrorMsg(object[])"/> are
+        /// ignored.</para>
+        /// <para>The given <paramref name="importedGameStates"/> must have non <see langword="null"/>
+        /// <see cref="LockstepImportedGS.GetImportOptions(object[])"/> for all game states where
         /// <see cref="LockstepGameState.ImportUI"/> is non <see langword="null"/>. The bare minimum would be
         /// to call <see cref="FillInMissingImportOptionsWithDefaults(object[][])"/> before calling
         /// <see cref="StartImport(object[][], System.DateTime, string, string)"/>, and then calling
-        /// <see cref="CleanupImportedGameStatesData(object[][])"/>.</para>
+        /// <see cref="CleanupImportedGameStatesData(object[][])"/> afterwards.</para>
         /// <para>The import process consists of 2 input actions internally. A start input action which
         /// contains just a bit of metadata. When it runs the <see cref="LockstepEventType.OnImportStart"/>
         /// event ultimately gets raised.</para>
         /// <para>The second input action is potentially very large as it contains all of the serialized
-        /// import options and serialized game states, which is all custom user data. However since it is just
-        /// one input action, there are no other input actions which could run in the middle of the import
-        /// process, when import options and game states actually get deserialized.</para>
-        /// <para>The system automatically spreads importing of each import options and importing of each game
-        /// state out across frames, however custom code can also call <see cref="FlagToContinueNextFrame"/>
-        /// to further spread out import work across frames to reduce lag spikes. Or simply to ensure that the
-        /// 10 second timeout for running Udon code is never reached.</para>
+        /// import options and serialized game states, which is all custom user data.</para>
+        /// <para>The system automatically spreads importing of each import options instance and importing of
+        /// each game state out across frames, however custom code can also call
+        /// <see cref="FlagToContinueNextFrame"/> to further spread out import work across frames to reduce
+        /// lag spikes. Or simply to ensure that the 10 second timeout for running Udon code is never
+        /// reached.</para>
+        /// <para>Before any
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// calls, <see cref="LockstepGameState.OptionsForCurrentImport"/> for each game state in
+        /// <see cref="GameStatesSupportingImportExport"/> gets set to the associated
+        /// <see cref="LockstepGameStateOptionsData"/> which got deserialized. In other words all import
+        /// options get deserialized first, then all game states.</para>
         /// <para>Note that this calls <see cref="ResetWriteStream"/>, which is to say if there were any calls
         /// to write to the internal write stream such as when sending input actions, all data written to the
         /// write stream so far will get cleared when calling
@@ -966,7 +980,10 @@ namespace JanSharp
         /// </summary>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
-        /// <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>.</param>
+        /// <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>. Regardless of
+        /// the order of game states in the given array, game states will be imported in the order of
+        /// <see cref="GameStatesSupportingImportExport"/>, skipping any non imported game states of
+        /// course.</param>
         /// <param name="exportDate">The UTC date and time obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>.</param>
         /// <param name="exportWorldName">The name obtained from
@@ -1060,7 +1077,9 @@ namespace JanSharp
         /// </summary>
         public abstract string ImportErrorMessage { get; }
         /// <summary>
-        /// <para>The version of the data that has just been imported.</para>
+        /// <para>The version of the data that has just been imported, which is what
+        /// <see cref="LockstepGameState.GameStateDataVersion"/> was for the <see cref="ImportedGameState"/>
+        /// at at the time of the export.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/> and
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
         /// even though that gets this value through the parameter anyway, but why not.</para>
