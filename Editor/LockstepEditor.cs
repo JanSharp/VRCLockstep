@@ -37,7 +37,7 @@ namespace JanSharp.Internal
         {
             BuildDependencyTree();
             OnBuildUtil.RegisterAction(PrepareDependencyTreeOnBuild, -2);
-            OnBuildUtil.RegisterType<Lockstep>(PreOnBuild, -1); // TODO: change this to use cumulative.
+            OnBuildUtil.RegisterType<Lockstep>(PreOnBuild, -1);
             OnBuildUtil.RegisterType<UdonSharpBehaviour>(InputActionsOnBuild, 0);
             OnBuildUtil.RegisterType<LockstepGameState>(GameStatesOnBuild, 0);
             OnBuildUtil.RegisterType<Lockstep>(PostOnBuild, 1);
@@ -187,12 +187,7 @@ namespace JanSharp.Internal
 
         private static bool PreOnBuild(Lockstep lockstep)
         {
-            if (LockstepOnBuild.lockstep != null && LockstepOnBuild.lockstep != lockstep)
-            {
-                Debug.LogError("[Lockstep] There must only be one instance "
-                    + $"of the {nameof(Lockstep)} script in a scene.", lockstep);
-                return false;
-            }
+            // Lockstep is using the SingletonScriptAttribute which ensures there is only 1 instance.
             LockstepOnBuild.lockstep = lockstep;
 
             allGameStates.Clear();
