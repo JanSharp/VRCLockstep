@@ -83,10 +83,6 @@ namespace JanSharp.Internal
             localPlayer = Networking.LocalPlayer;
             exportOptionsUI.Init();
             importOptionsUI.Init();
-            // TODO: do this on init / on client begin catch up
-            exportOptions = lockstep.GetNewExportOptions();
-            autosaveOptions = exportOptions;
-            importOptions = lockstep.GetNewImportOptions();
         }
 
         private void OnEnable()
@@ -205,6 +201,8 @@ namespace JanSharp.Internal
         public void OnImportSerializedTextValueChangedDelayed()
         {
             onImportSerializedTextValueChangedDelayedQueued = false;
+            if (!isInitialized)
+                return;
             // Reset regardless, because 2 consecutive valid yet different imports could be pasted in.
             ResetImport(leaveInputFieldUntouched: true);
 
@@ -302,6 +300,8 @@ namespace JanSharp.Internal
 
         public void OnAutosaveUsesExportOptionsToggleValueChanged()
         {
+            if (!isInitialized)
+                return;
             if (AutosaveUsesExportOptions == autosaveUsesExportOptionsToggle.isOn)
                 return;
             if (AutosaveUsesExportOptions)
@@ -351,6 +351,8 @@ namespace JanSharp.Internal
 
         public void OnAutosaveToggleValueChanged()
         {
+            if (!isInitialized)
+                return;
             lockstep.ExportOptionsForAutosave = autosaveToggle.isOn
                 ? lockstep.GetAllCurrentExportOptions(weakReferences: true)
                 : null;
@@ -502,11 +504,19 @@ namespace JanSharp.Internal
         private void OnInitialized()
         {
             isInitialized = true;
+            exportOptions = lockstep.GetNewExportOptions();
+            autosaveOptions = exportOptions;
+            importOptions = lockstep.GetNewImportOptions();
             openImportWindowButton.interactable = true;
             openExportWindowButton.interactable = true;
             openAutosaveWindowButton.interactable = true;
             UpdateAllConfirmButtons();
             TryStartAutosaveTimerUpdateLoop();
+            // Things that other scripts could have already modified but were ignored because lockstep was not
+            // initialized yet.
+            OnAutosaveToggleValueChanged();
+            OnAutosaveUsesExportOptionsToggleValueChanged();
+            OnImportSerializedTextValueChanged();
         }
 
         [LockstepEvent(LockstepEventType.OnInit)]

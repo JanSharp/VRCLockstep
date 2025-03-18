@@ -1148,8 +1148,10 @@ namespace JanSharp
         /// <see cref="LockstepEventType.OnExportOptionsForAutosaveChanged"/> gets raised 1 frame delayed to
         /// prevent recursion, subsequently if there are multiple changes within a frame the event only gets
         /// raised once (you can thank Udon).</para>
-        /// <para>All APIs related to autosaving are local only.</para>
         /// <para>Default: <see langword="null"/>.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Not game state safe, all APIs related to autosaving are local only.</para>
         /// </summary>
         public abstract LockstepGameStateOptionsData[] ExportOptionsForAutosave { get; set; }
         /// <summary>
