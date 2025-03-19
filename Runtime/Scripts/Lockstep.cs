@@ -176,7 +176,7 @@ namespace JanSharp.Internal
         private int suspendedGSIndexInExport = 0;
         private int currentIncomingGSDataIndex = 0;
         /// <summary>
-        /// <para>(object[] {int optionsByteCount, byte[] optionsAndGSBytes, byte[] gsBytes, int indexInGSBytes})[]</para>
+        /// <para>(object[] {int optionsByteCount, byte[] optionsBytes, byte[] gsBytes})[]</para>
         /// </summary>
         private object[][] incomingGameStateData = null;
 
@@ -4890,15 +4890,13 @@ namespace JanSharp.Internal
                 {
                     int optionsByteCount = (int)ReadSmallUInt();
                     int gsByteCount = (int)ReadSmallUInt();
-                    byte[] optionsAndGSBytes = ReadBytes(optionsByteCount + gsByteCount);
-                    byte[] gsBytes = new byte[gsByteCount];
-                    System.Array.Copy(optionsAndGSBytes, optionsByteCount, gsBytes, 0, gsByteCount);
+                    byte[] optionsBytes = ReadBytes(optionsByteCount);
+                    byte[] gsBytes = ReadBytes(gsByteCount);
                     incomingGameStateData[i] = new object[]
                     {
                         optionsByteCount,
-                        optionsAndGSBytes,
+                        optionsBytes,
                         gsBytes,
-                        0, // indexInGSBytes
                     };
                 }
                 suspendedInImportOptionsDeserialization = true;
@@ -4933,7 +4931,7 @@ namespace JanSharp.Internal
             #endif
             object[] incomingData = incomingGameStateData[currentIncomingGSDataIndex];
             if (!flaggedToContinueInsideOfGSImport)
-                SetReadStream((byte[])incomingData[1]/*optionsAndGSBytes*/);
+                SetReadStream((byte[])incomingData[1]/*optionsBytes*/);
             LockstepGameState gameState = gameStatesBeingImported[currentIncomingGSDataIndex];
             isContinuationFromPrevFrame = flaggedToContinueInsideOfGSImport;
             flaggedToContinueInsideOfGSImport = false;
@@ -4944,7 +4942,6 @@ namespace JanSharp.Internal
                 return;
             }
             gameState.SetProgramVariable("optionsForCurrentImport", importOptions);
-            incomingData[3]/*indexInGSBytes*/ = System.Math.Max(0, readStreamPosition - (int)incomingData[0]/*optionsByteCount*/);
             currentIncomingGSDataIndex++;
             if (currentIncomingGSDataIndex != gameStatesBeingImported.Length)
                 return;
@@ -4978,7 +4975,7 @@ namespace JanSharp.Internal
             {
                 object[] incomingData = incomingGameStateData[currentIncomingGSDataIndex++];
                 SetReadStream((byte[])incomingData[2]/*gsBytes*/);
-                readStreamPosition = (int)incomingData[3]/*indexInGSBytes*/;
+                ResetReadStream();
                 importedGameState = gameStatesBeingImported[gameStatesBeingImportedFinishedCount];
                 importedDataVersion = gameStatesBeingImportedDataVersions[gameStatesBeingImportedFinishedCount];
             }
