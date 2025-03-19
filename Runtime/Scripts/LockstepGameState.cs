@@ -179,8 +179,11 @@ namespace JanSharp
         /// containing custom options to use for the current import. Must be cast to the proper type in order
         /// to access the custom options, as defined by the
         /// <see cref="LockstepGameStateOptionsUI.OptionsClassName"/> on the <see cref="ImportUI"/>.
-        /// <see cref="OptionsForCurrentImport"/> holds a reference to the same options instance.<</param>
-        /// <returns><para>A non <see langword="null"/> return value indicates failure.</para>
+        /// <see cref="OptionsForCurrentImport"/> holds a reference to the same options instance.</param>
+        /// <returns>
+        /// <para>The return value is ignored if <see cref="LockstepAPI.FlagToContinueNextFrame"/> is was
+        /// called. In other words the return value is only used when deserialization truly finished.</para>
+        /// <para>A non <see langword="null"/> return value indicates failure.</para>
         /// <para>Failing at deserializing late joiner data, so when <paramref name="isImport"/> is
         /// <see langword="false"/>, means the system is in an unrecoverable state on this client and should
         /// therefore only ever be done to fail fast, which improves debugging.</para>
@@ -191,7 +194,8 @@ namespace JanSharp
         /// resort.</para>
         /// <para>Either way, whenever an error message is returned, a
         /// <see cref="LockstepEventType.OnLockstepNotification"/> is sent where the
-        /// <see cref="LockstepAPI.NotificationMessage"/> contains the given error message.</para></returns>
+        /// <see cref="LockstepAPI.NotificationMessage"/> contains the given error message.</para>
+        /// </returns>
         public abstract string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions);
     }
 }

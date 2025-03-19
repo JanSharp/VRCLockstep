@@ -72,9 +72,9 @@
 - [x] change importing to just be one big input action which gets spread out across frames
 - [x] maybe change importing to first read all incoming game states into separate arrays and then deserialize those one by one to prevent over-read in one game state breaking the attempt to read the next game state which makes debugging even worse, it's already bad for serialization/deserialization
 - [x] change exporting to always delay 1 frame between game state serializations
-- [ ] handle return error messages from game state deserialization which gets spread out across frames. For LJ it might be fine as is, potentially multiple notifications, though for imports there's a property part of the lockstep api for the error message inside of the OnImportedGameState event which as it stands right now is not handled properly. That either needs to be removed, there needs to be a limitation to one error message from deserialization or idk something else
-  - [ ] probably the best way to handle this is to treat it as though the game state finished importing at this point, and if it flagged to continue next frame while also returning an error message that is invalid and lockstep raises an error and ignores the flag
-  - [ ] or ignore the error message until it's no longer flagged to continue next frame. Also a very reasonable approach
+- [x] handle return error messages from game state deserialization which gets spread out across frames. For LJ it might be fine as is, potentially multiple notifications, though for imports there's a property part of the lockstep api for the error message inside of the OnImportedGameState event which as it stands right now is not handled properly. That either needs to be removed, there needs to be a limitation to one error message from deserialization or idk something else
+  - [x] probably the best way to handle this is to treat it as though the game state finished importing at this point, and if it flagged to continue next frame while also returning an error message that is invalid and lockstep raises an error and ignores the flag
+  - [x] or ignore the error message until it's no longer flagged to continue next frame. Also a very reasonable approach
 - [x] change all prefixes in debug messages in the dev folder to `[LockstepTest]`
 - [x] expose read stream position
 - [x] option to spread game state serialization out across frames. Except that the export api goes from nice to "oh god damn it now we need callbacks"

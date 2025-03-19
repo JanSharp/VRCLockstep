@@ -2898,10 +2898,10 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ProcessNextLJSerializedGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
             #endif
             isContinuationFromPrevFrame = false;
-            if (errorMessage != null)
-                RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
             if (flaggedToContinueNextFrame)
                 return;
+            if (errorMessage != null)
+                RaiseOnLockstepNotification($"Receiving late joiner data for '{allGameStates[gameStateIndex].GameStateDisplayName}' resulted in an error:\n{errorMessage}");
             LockstepGameStateOptionsUI exportUI = allGameStates[gameStateIndex].ExportUI;
             LockstepGameStateOptionsUI importUI = allGameStates[gameStateIndex].ImportUI;
             if (exportUI != null)
@@ -4992,13 +4992,13 @@ namespace JanSharp.Internal
             #endif
             isContinuationFromPrevFrame = false; // Must be false inside of the other raised events down below.
             isDeserializingForImport = false;
-            if (importErrorMessage != null)
-                RaiseOnLockstepNotification($"Importing '{importedGameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
             if (flaggedToContinueNextFrame)
             {
                 flaggedToContinueInsideOfGSImport = true;
                 return;
             }
+            if (importErrorMessage != null)
+                RaiseOnLockstepNotification($"Importing '{importedGameState.GameStateDisplayName}' resulted in an error:\n{importErrorMessage}");
             gameStatesBeingImportedFinishedCount++; // Before raising the event.
             RaiseOnImportedGameState();
             importedGameState = null;
