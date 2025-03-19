@@ -85,9 +85,10 @@
 - [x] several raise event function should not touch the is in game state safe event flag because that flag is already true when those events get raised
 - [x] ~~in the deserialization docs for import options mention that it can also start deserializing the game state data itself after deserializing import options data. And then depending on the implementation it can also set the read stream position to 0 in the actual deserialization of the game state itself, depending on if the data that was deserialized got saved separately in variables or read and discarded.~~
   - [x] remove this stupid useless feature that I thought was needed for whatever reason which is import options deserialization having the ability to continue reading past its end at which point it is reading the associated game state data. This is stupid, stop it
-- [ ] in the info section for imports after a valid string has been pasted into the text field only list the game states which will be imported. Either
-  - [ ] do not mention the game states which cannot be imported because they are not in the world at all
-  - [ ] or put them in a fold out, which is not folded out by default
+- [x] in the info section for imports after a valid string has been pasted into the text field only list the game states which will be imported. Either
+  - [x] ~~do not mention the game states which cannot be imported because they are not in the world at all~~
+  - [x] ~~or put them in a fold out, which is not folded out by default~~
+  - [x] show all game states in a foldout underneath the little info message about the imported data
 - [x] make all the options ui apis only usable once on init or on client begin catch up have been raised
 - [x] rename Export to StartExport
 - [x] make sure all doc `see` references are well formed. Some have been broken due to signature changes

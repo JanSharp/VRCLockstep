@@ -222,26 +222,50 @@ namespace JanSharp.Internal
                 return;
             }
 
+            DataDictionary importedGSByInternalName = new DataDictionary();
+            foreach (object[] importedGS in importedGameStates)
+                importedGSByInternalName.Add(LockstepImportedGS.GetInternalName(importedGS), new DataToken(importedGS));
+
             LabelWidgetData mainInfoLabel = importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewLabel(""));
+            FoldOutWidgetData gsFoldOut = importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewFoldOutScope("Game States", true));
 
             int canImportCount = 0;
-            foreach (object[] importedGS in importedGameStates)
+            foreach (LockstepGameState gameState in lockstep.AllGameStates)
             {
-                string errorMsg = LockstepImportedGS.GetErrorMsg(importedGS);
-                if (errorMsg == null)
+                string msg;
+                if (!importedGSByInternalName.TryGetValue(gameState.GameStateInternalName, out DataToken importedGSToken))
+                    msg = gameState.GameStateSupportsImportExport
+                        ? "<color=#888888>not in imported data, unchanged"
+                        : "<color=#888888>does not support import";
+                else
                 {
-                    canImportCount++;
-                    continue;
+                    object[] importedGS = (object[])importedGSToken.Reference;
+                    msg = LockstepImportedGS.GetErrorMsg(importedGS);
+                    if (msg != null)
+                        msg = "<color=#ffaaaa>" + msg;
+                    else
+                    {
+                        canImportCount++;
+                        msg = "<color=#99ccff>to import";
+                    }
                 }
-                string displayName = LockstepImportedGS.GetDisplayName(importedGS);
-                importOptionsUI.Info.AddChild(
-                    (LabelWidgetData)importOptionsUI.WidgetManager.NewLabel($"{displayName} - {errorMsg}").StdMove());
+                gsFoldOut.AddChild((LabelWidgetData)importOptionsUI.WidgetManager.NewLabel(
+                    $"<size=80%>{gameState.GameStateDisplayName} - {msg}").StdMove());
             }
             anyImportedGSHasNoErrors = canImportCount != 0;
 
-            // foreach (LockstepImportGSEntry entry in importGSEntries)
-            //     if (!entry.mainToggle.isOn)
-            //         entry.infoLabel.text = "not in imported data, unchanged";
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
+                if (gameState != null)
+                    continue;
+                string displayName = LockstepImportedGS.GetDisplayName(importedGS);
+                string errorMsg = LockstepImportedGS.GetErrorMsg(importedGS);
+                gsFoldOut.AddChild((LabelWidgetData)importOptionsUI.WidgetManager.NewLabel(
+                    $"<size=80%>{displayName} - <color=#ffaaaa>{errorMsg}").StdMove());
+            }
+
+            gsFoldOut.DecrementRefsCount();
 
             int cannotImportCount = importedGameStates.Length - canImportCount;
             mainInfoLabel.Label = $"Can import {(cannotImportCount == 0 ? "all " : "")}{canImportCount}"
