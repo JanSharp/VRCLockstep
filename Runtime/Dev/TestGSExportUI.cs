@@ -13,9 +13,9 @@ namespace JanSharp
 
         private ToggleFieldWidgetData shouldExportWidget;
 
-        public override LockstepGameStateOptionsData NewOptions()
+        protected override LockstepGameStateOptionsData NewOptionsImpl()
         {
-            Debug.Log($"[LockstepTest] TestGSExportUI  NewOptions");
+            Debug.Log($"[LockstepTest] TestGSExportUI  NewOptionsImpl");
             return wannaBeClasses.New<TestGSExportOptions>(nameof(TestGSExportOptions));
         }
 

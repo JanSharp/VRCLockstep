@@ -120,8 +120,31 @@ namespace JanSharp
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
-        /// <returns>A new instance of the <see cref="OptionsClassName"/> class.</returns>
-        public abstract LockstepGameStateOptionsData NewOptions();
+        /// <returns>A new instance of the <see cref="OptionsClassName"/> class, must not be
+        /// <see langword="null"/>.</returns>
+        protected abstract LockstepGameStateOptionsData NewOptionsImpl();
+        /// <summary>
+        /// <para>Creates an new options instance which is valid in the context of the current state of the
+        /// game state, would would make it already ready for
+        /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
+        /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>, depending on
+        /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
+        /// accordingly.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// </summary>
+        /// <returns>A new instance of the <see cref="OptionsClassName"/> class. Errors and returns
+        /// <see langword="null"/> if <see cref="LockstepAPI.IsInitialized"/> is <see langword="false"/>.
+        /// </returns>
+        public LockstepGameStateOptionsData NewOptions()
+        {
+            if (!lockstep.IsInitialized)
+            {
+                Debug.LogError($"[Lockstep] Attempt to call NewOptions before IsInitialized is true.");
+                return null;
+            }
+            return NewOptionsImpl();
+        }
         /// <summary>
         /// <para>When deriving from <see cref="LockstepGameStateOptionsUI"/>, there must be an
         /// <c>optionsToValidate</c> field with the same type as specified by <see cref="OptionsClassName"/>

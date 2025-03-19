@@ -88,7 +88,7 @@
 - [ ] in the info section for imports after a valid string has been pasted into the text field only list the game states which will be imported. Either
   - [ ] do not mention the game states which cannot be imported because they are not in the world at all
   - [ ] or put them in a fold out, which is not folded out by default
-- [ ] make all the options ui apis only usable once on init or on client begin catch up have been raised
+- [x] make all the options ui apis only usable once on init or on client begin catch up have been raised
 - [x] rename Export to StartExport
 - [x] make sure all doc `see` references are well formed. Some have been broken due to signature changes
 - [ ] if in single player, is it possible for the system to get stuck infinitely running input actions to be run in the next frame if those input actions send input actions themselves which send input actions which send input actions... infinitely?

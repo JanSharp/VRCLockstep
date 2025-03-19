@@ -15,9 +15,9 @@ namespace JanSharp
 
         private ToggleFieldWidgetData shouldImportWidget;
 
-        public override LockstepGameStateOptionsData NewOptions()
+        protected override LockstepGameStateOptionsData NewOptionsImpl()
         {
-            Debug.Log($"[LockstepTest] TestGSImportUI  NewOptions");
+            Debug.Log($"[LockstepTest] TestGSImportUI  NewOptionsImpl");
             return wannaBeClasses.New<TestGSImportOptions>(nameof(TestGSImportOptions));
         }
 
