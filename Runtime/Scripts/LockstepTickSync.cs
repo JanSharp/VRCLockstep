@@ -112,13 +112,13 @@ namespace JanSharp.Internal
         public override void OnDeserialization()
         {
             readPosition = 0;
-            lockstep.SetLastRunnableTick(DataStream.ReadSmallUInt(ref syncedData, ref readPosition));
+            lockstep.SetLastRunnableTick(DataStream.ReadSmallUInt(syncedData, ref readPosition));
             int length = syncedData.Length;
             while (readPosition < length)
             {
-                uint tickToRunIn = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
-                uint playerId = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
-                uint inputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref readPosition);
+                uint tickToRunIn = DataStream.ReadSmallUInt(syncedData, ref readPosition);
+                uint playerId = DataStream.ReadSmallUInt(syncedData, ref readPosition);
+                uint inputActionIndex = DataStream.ReadSmallUInt(syncedData, ref readPosition);
                 lockstep.AssociateIncomingInputActionWithTick(
                     tickToRunIn,
                     ((ulong)playerId << Lockstep.PlayerIdKeyShift) | (ulong)inputActionIndex

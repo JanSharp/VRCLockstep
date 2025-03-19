@@ -3801,29 +3801,29 @@ namespace JanSharp.Internal
         }
 
         private void ResetReadStream() => readStreamPosition = 0;
-        public override sbyte ReadSByte() => DataStream.ReadSByte(ref readStream, ref readStreamPosition);
-        public override byte ReadByte() => DataStream.ReadByte(ref readStream, ref readStreamPosition);
+        public override sbyte ReadSByte() => DataStream.ReadSByte(readStream, ref readStreamPosition);
+        public override byte ReadByte() => DataStream.ReadByte(readStream, ref readStreamPosition);
         public override void ReadFlags(out bool flag1)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
         }
         public override void ReadFlags(out bool flag1, out bool flag2)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
             flag2 = (value & 2) != 0;
         }
         public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
             flag2 = (value & 2) != 0;
             flag3 = (value & 4) != 0;
         }
         public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
             flag2 = (value & 2) != 0;
             flag3 = (value & 4) != 0;
@@ -3831,7 +3831,7 @@ namespace JanSharp.Internal
         }
         public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
             flag2 = (value & 2) != 0;
             flag3 = (value & 4) != 0;
@@ -3840,7 +3840,7 @@ namespace JanSharp.Internal
         }
         public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
             flag2 = (value & 2) != 0;
             flag3 = (value & 4) != 0;
@@ -3850,7 +3850,7 @@ namespace JanSharp.Internal
         }
         public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
             flag2 = (value & 2) != 0;
             flag3 = (value & 4) != 0;
@@ -3861,7 +3861,7 @@ namespace JanSharp.Internal
         }
         public override void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7, out bool flag8)
         {
-            int value = (int)DataStream.ReadByte(ref readStream, ref readStreamPosition);
+            int value = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
             flag1 = (value & 1) != 0;
             flag2 = (value & 2) != 0;
             flag3 = (value & 4) != 0;
@@ -3871,21 +3871,21 @@ namespace JanSharp.Internal
             flag7 = (value & 64) != 0;
             flag8 = (value & 128) != 0;
         }
-        public override short ReadShort() => DataStream.ReadShort(ref readStream, ref readStreamPosition);
-        public override ushort ReadUShort() => DataStream.ReadUShort(ref readStream, ref readStreamPosition);
-        public override int ReadInt() => DataStream.ReadInt(ref readStream, ref readStreamPosition);
-        public override uint ReadUInt() => DataStream.ReadUInt(ref readStream, ref readStreamPosition);
-        public override long ReadLong() => DataStream.ReadLong(ref readStream, ref readStreamPosition);
-        public override ulong ReadULong() => DataStream.ReadULong(ref readStream, ref readStreamPosition);
-        public override float ReadFloat() => DataStream.ReadFloat(ref readStream, ref readStreamPosition);
-        public override double ReadDouble() => DataStream.ReadDouble(ref readStream, ref readStreamPosition);
-        public override Vector2 ReadVector2() => DataStream.ReadVector2(ref readStream, ref readStreamPosition);
-        public override Vector3 ReadVector3() => DataStream.ReadVector3(ref readStream, ref readStreamPosition);
-        public override Vector4 ReadVector4() => DataStream.ReadVector4(ref readStream, ref readStreamPosition);
-        public override Quaternion ReadQuaternion() => DataStream.ReadQuaternion(ref readStream, ref readStreamPosition);
-        public override char ReadChar() => DataStream.ReadChar(ref readStream, ref readStreamPosition);
-        public override string ReadString() => DataStream.ReadString(ref readStream, ref readStreamPosition);
-        public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(ref readStream, ref readStreamPosition);
+        public override short ReadShort() => DataStream.ReadShort(readStream, ref readStreamPosition);
+        public override ushort ReadUShort() => DataStream.ReadUShort(readStream, ref readStreamPosition);
+        public override int ReadInt() => DataStream.ReadInt(readStream, ref readStreamPosition);
+        public override uint ReadUInt() => DataStream.ReadUInt(readStream, ref readStreamPosition);
+        public override long ReadLong() => DataStream.ReadLong(readStream, ref readStreamPosition);
+        public override ulong ReadULong() => DataStream.ReadULong(readStream, ref readStreamPosition);
+        public override float ReadFloat() => DataStream.ReadFloat(readStream, ref readStreamPosition);
+        public override double ReadDouble() => DataStream.ReadDouble(readStream, ref readStreamPosition);
+        public override Vector2 ReadVector2() => DataStream.ReadVector2(readStream, ref readStreamPosition);
+        public override Vector3 ReadVector3() => DataStream.ReadVector3(readStream, ref readStreamPosition);
+        public override Vector4 ReadVector4() => DataStream.ReadVector4(readStream, ref readStreamPosition);
+        public override Quaternion ReadQuaternion() => DataStream.ReadQuaternion(readStream, ref readStreamPosition);
+        public override char ReadChar() => DataStream.ReadChar(readStream, ref readStreamPosition);
+        public override string ReadString() => DataStream.ReadString(readStream, ref readStreamPosition);
+        public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(readStream, ref readStreamPosition);
         public override bool SkipCustomClass(out uint dataVersion, out byte[] data) => SkipCustomClass(out dataVersion, out data, isDeserializingForImport);
         public override bool SkipCustomClass(out uint dataVersion, out byte[] data, bool isImport)
         {
@@ -3998,14 +3998,14 @@ namespace JanSharp.Internal
                 readStreamPosition += byteCount;
                 return null;
             }
-            return DataStream.ReadBytes(ref readStream, ref readStreamPosition, byteCount);
+            return DataStream.ReadBytes(readStream, ref readStreamPosition, byteCount);
         }
-        public override short ReadSmallShort() => DataStream.ReadSmallShort(ref readStream, ref readStreamPosition);
-        public override ushort ReadSmallUShort() => DataStream.ReadSmallUShort(ref readStream, ref readStreamPosition);
-        public override int ReadSmallInt() => DataStream.ReadSmallInt(ref readStream, ref readStreamPosition);
-        public override uint ReadSmallUInt() => DataStream.ReadSmallUInt(ref readStream, ref readStreamPosition);
-        public override long ReadSmallLong() => DataStream.ReadSmallLong(ref readStream, ref readStreamPosition);
-        public override ulong ReadSmallULong() => DataStream.ReadSmallULong(ref readStream, ref readStreamPosition);
+        public override short ReadSmallShort() => DataStream.ReadSmallShort(readStream, ref readStreamPosition);
+        public override ushort ReadSmallUShort() => DataStream.ReadSmallUShort(readStream, ref readStreamPosition);
+        public override int ReadSmallInt() => DataStream.ReadSmallInt(readStream, ref readStreamPosition);
+        public override uint ReadSmallUInt() => DataStream.ReadSmallUInt(readStream, ref readStreamPosition);
+        public override long ReadSmallLong() => DataStream.ReadSmallLong(readStream, ref readStreamPosition);
+        public override ulong ReadSmallULong() => DataStream.ReadSmallULong(readStream, ref readStreamPosition);
 
         public override LockstepGameStateOptionsData[] CloneAllOptions(LockstepGameStateOptionsData[] allOptions)
         {

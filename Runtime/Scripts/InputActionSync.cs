@@ -449,7 +449,7 @@ namespace JanSharp.Internal
                         + "means this data gets ignored.");
                     return;
                 }
-                uint playerId = DataStream.ReadSmallUInt(ref syncedData, ref i);
+                uint playerId = DataStream.ReadSmallUInt(syncedData, ref i);
                 if (playerId != sendingPlayerId)
                 {
                     sendingPlayerId = playerId;
@@ -468,9 +468,9 @@ namespace JanSharp.Internal
                 Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - bytes left (syncedDataLength - i): {syncedDataLength - i}");
                 #endif
                 // Read IA header.
-                receivedInputActionIndex = DataStream.ReadSmallUInt(ref syncedData, ref i);
+                receivedInputActionIndex = DataStream.ReadSmallUInt(syncedData, ref i);
                 receivedUniqueId = shiftedSendingPlayerId | (ulong)receivedInputActionIndex;
-                receivedInputActionId = DataStream.ReadSmallUInt(ref syncedData, ref i);
+                receivedInputActionId = DataStream.ReadSmallUInt(syncedData, ref i);
                 if (!lockstep.inputActionHandlersRequireTimeTracking[receivedInputActionId])
                     receivedSendTime = Lockstep.SendTimeForNonTimedIAs;
                 else
@@ -478,15 +478,15 @@ namespace JanSharp.Internal
                     if (!didReadSerializationTime)
                     {
                         didReadSerializationTime = true;
-                        serializationTime = DataStream.ReadFloat(ref syncedData, ref i);
+                        serializationTime = DataStream.ReadFloat(syncedData, ref i);
                     }
-                    float sendTime = DataStream.ReadFloat(ref syncedData, ref i);
+                    float sendTime = DataStream.ReadFloat(syncedData, ref i);
                     receivedSendTime = result.sendTime - (serializationTime - sendTime);
                     #if LockstepDebug
                     Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - receivedSendTime: {receivedSendTime}, sendTime: {sendTime}, serializationTime: {serializationTime}, result.sendTime: {result.sendTime}, result.receiveTime: {result.receiveTime}, Time.realtimeSinceStartup: {Time.realtimeSinceStartup}");
                     #endif
                 }
-                int dataLength = (int)DataStream.ReadSmallUInt(ref syncedData, ref i);
+                int dataLength = (int)DataStream.ReadSmallUInt(syncedData, ref i);
                 #if LockstepDebug
                 Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - receivedUniqueId: 0x{receivedUniqueId:x16}, receivedInputActionId: {receivedInputActionId}, dataLength: {dataLength}");
                 #endif
