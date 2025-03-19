@@ -1213,11 +1213,15 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  SendSingletonInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
             currentInputActionSendTime = Time.realtimeSinceStartup; // As early as possible.
-            if (!IsAllowedToSendInputActionId(inputActionId))
+
+            if (!inGameStateSafeEvent)
             {
+                Debug.LogError("[Lockstep] Attempt to call SendSingletonInputAction outside of game state safe events.");
                 ResetWriteStream();
                 return 0uL;
             }
+            // No need to check if IsAllowedToSendInputActionId, because inside of game state safe events
+            // sending input actions is guaranteed to be allowed.
 
             uint singletonId = nextSingletonId++;
 
@@ -1304,11 +1308,14 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendEventDelayedTicks");
             #endif
-            if (ignoreLocalInputActions)
+            if (!inGameStateSafeEvent)
             {
+                Debug.LogError("[Lockstep] Attempt to call SendEventDelayedTicks outside of game state safe events.");
                 ResetWriteStream();
                 return;
             }
+            // No need to check if ignoreLocalInputActions, because inside of game state safe events
+            // sending input actions is guaranteed to be allowed.
 
             byte[] inputActionData = new byte[writeStreamSize];
             System.Array.Copy(writeStream, inputActionData, writeStreamSize);

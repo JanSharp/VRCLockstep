@@ -241,38 +241,38 @@ namespace JanSharp
         /// <see cref="LockstepEventType.OnMasterClientChanged"/> event is raised.</para>
         /// <para><see cref="IsMaster"/> may be <see langword="true"/> even before
         /// <see cref="MasterPlayerId"/> is equal to the local player id.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
-        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint MasterPlayerId { get; }
         /// <summary>
         /// <para>The id of the client which was the master right before the new master client.</para>
-        /// <para>Usable inside of <see cref="LockstepEventType.OnMasterClientChanged"/>.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnMasterClientChanged"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint OldMasterPlayerId { get; }
         /// <summary>
         /// <para>The id of the joined client.</para>
-        /// <para>Usable inside of <see cref="LockstepEventType.OnClientJoined"/>.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnClientJoined"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint JoinedPlayerId { get; }
         /// <summary>
         /// <para>The id of the left client.</para>
-        /// <para>Usable inside of <see cref="LockstepEventType.OnClientLeft"/>.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnClientLeft"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint LeftPlayerId { get; }
         /// <summary>
         /// <para>The id of the client which is beginning to catch up or has caught up.</para>
+        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
         /// <see cref="LockstepEventType.OnClientCaughtUp"/>.</para>
-        /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
         /// <para>Game state safe (but keep in mind that <see cref="LockstepEventType.OnClientBeginCatchUp"/>
         /// is not a game state safe event. <see cref="LockstepEventType.OnClientCaughtUp"/> is
         /// however).</para>
@@ -282,8 +282,8 @@ namespace JanSharp
         /// <para>The player id of the client which sent the currently running input action. It is guaranteed
         /// to be an id for which the <see cref="LockstepEventType.OnClientJoined"/> event has been raised,
         /// and the <see cref="LockstepEventType.OnClientLeft"/> event has not been raised.</para>
-        /// <para>Usable inside of input actions.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
+        /// <para>Usable inside of input actions.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint SendingPlayerId { get; }
@@ -565,6 +565,8 @@ namespace JanSharp
         /// memory leak since those are <see cref="WannaBeClass"/>es.</para>
         /// <para>Calls <see cref="WannaBeClass.DecrementRefsCount"/> on each given non <see langword="null"/>
         /// <see cref="LockstepImportedGS.GetImportOptions(object[])"/>.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
@@ -761,6 +763,8 @@ namespace JanSharp
         /// <see cref="CleanupImportedGameStatesData(object[][])"/> which should very most likely be used in
         /// most cases before letting <paramref name="allImportOptions"/> or
         /// <paramref name="importedGameStates"/> go out of scope.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
@@ -873,12 +877,14 @@ namespace JanSharp
         /// not get mutated throughout the process.</para>
         /// <para>While exporting <see cref="ResetWriteStream"/> gets called every frame. It is already part
         /// of the specification not to use lockstep's internal write stream across frames, or in other words
-        /// when leaving a system's control the write stream must be empty. Which is to say that
-        /// <see cref="ResetWriteStream"/> being called does not add any new restrictions, if anything it
+        /// when leaving a system's control flow the write stream must be empty. Which is to say that
+        /// <see cref="ResetWriteStream"/> being called here does not add any new restrictions, if anything it
         /// enforces existing restrictions further.</para>
         /// <para>Set to <see langword="true"/> right before <see cref="LockstepEventType.OnExportStart"/>
         /// and set to <see langword="false"/> right before <see cref="LockstepEventType.OnExportFinished"/>.
         /// </para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
         /// </summary>
         public abstract bool IsExporting { get; }
         /// <summary>
@@ -1256,7 +1262,7 @@ namespace JanSharp
         /// is required to call <see cref="ResetWriteStream"/>.</para>
         /// <para>This cleans up the write stream such that future sent input actions do not get this
         /// unfinished input action data prepended to them, ultimately breaking them.</para>
-        /// <para>Usable any time. <see cref="FlaggedToContinueNextFrame"/></para>
+        /// <para>Usable any time.</para>
         /// </summary>
         public abstract void ResetWriteStream();
         /// <summary>

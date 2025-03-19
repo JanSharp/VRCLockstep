@@ -68,7 +68,7 @@
 - [x] sort game states using lowercase strings
 - [ ] spread incoming input actions out to the next frame on master if we've already spent x ms running input actions this frame
 - [ ] spread input actions to be run next frame out to yet again the next frame if we've already spent x ms running input actions this frame
-- [ ] add checks for if we are in game state safe events inside of api functions which must be called from game state safe events, for example sending singleton input actions
+- [x] add checks for if we are in game state safe events inside of api functions which must be called from game state safe events, for example sending singleton input actions
 - [x] change importing to just be one big input action which gets spread out across frames
 - [x] maybe change importing to first read all incoming game states into separate arrays and then deserialize those one by one to prevent over-read in one game state breaking the attempt to read the next game state which makes debugging even worse, it's already bad for serialization/deserialization
 - [x] change exporting to always delay 1 frame between game state serializations
