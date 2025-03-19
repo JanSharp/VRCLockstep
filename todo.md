@@ -58,7 +58,7 @@
 - [x] use the new CustomRaisedEvent attribute system for lockstep events
 - [x] maybe collapse can send input actions and initialized enough for import export into one property
 - [x] add flag to lockstep api indicating whether or not the current event is a game state save event
-- [ ] mention SendEventDelayedTicks everywhere in the docs where send input action and send singleton input action is referenced
+- [x] mention SendEventDelayedTicks everywhere in the docs where send input action and send singleton input action is referenced
 - [ ] optimize the functions using RecursiveMethod by putting all the code that won't actually be recursive into separate functions, keeping the body of the RecursiveMethods themselves smaller
 - [x] add game state dependency attribute, changing the sort order of game states in the all game states array and game states supporting export array ultimately affecting serialization and deserialization order
   - [x] also force the correct load order when importing
