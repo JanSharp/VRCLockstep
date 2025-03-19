@@ -215,9 +215,9 @@ namespace JanSharp
         /// <param name="options">Must not be <see langword="null"/>.</param>
         public void ValidateOptions(LockstepGameStateOptionsData options)
         {
-            if (!lockstep.InitializedEnoughForImportExport)
+            if (!lockstep.IsInitialized)
             {
-                Debug.LogError($"[Lockstep] Attempt to call ValidateOptions before InitializedEnoughForImportExport is true.");
+                Debug.LogError($"[Lockstep] Attempt to call ValidateOptions before IsInitialized is true.");
                 return;
             }
             if (options == null)
@@ -281,9 +281,9 @@ namespace JanSharp
         /// described in the main summary.</param>
         public void ShowOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData options, uint importedDataVersion = 0u)
         {
-            if (!lockstep.InitializedEnoughForImportExport)
+            if (!lockstep.IsInitialized)
             {
-                Debug.LogError($"[Lockstep] Attempt to call ShowOptionsEditor before InitializedEnoughForImportExport is true.");
+                Debug.LogError($"[Lockstep] Attempt to call ShowOptionsEditor before IsInitialized is true.");
                 return;
             }
             if (currentlyShown)

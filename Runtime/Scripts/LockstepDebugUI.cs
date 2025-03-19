@@ -34,7 +34,7 @@ namespace JanSharp.Internal
             "isSinglePlayer",
             "currentlyNoMaster",
             "checkMasterChangeAfterProcessingLJGameStates",
-            "initializedEnoughForImportExport",
+            "lockstepIsInitialized",
             "isExporting",
             "isImporting",
             "isAskingForMasterCandidates",

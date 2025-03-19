@@ -328,27 +328,19 @@ namespace JanSharp
         /// </summary>
         public abstract float RealtimeSinceSending { get; }
         /// <summary>
-        /// <para>Enables easily checking if <see cref="SendInputAction(uint)"/>,
-        /// <see cref="SendSingletonInputAction(uint)"/> and its overload would be able to actually send input
-        /// actions.</para>
-        /// <para>Similarly <see cref="SendEventDelayedTicks(uint, uint)"/> also only works if this is
-        /// <see langword="true"/>.</para>
-        /// <para>The exact time when this becomes <see langword="true"/> is undefined, however as soon as
-        /// <see cref="LockstepEventType.OnInit"/> or <see cref="LockstepEventType.OnClientBeginCatchUp"/> get
-        /// raised, by then it is guaranteed to be <see langword="true"/>.</para>
-        /// <para>Usable any time.</para>
-        /// <para>Not game state safe.</para>
-        /// </summary>
-        public abstract bool CanSendInputActions { get; }
-        /// <summary>
-        /// <para>Calling <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> or
-        /// <see cref="StartImport(object[][], System.DateTime, string, string)"/> requires
-        /// <see cref="LockstepEventType.OnInit"/> or <see cref="LockstepEventType.OnClientBeginCatchUp"/> to
-        /// have been raised. This property can be used to check if exactly that is the case.</para>
+        /// <para>Enables checking if <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> have been raised. Gets set to
+        /// <see langword="true"/> right before those events.</para>
+        /// <para>Many things only work once either of those two events have been raised, things like
+        /// <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/> and its
+        /// overload, <see cref="SendEventDelayedTicks(uint, uint)"/>, export and import
+        /// <see cref="LockstepGameStateOptionsData"/> related apis,
+        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> and
+        /// <see cref="StartImport(object[][], System.DateTime, string, string)"/>, etc, ect.</para>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>
-        public abstract bool InitializedEnoughForImportExport { get; }
+        public abstract bool IsInitialized { get; }
         /// <summary>
         /// <para><see langword="true"/> when the currently running function is in a game state safe context,
         /// such as input actions, delayed events, game state deserialization, and most other lockstep events.
@@ -372,7 +364,7 @@ namespace JanSharp
         /// </summary>
         /// <param name="inputActionId">The id associated with a method with the
         /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
-        /// <returns>The unique id of the input action that got sent. If <see cref="CanSendInputActions"/> is
+        /// <returns>The unique id of the input action that got sent. If <see cref="IsInitialized"/> is
         /// <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
         /// returned.</returns>
         public abstract ulong SendInputAction(uint inputActionId);
@@ -394,7 +386,7 @@ namespace JanSharp
         /// </summary>
         /// <param name="inputActionId">The id associated with a method with the
         /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
-        /// <returns>The unique id of the input action that got sent. If <see cref="CanSendInputActions"/> is
+        /// <returns>The unique id of the input action that got sent. If <see cref="IsInitialized"/> is
         /// <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
         /// returned. The unique id is only returned on the initial responsible client, on all other clients
         /// it is going to be 0uL.</returns>
@@ -454,7 +446,7 @@ namespace JanSharp
         /// is invalid.</para>
         /// </param>
         /// <returns>Returns <see langword="true"/> if the input action was sent successfully. It will only be
-        /// sent if <see cref="CanSendInputActions"/> is <see langword="true"/>, if the
+        /// sent if <see cref="IsInitialized"/> is <see langword="true"/>, if the
         /// <paramref name="newMasterClientId"/> is different than the <see cref="MasterPlayerId"/>, if the
         /// <see cref="ClientState"/> of the <paramref name="newMasterClientId"/> is
         /// <see cref="ClientState.Normal"/> and if
@@ -869,7 +861,7 @@ namespace JanSharp
         /// actually indicates improper use of the API in every case except when
         /// <see cref="GameStatesSupportingImportExportCount"/> is 0, in which case it returns
         /// <see langword="false"/> without an error. An error is logged when
-        /// <see cref="InitializedEnoughForImportExport"/> is <see langword="false"/> or when given an invalid
+        /// <see cref="IsInitialized"/> is <see langword="false"/> or when given an invalid
         /// <paramref name="exportName"/> or <paramref name="allExportOptions"/>.</para></returns>
         public abstract bool StartExport(string exportName, LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
@@ -952,7 +944,7 @@ namespace JanSharp
         /// <summary>
         /// <para>Start importing game states using data obtained from
         /// <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>. This requires
-        /// <see cref="InitializedEnoughForImportExport"/> being <see langword="true"/>, as well as
+        /// <see cref="IsInitialized"/> being <see langword="true"/>, as well as
         /// <see cref="IsImporting"/> being <see langword="false"/>.</para>
         /// <para>All <see cref="LockstepImportedGS"/> in <paramref name="importedGameStates"/> which have a
         /// non <see langword="null"/> <see cref="LockstepImportedGS.GetErrorMsg(object[])"/> are

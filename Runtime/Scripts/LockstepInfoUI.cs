@@ -314,7 +314,7 @@ namespace JanSharp.Internal
         {
             becomeMasterButton.interactable = !IsChangingMaster
                 && LocalClientState == ClientState.Normal
-                && lockstep.CanSendInputActions;
+                && lockstep.IsInitialized;
 
             DataList entries = clientStateEntries.GetValues();
             int count = entries.Count;
@@ -326,7 +326,7 @@ namespace JanSharp.Internal
         {
             entry.makeMasterButton.interactable = !IsChangingMaster
                 && lockstep.GetClientState(entry.playerId) == ClientState.Normal;
-            // Does not need the lockstep.CanSendInputActions check because entries won't exist yet while that
+            // Does not need the lockstep.IsInitialized check because entries won't exist yet while that
             // is still false.
         }
 

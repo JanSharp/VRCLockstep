@@ -133,14 +133,13 @@ namespace JanSharp.Internal
         private bool isInitialCatchUp = true;
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
-        private bool initializedEnoughForImportExport = false;
+        private bool lockstepIsInitialized = false;
         // Only true for the initial catch up to avoid it being true for just a few ticks seemingly randomly
         // (Caused by the master changing which requires catching up to what the previous master had already
         // processed. See IsMaster property.)
         public override bool IsCatchingUp => isCatchingUp && isInitialCatchUp;
         public override bool IsSinglePlayer => isSinglePlayer;
-        public override bool CanSendInputActions => !ignoreLocalInputActions;
-        public override bool InitializedEnoughForImportExport => initializedEnoughForImportExport;
+        public override bool IsInitialized => lockstepIsInitialized;
 
         private bool inGameStateSafeEvent = false;
         public override bool InGameStateSafeEvent => inGameStateSafeEvent;
@@ -1130,6 +1129,12 @@ namespace JanSharp.Internal
 
         public override ulong SendInputAction(uint inputActionId)
         {
+            currentInputActionSendTime = Time.realtimeSinceStartup; // As early as possible.
+            if (!lockstepIsInitialized)
+            {
+                ResetWriteStream();
+                return 0uL;
+            }
             return SendInputAction(inputActionId, forceOneFrameDelay: true);
         }
 
@@ -1138,12 +1143,15 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
             #endif
-            currentInputActionSendTime = Time.realtimeSinceStartup; // As early as possible.
+            // currentInputActionSendTime is not set here because none of the internal Lockstep IAs require time tracking,
+            // so the if statement further below is always going to set it to SendTimeForNonTimedIAs;
             if (!IsAllowedToSendInputActionId(inputActionId))
             {
                 ResetWriteStream();
                 return 0uL;
             }
+            if (!inputActionHandlersRequireTimeTracking[inputActionId])
+                currentInputActionSendTime = SendTimeForNonTimedIAs;
 
             byte[] inputActionData = new byte[writeStreamSize];
             System.Array.Copy(writeStream, inputActionData, writeStreamSize);
@@ -1222,6 +1230,7 @@ namespace JanSharp.Internal
             }
             // No need to check if IsAllowedToSendInputActionId, because inside of game state safe events
             // sending input actions is guaranteed to be allowed.
+            // Similarly no need to check lockstepIsInitialized.
 
             uint singletonId = nextSingletonId++;
 
@@ -1576,7 +1585,7 @@ namespace JanSharp.Internal
             currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
             lastRunnableTick = uint.MaxValue;
             EnterSingePlayerMode();
-            initializedEnoughForImportExport = true;
+            lockstepIsInitialized = true;
             StartOrStopAutosave();
             RaiseOnInit();
             RaiseOnClientJoined(localPlayerId);
@@ -1711,7 +1720,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendMasterChangeRequestIA - newMasterClientId: {newMasterClientId}");
             #endif
-            if (!CanSendInputActions || newMasterClientId == masterPlayerId || masterChangeRequestInProgress)
+            if (!lockstepIsInitialized || newMasterClientId == masterPlayerId || masterChangeRequestInProgress)
                 return false;
             if (!TryGetClientState(newMasterClientId, out ClientState clientState))
             {
@@ -1844,10 +1853,10 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FactoryReset");
             #endif
-            if (IsProcessingLJGameStates || initializedEnoughForImportExport)
+            if (IsProcessingLJGameStates || lockstepIsInitialized)
             {
                 Debug.LogError("[Lockstep] It is invalid to call FactoryReset once IsProcessingLJGameStates or "
-                    + "initializedEnoughForImportExport is true, since that implies that OnInit or game state "
+                    + "lockstepIsInitialized is true, since that implies that OnInit or game state "
                     + "deserialization has already happened. After either of those points in time factory "
                     + "resetting would mean the system would perform one of those 2 things again, which goes "
                     + "against the specification of this lockstep implementation. (While technically "
@@ -1858,12 +1867,12 @@ namespace JanSharp.Internal
             if (isMaster)
             {
                 Debug.LogError("[Lockstep] Impossible because when isMaster is true, "
-                    + "initializedEnoughForImportExport is also true which was checked previously.");
+                    + "lockstepIsInitialized is also true which was checked previously.");
                 return;
             }
             // isSinglePlayer is only ever true when isMaster is true, therefore no need to check nor reset.
 
-            // Only ever used (on the master) once initializedEnoughForImportExport is true.
+            // Only ever used (on the master) once lockstepIsInitialized is true.
             // byteCountForLatestLJSync = -1;
 
             // Not needed to call CompletelyCancelMasterChangeRequest since it would require input actions to
@@ -2995,7 +3004,7 @@ namespace JanSharp.Internal
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
-            initializedEnoughForImportExport = true; // Close before OnClientBeginCatchUp.
+            lockstepIsInitialized = true; // Close before OnClientBeginCatchUp.
             SetDilatedTickStartTime(); // Right before OnClientBeginCatchUp.
             RaiseOnClientBeginCatchUp(localPlayerId);
             isTickPaused = false;
@@ -4356,7 +4365,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  PrepareForExport");
             #endif
-            if (!initializedEnoughForImportExport)
+            if (!lockstepIsInitialized)
             {
                 Debug.LogError("[Lockstep] Attempt to call Export before OnInit or OnClientBeginCatchUp, ignoring.");
                 return false;
@@ -4639,7 +4648,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartImport");
             #endif
-            if (!initializedEnoughForImportExport)
+            if (!lockstepIsInitialized)
             {
                 Debug.LogError("[Lockstep] Attempt to call StartImport before OnInit or OnClientBeginCatchUp, ignoring.");
                 return;
@@ -5011,7 +5020,7 @@ namespace JanSharp.Internal
         }
 
         private bool AutosaveShouldBeRunning
-            => initializedEnoughForImportExport
+            => lockstepIsInitialized
             && !(isCatchingUp && isInitialCatchUp)
             && autosavePauseScopeCount == 0
             && !isImporting;
