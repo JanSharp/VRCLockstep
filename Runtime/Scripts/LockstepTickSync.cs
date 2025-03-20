@@ -60,8 +60,8 @@ namespace JanSharp.Internal
             int totalSize = tickBufferSize + bufferSize;
             if (syncedData.Length != totalSize)
                 syncedData = new byte[totalSize];
-            System.Array.Copy(tickBuffer, syncedData, tickBufferSize);
-            System.Array.Copy(buffer, 0, syncedData, tickBufferSize, bufferSize);
+            System.Buffer.BlockCopy(tickBuffer, 0, syncedData, 0, tickBufferSize);
+            System.Buffer.BlockCopy(buffer, 0, syncedData, tickBufferSize, bufferSize);
             tickInSyncedData = lastRunnableTick;
             bufferSizeToClear = bufferSize;
         }
@@ -90,7 +90,7 @@ namespace JanSharp.Internal
             }
 
             bufferSize -= bufferSizeToClear;
-            // This could use a flipBuffer so it could then use System.Array.Copy instead of this loop,
+            // This could use a flipBuffer so it could then use System.Buffer.BlockCopy instead of this loop,
             // however the most common case is bufferSize being 0 at this point, making the for loop approach
             // faster than the base overhead the Copy call and value flipping would have.
             for (int i = 0; i < bufferSize; i++)

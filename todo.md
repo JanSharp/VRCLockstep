@@ -93,4 +93,4 @@
 - [x] rename Export to StartExport
 - [x] make sure all doc `see` references are well formed. Some have been broken due to signature changes
 - [ ] if in single player, is it possible for the system to get stuck infinitely running input actions to be run in the next frame if those input actions send input actions themselves which send input actions which send input actions... infinitely? yes, quite certain this is possible. However to fix it there would need to be the option to associate input actions with the next frame even past the first mutable frame on the master, which isn't how the system is designed and trying to introduce this would even further complicate master changes and I just don't want to think about it
-- [ ] Use System.Buffer.BlockCopy rather than System.Array.Copy... I guess?
+- [x] Use System.Buffer.BlockCopy rather than System.Array.Copy... I guess?

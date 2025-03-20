@@ -1119,7 +1119,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  SendInstantAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}, doRunLocally: {doRunLocally}");
             #endif
             byte[] inputActionData = new byte[writeStreamSize];
-            System.Array.Copy(writeStream, inputActionData, writeStreamSize);
+            System.Buffer.BlockCopy(writeStream, 0, inputActionData, 0, writeStreamSize);
             ResetWriteStream();
             ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
             if (!doRunLocally)
@@ -1154,7 +1154,7 @@ namespace JanSharp.Internal
                 currentInputActionSendTime = SendTimeForNonTimedIAs;
 
             byte[] inputActionData = new byte[writeStreamSize];
-            System.Array.Copy(writeStream, inputActionData, writeStreamSize);
+            System.Buffer.BlockCopy(writeStream, 0, inputActionData, 0, writeStreamSize);
             ResetWriteStream();
 
             return SendInputActionInternal(inputActionId, inputActionData, forceOneFrameDelay);
@@ -1241,8 +1241,8 @@ namespace JanSharp.Internal
             WriteSmallUInt(inputActionId);
             byte[] singletonInputActionData = new byte[writeStreamSize];
             int idsSize = writeStreamSize - actualInputActionDataSize;
-            System.Array.Copy(writeStream, actualInputActionDataSize, singletonInputActionData, 0, idsSize);
-            System.Array.Copy(writeStream, 0, singletonInputActionData, idsSize, actualInputActionDataSize);
+            System.Buffer.BlockCopy(writeStream, actualInputActionDataSize, singletonInputActionData, 0, idsSize);
+            System.Buffer.BlockCopy(writeStream, 0, singletonInputActionData, idsSize, actualInputActionDataSize);
             ResetWriteStream();
 
             bool requiresTimeTracking = inputActionHandlersRequireTimeTracking[inputActionId];
@@ -1327,7 +1327,7 @@ namespace JanSharp.Internal
             // sending input actions is guaranteed to be allowed.
 
             byte[] inputActionData = new byte[writeStreamSize];
-            System.Array.Copy(writeStream, inputActionData, writeStreamSize);
+            System.Buffer.BlockCopy(writeStream, 0, inputActionData, 0, writeStreamSize);
             ResetWriteStream();
 
             if (tickDelay == 0u)
@@ -3655,7 +3655,7 @@ namespace JanSharp.Internal
         public override void ShiftWriteStream(int sourcePosition, int destinationPosition, int count)
         {
             ArrList.EnsureCapacity(ref writeStream, destinationPosition + count);
-            System.Array.Copy(writeStream, sourcePosition, writeStream, destinationPosition, count);
+            System.Buffer.BlockCopy(writeStream, sourcePosition, writeStream, destinationPosition, count);
         }
 
         public override void ResetWriteStream() => writeStreamSize = 0;
@@ -3750,7 +3750,7 @@ namespace JanSharp.Internal
                 ShiftWriteStream(startPosition + 1, startPosition + sizeSize, customDataSize);
             if (customDataSize == 0)
                 ArrList.EnsureCapacity(ref writeStream, writeStreamSize);
-            System.Array.Copy(serializedSizeBuffer, 0, writeStream, startPosition, sizeSize);
+            System.Buffer.BlockCopy(serializedSizeBuffer, 0, writeStream, startPosition, sizeSize);
         }
         public override void WriteBytes(byte[] bytes) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes);
         public override void WriteBytes(byte[] bytes, int startIndex, int length) => DataStream.Write(ref writeStream, ref writeStreamSize, bytes, startIndex, length);
@@ -3781,7 +3781,7 @@ namespace JanSharp.Internal
                 return;
             }
             readStream = new byte[length];
-            System.Array.Copy(readStream, startIndex, stream, 0, length);
+            System.Buffer.BlockCopy(readStream, startIndex, stream, 0, length);
             ResetReadStream();
         }
         public override void SetReadStream(byte[] stream)
@@ -4547,7 +4547,7 @@ namespace JanSharp.Internal
             WriteUInt(crc);
 
             byte[] exportedData = new byte[writeStreamSize];
-            System.Array.Copy(writeStream, exportedData, writeStreamSize);
+            System.Buffer.BlockCopy(writeStream, 0, exportedData, 0, writeStreamSize);
             ResetWriteStream();
 
             exportResult = Base64.Encode(exportedData);
@@ -4632,7 +4632,7 @@ namespace JanSharp.Internal
                 LockstepImportedGS.SetDataVersion(importedGS, dataVersion);
                 int dataSize = ReadInt();
                 byte[] binaryData = new byte[dataSize];
-                System.Array.Copy(readStream, readStreamPosition, binaryData, 0, dataSize);
+                System.Buffer.BlockCopy(readStream, readStreamPosition, binaryData, 0, dataSize);
                 readStreamPosition += dataSize;
                 LockstepImportedGS.SetBinaryData(importedGS, binaryData);
                 DataToken internalNameToken = internalName;
@@ -4712,7 +4712,7 @@ namespace JanSharp.Internal
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
                 WriteCustomNullableClass(importOptions);
                 byte[] serializedImportOptions = new byte[writeStreamSize];
-                System.Array.Copy(writeStream, serializedImportOptions, writeStreamSize);
+                System.Buffer.BlockCopy(writeStream, 0, serializedImportOptions, 0, writeStreamSize);
                 ResetWriteStream();
                 LockstepImportedGS.SetSerializedImportOptions(importedGS, serializedImportOptions);
             }
