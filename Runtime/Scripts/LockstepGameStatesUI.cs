@@ -98,8 +98,8 @@ namespace JanSharp.Internal
             dimBackground.SetActive(true);
             importWindow.SetActive(true);
             ResetImport();
-            importOptionsUI.Info.AddChild((LabelWidgetData)importOptionsUI.WidgetManager.NewLabel(
-                "Paste text obtained from a previous export into the text field above.").StdMove());
+            importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewLabel(
+                "Paste text obtained from a previous export into the text field above.").StdMoveWidget());
             importOptionsUI.Draw();
         }
 
@@ -216,8 +216,8 @@ namespace JanSharp.Internal
                 out exportName);
             if (importedGameStates == null)
             {
-                importOptionsUI.Info.AddChild(
-                    (LabelWidgetData)importOptionsUI.WidgetManager.NewLabel("Malformed or invalid data.").StdMove());
+                importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewLabel(
+                    "Malformed or invalid data.").StdMoveWidget());
                 importOptionsUI.Draw();
                 return;
             }
@@ -249,8 +249,8 @@ namespace JanSharp.Internal
                         msg = "<color=#99ccff>to import";
                     }
                 }
-                gsFoldOut.AddChild((LabelWidgetData)importOptionsUI.WidgetManager.NewLabel(
-                    $"<size=80%>{gameState.GameStateDisplayName} - {msg}").StdMove());
+                gsFoldOut.AddChild(importOptionsUI.WidgetManager.NewLabel(
+                    $"<size=80%>{gameState.GameStateDisplayName} - {msg}").StdMoveWidget());
             }
             anyImportedGSHasNoErrors = canImportCount != 0;
 
@@ -261,8 +261,8 @@ namespace JanSharp.Internal
                     continue;
                 string displayName = LockstepImportedGS.GetDisplayName(importedGS);
                 string errorMsg = LockstepImportedGS.GetErrorMsg(importedGS);
-                gsFoldOut.AddChild((LabelWidgetData)importOptionsUI.WidgetManager.NewLabel(
-                    $"<size=80%>{displayName} - <color=#ffaaaa>{errorMsg}").StdMove());
+                gsFoldOut.AddChild(importOptionsUI.WidgetManager.NewLabel(
+                    $"<size=80%>{displayName} - <color=#ffaaaa>{errorMsg}").StdMoveWidget());
             }
 
             gsFoldOut.DecrementRefsCount();
