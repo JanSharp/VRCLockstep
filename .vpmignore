@@ -3,5 +3,7 @@ Runtime/Dev/**/*
 Runtime/Dev.meta
 **/*.lua
 **/*.lua.meta
+**/*.excalidraw
+**/*.excalidraw.meta
 todo.md
 todo.md.meta
