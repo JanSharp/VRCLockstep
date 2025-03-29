@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -182,7 +182,7 @@ namespace JanSharp
             ArrList.RemoveAt(ref latencyPreferences, ref latencyPreferencesCount, index);
             ArrList.RemoveAt(ref latencyHiddenIds, ref latencyHiddenIdsCount, index);
             if (preference == currentHighestPreference)
-            CheckForNewHighestPreference();
+                CheckForNewHighestPreference();
         }
 
         private int GetHighest(int[] values, int count)
@@ -248,10 +248,12 @@ namespace JanSharp
         {
             uint playerId = lockstep.ReadSmallUInt();
             int preference = lockstep.ReadSmallInt();
+            persistentPreferences[lockstep.GetDisplayName(playerId)] = preference;
             int index = BinarySearch(playerId);
+            if (index < 0)
+                return;
             int prevPreference = preferences[index];
             preferences[index] = preference;
-            persistentPreferences[lockstep.GetDisplayName(playerId)] = preference;
 
             if (preference < prevPreference)
                 CheckForNewHighestPreference();
