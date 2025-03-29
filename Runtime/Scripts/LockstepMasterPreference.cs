@@ -178,9 +178,10 @@ namespace JanSharp
             uint playerId = lockstep.LeftPlayerId;
             int index = BinarySearch(playerId);
             ArrList.RemoveAt(ref playerIds, ref playerIdsCount, index);
-            ArrList.RemoveAt(ref preferences, ref preferencesCount, index);
+            int preference = ArrList.RemoveAt(ref preferences, ref preferencesCount, index);
             ArrList.RemoveAt(ref latencyPreferences, ref latencyPreferencesCount, index);
             ArrList.RemoveAt(ref latencyHiddenIds, ref latencyHiddenIdsCount, index);
+            if (preference == currentHighestPreference)
             CheckForNewHighestPreference();
         }
 
