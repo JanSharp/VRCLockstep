@@ -397,7 +397,7 @@ namespace JanSharp
         public abstract ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId);
         /// <summary>
         /// <para>Send an event from a game state safe event delayed by 1 or more ticks. The event is
-        /// subsequently also going to be a game state save event/</para>
+        /// subsequently also going to be a game state safe event.</para>
         /// <para>Delayed events are run in the order in which they get sent.</para>
         /// <para>Delayed events are raised at the end of a tick, but before
         /// <see cref="LockstepOnNthTickAttribute"/> and
@@ -411,7 +411,7 @@ namespace JanSharp
         /// delayed event got sent, but before it got run, then the delayed event's data will be sent to the
         /// joining client.)</para>
         /// <para>When it comes to import export support, unfortunately delayed events further complicate the
-        /// process. Events which got sent before an import occurs, but get run after an import occurs may
+        /// process. Events which got sent before an import occurs, but get run after an import occurred may
         /// require additional handling, as the state they're related to may no longer exist or be
         /// mutated making the delayed event irrelevant or even invalid.</para>
         /// <para>Usable only inside of game state safe events.</para>

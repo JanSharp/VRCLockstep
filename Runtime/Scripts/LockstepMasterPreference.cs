@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -14,7 +14,7 @@ namespace JanSharp
         /// <para>Raised when the <see cref="LockstepMasterPreference.GetPreference(uint)"/> for a client
         /// changed.</para>
         /// <para>Game state safe.</para>
-        /// </summary>i
+        /// </summary>
         OnMasterPreferenceChanged,
         /// <summary>
         /// <para>Use <see cref="LockstepMasterPreference.ChangedPlayerId"/> to get the id of the client who's
@@ -23,7 +23,7 @@ namespace JanSharp
         /// <see cref="LockstepMasterPreference.GetLatencyHiddenPreference(uint)(uint)"/> for a client
         /// changed.</para>
         /// <para>Non game state safe.</para>
-        /// </summary>i
+        /// </summary>
         OnLatencyHiddenMasterPreferenceChanged,
     }
 
@@ -221,7 +221,7 @@ namespace JanSharp
         /// <see cref="LockstepMasterPreferenceEventType.OnLatencyHiddenMasterPreferenceChanged"/> handler,
         /// because that would cause recursion.</para>
         /// <para>(And we all love Udon so much that we happily choose not to use recursion. And no I'm not
-        /// going to mark <see cref="SetPreference(uint, int)"/>) with the
+        /// going to mark <see cref="SetPreference(uint, int)"/> with the
         /// <see cref="RecursiveMethodAttribute"/> just for the off chance that someone wants to call it
         /// recursively, that'd just make performance worse for every non recursive call. I hope you don't
         /// mind a tasteful amount of salt occasionally.)</para>
