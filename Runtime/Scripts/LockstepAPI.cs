@@ -1346,6 +1346,8 @@ namespace JanSharp
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteDouble(double value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteDecimal(decimal value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteVector2(Vector2 value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteVector3(Vector3 value);
@@ -1520,6 +1522,8 @@ namespace JanSharp
         public abstract float ReadFloat();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract double ReadDouble();
+        /// <inheritdoc cref="ReadSByte"/>
+        public abstract decimal ReadDecimal();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract Vector2 ReadVector2();
         /// <inheritdoc cref="ReadSByte"/>

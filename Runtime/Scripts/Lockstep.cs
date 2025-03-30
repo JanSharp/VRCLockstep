@@ -3678,6 +3678,7 @@ namespace JanSharp.Internal
         public override void WriteULong(ulong value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteFloat(float value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteDouble(double value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteDecimal(decimal value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteVector2(Vector2 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteVector3(Vector3 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteVector4(Vector4 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
@@ -3879,6 +3880,7 @@ namespace JanSharp.Internal
         public override ulong ReadULong() => DataStream.ReadULong(readStream, ref readStreamPosition);
         public override float ReadFloat() => DataStream.ReadFloat(readStream, ref readStreamPosition);
         public override double ReadDouble() => DataStream.ReadDouble(readStream, ref readStreamPosition);
+        public override decimal ReadDecimal() => DataStream.ReadDecimal(readStream, ref readStreamPosition);
         public override Vector2 ReadVector2() => DataStream.ReadVector2(readStream, ref readStreamPosition);
         public override Vector3 ReadVector3() => DataStream.ReadVector3(readStream, ref readStreamPosition);
         public override Vector4 ReadVector4() => DataStream.ReadVector4(readStream, ref readStreamPosition);
