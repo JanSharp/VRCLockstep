@@ -222,18 +222,37 @@ namespace JanSharp
         /// <see cref="LockstepMasterPreferenceEventType.OnLatencyHiddenMasterPreferenceChanged"/> handler,
         /// because that would cause recursion.</para>
         /// <para>(And we all love Udon so much that we happily choose not to use recursion. And no I'm not
-        /// going to mark <see cref="SetPreference(uint, int)"/> with the
+        /// going to mark <see cref="SetPreference(uint, int, bool)"/> with the
         /// <see cref="RecursiveMethodAttribute"/> just for the off chance that someone wants to call it
         /// recursively, that'd just make performance worse for every non recursive call. I hope you don't
         /// mind a tasteful amount of salt occasionally.)</para>
+        /// <para>Can be called inside and outside of game state safe events,
+        /// <see cref="LockstepAPI.InGameStateSafeEvent"/>. Uses
+        /// <see cref="LockstepAPI.SendInputAction(uint)"/> or
+        /// <see cref="LockstepAPI.SendSingletonInputAction(uint)"/> depending on context.</para>
         /// </summary>
         /// <param name="playerId"></param>
         /// <param name="preference"></param>
-        public void SetPreference(uint playerId, int preference)
+        /// <param name="valueIsGSSafe">Set this to <see langword="true"/> if the given
+        /// <paramref name="preference"/> is a game state safe value. When <see langword="true"/> and when
+        /// <see cref="LockstepAPI.InGameStateSafeEvent"/> is also <see langword="true"/> then this function
+        /// simply sets the preference of the given <paramref name="playerId"/>.</param>
+        public void SetPreference(uint playerId, int preference, bool valueIsGSSafe = false)
         {
+            if (valueIsGSSafe && lockstep.InGameStateSafeEvent)
+            {
+                SetPreferenceInGameState(playerId, preference, comingFromIA: false);
+                return;
+            }
+
             lockstep.WriteSmallUInt(playerId);
             lockstep.WriteSmallInt(preference);
-            ulong id = lockstep.SendInputAction(onSetPreferenceIAId);
+            ulong id = lockstep.InGameStateSafeEvent
+                ? lockstep.SendSingletonInputAction(onSetPreferenceIAId)
+                : lockstep.SendInputAction(onSetPreferenceIAId);
+            if (id == 0uL)
+                return;
+
             int index = BinarySearch(playerId);
             int prevLatencyPreference = latencyPreferences[index];
             latencyPreferences[index] = preference;
@@ -248,6 +267,11 @@ namespace JanSharp
         {
             uint playerId = lockstep.ReadSmallUInt();
             int preference = lockstep.ReadSmallInt();
+            SetPreferenceInGameState(playerId, preference, comingFromIA: true);
+        }
+
+        private void SetPreferenceInGameState(uint playerId, int preference, bool comingFromIA)
+        {
             persistentPreferences[lockstep.GetDisplayName(playerId)] = preference;
             int index = BinarySearch(playerId);
             if (index < 0)
@@ -261,7 +285,8 @@ namespace JanSharp
                 CheckIfIsNewHighestPreference(playerId, preference);
 
             DataDictionary hiddenIds = latencyHiddenIds[index];
-            hiddenIds.Remove(lockstep.SendingUniqueId);
+            if (comingFromIA)
+                hiddenIds.Remove(lockstep.SendingUniqueId);
             if (hiddenIds.Count == 0)
             {
                 int prevLatencyPreference = latencyPreferences[index];
