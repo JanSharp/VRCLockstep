@@ -2890,10 +2890,10 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}, readStreamPosition: {readStreamPosition}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
             #endif
-            inGameStateSafeEvent = true;
+            // Specifically explicitly leaving inGameStateSafeEvent as false.
+            // Modification of game states is not allowed, must only restoring the exact state that's been serialized.
             SetDilatedTickStartTime(); // Right before DeserializeGameState.
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u, null);
-            inGameStateSafeEvent = false;
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ProcessNextLJSerializedGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
             #endif
