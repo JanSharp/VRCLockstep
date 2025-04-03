@@ -1366,6 +1366,8 @@ namespace JanSharp
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteDateTime(System.DateTime value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteTimeSpan(System.TimeSpan value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
         /// <param name="instance">Can be <see langword="null"/>. Has 1 additional byte of overhead compared
         /// to <see cref="WriteCustomClass(SerializableWannaBeClass)"/> (except when exporting, no additional
         /// overhead there). When exporting also writes the
@@ -1546,6 +1548,8 @@ namespace JanSharp
         public abstract string ReadString();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract System.DateTime ReadDateTime();
+        /// <inheritdoc cref="ReadSByte"/>
+        public abstract System.TimeSpan ReadTimeSpan();
         /// <summary>
         /// <para>To retrieve data inside of input actions, delayed event handlers or
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>

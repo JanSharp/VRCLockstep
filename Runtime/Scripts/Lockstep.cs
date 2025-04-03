@@ -3688,6 +3688,7 @@ namespace JanSharp.Internal
         public override void WriteChar(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteString(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteDateTime(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteTimeSpan(System.TimeSpan value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         [RecursiveMethod]
         public override void WriteCustomNullableClass(SerializableWannaBeClass instance) => WriteCustomNullableClass(instance, isSerializingForExport);
         [RecursiveMethod]
@@ -3892,6 +3893,7 @@ namespace JanSharp.Internal
         public override char ReadChar() => DataStream.ReadChar(readStream, ref readStreamPosition);
         public override string ReadString() => DataStream.ReadString(readStream, ref readStreamPosition);
         public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(readStream, ref readStreamPosition);
+        public override System.TimeSpan ReadTimeSpan() => DataStream.ReadTimeSpan(readStream, ref readStreamPosition);
         public override bool SkipCustomClass(out uint dataVersion, out byte[] data) => SkipCustomClass(out dataVersion, out data, isDeserializingForImport);
         public override bool SkipCustomClass(out uint dataVersion, out byte[] data, bool isImport)
         {
