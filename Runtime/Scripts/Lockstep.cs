@@ -3683,6 +3683,8 @@ namespace JanSharp.Internal
         public override void WriteVector3(Vector3 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteVector4(Vector4 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteQuaternion(Quaternion value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteColor(Color value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
+        public override void WriteColor32(Color32 value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteChar(char value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteString(string value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteDateTime(System.DateTime value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
@@ -3885,6 +3887,8 @@ namespace JanSharp.Internal
         public override Vector3 ReadVector3() => DataStream.ReadVector3(readStream, ref readStreamPosition);
         public override Vector4 ReadVector4() => DataStream.ReadVector4(readStream, ref readStreamPosition);
         public override Quaternion ReadQuaternion() => DataStream.ReadQuaternion(readStream, ref readStreamPosition);
+        public override Color ReadColor() => DataStream.ReadColor(readStream, ref readStreamPosition);
+        public override Color32 ReadColor32() => DataStream.ReadColor32(readStream, ref readStreamPosition);
         public override char ReadChar() => DataStream.ReadChar(readStream, ref readStreamPosition);
         public override string ReadString() => DataStream.ReadString(readStream, ref readStreamPosition);
         public override System.DateTime ReadDateTime() => DataStream.ReadDateTime(readStream, ref readStreamPosition);

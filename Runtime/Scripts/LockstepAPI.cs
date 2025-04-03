@@ -1356,6 +1356,10 @@ namespace JanSharp
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteQuaternion(Quaternion value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteColor(Color value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        public abstract void WriteColor32(Color32 value);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteChar(char value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteString(string value);
@@ -1532,6 +1536,10 @@ namespace JanSharp
         public abstract Vector4 ReadVector4();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract Quaternion ReadQuaternion();
+        /// <inheritdoc cref="ReadSByte"/>
+        public abstract Color ReadColor();
+        /// <inheritdoc cref="ReadSByte"/>
+        public abstract Color32 ReadColor32();
         /// <inheritdoc cref="ReadSByte"/>
         public abstract char ReadChar();
         /// <inheritdoc cref="ReadSByte"/>
