@@ -16,7 +16,7 @@
   "vpmDependencies": {
     "com.vrchat.worlds": "^3.6.x",
     "com.cyan.playerobjectpool": "^1.1.2",
-    "com.jansharp.common": ">=1.0.0",
+    "com.jansharp.common": ">=1.0.2",
     "com.jansharp.generic-value-editor": ">=1.0.0"
   },
   "url": "https://github.com/JanSharp/VRCLockstep/releases/download/v1.0.0/com.jansharp.lockstep.zip",
