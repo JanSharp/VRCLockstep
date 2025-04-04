@@ -15,7 +15,59 @@ Input actions can be used to input non [game state safe data](game-states.md#gam
 
 The transfer of data is done through serialization in the send function and deserialization in the input action, see [serialization](serialization.md).
 
-Input actions can be configured to keep track of how much time has passed from the Send call until the input action gets run. This **timing** information is **not game state safe**.
+See below for small examples which do not modify any game state. For an example that is modifying a game state [see here](game-states.md#example).
+
+```cs
+using JanSharp;
+// ...
+
+// Game states already have a 'lockstep' field, but other scripts would need this:
+[HideInInspector] [SerializeField] [SingletonReference] private LockstepAPI lockstep;
+
+private void SendHelloWorldIA()
+{
+    lockstep.SendInputAction(helloWorldIAId);
+}
+
+[HideInInspector] [SerializeField] private uint helloWorldIAId;
+[LockstepInputAction(nameof(helloWorldIAId))]
+public void OnHelloWorldIA()
+{
+    Debug.Log("Hello World!");
+}
+```
+
+```cs
+using JanSharp;
+// ...
+
+// Game states already have a 'lockstep' field, but other scripts would need this:
+[HideInInspector] [SerializeField] [SingletonReference] private LockstepAPI lockstep;
+
+private void SendDiceRollIA(uint faceCount)
+{
+    uint rolledValue = (uint)Random.Range(0, (int)faceCount) + 1u;
+    lockstep.WriteSmallUInt(faceCount);
+    lockstep.WriteSmallUInt(rolledValue);
+    lockstep.SendInputAction(diceRollIAId);
+}
+
+[HideInInspector] [SerializeField] private uint diceRollIAId;
+[LockstepInputAction(nameof(diceRollIAId))]
+public void OnDiceRollIA()
+{
+    uint faceCount = lockstep.ReadSmallUInt();
+    uint rolledValue = lockstep.ReadSmallUInt();
+    string displayName = lockstep.GetDisplayName(lockstep.SendingPlayerId);
+    Debug.Log($"{displayName} rolled a {rolledValue} on a d{faceCount}.");
+}
+```
+
+## Timing
+
+Input actions can be configured to keep track of how much time has passed from the Send call until the input action gets run. See `lockstep.SendingTime` and `lockstep.RealtimeSinceSending`. This **timing** information is **not game state safe**.
+
+For things which require timing for both clients currently in the world as well as late joiners, save a tick value in the [game state](game-states.md) (see `lockstep.CurrentTick`). Then game state deserialization or another function later on can use `lockstep.RealtimeAtTick(tick)` and do math in the `Time.realtimeSinceStartup` scale to figure out proper timing.
 
 # Singleton Input Actions
 

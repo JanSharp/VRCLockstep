@@ -15,7 +15,7 @@ In order for some data structure to qualify as a game state, interaction with th
   - Part of the game state
   - Passed to the event through [Lockstep's read stream](serialization.md#data-streams), like for [input actions](input-actions.md)
   - Part of the Lockstep API where its intellisense declares a value to be [game state safe](#game-state-safe-data)
-- The only exception to the above is [`OnInit`](data-lifecycle.md#first-client) which is allowed to use any data it wants
+- The only exception to the above is `OnInit` which is allowed to [use any data it wants](data-lifecycle.md#first-client)
 - Game state modifications must be [deterministic](#determinism)
 
 Additionally to these rules there are `SerializeGameState` and `DeserializeGameState` functions game states must implement. Here [serialization rules](serialization.md#serialization-and-deserialization) also apply.
@@ -113,3 +113,123 @@ In order to make proper use of this API an understanding of 2 other (external) s
 - The [`WannaBeClass`](https://github.com/JanSharp/VRCJanSharpCommon?tab=readme-ov-file#wannabeclasses) concept from the JanSharp Common package
 
 Both `LockstepGameStateOptionsData` and `WidgetData` derive from `WannaBeClass`, making it particularly important to understand this concept to avoid memory leaks.
+
+# Example
+
+This example is a small game state with just 2 integers, a score value for 2 teams. It supports
+
+- Incrementing, decrementing and resetting teams's scores
+  - Could be done through UI buttons or other scripts
+  - Uses [input actions](input-actions.md)
+- [Exports and Imports](#exports-and-imports)
+- Having some UI to display the score values (not implemented, but see `UpdateUI`)
+
+When using this as a template, make sure to **read the intellisense** for each **overridden member**, there are a lot of important details in there.
+
+```cs
+using JanSharp;
+using UdonSharp;
+using UnityEngine;
+using VRC.SDK3.Data;
+using VRC.SDKBase;
+using VRC.Udon;
+
+namespace Example
+{
+    [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+    // This is where the [SingletonScript] attribute would go, see 'Singleton Tips'.
+    public class TeamScores : LockstepGameState
+    {
+        public override string GameStateInternalName => "example.team-scores";
+        public override string GameStateDisplayName => "Team Scores";
+        // Import/Export happens to be incredibly simple to implement for this game state.
+        public override bool GameStateSupportsImportExport => true;
+        public override uint GameStateDataVersion => 0u;
+        public override uint GameStateLowestSupportedDataVersion => 0u;
+        public override LockstepGameStateOptionsUI ExportUI => null;
+        public override LockstepGameStateOptionsUI ImportUI => null;
+
+        // This is the game state data structure.
+        private int teamOneScore = 0;
+        private int teamTwoScore = 0;
+        // Other scripts can only read, not write.
+        public int TeamOneScore => teamOneScore;
+        public int TeamTwoScore => teamTwoScore;
+
+        // These public functions could be called by other scripts or through UI buttons.
+        public void IncrementTeamOneScore() => SendTeamOneScoreChangeIA(1);
+        public void DecrementTeamOneScore() => SendTeamOneScoreChangeIA(-1);
+        public void IncrementTeamTwoScore() => SendTeamTwoScoreChangeIA(1);
+        public void DecrementTeamTwoScore() => SendTeamTwoScoreChangeIA(-1);
+
+        // This one too.
+        public void SendResetScoresIA()
+        {
+            lockstep.SendInputAction(resetScoresIAId);
+        }
+
+        [HideInInspector] [SerializeField] private uint resetScoresIAId;
+        [LockstepInputAction(nameof(resetScoresIAId))]
+        public void OnResetScoresIA()
+        {
+            teamOneScore = 0;
+            teamTwoScore = 0;
+            UpdateUI();
+        }
+
+        // public so other scripts are not limited to just incrementing and decrementing.
+        // Could be made private however.
+        public void SendTeamOneScoreChangeIA(int delta)
+        {
+            lockstep.WriteSmallInt(delta);
+            lockstep.SendInputAction(teamOneScoreChangeIAId);
+        }
+
+        [HideInInspector] [SerializeField] private uint teamOneScoreChangeIAId;
+        [LockstepInputAction(nameof(teamOneScoreChangeIAId))]
+        public void OnTeamOneScoreChangeIA()
+        {
+            int delta = lockstep.ReadSmallInt();
+            teamOneScore += delta;
+            UpdateUI();
+        }
+
+        // public so other scripts are not limited to just incrementing and decrementing.
+        // Could be made private however.
+        private void SendTeamTwoScoreChangeIA(int delta)
+        {
+            lockstep.WriteSmallInt(delta);
+            lockstep.SendInputAction(teamTwoScoreChangeIAId);
+        }
+
+        [HideInInspector] [SerializeField] private uint teamTwoScoreChangeIAId;
+        [LockstepInputAction(nameof(teamTwoScoreChangeIAId))]
+        public void OnTeamTwoScoreChangeIA()
+        {
+            int delta = lockstep.ReadSmallInt();
+            teamTwoScore += delta;
+            UpdateUI();
+        }
+
+        private void UpdateUI()
+        {
+            // TODO: Update UI for team one's and two's score.
+        }
+
+        public override void SerializeGameState(bool isExport, LockstepGameStateOptionsData exportOptions)
+        {
+            lockstep.WriteSmallInt(teamOneScore);
+            lockstep.WriteSmallInt(teamTwoScore);
+        }
+
+        public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)
+        {
+            // Does not even need to check isImport, it is the same logic either way.
+            teamOneScore = lockstep.ReadSmallInt();
+            teamTwoScore = lockstep.ReadSmallInt();
+            UpdateUI();
+            return null;
+        }
+    }
+}
+```
