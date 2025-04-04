@@ -11,8 +11,11 @@ In order for some data structure to qualify as a game state, interaction with th
 
 - Reading from it can happen any time
 - Writing to it must only happen inside of [game state safe events](events.md#game-state-safe-events) raised by Lockstep
-- Writing to it must only use data that is apart of the game state, or passed to the event through [Lockstep's read stream](serialization.md#data-streams), like for [input actions](input-actions.md)
-  - The only exception is `OnInit` which is allowed to use any data it wants
+- Writing to it must only use data that is
+  - Part of the game state
+  - Passed to the event through [Lockstep's read stream](serialization.md#data-streams), like for [input actions](input-actions.md)
+  - Part of the Lockstep API where its intellisense declares a value to be [game state safe](#game-state-safe-data)
+- The only exception to the above is [`OnInit`](data-lifecycle.md#first-client) which is allowed to use any data it wants
 - Game state modifications must be [deterministic](#determinism)
 
 Additionally to these rules there are `SerializeGameState` and `DeserializeGameState` functions game states must implement. Here [serialization rules](serialization.md#serialization-and-deserialization) also apply.
