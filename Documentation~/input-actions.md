@@ -5,13 +5,13 @@
 
 Input actions refer to the input action event handler, as defined by the `LockstepInputAction` attribute.
 
-Send functions, those that call `SendInputAction`, aren't input actions themselves.
+When referring to input actions, the send functions which ultimately call `SendInputAction` are not part of that definition. They are separate.
 
 Input actions are run on every client in the same tick in the same order.
 
-Input actions are game state safe events.
+Input actions are [game state safe events](events.md#non-game-state-safe-events).
 
-Input actions can be used to input non [game state safe data](game-states.md#game-state-safe-data) into the game state. Effectively passing data from a send function into the game state through an input action.
+Input actions can be used to input non [game state safe data](game-states.md#game-state-safe-data) into the [game state](game-states.md). Effectively passing data from a send function into the game state through an input action.
 
 The transfer of data is done through serialization in the send function and deserialization in the input action, see [serialization](serialization.md).
 
