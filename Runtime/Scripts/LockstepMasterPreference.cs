@@ -62,7 +62,12 @@ namespace JanSharp
         private int preferencesCount = 0;
         private int[] latencyPreferences = new int[ArrList.MinCapacity];
         private int latencyPreferencesCount = 0;
-        private DataDictionary[] latencyHiddenIds = new DataDictionary[ArrList.MinCapacity];
+        /// <summary>
+        /// <para>When the counter for a client is non zero, that client is currently hiding latency.</para>
+        /// <para>Simply incremented when the local player sends an input action, and decremented when
+        /// running an input action that was sent by the local player. Importing resets this counter.</para>
+        /// </summary>
+        private uint[] latencyHiddenCounters = new uint[ArrList.MinCapacity];
         private int latencyHiddenIdsCount = 0;
 
         private DataDictionary persistentPreferences = new DataDictionary();
@@ -168,7 +173,7 @@ namespace JanSharp
             ArrList.Insert(ref playerIds, ref playerIdsCount, playerId, index);
             ArrList.Insert(ref preferences, ref preferencesCount, preference, index);
             ArrList.Insert(ref latencyPreferences, ref latencyPreferencesCount, preference, index);
-            ArrList.Insert(ref latencyHiddenIds, ref latencyHiddenIdsCount, new DataDictionary(), index);
+            ArrList.Insert(ref latencyHiddenCounters, ref latencyHiddenIdsCount, 0u, index);
             return preference;
         }
 
@@ -180,7 +185,7 @@ namespace JanSharp
             ArrList.RemoveAt(ref playerIds, ref playerIdsCount, index);
             int preference = ArrList.RemoveAt(ref preferences, ref preferencesCount, index);
             ArrList.RemoveAt(ref latencyPreferences, ref latencyPreferencesCount, index);
-            ArrList.RemoveAt(ref latencyHiddenIds, ref latencyHiddenIdsCount, index);
+            ArrList.RemoveAt(ref latencyHiddenCounters, ref latencyHiddenIdsCount, index);
             if (preference == currentHighestPreference)
                 CheckForNewHighestPreference();
         }
@@ -309,7 +314,7 @@ namespace JanSharp
             int index = BinarySearch(playerId);
             int prevLatencyPreference = latencyPreferences[index];
             latencyPreferences[index] = preference;
-            latencyHiddenIds[index].Add(id, true);
+            latencyHiddenCounters[index]++;
             if (preference != prevLatencyPreference)
                 RaiseOnMasterLatencyPreferenceChanged(playerId);
         }
@@ -337,10 +342,10 @@ namespace JanSharp
             else
                 CheckIfIsNewHighestPreference(playerId, preference);
 
-            DataDictionary hiddenIds = latencyHiddenIds[index];
-            if (comingFromIA)
-                hiddenIds.Remove(lockstep.SendingUniqueId);
-            if (hiddenIds.Count == 0)
+            uint counter = latencyHiddenCounters[index];
+            if (counter > 0u && comingFromIA && lockstep.SendingPlayerId == localPlayerId)
+                latencyHiddenCounters[index] = --counter;
+            if (counter == 0u)
             {
                 int prevLatencyPreference = latencyPreferences[index];
                 if (preference != prevLatencyPreference)
@@ -418,14 +423,14 @@ namespace JanSharp
                 ArrList.EnsureCapacity(ref playerIds, playerIdsCount);
                 ArrList.EnsureCapacity(ref preferences, preferencesCount);
                 ArrList.EnsureCapacity(ref latencyPreferences, latencyPreferencesCount);
-                ArrList.EnsureCapacity(ref latencyHiddenIds, latencyHiddenIdsCount);
+                ArrList.EnsureCapacity(ref latencyHiddenCounters, latencyHiddenIdsCount);
                 for (int i = 0; i < playerIdsCount; i++)
                 {
                     playerIds[i] = lockstep.ReadSmallUInt();
                     int preference = lockstep.ReadSmallInt();
                     preferences[i] = preference;
                     latencyPreferences[i] = preference;
-                    latencyHiddenIds[i] = new DataDictionary();
+                    latencyHiddenCounters[i] = 0u;
                 }
             }
 
@@ -449,6 +454,8 @@ namespace JanSharp
             {
                 uint playerId = playerIds[i];
                 int importedPreference = persistentPreferences[lockstep.GetDisplayName(playerId)].Int;
+
+                latencyHiddenCounters[i] = 0u; // Latency state is being forced to match game state.
 
                 int prevLatencyPreference = latencyPreferences[i];
                 if (importedPreference != prevLatencyPreference)
