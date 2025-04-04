@@ -17,6 +17,6 @@ The majority of what Lockstep is and its documentation does not matter to world 
 
 # Documentation
 
-Online: [On github](https://github.com/JanSharp/VRCLockstep/blob/v1.0.0/Documentation~/index.md).
+Online: [On github](https://github.com/JanSharp/VRCLockstep/blob/main/Documentation~/index.md).
 
 Offline: In the `Documentation~` folder, as the [Unity's Manual](https://docs.unity3d.com/2022.3/Documentation/Manual/cus-document.html) suggests. Probably the easiest way to do it how Unity wants you to do it is by right clicking the package in the Project window (the Packages list is collapsed by default), wait for the packages panel to finish loading, and then press the Documentation button there.
