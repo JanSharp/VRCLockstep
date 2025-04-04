@@ -366,7 +366,8 @@ namespace JanSharp
         /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
         /// <returns>The unique id of the input action that got sent. If <see cref="IsInitialized"/> is
         /// <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
-        /// returned.</returns>
+        /// returned. Inside of the input action <see cref="SendingUniqueId"/> can then be used in order to
+        /// match it up with some part of the latency state, for example.</returns>
         public abstract ulong SendInputAction(uint inputActionId);
         /// <summary>
         /// <para>Send an input action from one client which, since it is an input action, will then run on
@@ -389,7 +390,8 @@ namespace JanSharp
         /// <returns>The unique id of the input action that got sent. If <see cref="IsInitialized"/> is
         /// <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
         /// returned. The unique id is only returned on the initial responsible client, on all other clients
-        /// it is going to be 0uL.</returns>
+        /// it is going to be 0uL. Inside of the input action <see cref="SendingUniqueId"/> can then be used
+        /// in order to match it up with some part of the latency state, for example.</returns>
         public abstract ulong SendSingletonInputAction(uint inputActionId);
         /// <inheritdoc cref="SendSingletonInputAction(uint)"/>
         /// <param name="responsiblePlayerId">The player id of the client which takes initial responsibility
