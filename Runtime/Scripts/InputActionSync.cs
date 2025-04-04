@@ -44,7 +44,7 @@ namespace JanSharp.Internal
         /// <summary>
         /// <para>The latest input action index either sent or received by this script.</para>
         /// </summary>
-        public uint latestInputActionIndex;
+        [System.NonSerialized] public uint latestInputActionIndex;
 
         // sending
 
