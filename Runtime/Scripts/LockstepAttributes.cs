@@ -34,6 +34,9 @@ namespace JanSharp {
         /// <para>At this point in time, this client - the local client - is not yet part of the game state in
         /// any of the custom game states. <see cref="OnClientJoined"/> eventually gets raised after this
         /// event.</para>
+        /// <para>Since the <see cref="VRC.SDKBase.VRCPlayerApi"/> is not part of the game state, if it is
+        /// desired to input <see cref="VRC.SDKBase.VRCPlayerApi"/> data into the game state, sending input
+        /// actions from within this event may make sense.</para>
         /// <para>The state of the local client in and after this event is
         /// <see cref="ClientState.WaitingForLateJoinerSync"/>. <see cref="LockstepAPI.IsCatchingUp"/> is
         /// <see langword="true"/> however. It may seem odd that the client state is not
@@ -44,6 +47,8 @@ namespace JanSharp {
         OnClientBeginCatchUp,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
+        /// <para>The <see cref="VRC.SDKBase.VRCPlayerApi"/> for the joining player may not even exist anymore
+        /// by the time this event gets raised. It is not part of the game state.</para>
         /// <para>This is the very first event to be raised for the joined client, however said client is
         /// waiting for late joiner data. It cannot send input actions yet, and any input actions sent may or
         /// may not actually be run on the joined client, depending on which tick the master client decides to
@@ -63,6 +68,8 @@ namespace JanSharp {
         /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
         /// <para>This event is guaranteed to be raised before any input actions sent by the joining client
         /// are received and run.</para>
+        /// <para>The <see cref="VRC.SDKBase.VRCPlayerApi"/> for the joining player may not even exist anymore
+        /// by the time this event gets raised. It is not part of the game state.</para>
         /// <para>While this is the second event for/about the joined client - only
         /// <see cref="OnPreClientJoined"/> comes before <see cref="OnClientJoined"/> - before this event the
         /// joined client should be treated as though they have not joined yet, making
@@ -79,6 +86,8 @@ namespace JanSharp {
         /// caught up.</para>
         /// <para>It is possible for a client to become master before finishing catching up, in which case
         /// <see cref="OnMasterClientChanged"/> will get raised before <see cref="OnClientCaughtUp"/>.</para>
+        /// <para>The <see cref="VRC.SDKBase.VRCPlayerApi"/> for the joining player may not even exist anymore
+        /// by the time this event gets raised. It is not part of the game state.</para>
         /// <para>The state of the catching up client in and after this event is either
         /// <see cref="ClientState.Normal"/> or <see cref="ClientState.Master"/>.</para>
         /// <para>Game state safe.</para>
@@ -88,6 +97,8 @@ namespace JanSharp {
         /// <para>Use <see cref="LockstepAPI.LeftPlayerId"/> to get the id of the left client.</para>
         /// <para>It is guaranteed that after this event got raised, not a single input action sent by the
         /// left client shall be received.</para>
+        /// <para>The <see cref="VRC.SDKBase.VRCPlayerApi"/> for the left player does not exist anymore by the
+        /// time this event gets raised.</para>
         /// <para>This event is not raised on the client which left, lockstep simply stops running as soon as
         /// the local player leaves, unlike VRChat's
         /// <see cref="UdonSharp.UdonSharpBehaviour.OnPlayerLeft(VRC.SDKBase.VRCPlayerApi)"/> event which does

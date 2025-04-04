@@ -96,4 +96,6 @@
 - [x] use System.Buffer.BlockCopy rather than System.Array.Copy... I guess?
 - [x] make the lockstep master preference api actually good
 - [x] add `decimal` read and write functions
-- [ ] add bool array read and write functions
+- [ ] maybe add bool array read and write functions. Big maybe
+- [ ] try using PlayerObjects rather than cyan's player object pool. Though really... if it ain't broke don't, fix it. Only reasons I'm considering this is because it removes the need for people to add an external VCC listing manually, and to potentially improve speed of entering play mode by not having 82 instances of the InputActionSync script in the scene
+- [ ] measure input action performance overhead by sending 1 every tick, with debug logs enabled and disabled, and include the results in comparison.md

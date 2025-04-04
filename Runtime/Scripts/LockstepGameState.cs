@@ -158,7 +158,7 @@ namespace JanSharp
         /// <paramref name="importOptions"/> is <see langword="null"/> - it is recommended for the current
         /// state to be reset/discarded before importing such that the state after importing is exactly the
         /// imported state, without any of the existing state polluting it, at least from what the user can
-        /// tell. There can be internal data such as player associated data, which may be required to stay or
+        /// tell. There may be internal data such as player associated data, which may be required to stay or
         /// be merged with imported data for a system to continue to function after the import.</para>
         /// <para>Hover the parameters to read further docs about imports.</para>
         /// </summary>
@@ -181,12 +181,14 @@ namespace JanSharp
         /// <see cref="LockstepGameStateOptionsUI.OptionsClassName"/> on the <see cref="ImportUI"/>.
         /// <see cref="OptionsForCurrentImport"/> holds a reference to the same options instance.</param>
         /// <returns>
-        /// <para>The return value is ignored if <see cref="LockstepAPI.FlagToContinueNextFrame"/> is was
-        /// called. In other words the return value is only used when deserialization truly finished.</para>
+        /// <para>The return value is ignored if <see cref="LockstepAPI.FlagToContinueNextFrame"/> was called.
+        /// In other words the return value is only used when deserialization truly finished.</para>
         /// <para>A non <see langword="null"/> return value indicates failure.</para>
         /// <para>Failing at deserializing late joiner data, so when <paramref name="isImport"/> is
         /// <see langword="false"/>, means the system is in an unrecoverable state on this client and should
-        /// therefore only ever be done to fail fast, which improves debugging.</para>
+        /// therefore only ever be done to "fail fast", which improves debugging.</para>
+        /// <para>It should not be used to report expected potential errors to users. There should be no
+        /// expected potential error states at all.</para>
         /// <para>Failing while <paramref name="isImport"/> is <see langword="true"/> is a valid thing to do,
         /// since - if implemented properly - every client will fail the same way. As such the error message
         /// can be displayed to the user and the system can continue running. However it is still highly

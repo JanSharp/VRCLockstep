@@ -209,12 +209,65 @@ namespace JanSharp
             return lowest;
         }
 
+        /// <summary>
+        /// <para>Gets the preference for the given <paramref name="playerId"/>.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="playerId">Must be an id of a client that actually exists, see
+        /// <see cref="LockstepAPI.ClientStateExists(uint)"/>.</param>
+        /// <returns></returns>
         public int GetPreference(uint playerId) => preferences[BinarySearch(playerId)];
+        /// <summary>
+        /// <para>Gets the highest preference out of all clients that are in the world. Offline players
+        /// excluded, even though their preferences are saved.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <returns></returns>
         public int GetHighestPreference() => currentHighestPreference;
+        /// <summary>
+        /// <para>Gets the lowest preference out of all clients that are in the world. Offline players
+        /// excluded, even though their preferences are saved.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <returns></returns>
         public int GetLowestPreference() => GetLowest(preferences, preferencesCount);
 
+        /// <summary>
+        /// <para>Gets the latency hidden preference for the given <paramref name="playerId"/>.</para>
+        /// <para>See <c>latency-states.md</c> in the documentation folder.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Non game state safe.</para>
+        /// </summary>
+        /// <param name="playerId">Must be an id of a client that actually exists, see
+        /// <see cref="LockstepAPI.ClientStateExists(uint)"/>.</param>
+        /// <returns></returns>
         public int GetLatencyHiddenPreference(uint playerId) => latencyPreferences[BinarySearch(playerId)];
+        /// <summary>
+        /// <para>Gets the highest latency hidden preference out of all clients that are in the world. Offline
+        /// players excluded, even though their preferences are saved.</para>
+        /// <para>See <c>latency-states.md</c> in the documentation folder.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Non game state safe.</para>
+        /// </summary>
+        /// <returns></returns>
         public int GetHighestLatencyHiddenPreference() => GetHighest(latencyPreferences, latencyPreferencesCount);
+        /// <summary>
+        /// <para>Gets the lowest latency hidden preference out of all clients that are in the world. Offline
+        /// players excluded, even though their preferences are saved.</para>
+        /// <para>See <c>latency-states.md</c> in the documentation folder.</para>
+        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Non game state safe.</para>
+        /// </summary>
+        /// <returns></returns>
         public int GetLowestLatencyHiddenPreference() => GetLowest(latencyPreferences, latencyPreferencesCount);
 
         /// <summary>
