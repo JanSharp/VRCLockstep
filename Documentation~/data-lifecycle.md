@@ -33,7 +33,7 @@ Speaking of input actions, similar to `OnInit` as soon as `OnClientBeginCatchUp`
 
 Once `OnClientBeginCatchUp` is raised, `lockstep.IsInitialized` is `true`.
 
-After `OnClientBeginCatchUp` the Lockstep system begins rapidly running game ticks and raising events as well as input action handlers in those game ticks in order to catch up with every other client in the world. The reason why this client is behind in the first place is because sending all the game states to it may take some time, depending on the size of game states, so the client then has to run all actions performed after the game states were captured and sent over the network.
+After `OnClientBeginCatchUp` the Lockstep system begins rapidly running game ticks and raising events as well as input action handlers in those game ticks in order to catch up with every other client in the world. The reason why this client is behind in the first place is because sending all the game states to it may have taken some time, depending on the size of game states, so the client then has to run all actions performed after the game states were captured and sent over the network.
 
 Note that during this process, it is good to keep in mind that any input action sent will run many many game ticks in the future, after the clint is fully caught up. Depending on what the input action is for it may make more sense not to send it at all. To do so check the `IsCatchingUp` flag on Lockstep.
 
@@ -47,4 +47,4 @@ There are [events](events.md) for players joining and leaving:
 - `OnClientJoined`
 - `OnClientLeft`
 
-For derails see [here](events.md#detailed-docs).
+For details see [here](events.md#detailed-docs).

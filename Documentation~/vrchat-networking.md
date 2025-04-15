@@ -1,4 +1,6 @@
 
+[To index](index.md)
+
 # Builtin VRChat Networking
 
 There is some documentation from VRChat [here](https://creators.vrchat.com/worlds/udon/networking/), however the target audience there vs on this page here is quite different. This page is oriented towards programmers and it just focuses on what VRChat networking is designed for and good or bad at, less so giving a generic overview.
@@ -78,7 +80,7 @@ There is some documentation from VRChat [here](https://creators.vrchat.com/world
 
 In order for an object to be sync-able:
 
-- The game object must exist in the scene at build tim
+- The game object must exist in the scene at build time
 - Must not be instantiated at runtime
 - Has one or more UdonSharpBehaviours on it which has a non `None` sync mode
   - Or it has the VRCObjectSync component in which case the object is forced to use `Continuous` sync mode
@@ -96,7 +98,7 @@ Every [Synced Object](#synced-objects) has an owner, which is a player in the wo
 
 When using `UdonSharpBehaviour.RequestSerialization`, the player running that code must be the owner of the synced object in order for syncing to actually happen.
 
-There is technically more to ownership, like instance masters, ownership transfer requests, but none of those actually matter when using VRCHat networking the way it is "supposed" to be used.
+There is technically more to ownership, like instance masters, ownership transfer requests, but none of those actually matter when using VRChat networking the way it is "supposed" to be used.
 
 ## Network Congestion
 
