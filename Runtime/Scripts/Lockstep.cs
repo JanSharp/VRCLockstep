@@ -1968,6 +1968,11 @@ namespace JanSharp.Internal
             ignoreIncomingInputActions = false;
             tickStartTimeShift = 0f;
 
+            // The immutable tick prevents any newly enqueued input actions from being enqueued too early,
+            // to prevent desyncs when not in single player as well as poor IA ordering in general.
+            // AssociateUnassociatedInputActionsWithTicks also requires currentTick to be <= lastRunnableTick.
+            firstMutableTick = lastRunnableTick + 1;
+
             // If this client has never run ticks before then currentTick will still be 0,
             // while lastRunnableTick will never be 0 here.
             // If currentTick is past lastRunnableTick (which it will only ever be by 1) then this client is
@@ -1987,11 +1992,6 @@ namespace JanSharp.Internal
                 SetDilatedTickStartTime();
             }
             isTickPaused = false;
-
-            // The immutable tick prevents any newly enqueued input actions from being enqueued too early,
-            // to prevent desyncs when not in single player as well as poor IA ordering in general.
-            // AssociateUnassociatedInputActionsWithTicks also requires currentTick to be <= lastRunnableTick.
-            firstMutableTick = currentTick;
 
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
