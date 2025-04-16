@@ -1973,7 +1973,10 @@ namespace JanSharp.Internal
             // If currentTick is past lastRunnableTick (which it will only ever be by 1) then this client is
             // fully caught up with whatever the last tick the previous master had run was.
             if (currentTick > lastRunnableTick) // Instantly become master.
-                FinishCatchingUpOnMaster(); // We weren't actually catching up but the logic is the same.
+            {
+                if (!isCatchingUp) // Is true when coming from DoneProcessingLJGameStates directly.
+                    FinishCatchingUpOnMaster(); // We weren't actually catching up but the logic is the same.
+            }
             else
             {
                 isCatchingUp = true; // Catch up as quickly as possible to the lastRunnableTick. Unless it was
