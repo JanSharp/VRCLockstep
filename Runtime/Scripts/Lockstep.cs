@@ -1675,9 +1675,8 @@ namespace JanSharp.Internal
             sendMasterChangeConfirmationInFirstMutableTick = false;
             finishMasterChangeProcessAtStartOfTick = false;
 
-            someoneIsAskingForMasterCandidates = false;
-            acceptForcedCandidate = false;
             StopWaitingForCandidates();
+            acceptForcedCandidate = false;
 
             if (oldMasterHasAState)
                 SetClientState(oldMasterPlayerId, ClientState.Normal);
@@ -1887,7 +1886,6 @@ namespace JanSharp.Internal
             latestInputActionIndexByPlayerIdForLJ = null;
             currentlyNoMaster = true;
             StopWaitingForCandidates();
-            someoneIsAskingForMasterCandidates = false;
             acceptForcedCandidate = false;
             // The times where ignoreLocalInputActions would be false, FactoryReset should no longer get called.
             stillAllowLocalClientJoinedIA = false;
@@ -2139,7 +2137,7 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  SendResponseForBetterMasterCandidateIA");
             #endif
             WriteSmallUInt(askingPlayerIdRoundtrip);
-            WriteByte((byte)(isMaster ? 2u : couldBecomeMaster ? 1u : 0u));
+            WriteFlags(isMaster, couldBecomeMaster);
             SendInstantAction(responseForBetterMasterCandidateIAId, doRunLocally: askingPlayerIdRoundtrip == localPlayerId);
         }
 
@@ -2151,12 +2149,12 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  OnResponseForBetterMasterCandidateIA");
             #endif
             uint askingPlayerIdRoundtrip = ReadSmallUInt();
-            byte couldBecomeMaster = ReadByte();
+            ReadFlags(out bool isAlreadyMaster, out bool couldBecomeMaster);
             if (!isAskingForMasterCandidates)
                 return;
             if (askingPlayerIdRoundtrip != localPlayerId) // A different player asked, we don't care.
                 return;
-            if (couldBecomeMaster == 2u)
+            if (isAlreadyMaster)
             {
                 StopWaitingForCandidates();
                 // Tell all the other clients that we stopped asking about it. This approach prevents race
@@ -2169,7 +2167,7 @@ namespace JanSharp.Internal
             // Or this is a new client that joined right after we sent the question/request.
 
             notYetRespondedCandidates.Remove(sendingPlayerId);
-            if (couldBecomeMaster != 0u)
+            if (couldBecomeMaster)
                 ArrList.Add(ref acceptingCandidates, ref acceptingCandidatesCount, sendingPlayerId);
             if (notYetRespondedCandidates.Count != 0)
                 return;
@@ -2195,10 +2193,11 @@ namespace JanSharp.Internal
         private void StopWaitingForCandidates()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] Lockstep  StopWaitingForCandidatesAsAMasterAlreadyExists");
+            Debug.Log($"[LockstepDebug] Lockstep  StopWaitingForCandidates");
             #endif
 
             isAskingForMasterCandidates = false;
+            someoneIsAskingForMasterCandidates = false;
             notYetRespondedCandidates = null;
             // Not clearing acceptingCandidates as it could be reused later.
         }
@@ -2245,12 +2244,19 @@ namespace JanSharp.Internal
             uint acceptedPlayerId = ReadSmallUInt();
             ReadFlags(out bool force);
             if (acceptedPlayerId != localPlayerId
-                || !isMaster // This client was already asked to become master previously, ignore another confirmation.
+                || isMaster // This client was already asked to become master previously, ignore another confirmation.
                 || !currentlyNoMaster) // A different client already became master, or this client is getting
             { // asked too early - before getting a player left event - so it cannot take master yet.
                 acceptForcedCandidate = false;
                 return;
             }
+            // This force feature purely exists to ask the client that sent the confirmation to resend the
+            // confirmation just to be sure that the local client is actually legitimately supposed to become
+            // the new master. This is only required when clientIdAskingForCandidates is somehow "wrong",
+            // which is incredibly unlikely if it is even possible as it would require the lockstep+VRChat
+            // master to leave, and then the new VRChat master to ask for better candidates and then also
+            // instantly leave. Then finally another VRChat master also asks for better candidates and through
+            // some weird edge case the local player here received those 2 ask IAs in the opposite order.
             if (clientIdAskingForCandidates != sendingPlayerId
                 && (!force || !acceptForcedCandidate || sendingPlayerId != acceptForcedCandidateFromPlayerId))
             {
@@ -2994,6 +3000,8 @@ namespace JanSharp.Internal
             bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
             ForgetAboutUnprocessedLJSerializedGameSates();
             CleanUpOldInputActions();
+            StopWaitingForCandidates();
+            acceptForcedCandidate = false;
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
