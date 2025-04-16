@@ -1974,9 +1974,7 @@ namespace JanSharp.Internal
             // while lastRunnableTick will never be 0 here.
             // If currentTick is past lastRunnableTick (which it will only ever be by 1) then this client is
             // fully caught up with whatever the last tick the previous master had run was.
-            bool instantlyBecomeMaster = currentTick > lastRunnableTick;
-
-            if (instantlyBecomeMaster)
+            if (currentTick > lastRunnableTick) // Instantly become master.
                 FinishCatchingUpOnMaster(); // We weren't actually catching up but the logic is the same.
             else
             {
@@ -2000,15 +1998,10 @@ namespace JanSharp.Internal
 
             AssociateUnassociatedInputActionsWithTicks();
 
-            if (instantlyBecomeMaster)
-                UpdateClientStatesForNewMaster(localPlayerId);
-            else
-            {
-                SendMasterChangedIA(); // Do it here to have it happen in the first mutable tick, which is the
-                // first tick the previous master didn't get to run anymore.
-                // And process left players afterwards which guarantees that there is always 1 master in the
-                // client states.
-            }
+            SendMasterChangedIA(); // Do it here to have it happen in the first mutable tick, which is the
+            // first tick the previous master didn't get to run anymore.
+            // And process left players afterwards which guarantees that there is always 1 master in the
+            // client states.
 
             if (masterChangeRequestInProgress)
                 SendCancelledMasterChangeIA();
