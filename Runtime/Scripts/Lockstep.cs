@@ -2519,8 +2519,10 @@ namespace JanSharp.Internal
             #endif
             string playerName = ReadString();
             DataToken keyToken = sendingPlayerId;
+            bool doRaise = true;
             if (TryGetClientState(sendingPlayerId, out ClientState currentState))
             {
+                doRaise = false;
                 if (currentState != ClientState.WaitingForLateJoinerSync)
                     return;
             }
@@ -2537,7 +2539,8 @@ namespace JanSharp.Internal
                 SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), lateJoinerSyncDelay);
             }
 
-            RaiseOnPreClientJoined(sendingPlayerId);
+            if (doRaise)
+                RaiseOnPreClientJoined(sendingPlayerId);
         }
 
         public void PlayerJoinedFiveMinutesAgo()
