@@ -3006,8 +3006,11 @@ namespace JanSharp.Internal
             bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
             ForgetAboutUnprocessedLJSerializedGameSates();
             CleanUpOldInputActions();
-            StopWaitingForCandidates();
-            acceptForcedCandidate = false;
+            if (!currentlyNoMaster)
+            {
+                StopWaitingForCandidates();
+                acceptForcedCandidate = false;
+            }
             ignoreLocalInputActions = false;
             stillAllowLocalClientJoinedIA = false;
             SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.

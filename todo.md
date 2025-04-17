@@ -106,4 +106,4 @@
 - [x] becoming master during the initial catch up causes it to set the last runnable tick to uint max value and it ends up trying to catch up indefinitely
 - [x] becoming a new master due to the master leaving can potentially cause other clients to not run `OnMasterChangedIA` nor `OnClientLeftIA`, this is due to IAs being associated wit ha tick too early on the new master... somehow. My guess is a race condition with the tick sync script where 1 packet from that script was still in transit from the original master that had not been received on the new master yet
 - [ ] I noticed that there is an event for the VRChat master changing, double check and use that for the info UI
-- [ ] Is stopping asking for candidates really safe to do when finishing processing LJ game states?
+- [x] Is stopping asking for candidates really safe to do when finishing processing LJ game states?
