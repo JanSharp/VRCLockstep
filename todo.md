@@ -105,5 +105,6 @@
 - [x] WaitingForCandidatesLoop does not work. Master CLient A leaves. Client B has game state data, Client C does not. Client C becomes VRChat master. Client C asks all clients if they're candidates to become master, Client C determines Client B is supposed to become master, `OnAcceptedMasterCandidateIA` runs on both Client B and Client C, no client becomes master. Something along the way did not work
 - [x] becoming master during the initial catch up causes it to set the last runnable tick to uint max value and it ends up trying to catch up indefinitely
 - [x] becoming a new master due to the master leaving can potentially cause other clients to not run `OnMasterChangedIA` nor `OnClientLeftIA`, this is due to IAs being associated wit ha tick too early on the new master... somehow. My guess is a race condition with the tick sync script where 1 packet from that script was still in transit from the original master that had not been received on the new master yet
-- [ ] I noticed that there is an event for the VRChat master changing, double check and use that for the info UI
+- [x] I noticed that there is an event for the VRChat master changing, double check and use that for the info UI
 - [x] Is stopping asking for candidates really safe to do when finishing processing LJ game states?
+- [ ] reduce delay for when late joiner syncing starts. Yea it will increase the amount of networking when multiple people are joining, but when just 1 or 2 people are joining it should be sending data asap
