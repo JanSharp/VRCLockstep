@@ -52,6 +52,7 @@ There is some documentation from VRChat [here](https://creators.vrchat.com/world
   - `UdonSharpBehaviour.SendCustomNetworkEvent` function
   - `OnOwnershipRequest` event
   - `OnOwnershipTransferred` event
+  - `OnMasterTransferred` event
   - `Networking.GetOwner` static function
   - `Networking.SetOwner` static function
   - `Networking.IsOwner` static function
