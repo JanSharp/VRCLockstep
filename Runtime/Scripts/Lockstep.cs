@@ -1506,7 +1506,7 @@ namespace JanSharp.Internal
             #endif
             if (!PlayerIdHasClientState(playerId) // If they're not in clientStates then we simply don't care.
                 || ArrList.Contains(ref leftClients, ref leftClientsCount, playerId))
-                return; // ^ Detect and ignore player left events (aka major trust issues).
+                return; // ^ Detect and ignore duplicate player left events (aka major trust issues).
             ArrList.Add(ref leftClients, ref leftClientsCount, playerId);
             if (playerId == masterPlayerId)
                 SetMasterLeftFlag();
