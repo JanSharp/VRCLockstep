@@ -325,11 +325,7 @@ namespace JanSharp.Internal
         [LockstepEvent(LockstepEventType.OnClientJoined)]
         public void OnClientJoined()
         {
-            uint joinedPlayerId = lockstep.JoinedPlayerId;
-            if (clientStateEntries.ContainsKey(joinedPlayerId))
-                UpdateClientState(joinedPlayerId);
-            else
-                AddClient(joinedPlayerId); // TODO: this should never actually happen
+            UpdateClientState(lockstep.JoinedPlayerId);
         }
 
         [LockstepEvent(LockstepEventType.OnClientCaughtUp)]

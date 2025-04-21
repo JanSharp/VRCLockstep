@@ -111,4 +111,4 @@
 - [x] sort the clients list in the info UI please. Like please. It's such a bad look with it being undefined/unknown order. ~~Just add like a header that warns that the list is about to get reordered, a 1 or 2 second warning~~ Who cares about that warning. It really is not a big deal if the list shuffles, worst case is making the wrong player lockstep master, which can be fixed with 1 more click very quickly
 - [x] info UI should have the clients list show by default, and auto switch to the notifications when there is a new one
 - [ ] test if scripts receive events raised by lockstep even if the scripts are disabled. The expectation is that yes they will, so add that to the docs
-- [ ] make info UI bigger, or at least taller
+- [x] make info UI bigger, or at least taller
