@@ -37,7 +37,7 @@ Determinism simply means that an operation is going to have the exact same resul
 
 Game state modification relies on determinism in order to maintain the guarantee that they remain in perfect sync across all [clients](clients.md).
 
-This usually gets complicated as soon as multiple architectures are involved. Arm vs x86. Android is probably using arm, while basically every PC is using x86. The way they handle integer overflow, floating point rounding might also differ... though who knows for sure. (I, JanSharp, am not very knowledgeable in this field.)
+This usually gets complicated as soon as multiple architectures are involved. Arm vs x64 vs x86. Android is probably using arm, while basically every PC is using x64. The way they handle integer overflow, floating point rounding might also differ... though who knows for sure. (I, JanSharp, am not very knowledgeable in this field.)
 
 But trying to do handle this in Udon would be incredibly annoying so the solution is to pretend and assume that - so long as purely [game state safe data](#game-state-safe-data) is being used - the result is going to be identical on all clients. But just in case that is not truly the case, floating point values may be better to be compared using some "almost equals" function (like `Mathf.Approximately` for example) rather than exact equality (`==`, `!=`).
 

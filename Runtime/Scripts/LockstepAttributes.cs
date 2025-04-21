@@ -232,6 +232,7 @@ namespace JanSharp {
         /// <para>Event registration is performed at OnBuild, which is to say that scripts with these kinds of
         /// event handlers must exist in the scene at build time, any runtime instantiated objects with these
         /// scripts on them will not receive these events.</para>
+        /// <para>Disabled scripts still receive events.</para>
         /// </summary>
         /// <param name="eventType">The event to register this function as a listener to.</param>
         public LockstepEventAttribute(LockstepEventType eventType)
@@ -256,6 +257,7 @@ namespace JanSharp {
         /// [<see cref="UnityEngine.HideInInspector"/>] attribute, as it is not set from the inspector. It is
         /// set by lockstep in an OnBuild handler, so when entering play mode, when uploading or when manually
         /// running handlers through Tools in the unity editor.</para>
+        /// <para>Disabled scripts still receive events.</para>
         /// </summary>
         /// <param name="idFieldName">Use <c>nameof(fieldName)</c>.</param>
         public LockstepInputActionAttribute(string idFieldName)
@@ -310,7 +312,7 @@ namespace JanSharp {
         /// <see cref="LockstepAPI.CurrentTick"/> divided by <paramref name="interval"/> leaves 0 rest.</para>
         /// <para>On nth tick event handlers are executed ordered by <see langword="internal"/> ascending,
         /// then by <see cref="Order"/> ascending and then by method name ascending.</para>
-        /// make sure to mention this event in the notes file
+        /// <para>Disabled scripts still receive events.</para>
         /// </summary>
         /// <param name="interval">Must be greater than 0.</param>
         public LockstepOnNthTickAttribute(uint interval)

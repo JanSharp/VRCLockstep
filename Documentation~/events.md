@@ -13,6 +13,8 @@ Scripts listening to events must:
 - Not be instantiated at runtime
 - Not be destroyed at runtime
 
+**Disabled scripts still receive all events raised by lockstep.** This is required in order to upkeep [determinism](game-states.md#determinism). If a script should ignore events when it is disabled, it can do so by checking a variable inside of the event handler and early returning, however keep in mind that in [game state safe events](#game-state-safe-events) this variable must also be a game state safe variable, otherwise any modifications made to the game state in the event would result in desyncs.
+
 ## Instantiation and Listeners
 
 As mentioned above, event listeners using attributes cannot be instantiated at runtime, they simply would not receive any event.
