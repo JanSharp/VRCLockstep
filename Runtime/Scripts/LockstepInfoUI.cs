@@ -462,6 +462,7 @@ namespace JanSharp.Internal
             entryGo.transform.SetParent(notificationLogContent, worldPositionStays: false);
             entryGo.transform.SetAsFirstSibling();
             entryGo.GetComponentInChildren<TextMeshProUGUI>().text = message;
+            notificationLogTabToggle.isOn = true;
         }
     }
 }

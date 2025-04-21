@@ -109,4 +109,4 @@
 - [x] Is stopping asking for candidates really safe to do when finishing processing LJ game states?
 - [ ] reduce delay for when late joiner syncing starts. Yea it will increase the amount of networking when multiple people are joining, but when just 1 or 2 people are joining it should be sending data asap
 - [ ] sort the clients list in the info UI please. Like please. It's such a bad look with it being undefined/unknown order. Just add like a header that warns that the list is about to get reordered, a 1 or 2 second warning
-- [ ] info UI should have the clients list show by default, and auto switch to the notifications when there is a new one
+- [x] info UI should have the clients list show by default, and auto switch to the notifications when there is a new one

@@ -1288,8 +1288,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4557095011005213610}
   - {fileID: 4557095011129707166}
+  - {fileID: 4557095011005213610}
   m_Father: {fileID: 4557095011502404609}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
@@ -1665,8 +1665,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 4557095011136235211}
   m_HandleRect: {fileID: 4557095012584568641}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.9999884
+  m_Value: 0
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2171,10 +2171,10 @@ RectTransform:
   - {fileID: 4557095012140719819}
   m_Father: {fileID: 4557095010617847349}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 71, y: -15}
-  m_SizeDelta: {x: 142, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4557095011005213615
 CanvasRenderer:
@@ -2273,7 +2273,7 @@ MonoBehaviour:
           m_StringArgument: OnTabToggleValueChanged
           m_BoolArgument: 0
         m_CallState: 2
-  m_IsOn: 1
+  m_IsOn: 0
 --- !u!1 &4557095011129707167
 GameObject:
   m_ObjectHideFlags: 0
@@ -2310,10 +2310,10 @@ RectTransform:
   - {fileID: 4557095010696406898}
   m_Father: {fileID: 4557095010617847349}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 213, y: -15}
-  m_SizeDelta: {x: 142, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4557095011129707107
 CanvasRenderer:
@@ -2412,7 +2412,7 @@ MonoBehaviour:
           m_StringArgument: OnTabToggleValueChanged
           m_BoolArgument: 0
         m_CallState: 2
-  m_IsOn: 0
+  m_IsOn: 1
 --- !u!1 &4557095011136235205
 GameObject:
   m_ObjectHideFlags: 0
@@ -2522,7 +2522,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00340271}
+  m_AnchoredPosition: {x: 0, y: 0.000045776367}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &4557095011368617300
@@ -3627,8 +3627,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 4557095011591485534}
   m_HandleRect: {fileID: 4557095011715424442}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.9999884
+  m_Value: 0
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -3900,7 +3900,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00340271}
+  m_AnchoredPosition: {x: 0, y: 0.000045776367}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &4557095012031340351
@@ -4240,7 +4240,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &4557095012232517617
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4663,9 +4663,9 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4557095012533376177}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 1
-  m_BlocksRaycasts: 1
+  m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
 --- !u!1 &4557095012553212241
 GameObject:
@@ -4712,9 +4712,9 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4557095012553212241}
   m_Enabled: 1
-  m_Alpha: 0
+  m_Alpha: 1
   m_Interactable: 1
-  m_BlocksRaycasts: 0
+  m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
 --- !u!1 &4557095012584568642
 GameObject:
