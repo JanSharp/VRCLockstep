@@ -134,6 +134,8 @@ namespace JanSharp.Internal
         /// <para><see cref="uint"/> clientId => <see cref="LockstepClientStateEntry"/> entry</para>
         /// </summary>
         private DataDictionary clientStateEntries = new DataDictionary();
+        private string[] displayNames = new string[ArrList.MinCapacity];
+        private int displayNamesCount = 0;
         private LockstepClientStateEntry[] unusedClientStateEntries = new LockstepClientStateEntry[ArrList.MinCapacity];
         private int unusedClientStateEntriesCount = 0;
 
@@ -327,7 +329,7 @@ namespace JanSharp.Internal
             if (clientStateEntries.ContainsKey(joinedPlayerId))
                 UpdateClientState(joinedPlayerId);
             else
-                AddClient(joinedPlayerId);
+                AddClient(joinedPlayerId); // TODO: this should never actually happen
         }
 
         [LockstepEvent(LockstepEventType.OnClientCaughtUp)]
@@ -408,10 +410,17 @@ namespace JanSharp.Internal
             ClientState clientState = lockstep.GetClientState(clientId);
             if (clientId == localPlayerId)
                 LocalClientState = clientState;
+            string displayName = lockstep.GetDisplayName(clientId);
+            string comparableName = displayName.ToLower().Trim();
+            int index = ArrList.BinarySearch(ref displayNames, ref displayNamesCount, comparableName);
+            if (index < 0)
+                index = ~index;
+            ArrList.Insert(ref displayNames, ref displayNamesCount, comparableName, index);
             LockstepClientStateEntry entry = GetOrCreateEntry();
             clientStateEntries.Add(clientId, entry);
+            entry.transform.SetSiblingIndex(index);
             entry.playerId = clientId;
-            entry.clientDisplayNameText.text = lockstep.GetDisplayName(clientId);
+            entry.clientDisplayNameText.text = displayName;
             entry.clientStateText.text = lockstep.ClientStateToString(clientState);
             UpdateMakeMasterButton(entry);
             UpdateClientCount();
@@ -422,7 +431,9 @@ namespace JanSharp.Internal
         public void RemoveClient(uint clientId)
         {
             clientStateEntries.Remove(clientId, out DataToken entryToken);
-            DisableClientEntry((LockstepClientStateEntry)entryToken.Reference);
+            LockstepClientStateEntry entry = (LockstepClientStateEntry)entryToken.Reference;
+            ArrList.RemoveAt(ref displayNames, ref displayNamesCount, entry.transform.GetSiblingIndex());
+            DisableClientEntry(entry);
             UpdateClientCount();
         }
 
