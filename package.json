@@ -15,7 +15,6 @@
   "license": "MIT",
   "vpmDependencies": {
     "com.vrchat.worlds": "^3.6.x",
-    "com.cyan.playerobjectpool": "^1.1.2",
     "com.jansharp.common": ">=1.0.2",
     "com.jansharp.generic-value-editor": ">=1.0.0"
   },

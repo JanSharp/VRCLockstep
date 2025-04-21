@@ -97,7 +97,7 @@
 - [x] make the lockstep master preference api actually good
 - [x] add `decimal` read and write functions
 - [ ] maybe add bool array read and write functions. Big maybe
-- [ ] try using PlayerObjects rather than cyan's player object pool. Though really... if it ain't broke don't, fix it. Only reasons I'm considering this is because it removes the need for people to add an external VCC listing manually, and to potentially improve speed of entering play mode by not having 82 instances of the InputActionSync script in the scene
+- [x] try using PlayerObjects rather than cyan's player object pool. Though really... if it ain't broke don't, fix it. Only reasons I'm considering this is because it removes the need for people to add an external VCC listing manually, and to potentially improve speed of entering play mode by not having 82 instances of the InputActionSync script in the scene
   - We cannot trust PlayerObjects to be created and deleted consistently across all clients in relation to the first and last sync on the object. Lockstep requires the guarantee that any sync on an object is going to be received by all clients and I am not about to risk the integrity of the system on VRChat's internals that I cannot see, and testing it sounds like a ginormous pain and would still not guarantee that they aren't going to break it in the future. That is kind of VRChat's habit: hidden breaking changes, because everything is a breaking change
 - [ ] measure input action performance overhead by sending 1 every tick, with debug logs enabled and disabled, and include the results in comparison.md
 - [ ] figure out a way to make the link to online documentation automatically update when doing a release
@@ -108,3 +108,5 @@
 - [x] I noticed that there is an event for the VRChat master changing, double check and use that for the info UI
 - [x] Is stopping asking for candidates really safe to do when finishing processing LJ game states?
 - [ ] reduce delay for when late joiner syncing starts. Yea it will increase the amount of networking when multiple people are joining, but when just 1 or 2 people are joining it should be sending data asap
+- [ ] sort the clients list in the info UI please. Like please. It's such a bad look with it being undefined/unknown order. Just add like a header that warns that the list is about to get reordered, a 1 or 2 second warning
+- [ ] info UI should have the clients list show by default, and auto switch to the notifications when there is a new one

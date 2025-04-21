@@ -5,7 +5,6 @@
         "JanSharp.Common",
         "JanSharp.GenericValueEditor",
         "UdonSharp.Runtime",
-        "Cyan.PlayerObjectPool.UdonSharp",
         "VRC.SDK3",
         "VRC.SDKBase",
         "VRC.Udon",

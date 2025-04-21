@@ -2,7 +2,6 @@
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
-using Cyan.PlayerObjectPool;
 using VRC.Udon.Common;
 
 namespace JanSharp.Internal
@@ -11,7 +10,7 @@ namespace JanSharp.Internal
     [AddComponentMenu("")]
     #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
-    public class InputActionSync : CyanPlayerObjectPoolObject
+    public class InputActionSync : UdonSharpBehaviour
     {
         private const int MaxSyncedDataSize = 4096;
         private const int PlayerIdShift = 32;
@@ -22,14 +21,12 @@ namespace JanSharp.Internal
         ///<summary>WriteSmall((uint)index) never writes 0xff as the first byte, making this distinguishable.</summary>
         private const byte IgnoreRestOfDataMarker = 0xff;
 
-        [System.NonSerialized] public Lockstep lockstep;
+        public Lockstep lockstep;
         /// <summary>Guaranteed to be <see langword="false"/> on the lockstep master client.</summary>
         [System.NonSerialized] public bool lockstepIsWaitingForLateJoinerSync;
-        [System.NonSerialized] public ulong shiftedPlayerId;
+        [System.NonSerialized] public ulong shiftedOwnerPlayerId;
         [System.NonSerialized] public uint ownerPlayerId;
-
-        // Who is the current owner of this object. Null if object is not currently in use.
-        // [System.NonSerialized] public VRCPlayerApi Owner; // In the base class.
+        [System.NonSerialized] public VRCPlayerApi owner;
 
         #if !LockstepDebug
         [HideInInspector]
@@ -44,7 +41,7 @@ namespace JanSharp.Internal
         /// <summary>
         /// <para>The latest input action index either sent or received by this script.</para>
         /// </summary>
-        [System.NonSerialized] public uint latestInputActionIndex;
+        [System.NonSerialized] public uint latestInputActionIndex = 0u;
 
         // sending
 
@@ -92,9 +89,6 @@ namespace JanSharp.Internal
 
         // receiving
 
-        private uint sendingPlayerId = 0u; // Initial value does not matter, so long as they match.
-        private ulong shiftedSendingPlayerId = 0uL; // Initial value does not matter, so long as they match.
-
         private bool hasPartialInputAction = false;
         private uint receivedInputActionId;
         private uint receivedInputActionIndex;
@@ -106,20 +100,45 @@ namespace JanSharp.Internal
         private bool partialRequiresTimeTracking;
         private float partialSendTime;
 
-        // This method will be called on all clients when the object is enabled and the Owner has been assigned.
-        public override void _OnOwnerSet()
+        private void Start()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] {this.name}  _OnOwnerSet");
+            Debug.Log($"[LockstepDebug] {this.name}  Start");
             #endif
+            if (isLateJoinerSyncInst)
+                return;
+            SendCustomEventDelayedFrames(nameof(StartDelayed), 1); // Trust issues.
         }
 
-        // This method will be called on all clients when the original owner has left and the object is about to be disabled.
-        public override void _OnCleanup()
+        public void StartDelayed()
         {
             #if LockstepDebug
-            Debug.Log($"[LockstepDebug] {this.name}  _OnCleanup");
+            Debug.Log($"[LockstepDebug] {this.name}  StartDelayed");
             #endif
+            owner = Networking.GetOwner(this.gameObject);
+            ownerPlayerId = (uint)owner.playerId;
+            shiftedOwnerPlayerId = ((ulong)ownerPlayerId) << Lockstep.PlayerIdKeyShift;
+            lockstep.OnInputActionSyncPlayerAssigned(owner, this);
+        }
+
+        private void OnDisable()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] {this.name}  OnDisable");
+            #endif
+            if (isLateJoinerSyncInst)
+                return;
+            lockstep.OnInputActionSyncPlayerUnassigned(ownerPlayerId, this);
+        }
+
+        private void OnDestroy()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] {this.name}  OnDestroy");
+            #endif
+            if (isLateJoinerSyncInst)
+                return;
+            lockstep.OnInputActionSyncPlayerUnassigned(ownerPlayerId, this);
         }
 
         public ulong MakeUniqueId()
@@ -127,7 +146,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] {this.name}  MakeUniqueId");
             #endif
-            return shiftedPlayerId | (ulong)(nextInputActionIndex++);
+            return shiftedOwnerPlayerId | (ulong)(nextInputActionIndex++);
         }
 
         /// <summary>
@@ -136,6 +155,9 @@ namespace JanSharp.Internal
         /// </summary>
         private void MoveStageToQueue()
         {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] {this.name}  MoveStageToQueue");
+            #endif
             byte[] stageCopy = new byte[MaxSyncedDataSize];
             stage.CopyTo(stageCopy, 0);
             ArrQueue.Enqueue(ref dataQueue, ref dqStartIndex, ref dqCount, stageCopy);
@@ -176,14 +198,8 @@ namespace JanSharp.Internal
                 MoveStageToQueue();
             }
 
-            // Always send the player id to prevent race conditions around players joining and leaving, because
-            // I cannot trust VRChat and the player object pool to ensure that the owner (assigned by the
-            // player object pool) to be the same for every client at the time of deserialization.
-            if (stageSize == 0)
-                DataStream.WriteSmall(ref stage, ref stageSize, ownerPlayerId);
-
             uint index = (nextInputActionIndex++);
-            ulong uniqueId = shiftedPlayerId | index;
+            ulong uniqueId = shiftedOwnerPlayerId | index;
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] {this.name}  SendInputAction (inner) - uniqueId: 0x{uniqueId:x16}");
             #endif
@@ -294,7 +310,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] {this.name}  CheckSyncStart");
             #endif
-            if (!isLateJoinerSyncInst && Owner == null)
+            if (!isLateJoinerSyncInst && (owner == null || !owner.IsValid()))
             {
                 Debug.LogError("[Lockstep] Attempt to send input actions when there is no player assigned with the sync script.");
                 return;
@@ -398,9 +414,9 @@ namespace JanSharp.Internal
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             #endif
-            if ((isLateJoinerSyncInst && !lockstepIsWaitingForLateJoinerSync) || lockstep == null)
+            if (isLateJoinerSyncInst ? !lockstepIsWaitingForLateJoinerSync : owner == null)
             {
-                // When lockstep is still null, this can safely ignore any incoming data,
+                // When owner is still null, this can safely ignore any incoming data,
                 // because this script can handle broken partial actions and Lockstep
                 // doesn't except to get input actions instantly after joining.
                 return;
@@ -439,24 +455,13 @@ namespace JanSharp.Internal
                     lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedSendTime, receivedData);
                 }
             }
-            else
+            else if (hasPartialInputAction)
             {
-                if (hasPartialInputAction)
-                {
-                    Debug.LogError("[Lockstep] Expected continuation of split up partial input action data, "
-                        + "but didn't receive as such. This is very most likely an unrecoverable state for "
-                        + "the system, but just in case someone just tried sending data through malicious "
-                        + "means this data gets ignored.");
-                    return;
-                }
-                uint playerId = DataStream.ReadSmallUInt(syncedData, ref i);
-                if (playerId != sendingPlayerId)
-                {
-                    sendingPlayerId = playerId;
-                    shiftedSendingPlayerId = (ulong)playerId << PlayerIdShift;
-                    hasPartialInputAction = false;
-                    receivedData = null;
-                }
+                Debug.LogError("[Lockstep] Expected continuation of split up partial input action data, "
+                    + "but didn't receive as such. This is very most likely an unrecoverable state for "
+                    + "the system, but just in case someone just tried sending data through malicious "
+                    + "means this data gets ignored.");
+                return;
             }
 
             bool didReadSerializationTime = false;
@@ -469,7 +474,7 @@ namespace JanSharp.Internal
                 #endif
                 // Read IA header.
                 receivedInputActionIndex = DataStream.ReadSmallUInt(syncedData, ref i);
-                receivedUniqueId = shiftedSendingPlayerId | (ulong)receivedInputActionIndex;
+                receivedUniqueId = shiftedOwnerPlayerId | (ulong)receivedInputActionIndex;
                 receivedInputActionId = DataStream.ReadSmallUInt(syncedData, ref i);
                 if (!lockstep.inputActionHandlersRequireTimeTracking[receivedInputActionId])
                     receivedSendTime = Lockstep.SendTimeForNonTimedIAs;

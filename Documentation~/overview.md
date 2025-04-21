@@ -9,7 +9,7 @@ This page covers concepts about Lockstep particularly relevant to world creators
 
 # Project Setup
 
-In order to use Lockstep in a project, its package from the [VCC listing](https://jansharp.github.io/vrc/vcclisting.xhtml) and all of its dependencies must be added to the project. Most importantly the [CyanPlayerObjectPool](https://cyanlaser.github.io/CyanPlayerObjectPool/) which is part of a separate VCC listing, so make sure it is also added.
+In order to use Lockstep in a project, its package from the [VCC listing](https://jansharp.github.io/vrc/vcclisting.xhtml) and all of its dependencies must be added to the project.
 
 # Scene Setup
 

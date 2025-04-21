@@ -47,6 +47,7 @@ namespace JanSharp.Internal
 
         [HideInInspector] [SerializeField] [SingletonReference] private WannaBeClassesManager wannaBeClassesManager;
         [SerializeField] private InputActionSync lateJoinerInputActionSync;
+        [SerializeField] private InputActionSync inputActionSyncPerPlayerTemplate;
         [SerializeField] private LockstepTickSync tickSync;
         /// <summary>
         /// <para>On the master this is the currently running tick, as in new input actions are getting
@@ -1401,6 +1402,8 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnInputActionSyncPlayerAssigned");
             #endif
+            if (inputActionSync == inputActionSyncPerPlayerTemplate)
+                return;
             inputActionSyncByPlayerId.Add((uint)player.playerId, inputActionSync);
             if (!player.isLocal)
                 return;
@@ -1411,15 +1414,33 @@ namespace JanSharp.Internal
             SendCustomEventDelayedSeconds(nameof(OnLocalInputActionSyncPlayerAssignedDelayed), 2f);
         }
 
-        public void OnInputActionSyncPlayerUnassigned(VRCPlayerApi player, InputActionSync inputActionSync)
+        public void OnInputActionSyncPlayerUnassigned(uint playerId, InputActionSync inputActionSync)
         {
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnInputActionSyncPlayerUnassigned");
             #endif
-            DataToken playerIdToken = (uint)player.playerId;
+            if (inputActionSync == inputActionSyncPerPlayerTemplate)
+                return;
+            DataToken playerIdToken = playerId;
             if (!inputActionSyncByPlayerId.Remove(playerIdToken))
-                return; // Could already be removed due to client left input action.
-            latestInputActionIndexByPlayerId.Add(playerIdToken, inputActionSync.latestInputActionIndex);
+                return; // Could already be removed due to client left input action, or by OnDisable or ...
+            // ... OnDestroy, whichever came first - if both happened. Expect the unexpected.
+            latestInputActionIndexByPlayerId.SetValue(playerIdToken, inputActionSync.latestInputActionIndex);
+            if (playerId == localPlayerId)
+                LocalPlayerLeft();
+        }
+
+        private void LocalPlayerLeft()
+        {
+            #if LockstepDebug
+            Debug.Log($"[LockstepDebug] Lockstep  LocalPlayerLeft");
+            #endif
+            // Just sit there, do nothing and wait for the player to finish leaving the world. Additionally it
+            // is invalid for Lockstep to have 0 clients in its client states game state, so we must ignore
+            // the local player leaving.
+            isTickPaused = true;
+            ignoreLocalInputActions = true;
+            inputActionSyncForLocalPlayer = null;
         }
 
         public void OnLocalInputActionSyncPlayerAssignedDelayed()
@@ -1457,9 +1478,7 @@ namespace JanSharp.Internal
             uint playerId = (uint)player.playerId;
             if (playerId == localPlayerId)
             {
-                isTickPaused = true; // Just sit there, do nothing and wait for the player to finish leaving
-                // the world. It is invalid for Lockstep to have 0 clients in its client states game state, so
-                // we must ignore the local player leaving.
+                LocalPlayerLeft();
                 return;
             }
 
@@ -1467,6 +1486,24 @@ namespace JanSharp.Internal
             // but if that's the case, isMaster is false and clientStates is null,
             // so the only function that needs to handle inputActionSyncForLocalPlayer being null
             // is SomeoneLeftWhileWeWereWaitingForLJSync.
+
+            // This here is effectively duplication of what OnInputActionSyncPlayerUnassigned is doing.
+            // The only reason is that OnDisable and OnDestroy are not mentioned in the Player Object docs, so
+            // while it makes sense for them to get raised - and subsequently wouldn't make sense for them to
+            // not get raised - I am still considering it to be undefined behavior. The OnPlayerLeft event
+            // getting raised when a player leaves is defined behavior though... but whether or not the Player
+            // Object instance still exists at this point is once again undefined behavior.
+            // Additionally lockstep would require there to not be any OnDeserialization after OnPlayerLeft
+            // for the Player Object for the associated player that left, which is also undefined.
+            // Since everything is undefined, lockstep just does everything and hopes that at least 1 of them
+            // is going to work even with future changes in mind.
+            DataToken playerIdToken = playerId;
+            if (inputActionSyncByPlayerId.TryGetValue(playerIdToken, out DataToken inputActionSyncToken))
+            {
+                InputActionSync inputActionSync = (InputActionSync)inputActionSyncToken.Reference;
+                if (inputActionSync != null) // Could be destroyed at any point in time, it is undefined behavior.
+                    latestInputActionIndexByPlayerId.SetValue(playerId, inputActionSync.latestInputActionIndex);
+            }
 
             if (isMaster)
             {
@@ -2573,10 +2610,24 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  GetLatestInputActionIndex - playerId: {playerId}");
             #endif
             DataToken playerIdToken = playerId;
-            if (inputActionSyncByPlayerId.TryGetValue(playerIdToken, out DataToken inputActionSyncToken))
-                return ((InputActionSync)inputActionSyncToken.Reference).latestInputActionIndex;
-            // If inputActionSyncByPlayerId doesn't contain it, this this is guaranteed to contain it.
-            return latestInputActionIndexByPlayerId[playerIdToken].UInt;
+            if (!inputActionSyncByPlayerId.TryGetValue(playerIdToken, out DataToken inputActionSyncToken))
+            {
+                // If inputActionSyncByPlayerId doesn't contain it, this this is guaranteed to contain it.
+                return latestInputActionIndexByPlayerId[playerIdToken].UInt;
+            }
+            InputActionSync inputActionSync = (InputActionSync)inputActionSyncToken.Reference;
+            // Could be destroyed at any point in time, it is undefined behavior.
+            if (inputActionSync != null)
+                return inputActionSync.latestInputActionIndex;
+            Debug.LogError($"[Lockstep] The only way for this to happen is if both OnDisable and OnDestroy "
+                + $"did not get raised for a Player Object instance (for an input action sync script) for "
+                + $"a player (player id: {playerId}). This should be impossible, generally speaking, though "
+                + $"it is also undefined behavior which makes it very technically possible. If this does "
+                + $"happen then the guarantee that every client is going to clean up IAs which had already "
+                + $"run before a client got late joiner data gets broken. This can subsequently cause IAs to "
+                + $"get run twice, specifically when a 'broken' client becomes master. This is a long winded "
+                + $"way of saying that this breaks lockstep.");
+            return 0u;
         }
 
         private void SendLateJoinerData()
