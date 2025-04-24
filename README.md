@@ -3,6 +3,12 @@
 
 Lockstep networking (at least similar) infrastructure for UdonSharp.
 
+Lockstep relies on determinism to keep the state of the world in sync. Rather than syncing the whole state of a given system each time, just input actions get synced which modify the state. This allows for large and constantly mutating synced states.
+
+Input actions and lockstep events are run in the same lockstep ticks in the exact same order on every single client. This is required for determinism, and as a byproduct there are no network race conditions.
+
+Ultimately all syncing is done using byte arrays, both for game state syncing for late joiners as well as for input actions. Lockstep can take these byte arrays and let the user **import and export** them as strings/text, similar to save files in games, so long as game states - the systems using lockstep - have support for it.
+
 # Installing
 
 Head to my [VCC Listing](https://jansharp.github.io/vrc/vcclisting.xhtml) and follow the instructions there.
