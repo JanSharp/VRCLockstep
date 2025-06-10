@@ -310,7 +310,7 @@ namespace JanSharp.Internal
             #if LockstepDebug
             Debug.Log($"[LockstepDebug] {this.name}  CheckSyncStart");
             #endif
-            if (!isLateJoinerSyncInst && (owner == null || !owner.IsValid()))
+            if (!isLateJoinerSyncInst && !Utilities.IsValid(owner)) // Ew, but this is faster than 'owner == null || !owner.IsValid()'.
             {
                 Debug.LogError("[Lockstep] Attempt to send input actions when there is no player assigned with the sync script.");
                 return;

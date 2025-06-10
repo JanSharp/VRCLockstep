@@ -2077,7 +2077,7 @@ namespace JanSharp.Internal
             VRCPlayerApi[] players = new VRCPlayerApi[VRCPlayerApi.GetPlayerCount()];
             VRCPlayerApi.GetPlayers(players);
             foreach (VRCPlayerApi player in players)
-                if (player != null && player.IsValid() // Severe trust issues.
+                if (Utilities.IsValid(player) // Severe trust issues. Also ew, but this is faster than 'player != null && player.IsValid()'.
                     && notYetRespondedCandidates.ContainsKey(player.playerId))
                     toKeep.Add(player.playerId, true);
             notYetRespondedCandidates = toKeep;
@@ -2097,7 +2097,7 @@ namespace JanSharp.Internal
             {
                 uint candidateId = acceptingCandidates[i];
                 VRCPlayerApi player = VRCPlayerApi.GetPlayerById((int)candidateId);
-                if (player != null && player.IsValid()) // Trust issues.
+                if (Utilities.IsValid(player)) // Trust issues. Also ew, but this is faster than 'player != null && player.IsValid()'.
                 {
                     candidateClientId = candidateId;
                     return true;
@@ -2135,7 +2135,7 @@ namespace JanSharp.Internal
             VRCPlayerApi[] players = new VRCPlayerApi[VRCPlayerApi.GetPlayerCount()];
             VRCPlayerApi.GetPlayers(players); // Includes local player.
             foreach (VRCPlayerApi player in players)
-                if (player != null && player.IsValid()) // Severe trust issues.
+                if (Utilities.IsValid(player)) // Severe trust issues. Also ew, but this is faster than 'player != null && player.IsValid()'.
                     notYetRespondedCandidates.Add((uint)player.playerId, true);
             ArrList.Clear(ref acceptingCandidates, ref acceptingCandidatesCount);
 
