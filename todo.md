@@ -113,3 +113,4 @@
 - [x] test if scripts receive events raised by lockstep even if the scripts are disabled. The expectation is that yes they will, so add that to the docs
 - [x] make info UI bigger, or at least taller
 - [x] reset `sendingPlayerId`, `sendingUniqueId` and `sendingTime` after an input action handler got raised, or when early returning
+- [ ] update docs to mention vrc network event changes

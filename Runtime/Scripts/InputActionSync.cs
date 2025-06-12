@@ -12,12 +12,11 @@ namespace JanSharp.Internal
     public class InputActionSync : UdonSharpBehaviour
     {
         private const int MaxSyncedDataSize = 4096;
-        private const int PlayerIdShift = 32;
-        ///<summary>WriteSmall((uint)playerId) never writes 0xfe as the first byte, making this distinguishable.</summary>
+        ///<summary>WriteSmall((uint)inputActionIndex) never writes 0xfe as the first byte, making this distinguishable.</summary>
         private const byte SplitDataMarker = 0xfe;
-        ///<summary>WriteSmall((uint)playerId) never writes 0xff as the first byte, making this distinguishable.</summary>
+        ///<summary>WriteSmall((uint)inputActionIndex) never writes 0xff as the first byte, making this distinguishable.</summary>
         private const byte ClearedDataMarker = 0xff;
-        ///<summary>WriteSmall((uint)index) never writes 0xff as the first byte, making this distinguishable.</summary>
+        ///<summary>WriteSmall((uint)inputActionIndex) never writes 0xff as the first byte, making this distinguishable.</summary>
         private const byte IgnoreRestOfDataMarker = 0xff;
 
         public Lockstep lockstep;
@@ -197,7 +196,7 @@ namespace JanSharp.Internal
                 MoveStageToQueue();
             }
 
-            uint index = (nextInputActionIndex++);
+            uint index = nextInputActionIndex++;
             ulong uniqueId = shiftedOwnerPlayerId | index;
 #if LockstepDebug
             Debug.Log($"[LockstepDebug] {this.name}  SendInputAction (inner) - uniqueId: 0x{uniqueId:x16}");
@@ -229,7 +228,7 @@ namespace JanSharp.Internal
                 // #endif
                 System.Buffer.BlockCopy(inputActionData, baseIndex, stage, stageSize, freeSpace);
                 MoveStageToQueue();
-                // Instead of starting with WriteSmall((uint)ownerPlayerId), write SplitDataMarker.
+                // Instead of starting with WriteSmall((uint)inputActionIndex), write SplitDataMarker.
                 DataStream.Write(ref stage, ref stageSize, SplitDataMarker);
                 baseIndex += freeSpace;
                 remainingLength -= freeSpace;
