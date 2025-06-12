@@ -1,15 +1,13 @@
 using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 using VRC.SDK3.Data;
-using TMPro;
+using VRC.SDKBase;
 
 namespace JanSharp.Internal
 {
-    #if !LockstepDebug
+#if !LockstepDebug
     [AddComponentMenu("")]
-    #endif
+#endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     [CustomRaisedEventsDispatcher(typeof(LockstepEventAttribute), typeof(LockstepEventType))]
     public class Lockstep : LockstepAPI
@@ -45,7 +43,7 @@ namespace JanSharp.Internal
             }
         }
 
-        [HideInInspector] [SerializeField] [SingletonReference] private WannaBeClassesManager wannaBeClassesManager;
+        [HideInInspector][SerializeField][SingletonReference] private WannaBeClassesManager wannaBeClassesManager;
         [SerializeField] private InputActionSync lateJoinerInputActionSync;
         [SerializeField] private InputActionSync inputActionSyncPerPlayerTemplate;
         [SerializeField] private LockstepTickSync tickSync;
@@ -147,9 +145,9 @@ namespace JanSharp.Internal
 
         public override void FlagToContinueNextFrame()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FlagToContinueNextFrame");
-            #endif
+#endif
             flaggedToContinueNextFrame = true;
         }
         private bool isContinuationFromPrevFrame = false;
@@ -310,25 +308,25 @@ namespace JanSharp.Internal
 
         private bool PlayerIdHasClientState(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  PlayerIdHasClientState - playerId: {playerId}");
-            #endif
+#endif
             return ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId) >= 0;
         }
 
         private ClientState GetClientStateUnsafe(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetClientStateUnsafe - playerId: {playerId}");
-            #endif
+#endif
             return allClientStates[ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId)];
         }
 
         public override bool ClientStateExists(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ClientStateExists - playerId: {playerId}");
-            #endif
+#endif
             if (allClientStates == null)
                 return false;
             int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
@@ -337,9 +335,9 @@ namespace JanSharp.Internal
 
         public override ClientState GetClientState(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetClientState - playerId: {playerId}");
-            #endif
+#endif
             if (allClientStates == null)
                 return ClientState.None;
             int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
@@ -348,9 +346,9 @@ namespace JanSharp.Internal
 
         public override bool TryGetClientState(uint playerId, out ClientState clientState)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryGetClientState - playerId: {playerId}");
-            #endif
+#endif
             clientState = GetClientState(playerId);
             return clientState != ClientState.None;
         }
@@ -416,9 +414,9 @@ namespace JanSharp.Internal
 
         private void SetClientStatesToEmpty()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetClientStatesToEmpty");
-            #endif
+#endif
             allClientIds = new uint[ArrList.MinCapacity];
             allClientIdsCount = 0;
             allClientStates = new ClientState[ArrList.MinCapacity];
@@ -429,9 +427,9 @@ namespace JanSharp.Internal
 
         private void SetClientStatesToNull()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetClientStatesToNull");
-            #endif
+#endif
             allClientIds = null;
             allClientIdsCount = 0;
             allClientStates = null;
@@ -442,19 +440,19 @@ namespace JanSharp.Internal
 
         private void AddClientState(uint playerId, ClientState clientState, string playerName)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AddClientState - playerId: {playerId}, clientState: {clientState}, playerName: {playerName}");
-            #endif
+#endif
             // Note the ~, not -. Read C# docs about BinarySearch, that's just how it is.
             int index = ~ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
-            #if LockstepDebug
+#if LockstepDebug
             if (index < 0)
             {
                 Debug.LogError($"[LockstepDebug] Attempt to add client state with already existing playerId {playerId}.");
                 playerId = allClientIds[index]; // Intentionally crash the script.
                 return;
             }
-            #endif
+#endif
             ArrList.Insert(ref allClientIds, ref allClientIdsCount, playerId, index);
             ArrList.Insert(ref allClientStates, ref allClientStatesCount, clientState, index);
             ArrList.Insert(ref allClientNames, ref allClientNamesCount, playerName, index);
@@ -462,28 +460,28 @@ namespace JanSharp.Internal
 
         private void SetClientState(uint playerId, ClientState clientState)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetClientState - playerId: {playerId}, clientState: {clientState}");
-            #endif
+#endif
             int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
-            #if LockstepDebug
+#if LockstepDebug
             if (index < 0)
             {
                 Debug.LogError($"[LockstepDebug] Attempt to set client state of non existent playerId {playerId}.");
                 playerId = allClientIds[index]; // Intentionally crash the script.
                 return;
             }
-            #endif
+#endif
             allClientStates[index] = clientState;
         }
 
         private void RemoveClientState(uint playerId, out ClientState clientState, out string playerName)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RemoveClientState - playerId: {playerId}");
-            #endif
+#endif
             int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
-            #if LockstepDebug
+#if LockstepDebug
             if (index < 0)
             {
                 Debug.LogError($"[LockstepDebug] Attempt to remove client state of non existent playerId {playerId}.");
@@ -492,7 +490,7 @@ namespace JanSharp.Internal
                 playerName = null;
                 return;
             }
-            #endif
+#endif
             ArrList.RemoveAt(ref allClientIds, ref allClientIdsCount, index);
             clientState = ArrList.RemoveAt(ref allClientStates, ref allClientStatesCount, index);
             playerName = ArrList.RemoveAt(ref allClientNames, ref allClientNamesCount, index);
@@ -613,9 +611,9 @@ namespace JanSharp.Internal
 
         private void Start()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  Start");
-            #endif
+#endif
             localPlayer = Networking.LocalPlayer;
             localPlayerId = (uint)localPlayer.playerId;
             lateJoinerInputActionSync.lockstep = this;
@@ -715,9 +713,9 @@ namespace JanSharp.Internal
 
         private void CatchUp()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CatchUp");
-            #endif
+#endif
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
             SetDilatedTickStartTime();
@@ -748,9 +746,9 @@ namespace JanSharp.Internal
 
         private void CleanUpOldTickAssociations()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CleanUpOldTickAssociations");
-            #endif
+#endif
             DataList keys = uniqueIdsByTick.GetKeys();
             for (int i = 0; i < keys.Count; i++)
             {
@@ -793,13 +791,13 @@ namespace JanSharp.Internal
                 uniqueIdsByTick.Remove(currentTickToken);
             }
 
-            #if LockstepDebug
+#if LockstepDebug
             if (isMaster && currentTick > firstMutableTick && uniqueIds != null)
                 Debug.LogError($"[LockstepDebug] When on master the first mutable tick is the only tick that "
                     + $"is still allowed to have input actions associated with it. Past that there must be "
                     + $"zero input actions associated with ticks, since they should just get run as soon as "
                     + $"they get received (or once they got sent if the local client was issuing them).");
-            #endif
+#endif
 
             disallowAssociatingWithCurrentTick = true;
 
@@ -836,9 +834,9 @@ namespace JanSharp.Internal
             // Still continue increasing it even when done catching up, for the same reason: no lag spikes.
             if ((currentTick % TickRate) == 0u)
                 firstMutableTick++;
-            #if LockstepDebug
+#if LockstepDebug
             // Debug.Log($"[LockstepDebug] Running tick {currentTick}");
-            #endif
+#endif
 
             StartOfTick();
 
@@ -909,9 +907,9 @@ namespace JanSharp.Internal
 
         private void RunDelayedEventsForCurrentTick(DataList eventDataList)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunDelayedEventsForCurrentTick");
-            #endif
+#endif
             int count = eventDataList.Count;
             for (int i = suspendedIndexInArray; i < count; i++)
             {
@@ -962,9 +960,9 @@ namespace JanSharp.Internal
 
         private void RunInputActionsForUniqueIds(ulong[] uniqueIds)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionsForUniqueIds");
-            #endif
+#endif
             int length = uniqueIds.Length;
             for (int i = suspendedIndexInArray; i < length; i++)
             {
@@ -988,9 +986,9 @@ namespace JanSharp.Internal
 
         private void RunInputActionForUniqueId(ulong uniqueId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionForUniqueId");
-            #endif
+#endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
             RunInputAction((uint)inputActionData[0], (byte[])inputActionData[1], uniqueId, (float)inputActionData[2]);
@@ -998,9 +996,9 @@ namespace JanSharp.Internal
 
         private void RunInputActionForUniqueIdNextFrame(ulong uniqueId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionForUniqueIdNextFrame");
-            #endif
+#endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
             ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { (uint)inputActionData[0], (byte[])inputActionData[1], uniqueId, (float)inputActionData[2] });
@@ -1008,9 +1006,9 @@ namespace JanSharp.Internal
 
         private void RunInputActionsForThisFrame()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionsForThisFrame");
-            #endif
+#endif
             for (int i = suspendedIndexInArray; i < iatrnCount; i++)
             {
                 if (flaggedToContinueNextFrame)
@@ -1038,9 +1036,9 @@ namespace JanSharp.Internal
 
         private void ForgetAboutInputActionsForThisFrame()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutInputActionsForThisFrame");
-            #endif
+#endif
             for (int i = 0; i < iatrnCount; i++)
                 inputActionsToRunNextFrame[i] = null; // Just to ensure that memory can be freed.
             iatrnCount = 0;
@@ -1048,11 +1046,11 @@ namespace JanSharp.Internal
 
         private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId, float sendTime, bool bypassValidityCheck = false)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputAction - event name: {inputActionHandlerEventNames[inputActionId]}");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
             ResetReadStream();
             readStream = inputActionData;
             UdonSharpBehaviour inst = inputActionHandlerInstances[inputActionId];
@@ -1071,31 +1069,31 @@ namespace JanSharp.Internal
             // clientStates in the first place.
             if (!bypassValidityCheck && inputActionId != clientJoinedIAId && !PlayerIdHasClientState(sendingPlayerId))
             {
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockStepDebug] The player id {sendingPlayerId} is not in the client states game"
                     + $"state and therefore running input actions sent by this player id is invalid. This "
                     + $"input action is ignored. This is supposed to be an incredibly rare edge case, such "
                     + $"that it should effectively never happen.");
-                #endif
+#endif
                 return;
             }
             inGameStateSafeEvent = true;
             inst.SendCustomEvent(inputActionHandlerEventNames[inputActionId]);
             inGameStateSafeEvent = false;
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  RunInputActionWithCurrentReadStream (inner) - ms: {sw.Elapsed.TotalMilliseconds}, event name: {inputActionHandlerEventNames[inputActionId]}");
-            #endif
+#endif
             if (flaggedToContinueNextFrame)
                 suspendedInputActionId = inputActionId;
         }
 
         private void RunInputActionSuspendedPrevFrame()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionSuspendedPrevFrame - event name: {inputActionHandlerEventNames[suspendedInputActionId]}");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
             flaggedToContinueNextFrame = false;
             UdonSharpBehaviour inst = inputActionHandlerInstances[suspendedInputActionId];
             // sendingPlayerId, sendingUniqueId, sendingTime are all still set.
@@ -1104,9 +1102,9 @@ namespace JanSharp.Internal
             inst.SendCustomEvent(inputActionHandlerEventNames[suspendedInputActionId]);
             inGameStateSafeEvent = false;
             isContinuationFromPrevFrame = false;
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  RunInputActionSuspendedPrevFrame (inner) - ms: {sw.Elapsed.TotalMilliseconds}, event name: {inputActionHandlerEventNames[suspendedInputActionId]}");
-            #endif
+#endif
         }
 
         private bool IsAllowedToSendInputActionId(uint inputActionId)
@@ -1116,9 +1114,9 @@ namespace JanSharp.Internal
 
         private void SendInstantAction(uint inputActionId, bool doRunLocally = false)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInstantAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}, doRunLocally: {doRunLocally}");
-            #endif
+#endif
             byte[] inputActionData = new byte[writeStreamSize];
             System.Buffer.BlockCopy(writeStream, 0, inputActionData, 0, writeStreamSize);
             ResetWriteStream();
@@ -1141,9 +1139,9 @@ namespace JanSharp.Internal
 
         private ulong SendInputAction(uint inputActionId, bool forceOneFrameDelay)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
-            #endif
+#endif
             // currentInputActionSendTime is not set here because none of the internal Lockstep IAs require time tracking,
             // so the if statement further below is always going to set it to SendTimeForNonTimedIAs;
             if (!IsAllowedToSendInputActionId(inputActionId))
@@ -1166,24 +1164,24 @@ namespace JanSharp.Internal
         /// </summary>
         private ulong SendInputActionInternal(uint inputActionId, byte[] inputActionData, bool forceOneFrameDelay)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputActionInternal - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
-            #endif
+#endif
             if (isSinglePlayer) // Guaranteed to be master while in single player.
                 return TryToInstantlyRunInputActionOnMaster(inputActionId, 0uL, currentInputActionSendTime, inputActionData, forceOneFrameDelay);
 
             ulong uniqueId = inputActionSyncForLocalPlayer.SendInputAction(inputActionId, inputActionData, inputActionData.Length);
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendInputActionInternal (inner) - uniqueId: 0x{uniqueId:x16}");
-            #endif
+#endif
 
             if (stillAllowLocalClientJoinedIA)
             {
                 if (ignoreLocalInputActions)
                 {
-                    #if LockstepDebug
+#if LockstepDebug
                     Debug.Log($"[LockstepDebug] Lockstep  SendInputAction (inner) - ignoreLocalInputActions is true, returning");
-                    #endif
+#endif
                     return 0uL; // Do not save client joined IA because it will never be executed locally.
                 }
                 Debug.LogError("[Lockstep] stillAllowLocalClientJoinedIA is true while ignoreLocalInputActions is false. "
@@ -1218,9 +1216,9 @@ namespace JanSharp.Internal
         ///latency state implementations with latency hiding easier.</para></summary>
         public override ulong SendSingletonInputAction(uint inputActionId, uint responsiblePlayerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendSingletonInputAction - inputActionId: {inputActionId}, event name: {inputActionHandlerEventNames[inputActionId]}");
-            #endif
+#endif
             currentInputActionSendTime = Time.realtimeSinceStartup; // As early as possible.
 
             if (!inGameStateSafeEvent)
@@ -1263,35 +1261,35 @@ namespace JanSharp.Internal
             return SendInputActionInternal(singletonIAId, singletonInputActionData, forceOneFrameDelay: true);
         }
 
-        [SerializeField] [HideInInspector] private uint singletonInputActionIAId;
+        [SerializeField][HideInInspector] private uint singletonInputActionIAId;
         [LockstepInputAction(nameof(singletonInputActionIAId))]
         public void OnSingletonInputActionIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnSingletonInputActionIA - sendingTime: {sendingTime}");
-            #endif
+#endif
             if (!isContinuationFromPrevFrame)
             {
                 uint singletonId = ReadSmallUInt();
                 suspendedSingletonInputActionId = ReadSmallUInt();
                 singletonInputActions.Remove(singletonId);
             }
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnSingletonInputActionIA (inner) - event name: {inputActionHandlerEventNames[suspendedSingletonInputActionId]}");
-            #endif
+#endif
             UdonSharpBehaviour inst = inputActionHandlerInstances[suspendedSingletonInputActionId];
             inst.SendCustomEvent(inputActionHandlerEventNames[suspendedSingletonInputActionId]);
         }
 
-        [SerializeField] [HideInInspector] private uint timedSingletonInputActionIAId;
+        [SerializeField][HideInInspector] private uint timedSingletonInputActionIAId;
         [LockstepInputAction(nameof(timedSingletonInputActionIAId), TrackTiming = true)]
         public void OnTimedSingletonInputActionIA() => OnSingletonInputActionIA(); // Exact same handler.
 
         private void CheckIfSingletonInputActionGotDropped(uint leftPlayerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CheckIfSingletonInputActionGotDropped");
-            #endif
+#endif
             DataList values = singletonInputActions.GetValues();
             for (int i = 0; i < values.Count; i++)
             {
@@ -1315,9 +1313,9 @@ namespace JanSharp.Internal
 
         public override void SendEventDelayedTicks(uint inputActionId, uint tickDelay)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendEventDelayedTicks");
-            #endif
+#endif
             if (!inGameStateSafeEvent)
             {
                 Debug.LogError("[Lockstep] Attempt to call SendEventDelayedTicks outside of game state safe events.");
@@ -1358,9 +1356,9 @@ namespace JanSharp.Internal
 
         public void InputActionSent(ulong uniqueId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  InputActionSent");
-            #endif
+#endif
             if (!isMaster) // When instant actions are sent, isMaster is still going to be false.
                 return;
 
@@ -1399,9 +1397,9 @@ namespace JanSharp.Internal
 
         public void OnInputActionSyncPlayerAssigned(VRCPlayerApi player, InputActionSync inputActionSync)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnInputActionSyncPlayerAssigned");
-            #endif
+#endif
             if (inputActionSync == inputActionSyncPerPlayerTemplate)
                 return;
             inputActionSyncByPlayerId.Add((uint)player.playerId, inputActionSync);
@@ -1416,9 +1414,9 @@ namespace JanSharp.Internal
 
         public void OnInputActionSyncPlayerUnassigned(uint playerId, InputActionSync inputActionSync)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnInputActionSyncPlayerUnassigned");
-            #endif
+#endif
             if (inputActionSync == inputActionSyncPerPlayerTemplate)
                 return;
             DataToken playerIdToken = playerId;
@@ -1432,9 +1430,9 @@ namespace JanSharp.Internal
 
         private void LocalPlayerLeft()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  LocalPlayerLeft");
-            #endif
+#endif
             // Just sit there, do nothing and wait for the player to finish leaving the world. Additionally it
             // is invalid for Lockstep to have 0 clients in its client states game state, so we must ignore
             // the local player leaving.
@@ -1445,9 +1443,9 @@ namespace JanSharp.Internal
 
         public void OnLocalInputActionSyncPlayerAssignedDelayed()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnLocalInputActionSyncPlayerAssignedDelayed");
-            #endif
+#endif
             if (isMaster)
             {
                 Debug.Log($"[Lockstep] isMaster is already true 2 seconds after the local player's "
@@ -1472,9 +1470,9 @@ namespace JanSharp.Internal
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnPlayerLeft - player is null: {player == null}");
-            #endif
+#endif
             uint playerId = (uint)player.playerId;
             if (playerId == localPlayerId)
             {
@@ -1538,9 +1536,9 @@ namespace JanSharp.Internal
 
         private void AddToLeftClients(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AddToLeftClients");
-            #endif
+#endif
             if (!PlayerIdHasClientState(playerId) // If they're not in clientStates then we simply don't care.
                 || ArrList.Contains(ref leftClients, ref leftClientsCount, playerId))
                 return; // ^ Detect and ignore duplicate player left events (aka major trust issues).
@@ -1551,9 +1549,9 @@ namespace JanSharp.Internal
 
         public void SomeoneLeftWhileWeWereWaitingForLJSync()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SomeoneLeftWhileWeWereWaitingForLJSync");
-            #endif
+#endif
             if ((--someoneLeftWhileWeWereWaitingForLJSyncSentCount) != 0)
                 return;
 
@@ -1589,9 +1587,9 @@ namespace JanSharp.Internal
 
         private void SetMasterLeftFlag()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetMasterLeftFlag");
-            #endif
+#endif
             if (currentlyNoMaster)
                 return;
             currentlyNoMaster = true;
@@ -1600,9 +1598,9 @@ namespace JanSharp.Internal
 
         private void BecomeInitialMaster()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  BecomeInitialMaster");
-            #endif
+#endif
             isMaster = true;
             currentlyNoMaster = false;
             ignoreLocalInputActions = false;
@@ -1634,9 +1632,9 @@ namespace JanSharp.Internal
 
         private void InitAllImportExportOptionsWidgetData()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  InitAllImportExportOptionsWidgetData");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
             {
                 if (gameState.ExportUI != null)
@@ -1651,9 +1649,9 @@ namespace JanSharp.Internal
         /// </summary>
         private void SetMaster(uint newMasterId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetMaster - newMasterId: {newMasterId}");
-            #endif
+#endif
 
             if (masterPlayerId == newMasterId)
             {
@@ -1675,9 +1673,9 @@ namespace JanSharp.Internal
 
         private void StopBeingMaster()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StopBeingMaster");
-            #endif
+#endif
             masterChangeRequestInProgress = false;
             isMaster = false;
             // This runs at the start of a tick. That tick should not actually get run though, so stop right there.
@@ -1690,11 +1688,11 @@ namespace JanSharp.Internal
 
         private void UpdateClientStatesForNewMaster(uint newMasterId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  UpdateClientStatesForNewMaster");
-            #endif
+#endif
 
-            bool oldMasterHasAState =  PlayerIdHasClientState(masterPlayerId);
+            bool oldMasterHasAState = PlayerIdHasClientState(masterPlayerId);
             if (!oldMasterHasAState)
             {
                 Debug.LogError($"[Lockstep] The system is supposed to guarantee that there is always 1 client "
@@ -1723,9 +1721,9 @@ namespace JanSharp.Internal
 
         private void SetMasterPlayerId(uint newMasterId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetMasterPlayerId");
-            #endif
+#endif
             masterPlayerId = newMasterId;
             if (ArrList.Contains(ref leftClients, ref leftClientsCount, masterPlayerId))
                 SetMasterLeftFlag();
@@ -1735,9 +1733,9 @@ namespace JanSharp.Internal
 
         private void CheckIfRequestedMasterClientLeft(uint leftClientId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CheckIfRequestedMasterClientLeft");
-            #endif
+#endif
             if (!masterChangeRequestInProgress || leftClientId != requestedMasterClientId)
                 return;
             CompletelyCancelMasterChangeRequest();
@@ -1745,17 +1743,17 @@ namespace JanSharp.Internal
 
         public override bool RequestLocalClientToBecomeMaster()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RequestToBecomeMaster");
-            #endif
+#endif
             return SendMasterChangeRequestIA(localPlayerId);
         }
 
         public override bool SendMasterChangeRequestIA(uint newMasterClientId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendMasterChangeRequestIA - newMasterClientId: {newMasterClientId}");
-            #endif
+#endif
             if (!lockstepIsInitialized || newMasterClientId == masterPlayerId || masterChangeRequestInProgress)
                 return false;
             if (!TryGetClientState(newMasterClientId, out ClientState clientState))
@@ -1772,13 +1770,13 @@ namespace JanSharp.Internal
             return true;
         }
 
-        [SerializeField] [HideInInspector] private uint masterChangeRequestIAId;
+        [SerializeField][HideInInspector] private uint masterChangeRequestIAId;
         [LockstepInputAction(nameof(masterChangeRequestIAId))]
         public void OnMasterChangeRequestIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnMasterChangeRequestIA");
-            #endif
+#endif
             if (masterChangeRequestInProgress) // Already in process, ignore another request.
                 return;
             requestedMasterClientId = ReadSmallUInt();
@@ -1804,19 +1802,19 @@ namespace JanSharp.Internal
 
         private void SendConfirmedMasterChangeIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendConfirmedMasterChangeIA");
-            #endif
+#endif
             SendInputAction(confirmedMasterChangeIAId);
         }
 
-        [SerializeField] [HideInInspector] private uint confirmedMasterChangeIAId;
+        [SerializeField][HideInInspector] private uint confirmedMasterChangeIAId;
         [LockstepInputAction(nameof(confirmedMasterChangeIAId))]
         public void OnConfirmedMasterChangeIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnConfirmedMasterChangeIA");
-            #endif
+#endif
             if (!PlayerIdHasClientState(requestedMasterClientId)) // The client left already, cannot change master.
             { // Cannot use leftClients for a check here since that is not part of the game state.
                 CompletelyCancelMasterChangeRequest();
@@ -1827,19 +1825,19 @@ namespace JanSharp.Internal
 
         private void SendCancelledMasterChangeIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendCancelledMasterChangeIA");
-            #endif
+#endif
             SendInputAction(cancelledMasterChangeIAId);
         }
 
-        [SerializeField] [HideInInspector] private uint cancelledMasterChangeIAId;
+        [SerializeField][HideInInspector] private uint cancelledMasterChangeIAId;
         [LockstepInputAction(nameof(cancelledMasterChangeIAId))]
         public void OnCancelledMasterChangeIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnCancelledMasterChangeIA");
-            #endif
+#endif
             CompletelyCancelMasterChangeRequest();
         }
 
@@ -1850,9 +1848,9 @@ namespace JanSharp.Internal
         /// </summary>
         private void CompletelyCancelMasterChangeRequest()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CompletelyCancelMasterChangeRequest");
-            #endif
+#endif
             masterChangeRequestInProgress = false;
             masterRequestManagingMasterId = 0u;
             requestedMasterClientId = 0u;
@@ -1862,9 +1860,9 @@ namespace JanSharp.Internal
 
         private DataDictionary GetLeftClientsLut()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetLeftClientsLut");
-            #endif
+#endif
             DataDictionary lut = new DataDictionary();
             for (int i = 0; i < leftClientsCount; i++)
                 lut.Add(leftClients[i], true);
@@ -1873,9 +1871,9 @@ namespace JanSharp.Internal
 
         private bool IsAnyClientWaitingForLateJoinerSync()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  IsAnyClientWaitingForLateJoinerSync");
-            #endif
+#endif
             DataDictionary leftClientsLut = GetLeftClientsLut();
             for (int i = 0; i < allClientStatesCount; i++)
                 if (allClientStates[i] == ClientState.WaitingForLateJoinerSync
@@ -1886,9 +1884,9 @@ namespace JanSharp.Internal
 
         private void FactoryReset()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FactoryReset");
-            #endif
+#endif
             if (IsProcessingLJGameStates || lockstepIsInitialized)
             {
                 Debug.LogError("[Lockstep] It is invalid to call FactoryReset once IsProcessingLJGameStates or "
@@ -1942,9 +1940,9 @@ namespace JanSharp.Internal
 
         public void CheckMasterChange()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CheckMasterChange");
-            #endif
+#endif
 
             if (inputActionSyncForLocalPlayer == null)
             {
@@ -1995,9 +1993,9 @@ namespace JanSharp.Internal
 
         private void BecomeNewMaster()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  BecomeNewMaster - currentTick: {currentTick}, lastRunnableTick: {lastRunnableTick}");
-            #endif
+#endif
 
             isMaster = true; // currentlyNoMaster will be set to false in OnMasterClientChangedIA later.
             ignoreLocalInputActions = false;
@@ -2052,9 +2050,9 @@ namespace JanSharp.Internal
 
         private void StartWaitingForCandidatesLoop()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartWaitingForCandidatesLoop");
-            #endif
+#endif
             if (waitingForCandidatesLoopRunning)
                 return;
             waitingForCandidatesLoopRunning = true;
@@ -2064,9 +2062,9 @@ namespace JanSharp.Internal
 
         public void WaitingForCandidatesLoop()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  WaitingForCandidatesLoop");
-            #endif
+#endif
             if (!isAskingForMasterCandidates)
             {
                 waitingForCandidatesLoopRunning = false;
@@ -2090,9 +2088,9 @@ namespace JanSharp.Internal
 
         private bool TryGetMasterCandidate(out uint candidateClientId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryGetMasterCandidate");
-            #endif
+#endif
             for (int i = 0; i < acceptingCandidatesCount; i++)
             {
                 uint candidateId = acceptingCandidates[i];
@@ -2109,9 +2107,9 @@ namespace JanSharp.Internal
 
         private void AskForBetterMasterCandidate()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AskForBetterMasterCandidate");
-            #endif
+#endif
 
             if (TryGetMasterCandidate(out uint candidateClientId))
             {
@@ -2145,21 +2143,21 @@ namespace JanSharp.Internal
 
         private void SendAskForBetterMasterCandidateIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendAskForBetterMasterCandidateIA");
-            #endif
+#endif
             // If someone was already asking for candidates when we became instance master, then the local
             // client may in fact be able to become master and yet still have to go through this process.
             SendInstantAction(askForBetterMasterCandidateIAId, doRunLocally: true);
         }
 
-        [SerializeField] [HideInInspector] private uint askForBetterMasterCandidateIAId;
+        [SerializeField][HideInInspector] private uint askForBetterMasterCandidateIAId;
         [LockstepInputAction(nameof(askForBetterMasterCandidateIAId))]
         public void OnAskForBetterMasterCandidateIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnAskForBetterMasterCandidateIA");
-            #endif
+#endif
             if (isAskingForMasterCandidates && sendingPlayerId != localPlayerId)
             {
                 Debug.LogError("[Lockstep] Impossible because for this to happen there would have to be 2 "
@@ -2173,21 +2171,21 @@ namespace JanSharp.Internal
 
         private void SendResponseForBetterMasterCandidateIA(uint askingPlayerIdRoundtrip, bool couldBecomeMaster)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendResponseForBetterMasterCandidateIA");
-            #endif
+#endif
             WriteSmallUInt(askingPlayerIdRoundtrip);
             WriteFlags(isMaster, couldBecomeMaster);
             SendInstantAction(responseForBetterMasterCandidateIAId, doRunLocally: askingPlayerIdRoundtrip == localPlayerId);
         }
 
-        [SerializeField] [HideInInspector] private uint responseForBetterMasterCandidateIAId;
+        [SerializeField][HideInInspector] private uint responseForBetterMasterCandidateIAId;
         [LockstepInputAction(nameof(responseForBetterMasterCandidateIAId))]
         public void OnResponseForBetterMasterCandidateIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnResponseForBetterMasterCandidateIA");
-            #endif
+#endif
             uint askingPlayerIdRoundtrip = ReadSmallUInt();
             ReadFlags(out bool isAlreadyMaster, out bool couldBecomeMaster);
             if (!isAskingForMasterCandidates)
@@ -2216,9 +2214,9 @@ namespace JanSharp.Internal
 
         private void AllCandidatesHaveResponded(bool force = false)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AllCandidatesHaveResponded");
-            #endif
+#endif
 
             if (!TryGetMasterCandidate(out uint candidateClientId))
             {
@@ -2232,9 +2230,9 @@ namespace JanSharp.Internal
 
         private void StopWaitingForCandidates()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StopWaitingForCandidates");
-            #endif
+#endif
 
             isAskingForMasterCandidates = false;
             someoneIsAskingForMasterCandidates = false;
@@ -2244,19 +2242,19 @@ namespace JanSharp.Internal
 
         private void SendStoppedAskingForCandidatesThanksToExistingMasterIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendStoppedAskingForCandidatesThanksToExistingMasterIA");
-            #endif
+#endif
             SendInstantAction(sendStoppedAskingForCandidatesThanksToExistingMasterIAId, doRunLocally: true);
         }
 
-        [SerializeField] [HideInInspector] private uint sendStoppedAskingForCandidatesThanksToExistingMasterIAId;
+        [SerializeField][HideInInspector] private uint sendStoppedAskingForCandidatesThanksToExistingMasterIAId;
         [LockstepInputAction(nameof(sendStoppedAskingForCandidatesThanksToExistingMasterIAId))]
         public void OnStoppedAskingForCandidatesThanksToExistingMasterIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnStoppedAskingForCandidatesThanksToExistingMasterIA");
-            #endif
+#endif
             if (sendingPlayerId != clientIdAskingForCandidates) // If they don't match then more players have
                 return; // left and another one is asking for candidates, which may also mean that the
             // lockstep master had left while this currently running IA was in transit.
@@ -2266,21 +2264,21 @@ namespace JanSharp.Internal
 
         private void SendAcceptedMasterCandidateIA(uint acceptedPlayerId, bool force)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendAcceptedMasterCandidateIA");
-            #endif
+#endif
             WriteSmallUInt(acceptedPlayerId);
             WriteFlags(force);
             SendInstantAction(acceptedMasterCandidateIAId, doRunLocally: true);
         }
 
-        [SerializeField] [HideInInspector] private uint acceptedMasterCandidateIAId;
+        [SerializeField][HideInInspector] private uint acceptedMasterCandidateIAId;
         [LockstepInputAction(nameof(acceptedMasterCandidateIAId))]
         public void OnAcceptedMasterCandidateIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnAcceptedMasterCandidateIA");
-            #endif
+#endif
             uint acceptedPlayerId = ReadSmallUInt();
             ReadFlags(out bool force);
             if (acceptedPlayerId != localPlayerId
@@ -2311,20 +2309,20 @@ namespace JanSharp.Internal
 
         private void SendRefusedMasterCandidateConfirmationIA(uint askingPlayerIdRoundtrip)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendRefusedMasterCandidateConfirmationIA");
-            #endif
+#endif
             WriteSmallUInt(askingPlayerIdRoundtrip);
             SendInstantAction(refusedMasterCandidateConfirmationIAId, doRunLocally: true);
         }
 
-        [SerializeField] [HideInInspector] private uint refusedMasterCandidateConfirmationIAId;
+        [SerializeField][HideInInspector] private uint refusedMasterCandidateConfirmationIAId;
         [LockstepInputAction(nameof(refusedMasterCandidateConfirmationIAId))]
         public void OnRefusedMasterCandidateConfirmationIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnRefusedMasterCandidateConfirmationIA");
-            #endif
+#endif
             uint askingPlayerIdRoundtrip = ReadSmallUInt();
             if (askingPlayerIdRoundtrip != localPlayerId
                 || !isAskingForMasterCandidates
@@ -2336,9 +2334,9 @@ namespace JanSharp.Internal
 
         private void FinishCatchingUpOnMaster()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FinishCatchingUpOnMaster");
-            #endif
+#endif
             lastRunnableTick = uint.MaxValue;
 
             if (IsAnyClientWaitingForLateJoinerSync())
@@ -2350,9 +2348,9 @@ namespace JanSharp.Internal
 
         private void AssociateUnassociatedInputActionsWithTicks()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AssociateUnassociatedInputActionsWithTicks");
-            #endif
+#endif
             if (!isMaster)
             {
                 Debug.LogError("[Lockstep] Attempt to use AssociateUnassociatedInputActionsWithTicks on non master.");
@@ -2412,9 +2410,9 @@ namespace JanSharp.Internal
 
         private void InstantlyRunInputActionsWaitingToBeSent()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  InstantlyRunInputActionsWaitingToBeSent");
-            #endif
+#endif
             // It doesn't really make sense to call RunInputActionsForThisFrame because that has no guarantee
             // to actually clear the list of input actions to be run this frame. So calling it vs not makes
             // no difference, aside from running some input actions right now rather than in the next Update
@@ -2424,18 +2422,18 @@ namespace JanSharp.Internal
 
         private void ForgetAboutInputActionsWaitingToBeSent()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutInputActionsWaitingToBeSent");
-            #endif
+#endif
             ForgetAboutInputActionsForThisFrame();
             inputActionSyncForLocalPlayer.DequeueEverything(doCallback: false);
         }
 
         public void ProcessLeftPlayers()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ProcessLeftPlayers");
-            #endif
+#endif
             if ((--processLeftPlayersSentCount) != 0)
                 return;
             if (!isMaster)
@@ -2453,17 +2451,17 @@ namespace JanSharp.Internal
 
         private void ForgetAboutLeftPlayers()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutLeftPlayers");
-            #endif
+#endif
             ArrList.Clear(ref leftClients, ref leftClientsCount);
         }
 
         private void CheckSingePlayerModeChange()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CheckSingePlayerModeChange");
-            #endif
+#endif
             bool shouldBeSinglePlayer = allClientStatesCount - leftClientsCount <= 1;
             if (isSinglePlayer == shouldBeSinglePlayer)
                 return;
@@ -2475,9 +2473,9 @@ namespace JanSharp.Internal
 
         private void EnterSingePlayerMode()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  EnterSingePlayerMode");
-            #endif
+#endif
             isSinglePlayer = true;
             tickSync.isSinglePlayer = true;
             lateJoinerInputActionSync.DequeueEverything(doCallback: false);
@@ -2487,9 +2485,9 @@ namespace JanSharp.Internal
 
         private void ExitSinglePlayerMode()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ExitSinglePlayerMode");
-            #endif
+#endif
             isSinglePlayer = false;
             tickSync.isSinglePlayer = false;
             // (0u, 0uL) Indicate that any input actions associated with ticks
@@ -2509,27 +2507,27 @@ namespace JanSharp.Internal
 
         private void SendMasterChangedIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendMasterChangedIA");
-            #endif
+#endif
             SendInputAction(masterChangedIAId, forceOneFrameDelay: false);
         }
 
-        [SerializeField] [HideInInspector] private uint masterChangedIAId;
+        [SerializeField][HideInInspector] private uint masterChangedIAId;
         [LockstepInputAction(nameof(masterChangedIAId))]
         public void OnMasterClientChangedIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnMasterClientChangedIA");
-            #endif
+#endif
             UpdateClientStatesForNewMaster(sendingPlayerId);
         }
 
         private void SendClientJoinedIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientJoinedIA");
-            #endif
+#endif
             if (inputActionSyncForLocalPlayer == null)
             {
                 Debug.LogError("[Lockstep] Impossible, the inputActionSyncForLocalPlayer is null inside of "
@@ -2547,13 +2545,13 @@ namespace JanSharp.Internal
             SendInputAction(clientJoinedIAId, forceOneFrameDelay: false);
         }
 
-        [SerializeField] [HideInInspector] private uint clientJoinedIAId;
+        [SerializeField][HideInInspector] private uint clientJoinedIAId;
         [LockstepInputAction(nameof(clientJoinedIAId))]
         public void OnClientJoinedIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientJoinedIA");
-            #endif
+#endif
             string playerName = ReadString();
             DataToken keyToken = sendingPlayerId;
             bool doRaise = true;
@@ -2587,9 +2585,9 @@ namespace JanSharp.Internal
 
         public void FlagForLateJoinerSync()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FlagForLateJoinerSync");
-            #endif
+#endif
             if ((--flagForLateJoinerSyncSentCount) != 0)
                 return;
 
@@ -2606,9 +2604,9 @@ namespace JanSharp.Internal
 
         private uint GetLatestInputActionIndex(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetLatestInputActionIndex - playerId: {playerId}");
-            #endif
+#endif
             DataToken playerIdToken = playerId;
             if (!inputActionSyncByPlayerId.TryGetValue(playerIdToken, out DataToken inputActionSyncToken))
             {
@@ -2632,9 +2630,9 @@ namespace JanSharp.Internal
 
         private void SendLateJoinerData()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerData");
-            #endif
+#endif
             if (flaggedToContinueNextFrame)
                 suspendedInLJSerialization = false;
             else
@@ -2663,9 +2661,9 @@ namespace JanSharp.Internal
 
         private void SendLateJoinerInternalGameStatesIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerInternalGameStatesIA");
-            #endif
+#endif
             // Client states game state.
             WriteSmallUInt((uint)allClientStatesCount);
             for (int i = 0; i < allClientStatesCount; i++)
@@ -2722,15 +2720,15 @@ namespace JanSharp.Internal
 
         private void SendLateJoinerCustomGameStatesIAs()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerCustomGameStatesIAs");
-            #endif
+#endif
             for (int i = suspendedIndexInArray; i < allGameStatesCount; i++)
             {
-                #if LockstepDebug
+#if LockstepDebug
                 System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
-                #endif
+#endif
                 byte[] unsuspendedWriteStream = null;
                 if (flaggedToContinueNextFrame)
                 {
@@ -2755,9 +2753,9 @@ namespace JanSharp.Internal
                     ResetWriteStream();
                     return;
                 }
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockstepDebug] [sw] Lockstep  SendLateJoinerData (inner) - serialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[i].GameStateInternalName}, writeStreamSize: {writeStreamSize}");
-                #endif
+#endif
                 lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, writeStream, writeStreamSize);
                 ResetWriteStream();
             }
@@ -2765,9 +2763,9 @@ namespace JanSharp.Internal
 
         private void SendLateJoinerCurrentTickIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerCurrentTickIA");
-            #endif
+#endif
             WriteSmallUInt(currentTick);
             lateJoinerInputActionSync.SendInputAction(LJCurrentTickIAId, writeStream, writeStreamSize);
             ResetWriteStream();
@@ -2775,9 +2773,9 @@ namespace JanSharp.Internal
 
         private void OnLJInternalGameStatesIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnLJClientStatesIA");
-            #endif
+#endif
             // If this client was already receiving data, but then it restarted from
             // the beginning, forget about everything that's been received so far.
             ForgetAboutUnprocessedLJSerializedGameSates();
@@ -2843,9 +2841,9 @@ namespace JanSharp.Internal
 
         private void RemoveClientsFromLeftClientsWhichAreNotInClientStates()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RemoveClientsFromLeftClientsWhichAreNotInClientStates");
-            #endif
+#endif
             int i = 0;
             int newI = 0;
             while (i < leftClientsCount)
@@ -2860,9 +2858,9 @@ namespace JanSharp.Internal
 
         private void OnLJCustomGameStateIA(uint inputActionId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnLJCustomGameStateIA - allClientStates is null: {allClientStates == null}");
-            #endif
+#endif
             if (allClientStates == null) // This data was not meant for this client. Continue waiting.
                 return;
 
@@ -2878,9 +2876,9 @@ namespace JanSharp.Internal
 
         private void OnLJCurrentTickIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnLJCurrentTickIA - allClientStates is null: {allClientStates == null}");
-            #endif
+#endif
             if (allClientStates == null) // This data was not meant for this client. Continue waiting.
             {
                 SendCustomEventDelayedSeconds(nameof(AskForLateJoinerSyncAgain), 2.5f);
@@ -2896,9 +2894,9 @@ namespace JanSharp.Internal
 
         public void AskForLateJoinerSyncAgain()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AskForLateJoinerSyncAgain");
-            #endif
+#endif
             // Does not need to keep track of the amount of time this has been raised to only run for the last
             // one, because even after the first time it was sent, by the time this runs the condition below
             // should already be true. And if it isn't, no new late joiner data has been received, so it it
@@ -2919,9 +2917,9 @@ namespace JanSharp.Internal
 
         private void TryMoveToNextLJSerializedGameState()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryMoveToNextLJSerializedGameState");
-            #endif
+#endif
             nextLJGameStateToProcess++;
             nextLJGameStateToProcessTime = Time.realtimeSinceStartup + LJGameStateProcessingFrequency;
             if (nextLJGameStateToProcess >= unprocessedLJSerializedGSCount)
@@ -2930,11 +2928,11 @@ namespace JanSharp.Internal
 
         private void ProcessNextLJSerializedGameState()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
             int gameStateIndex = nextLJGameStateToProcess;
             if (!flaggedToContinueNextFrame)
                 SetReadStream(unprocessedLJSerializedGameStates[gameStateIndex]);
@@ -2943,16 +2941,16 @@ namespace JanSharp.Internal
                 flaggedToContinueNextFrame = false;
                 isContinuationFromPrevFrame = true;
             }
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ProcessNextLJSerializedGameState (inner) - readStream.Length: {readStream.Length}, readStreamPosition: {readStreamPosition}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
-            #endif
+#endif
             // Specifically explicitly leaving inGameStateSafeEvent as false.
             // Modification of game states is not allowed, must only restoring the exact state that's been serialized.
             SetDilatedTickStartTime(); // Right before DeserializeGameState.
             string errorMessage = allGameStates[gameStateIndex].DeserializeGameState(false, 0u, null);
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ProcessNextLJSerializedGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[gameStateIndex].GameStateInternalName}");
-            #endif
+#endif
             isContinuationFromPrevFrame = false;
             if (flaggedToContinueNextFrame)
                 return;
@@ -2969,9 +2967,9 @@ namespace JanSharp.Internal
 
         private void ForgetAboutUnprocessedLJSerializedGameSates()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutUnprocessedLJSerializedGameSates");
-            #endif
+#endif
             nextLJGameStateToProcess = -1;
             checkMasterChangeAfterProcessingLJGameStates = false;
             ArrList.Clear(ref unprocessedLJSerializedGameStates, ref unprocessedLJSerializedGSCount);
@@ -2979,9 +2977,9 @@ namespace JanSharp.Internal
 
         private void CleanUpOldInputActions()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CleanUpOldInputActions");
-            #endif
+#endif
             if (latestInputActionIndexByPlayerIdForLJ == null)
             {
                 Debug.Log("[Lockstep] Impossible, latestInputActionIndexByPlayerIdForLJ is null inside of "
@@ -3051,9 +3049,9 @@ namespace JanSharp.Internal
 
         private void DoneProcessingLJGameStates()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  DoneProcessingLJGameStates");
-            #endif
+#endif
             bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
             ForgetAboutUnprocessedLJSerializedGameSates();
             CleanUpOldInputActions();
@@ -3078,9 +3076,9 @@ namespace JanSharp.Internal
 
         private void CheckIfLateJoinerSyncShouldStop()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CheckIfLateJoinerSyncShouldStop");
-            #endif
+#endif
             if (isMaster && !IsAnyClientWaitingForLateJoinerSync())
             {
                 sendLateJoinerDataAtStartOfTick = false;
@@ -3090,19 +3088,19 @@ namespace JanSharp.Internal
 
         private void SendClientGotLateJoinerDataIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientGotLateJoinerDataIA");
-            #endif
+#endif
             SendInputAction(clientGotLateJoinerDataIAId, forceOneFrameDelay: false);
         }
 
-        [SerializeField] [HideInInspector] private uint clientGotLateJoinerDataIAId;
+        [SerializeField][HideInInspector] private uint clientGotLateJoinerDataIAId;
         [LockstepInputAction(nameof(clientGotLateJoinerDataIAId))]
         public void OnClientGotLateJoinerDataIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientGotLateJoinerDataIA");
-            #endif
+#endif
             if (GetClientStateUnsafe(sendingPlayerId) == ClientState.Master)
                 Debug.LogError("[Lockstep] Impossible, a client started catching up while already being master, "
                     + "however the got LJ data IA gets sent before the master change check happens.");
@@ -3113,9 +3111,9 @@ namespace JanSharp.Internal
 
         private void SendClientLeftIA(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientLeftIA");
-            #endif
+#endif
             WriteSmallUInt(playerId);
             // One of the few internal input actions which forces a frame delay. For two reasons:
             // To process left players in the order in which they actually left. If the input action were to
@@ -3124,13 +3122,13 @@ namespace JanSharp.Internal
             SendInputAction(clientLeftIAId, forceOneFrameDelay: true);
         }
 
-        [SerializeField] [HideInInspector] private uint clientLeftIAId;
+        [SerializeField][HideInInspector] private uint clientLeftIAId;
         [LockstepInputAction(nameof(clientLeftIAId))]
         public void OnClientLeftIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientLeftIA");
-            #endif
+#endif
             uint playerId = ReadSmallUInt();
             CheckIfImportingPlayerLeft(playerId); // Can raise an event, must therefore happen before removing the client state.
             RemoveClientState(playerId, out ClientState clientState, out string playerName);
@@ -3156,20 +3154,20 @@ namespace JanSharp.Internal
 
         private void SendClientCaughtUpIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendClientCaughtUpIA");
-            #endif
+#endif
             WriteFlags(isInitialCatchUp); // `doRaise`.
             SendInputAction(clientCaughtUpIAId, forceOneFrameDelay: false);
         }
 
-        [SerializeField] [HideInInspector] private uint clientCaughtUpIAId;
+        [SerializeField][HideInInspector] private uint clientCaughtUpIAId;
         [LockstepInputAction(nameof(clientCaughtUpIAId))]
         public void OnClientCaughtUpIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnClientCaughtUpIA");
-            #endif
+#endif
             ReadFlags(out bool doRaise);
             if (GetClientStateUnsafe(sendingPlayerId) != ClientState.Master)
                 SetClientState(sendingPlayerId, ClientState.Normal);
@@ -3191,9 +3189,9 @@ namespace JanSharp.Internal
 
         public void ReceivedInputAction(bool isLateJoinerSync, uint inputActionId, ulong uniqueId, float sendTime, byte[] inputActionData)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ReceivedInputAction - isLateJoinerSync: {isLateJoinerSync}, inputActionId: {inputActionId}, uniqueId: 0x{uniqueId:x16}{(isLateJoinerSync ? "" : $", event name {(inputActionId < inputActionHandlerEventNames.Length ? inputActionHandlerEventNames[inputActionId] : "<id/index out of bounds>")}")}");
-            #endif
+#endif
             if (isLateJoinerSync)
             {
                 if (!isWaitingForLateJoinerSync)
@@ -3226,9 +3224,9 @@ namespace JanSharp.Internal
 
         private ulong TryToInstantlyRunInputActionOnMaster(uint inputActionId, ulong uniqueId, float sendTime, byte[] inputActionData, bool forceOneFrameDelay = false)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  TryToInstantlyRunInputActionOnMaster");
-            #endif
+#endif
             if (currentTick < firstMutableTick
                 || (currentTick == firstMutableTick && !disallowAssociatingWithCurrentTick))
             {
@@ -3273,9 +3271,9 @@ namespace JanSharp.Internal
 
         private void ClearUniqueIdsByTick()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ClearUniqueIdsByTick");
-            #endif
+#endif
             // When only clearing uniqueIdsByTick we can't just clear inputActionsByUniqueId,
             // because that may contain very new input actions which have not been associated
             // with a tick yet, so they'd be associated with future ticks which means we must
@@ -3290,9 +3288,9 @@ namespace JanSharp.Internal
 
         public void AssociateIncomingInputActionWithTick(uint tickToRunIn, ulong uniqueId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AssociateIncomingInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
-            #endif
+#endif
             if (tickToRunIn == 0u && uniqueId == 0uL)
             {
                 ClearUniqueIdsByTick();
@@ -3312,9 +3310,9 @@ namespace JanSharp.Internal
 
         private void AssociateInputActionWithTickOnMaster(uint tickToRunIn, ulong uniqueId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTickOnMaster - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
-            #endif
+#endif
             AssociateInputActionWithTick(tickToRunIn, uniqueId);
             if (!isSinglePlayer)
                 tickSync.AddInputActionToRun(tickToRunIn, uniqueId);
@@ -3322,9 +3320,9 @@ namespace JanSharp.Internal
 
         private void AssociateInputActionWithTick(uint tickToRunIn, ulong uniqueId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AssociateInputActionWithTick - tickToRunIn: {tickToRunIn}, uniqueId: 0x{uniqueId:x16}");
-            #endif
+#endif
             // Mark the input action to run at the given tick.
             DataToken tickToRunInToken = new DataToken(tickToRunIn);
             if (uniqueIdsByTick.TryGetValue(tickToRunInToken, out DataToken uniqueIdsToken))
@@ -3342,9 +3340,9 @@ namespace JanSharp.Internal
 
         private UdonSharpBehaviour[] CleanUpRemovedListeners(UdonSharpBehaviour[] listeners, int destroyedCount, string eventName)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CleanUpRemovedListeners");
-            #endif
+#endif
             Debug.LogError($"[Lockstep] An event listener for {eventName} has been destroyed at runtime. "
                 + "Lockstep event listeners must not be destroyed in order to guarantee deterministic behavior.");
             int length = listeners.Length;
@@ -3361,9 +3359,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnInit() // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnInit");
-            #endif
+#endif
             inGameStateSafeEvent = true; // Calling function is not an IA.
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onInitListeners)
@@ -3378,9 +3376,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnClientBeginCatchUp(uint catchingUpPlayerId) // Not game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientBeginCatchUp");
-            #endif
+#endif
             this.catchingUpPlayerId = catchingUpPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientBeginCatchUpListeners)
@@ -3395,9 +3393,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnPreClientJoined(uint joinedPlayerId) // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnPreClientJoined");
-            #endif
+#endif
             this.joinedPlayerId = joinedPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onPreClientJoinedListeners)
@@ -3412,9 +3410,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnClientJoined(uint joinedPlayerId) // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientJoined");
-            #endif
+#endif
             inGameStateSafeEvent = true; // Calling function is potentially not an IA.
             this.joinedPlayerId = joinedPlayerId;
             int destroyedCount = 0;
@@ -3431,9 +3429,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnClientCaughtUp(uint catchingUpPlayerId) // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientCaughtUp");
-            #endif
+#endif
             this.catchingUpPlayerId = catchingUpPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientCaughtUpListeners)
@@ -3448,9 +3446,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnClientLeft(uint leftPlayerId) // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientLeft");
-            #endif
+#endif
             this.leftPlayerId = leftPlayerId;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onClientLeftListeners)
@@ -3468,9 +3466,9 @@ namespace JanSharp.Internal
         /// </summary>
         private void RaiseOnMasterClientChanged(uint oldMasterPlayerId) // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnMasterClientChanged");
-            #endif
+#endif
             inGameStateSafeEvent = true; // Calling function is potentially not an IA.
             this.oldMasterPlayerId = oldMasterPlayerId;
             int destroyedCount = 0;
@@ -3504,9 +3502,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnExportStart() // Not game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportStart");
-            #endif
+#endif
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onExportStartListeners)
                 if (listener == null)
@@ -3519,9 +3517,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnExportFinished() // Not game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportFinished");
-            #endif
+#endif
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onExportFinishedListeners)
                 if (listener == null)
@@ -3534,9 +3532,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnImportStart() // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportStart");
-            #endif
+#endif
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportStartListeners)
                 if (listener == null)
@@ -3549,9 +3547,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnImportOptionsDeserialized() // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportOptionsDeserialized");
-            #endif
+#endif
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportOptionsDeserializedListeners)
                 if (listener == null)
@@ -3564,9 +3562,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnImportedGameState() // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportedGameState");
-            #endif
+#endif
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportedGameStateListeners)
                 if (listener == null)
@@ -3579,9 +3577,9 @@ namespace JanSharp.Internal
 
         private void RaiseOnImportFinished() // Game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportFinished");
-            #endif
+#endif
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onImportFinishedListeners)
                 if (listener == null)
@@ -3595,9 +3593,9 @@ namespace JanSharp.Internal
         private bool markedForOnExportOptionsForAutosaveChanged;
         private void MarkForOnExportOptionsForAutosaveChanged()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  MarkForOnExportOptionsForAutosaveChanged");
-            #endif
+#endif
             if (markedForOnExportOptionsForAutosaveChanged)
                 return;
             markedForOnExportOptionsForAutosaveChanged = true;
@@ -3606,9 +3604,9 @@ namespace JanSharp.Internal
 
         public void RaiseOnExportOptionsForAutosaveChanged() // Not game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnExportOptionsForAutosaveChanged");
-            #endif
+#endif
             markedForOnExportOptionsForAutosaveChanged = false;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onExportOptionsForAutosaveChangedListeners)
@@ -3623,9 +3621,9 @@ namespace JanSharp.Internal
         private bool markedForOnAutosaveIntervalSecondsChanged;
         private void MarkForOnAutosaveIntervalSecondsChanged()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  MarkForOnAutosaveIntervalSecondsChanged");
-            #endif
+#endif
             if (markedForOnAutosaveIntervalSecondsChanged)
                 return;
             markedForOnAutosaveIntervalSecondsChanged = true;
@@ -3634,9 +3632,9 @@ namespace JanSharp.Internal
 
         public void RaiseOnAutosaveIntervalSecondsChanged() // Not game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnAutosaveIntervalSecondsChanged");
-            #endif
+#endif
             markedForOnAutosaveIntervalSecondsChanged = false;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onAutosaveIntervalSecondsChangedListeners)
@@ -3651,9 +3649,9 @@ namespace JanSharp.Internal
         private bool markedForOnIsAutosavePausedChanged;
         private void MarkForOnIsAutosavePausedChanged()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  MarkForOnIsAutosavePausedChanged");
-            #endif
+#endif
             if (markedForOnIsAutosavePausedChanged)
                 return;
             markedForOnIsAutosavePausedChanged = true;
@@ -3662,9 +3660,9 @@ namespace JanSharp.Internal
 
         public void RaiseOnIsAutosavePausedChanged() // Not game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnIsAutosavePausedChanged");
-            #endif
+#endif
             markedForOnIsAutosavePausedChanged = false;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onIsAutosavePausedChangedListeners)
@@ -3678,9 +3676,9 @@ namespace JanSharp.Internal
 
         public void RaiseOnLockstepNotification(string message) // Not game state safe.
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnLockstepNotification");
-            #endif
+#endif
             notificationMessage = message;
             int destroyedCount = 0;
             foreach (UdonSharpBehaviour listener in onLockstepNotificationListeners)
@@ -3695,9 +3693,9 @@ namespace JanSharp.Internal
 
         public override string GetDisplayName(uint playerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetDisplayName - playerId: {playerId}");
-            #endif
+#endif
             int index = ArrList.BinarySearch(ref allClientIds, ref allClientIdsCount, playerId);
             if (index >= 0)
                 return allClientNames[index];
@@ -3835,9 +3833,9 @@ namespace JanSharp.Internal
 
         public override void SetReadStream(byte[] stream, int startIndex, int length)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetReadStream");
-            #endif
+#endif
             if (flaggedToContinueNextFrame)
             {
                 Debug.LogError($"[Lockstep] Attempt to call SetReadStream while flaggedToContinueNextFrame "
@@ -3851,9 +3849,9 @@ namespace JanSharp.Internal
         }
         public override void SetReadStream(byte[] stream)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SetReadStream");
-            #endif
+#endif
             if (flaggedToContinueNextFrame)
             {
                 Debug.LogError($"[Lockstep] Attempt to call SetReadStream while flaggedToContinueNextFrame "
@@ -4078,9 +4076,9 @@ namespace JanSharp.Internal
 
         public override LockstepGameStateOptionsData[] CloneAllOptions(LockstepGameStateOptionsData[] allOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CloneAllOptions");
-            #endif
+#endif
             LockstepGameStateOptionsData[] other = new LockstepGameStateOptionsData[allOptions.Length];
             for (int i = 0; i < allOptions.Length; i++)
             {
@@ -4092,9 +4090,9 @@ namespace JanSharp.Internal
 
         public override void CleanupAllExportOptions(LockstepGameStateOptionsData[] allExportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CleanupAllOptions");
-            #endif
+#endif
             foreach (LockstepGameStateOptionsData options in allExportOptions)
                 if (options != null)
                     options.DecrementRefsCount();
@@ -4102,9 +4100,9 @@ namespace JanSharp.Internal
 
         public override void CleanupAllImportOptions(DataDictionary allImportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CleanupAllOptions");
-            #endif
+#endif
             DataList values = allImportOptions.GetValues();
             int count = values.Count;
             for (int i = 0; i < count; i++)
@@ -4117,9 +4115,9 @@ namespace JanSharp.Internal
 
         public override void CleanupImportedGameStatesData(object[][] importedGameStates)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CleanupImportedGameStatesData");
-            #endif
+#endif
             foreach (object[] importedGS in importedGameStates)
             {
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
@@ -4133,9 +4131,9 @@ namespace JanSharp.Internal
 
         public override LockstepGameStateOptionsData[] GetNewExportOptions()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetNewExportOptions");
-            #endif
+#endif
             LockstepGameStateOptionsData[] allOptions = new LockstepGameStateOptionsData[gameStatesSupportingImportExportCount];
             for (int i = 0; i < gameStatesSupportingImportExportCount; i++)
             {
@@ -4149,9 +4147,9 @@ namespace JanSharp.Internal
 
         public override int FillInMissingExportOptionsWithDefaults(LockstepGameStateOptionsData[] allExportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FillInMissingExportOptionsWithDefaults");
-            #endif
+#endif
             int filledInCount = 0;
             for (int i = 0; i < gameStatesSupportingImportExportCount; i++)
             {
@@ -4167,9 +4165,9 @@ namespace JanSharp.Internal
 
         public override bool AnyExportOptionsCurrentlyShown()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetNewExportOptions");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ExportUI != null && gameState.ExportUI.CurrentlyShown)
                     return true;
@@ -4178,9 +4176,9 @@ namespace JanSharp.Internal
 
         public override void UpdateAllCurrentExportOptionsFromWidgets()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  UpdateAllCurrentExportOptionsFromWidgets");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ExportUI != null && gameState.ExportUI.CurrentlyShown)
                     gameState.ExportUI.UpdateCurrentOptionsFromWidgets();
@@ -4188,9 +4186,9 @@ namespace JanSharp.Internal
 
         public override LockstepGameStateOptionsData[] GetAllCurrentExportOptions(bool weakReferences)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetAllCurrentExportOptions");
-            #endif
+#endif
             LockstepGameStateOptionsData[] allOptions = new LockstepGameStateOptionsData[gameStatesSupportingImportExportCount];
             for (int i = 0; i < gameStatesSupportingImportExportCount; i++)
             {
@@ -4210,9 +4208,9 @@ namespace JanSharp.Internal
 
         public override void ValidateExportOptions(LockstepGameStateOptionsData[] allExportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ValidateExportOptions");
-            #endif
+#endif
             for (int i = 0; i < gameStatesSupportingImportExportCount; i++)
             {
                 LockstepGameStateOptionsUI exportUI = gameStatesSupportingImportExport[i].ExportUI;
@@ -4226,9 +4224,9 @@ namespace JanSharp.Internal
 
         public override void ShowExportOptionsEditor(LockstepOptionsEditorUI ui, LockstepGameStateOptionsData[] allExportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ShowExportOptionsEditor");
-            #endif
+#endif
             for (int i = 0; i < gameStatesSupportingImportExportCount; i++)
             {
                 LockstepGameStateOptionsUI exportUI = gameStatesSupportingImportExport[i].ExportUI;
@@ -4244,9 +4242,9 @@ namespace JanSharp.Internal
 
         public override void HideExportOptionsEditor()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  HideExportOptionsEditor");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
             {
                 LockstepGameStateOptionsUI exportUI = gameState.ExportUI;
@@ -4259,9 +4257,9 @@ namespace JanSharp.Internal
 
         public override DataDictionary GetNewImportOptions()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetNewImportOptions");
-            #endif
+#endif
             DataDictionary allOptions = new DataDictionary();
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ImportUI != null)
@@ -4271,9 +4269,9 @@ namespace JanSharp.Internal
 
         public override int FillInMissingImportOptionsWithDefaults(DataDictionary allImportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FillInMissingImportOptionsWithDefaults");
-            #endif
+#endif
             int filledInCount = 0;
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ImportUI != null && !allImportOptions.ContainsKey(gameState.GameStateInternalName))
@@ -4286,9 +4284,9 @@ namespace JanSharp.Internal
 
         public override int FillInMissingImportOptionsWithDefaults(object[][] importedGameStates)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  FillInMissingImportOptionsWithDefaults");
-            #endif
+#endif
             int filledInCount = 0;
             foreach (object[] importedGS in importedGameStates)
             {
@@ -4307,9 +4305,9 @@ namespace JanSharp.Internal
 
         public override bool AnyImportOptionsCurrentlyShown()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetNewImportOptions");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ImportUI != null && gameState.ImportUI.CurrentlyShown)
                     return true;
@@ -4318,9 +4316,9 @@ namespace JanSharp.Internal
 
         public override void UpdateAllCurrentImportOptionsFromWidgets()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  UpdateAllCurrentImportOptionsFromWidgets");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ImportUI != null && gameState.ImportUI.CurrentlyShown)
                     gameState.ImportUI.UpdateCurrentOptionsFromWidgets();
@@ -4328,9 +4326,9 @@ namespace JanSharp.Internal
 
         public override DataDictionary GetAllCurrentImportOptions(bool weakReferences)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  GetAllCurrentImportOptions");
-            #endif
+#endif
             DataDictionary allOptions = new DataDictionary();
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
             {
@@ -4350,9 +4348,9 @@ namespace JanSharp.Internal
 
         public override void AssociateImportOptionsWithImportedGameStates(object[][] importedGameStates, DataDictionary allImportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AssociateImportOptionsWithImportedGameStates");
-            #endif
+#endif
             foreach (object[] importedGS in importedGameStates)
             {
                 LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
@@ -4373,9 +4371,9 @@ namespace JanSharp.Internal
 
         public override void ValidateImportOptions(DataDictionary allImportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ValidateImportOptions");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ImportUI != null && allImportOptions.TryGetValue(gameState.GameStateInternalName, out DataToken optionsToken))
                 {
@@ -4387,9 +4385,9 @@ namespace JanSharp.Internal
 
         public override void ShowImportOptionsEditor(LockstepOptionsEditorUI ui, object[][] importedGameStates)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ShowImportOptionsEditor");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
                 if (gameState.ImportUI && gameState.ImportUI.CurrentlyShown)
                     gameState.ImportUI.HideOptionsEditor();
@@ -4409,9 +4407,9 @@ namespace JanSharp.Internal
 
         public override void HideImportOptionsEditor()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  HideImportOptionsEditor");
-            #endif
+#endif
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
             {
                 LockstepGameStateOptionsUI importUI = gameState.ImportUI;
@@ -4431,9 +4429,9 @@ namespace JanSharp.Internal
 
         public override bool StartExport(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartExport");
-            #endif
+#endif
             if (!PrepareForExport(exportName, allExportOptions))
                 return false;
             currentExportName = exportName;
@@ -4449,9 +4447,9 @@ namespace JanSharp.Internal
         private uint[] crc32LookupCache;
         private bool PrepareForExport(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  PrepareForExport");
-            #endif
+#endif
             if (!lockstepIsInitialized)
             {
                 Debug.LogError("[Lockstep] Attempt to call Export before OnInit or OnClientBeginCatchUp, ignoring.");
@@ -4516,11 +4514,11 @@ namespace JanSharp.Internal
 
         private void ExportGameStates()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ExportGameStates");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
             byte[] unsuspendedWriteStream = null;
             LockstepGameState gameState = gameStatesSupportingImportExport[suspendedGSIndexInExport];
             if (!flaggedToContinueNextFrame)
@@ -4542,13 +4540,13 @@ namespace JanSharp.Internal
                 suspendedInExport = false;
                 isContinuationFromPrevFrame = true;
             }
-            #if LockstepDebug
+#if LockstepDebug
             double serializeStartMs = sw.Elapsed.TotalMilliseconds;
-            #endif
+#endif
             gameState.SerializeGameState(true, currentAllExportOptions[suspendedGSIndexInExport]);
-            #if LockstepDebug
+#if LockstepDebug
             double serializeMs = sw.Elapsed.TotalMilliseconds - serializeStartMs;
-            #endif
+#endif
             isContinuationFromPrevFrame = false;
             if (flaggedToContinueNextFrame)
             {
@@ -4563,9 +4561,9 @@ namespace JanSharp.Internal
             writeStreamSize = suspendedExportGSSizePosition;
             WriteInt(stopPosition - suspendedExportGSSizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
             writeStreamSize = stopPosition;
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - suspendedExportGSSizePosition - 4}");
-            #endif
+#endif
 
             suspendedGSIndexInExport++;
             if (suspendedGSIndexInExport == gameStatesSupportingImportExportCount)
@@ -4577,11 +4575,11 @@ namespace JanSharp.Internal
 
         private void ExportInternal()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ExportInternal");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
 
             if (suspendedInExportPreparation)
             {
@@ -4606,13 +4604,13 @@ namespace JanSharp.Internal
             }
             currentAllExportOptions = null;
 
-            #if LockstepDebug
+#if LockstepDebug
             double crcStartMs = sw.Elapsed.TotalMilliseconds;
-            #endif
+#endif
             uint crc = CRC32.Compute(ref crc32LookupCache, writeStream, 0, writeStreamSize);
-            #if LockstepDebug
+#if LockstepDebug
             double crcMs = sw.Elapsed.TotalMilliseconds - crcStartMs;
-            #endif
+#endif
             WriteUInt(crc);
 
             byte[] exportedData = new byte[writeStreamSize];
@@ -4621,10 +4619,10 @@ namespace JanSharp.Internal
 
             exportResult = Base64.Encode(exportedData);
             Debug.Log("[Lockstep] Export:" + (currentExportName != null ? $" {currentExportName}:\n" : "\n") + exportResult);
-            #if LockstepDebug
+#if LockstepDebug
             sw.Stop();
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ExportInternal (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation ms: {crcMs}, total ms: {sw.Elapsed.TotalMilliseconds}");
-            #endif
+#endif
             isExporting = false;
             RaiseOnExportFinished();
             exportResult = null;
@@ -4633,9 +4631,9 @@ namespace JanSharp.Internal
 
         public override object[][] ImportPreProcess(string exportedString, out System.DateTime exportedDate, out string exportWorldName, out string exportName)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess");
-            #endif
+#endif
             exportedDate = System.DateTime.MinValue;
             exportWorldName = null;
             exportName = null;
@@ -4645,32 +4643,32 @@ namespace JanSharp.Internal
 
             if (!Base64.TryDecode(exportedString, out readStream))
             {
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - invalid base64 encoding:\n{exportedString}");
-                #endif
+#endif
                 return null;
             }
             if (readStream.Length < 4)
             {
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - exported data too short:\n{exportedString}");
-                #endif
+#endif
                 return null;
             }
 
-            #if LockstepDebug
+#if LockstepDebug
             System.Diagnostics.Stopwatch crcStopwatch = new System.Diagnostics.Stopwatch();
             crcStopwatch.Start();
-            #endif
+#endif
             uint gotCrc = CRC32.Compute(ref crc32LookupCache, readStream, 0, readStream.Length - 4);
-            #if LockstepDebug
+#if LockstepDebug
             crcStopwatch.Stop();
-            #endif
+#endif
             readStreamPosition = readStream.Length - 4;
             uint expectedCrc = ReadUInt();
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportPreProcess (inner) - binary size: {readStream.Length}, expected crc: {expectedCrc}, got crc: {gotCrc}, crc calculation ms: {crcStopwatch.Elapsed.TotalMilliseconds}");
-            #endif
+#endif
             if (gotCrc != expectedCrc)
                 return null;
 
@@ -4732,9 +4730,9 @@ namespace JanSharp.Internal
 
         public override void StartImport(object[][] importedGameStates, System.DateTime exportDate, string exportWorldName, string exportName)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartImport");
-            #endif
+#endif
             if (!lockstepIsInitialized)
             {
                 Debug.LogError("[Lockstep] Attempt to call StartImport before OnInit or OnClientBeginCatchUp, ignoring.");
@@ -4874,9 +4872,9 @@ namespace JanSharp.Internal
         ///<summary>LockstepImportedGS[] importedGSs</summary>
         private void SendImportStartIA(object[][] importedGSs, System.DateTime exportDate, string exportWorldName, string exportName)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendImportStartIA");
-            #endif
+#endif
             if (importedGSs.Length == 0)
             {
                 Debug.LogError("[Lockstep] Attempt to SendImportStartIA with 0 game states to import, ignoring.");
@@ -4895,13 +4893,13 @@ namespace JanSharp.Internal
             SendInputAction(importStartIAId);
         }
 
-        [SerializeField] [HideInInspector] private uint importStartIAId;
+        [SerializeField][HideInInspector] private uint importStartIAId;
         [LockstepInputAction(nameof(importStartIAId))]
         public void OnImportStartIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnImportStartIA");
-            #endif
+#endif
             if (isImporting)
             {
                 foreach (object[] importedGS in importedGSsToSend)
@@ -4939,9 +4937,9 @@ namespace JanSharp.Internal
         ///<summary>LockstepImportedGS[] importedGSsToSend</summary>
         private void SendImportGameStatesIA(object[][] importedGSsToSend)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  SendImportGameStatesIA");
-            #endif
+#endif
             foreach (object[] importedGS in importedGSsToSend)
             {
                 byte[] optionsBytes = LockstepImportedGS.GetSerializedImportOptions(importedGS);
@@ -4955,13 +4953,13 @@ namespace JanSharp.Internal
             SendInputAction(importGameStatesIAId);
         }
 
-        [SerializeField] [HideInInspector] private uint importGameStatesIAId;
+        [SerializeField][HideInInspector] private uint importGameStatesIAId;
         [LockstepInputAction(nameof(importGameStatesIAId))]
         public void OnImportGameStatesIA()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  OnImportGameStatesIA");
-            #endif
+#endif
 
             if (!isContinuationFromPrevFrame)
             {
@@ -5013,9 +5011,9 @@ namespace JanSharp.Internal
 
         private void DeserializeImportOptions()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  DeserializeImportOptions");
-            #endif
+#endif
             object[] incomingData = incomingGameStateData[currentIncomingGSDataIndex];
             if (!flaggedToContinueInsideOfGSImport)
                 SetReadStream((byte[])incomingData[1]/*optionsBytes*/);
@@ -5040,9 +5038,9 @@ namespace JanSharp.Internal
 
         private LockstepGameStateOptionsData ReadImportOptions(LockstepGameState gameState)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ReadImportOptions");
-            #endif
+#endif
             if (gameState.ImportUI != null)
                 return (LockstepGameStateOptionsData)ReadCustomNullableClass(gameState.ImportUI.OptionsClassName);
             if (ReadByte() == 0) // Reading the byte that was written by WriteCustomNullableClass.
@@ -5055,9 +5053,9 @@ namespace JanSharp.Internal
 
         private void ImportGameState()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  ImportGameState");
-            #endif
+#endif
             if (!flaggedToContinueInsideOfGSImport)
             {
                 object[] incomingData = incomingGameStateData[currentIncomingGSDataIndex++];
@@ -5069,14 +5067,14 @@ namespace JanSharp.Internal
             isContinuationFromPrevFrame = flaggedToContinueInsideOfGSImport;
             flaggedToContinueInsideOfGSImport = false;
             isDeserializingForImport = true;
-            #if LockstepDebug
+#if LockstepDebug
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
             importErrorMessage = importedGameState.DeserializeGameState(isImport: true, importedDataVersion, importedGameState.OptionsForCurrentImport);
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {importedGameState.GameStateInternalName}");
-            #endif
+#endif
             isContinuationFromPrevFrame = false; // Must be false inside of the other raised events down below.
             isDeserializingForImport = false;
             if (flaggedToContinueNextFrame)
@@ -5095,9 +5093,9 @@ namespace JanSharp.Internal
 
         private void CheckIfImportingPlayerLeft(uint leftPlayerId)
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  CheckIfImportingPlayerLeft");
-            #endif
+#endif
             if (!isImporting || leftPlayerId != ImportingPlayerId)
                 return;
             SetIsImporting(false);
@@ -5111,9 +5109,9 @@ namespace JanSharp.Internal
 
         private void StartOrStopAutosave()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartOrStopAutosave");
-            #endif
+#endif
             if (exportOptionsForAutosave == null)
             {
                 autosaveTimerStart = -1f;
@@ -5151,16 +5149,16 @@ namespace JanSharp.Internal
         {
             get
             {
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockstepDebug] Lockstep  ExportOptionsForAutosave.get");
-                #endif
+#endif
                 return CloneAllOptions(exportOptionsForAutosave);
             }
             set
             {
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockstepDebug] Lockstep  ExportOptionsForAutosave.set");
-                #endif
+#endif
                 if (value == null && exportOptionsForAutosave == null)
                     return;
                 if (exportOptionsForAutosave != null)
@@ -5186,9 +5184,9 @@ namespace JanSharp.Internal
             get => autosaveIntervalSeconds;
             set
             {
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockstepDebug] Lockstep  AutosaveIntervalSeconds.set");
-                #endif
+#endif
                 if (float.IsInfinity(value) || float.IsNaN(value))
                 {
                     Debug.LogError($"[Lockstep] Attempt to write {value} to {nameof(AutosaveIntervalSeconds)} "
@@ -5226,9 +5224,9 @@ namespace JanSharp.Internal
 
         public override void StartScopedAutosavePause()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StartScopedAutosavePause");
-            #endif
+#endif
             autosavePauseScopeCount++;
             if (autosavePauseScopeCount == 1)
             {
@@ -5239,9 +5237,9 @@ namespace JanSharp.Internal
 
         public override void StopScopedAutosavePause()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  StopScopedAutosavePause");
-            #endif
+#endif
             if (autosavePauseScopeCount == 0)
                 return;
             autosavePauseScopeCount--;
@@ -5256,9 +5254,9 @@ namespace JanSharp.Internal
 
         public void AutosaveLoop()
         {
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] Lockstep  AutosaveLoop");
-            #endif
+#endif
             if (autosaveTimerPausedAt != -1f) // Autosaving is paused or straight up no longer running.
                 return;
             float timePassed = Time.realtimeSinceStartup - autosaveTimerStart;

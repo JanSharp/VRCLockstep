@@ -1,7 +1,5 @@
 using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 
 namespace JanSharp
 {
@@ -28,7 +26,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public abstract class SerializableWannaBeClass : WannaBeClass
     {
-        [HideInInspector] [SingletonReference] public LockstepAPI lockstep;
+        [HideInInspector][SingletonReference] public LockstepAPI lockstep;
 
         /// <summary>
         /// <para>When <see langword="false"/>, the <c>isExport</c> and <c>isImport</c> parameters for

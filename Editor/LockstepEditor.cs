@@ -1,15 +1,13 @@
-using UdonSharp;
-using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
-using UnityEditor;
-using UdonSharpEditor;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Reflection;
 using System.Linq;
-using UnityEngine.SceneManagement;
+using System.Reflection;
+using UdonSharp;
+using UdonSharpEditor;
+using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace JanSharp.Internal
 {
@@ -448,11 +446,11 @@ namespace JanSharp.Internal
                 EditorGUILayout.PropertyField(worldNameProp);
             so.ApplyModifiedProperties();
 
-            #if LockstepDebug
+#if LockstepDebug
             EditorGUILayout.Space();
             GUILayout.Label("Debug", EditorStyles.boldLabel);
             DrawDefaultInspector();
-            #endif
+#endif
         }
 
         private void RecheckWorldName()

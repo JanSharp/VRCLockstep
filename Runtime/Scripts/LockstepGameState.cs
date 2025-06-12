@@ -1,8 +1,5 @@
 using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
-using VRC.SDK3.Data;
 
 namespace JanSharp
 {
@@ -22,7 +19,7 @@ namespace JanSharp
     /// </summary>
     public abstract class LockstepGameState : UdonSharpBehaviour
     {
-        [HideInInspector] [SingletonReference] public LockstepAPI lockstep;
+        [HideInInspector][SingletonReference] public LockstepAPI lockstep;
 
         /// <summary>
         /// <para>Must be a completely unique name for this game state. Anything can be used however it is

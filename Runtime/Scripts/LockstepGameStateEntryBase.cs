@@ -1,33 +1,31 @@
+using TMPro;
 using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 using UnityEngine.UI;
-using TMPro;
 
 namespace JanSharp.Internal
 {
     public abstract class LockstepGameStateEntryBase : UdonSharpBehaviour
     {
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public TextMeshProUGUI displayNameText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public Toggle mainToggle;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public Image toggledImage;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public Color goodColor;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public Color badColor;
     }
 }

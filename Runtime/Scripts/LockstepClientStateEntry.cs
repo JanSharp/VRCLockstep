@@ -1,37 +1,34 @@
-﻿using UdonSharp;
-using UnityEngine;
+﻿using TMPro;
+using UdonSharp;
 using UnityEngine.UI;
-using VRC.SDKBase;
-using VRC.Udon;
-using TMPro;
 
 namespace JanSharp.Internal
 {
-    #if !LockstepDebug
+#if !LockstepDebug
     [AddComponentMenu("")]
-    #endif
+#endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepClientStateEntry : UdonSharpBehaviour
     {
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public TextMeshProUGUI clientDisplayNameText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public TextMeshProUGUI clientStateText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public TextMeshProUGUI masterPreferenceText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public Slider masterPreferenceSlider;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public Button makeMasterButton;
 
         [System.NonSerialized] public LockstepInfoUI infoUI;

@@ -1,102 +1,101 @@
-﻿using UdonSharp;
+﻿using TMPro;
+using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
-using VRC.SDKBase;
-using VRC.Udon;
 using VRC.SDK3.Data;
-using TMPro;
+using VRC.SDKBase;
 
 ///cSpell:ignore Raycasts
 
 namespace JanSharp.Internal
 {
-    #if !LockstepDebug
+#if !LockstepDebug
     [AddComponentMenu("")]
-    #endif
+#endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepInfoUI : UdonSharpBehaviour
     {
-        [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
-        [SerializeField] [HideInInspector] [SingletonReference(Optional = true)] private LockstepMasterPreference masterPreference;
+        [SerializeField][HideInInspector][SingletonReference] private LockstepAPI lockstep;
+        [SerializeField][HideInInspector][SingletonReference(Optional = true)] private LockstepMasterPreference masterPreference;
         private bool MasterPreferenceExists => masterPreference != null;
         private const string LocalMasterPreferenceText = "Your Master Preference: ";
         private const string EntryMasterPreferenceText = "Master Preference: ";
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private GameObject notificationEntryPrefab;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private GameObject clientStateEntryPrefab;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI lockstepMasterText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private GameObject lockstepMasterNoValueObj;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI vrcMasterText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private GameObject vrcMasterNoValueObj;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI localClientStateText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Button becomeMasterButton;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI clientCountText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private GameObject localMasterPreferenceObject;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI localMasterPreferenceText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Slider localMasterPreferenceSlider;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Toggle notificationLogTabToggle;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private CanvasGroup notificationLogCanvasGroup;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Transform notificationLogContent;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private ScrollRect notificationLogScrollRect;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Toggle clientStatesTabToggle;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private CanvasGroup clientStatesCanvasGroup;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Transform clientStatesContent;
 
         private VRCPlayerApi localPlayer;
@@ -382,14 +381,14 @@ namespace JanSharp.Internal
                 entry.gameObject.SetActive(true);
                 return entry;
             }
-            #if LockstepDebug
+#if LockstepDebug
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
             GameObject entryGo = Instantiate(clientStateEntryPrefab);
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] LockstepInfoUI  GetOrCreateEntry (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
-            #endif
+#endif
             entryGo.transform.SetParent(clientStatesContent, worldPositionStays: false);
             entry = entryGo.GetComponent<LockstepClientStateEntry>();
             entry.infoUI = this;
@@ -458,14 +457,14 @@ namespace JanSharp.Internal
 
         private void SendNotification(string message)
         {
-            #if LockstepDebug
+#if LockstepDebug
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            #endif
+#endif
             GameObject entryGo = Instantiate(notificationEntryPrefab);
-            #if LockstepDebug
+#if LockstepDebug
             Debug.Log($"[LockstepDebug] [sw] LockstepInfoUI  SendNotification (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
-            #endif
+#endif
             entryGo.transform.SetParent(notificationLogContent, worldPositionStays: false);
             entryGo.transform.SetAsFirstSibling();
             entryGo.GetComponentInChildren<TextMeshProUGUI>().text = message;

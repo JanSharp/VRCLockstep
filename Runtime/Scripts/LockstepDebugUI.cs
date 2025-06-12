@@ -1,24 +1,23 @@
+using TMPro;
 using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 using UnityEngine.UI;
-using TMPro;
 using VRC.SDK3.Data;
+using VRC.SDKBase;
 
 namespace JanSharp.Internal
 {
-    #if !LockstepDebug
+#if !LockstepDebug
     [AddComponentMenu("")]
-    #endif
+#endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepDebugUI : UdonSharpBehaviour
     {
-        [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
+        [SerializeField][HideInInspector][SingletonReference] private LockstepAPI lockstep;
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Transform flagsParent;
         private string[] flagFieldNames = new string[]
         {
@@ -59,9 +58,9 @@ namespace JanSharp.Internal
         private const float MinMaxTimeFrame = 5f;
         private int lastFullSecond = int.MinValue;
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI lockstepPerformanceText;
         private const string lockstepLastUpdateSWFieldName = "lastUpdateSW";
         private double averageUpdateMS;
@@ -69,9 +68,9 @@ namespace JanSharp.Internal
         private double maxUpdateMS = double.MinValue;
         private string formattedMaxAndMax;
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI debugUIPerformanceText;
         private System.Diagnostics.Stopwatch debugLastUpdateSW = new System.Diagnostics.Stopwatch();
         private double debugAverageUpdateMS;
@@ -79,9 +78,9 @@ namespace JanSharp.Internal
         private double debugMaxUpdateMS = double.MinValue;
         private string debugFormattedMaxAndMax;
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private Transform numbersParent;
         private string[] numbersFieldNames = new string[]
         {
@@ -108,17 +107,17 @@ namespace JanSharp.Internal
         private TextMeshProUGUI[] numbersValues;
         private TextMeshProUGUI[] numbersLabels;
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private RectTransform clientStatesParent;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI clientStatesCountText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private float clientStatesElemHeight;
         private object[] clientStatesListObj;
         private uint[] allClientIds;
@@ -130,34 +129,34 @@ namespace JanSharp.Internal
         private const string ClientNamesFieldName = "allClientNames";
         private const string ClientStatesCountFieldName = "allClientStatesCount";
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private RectTransform leftClientsParent;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI leftClientsCountText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private float leftClientsElemHeight;
         private object[] leftClientsListObj;
         private uint[] leftClients;
         private const string LeftClientsFieldName = "leftClients";
         private const string LeftClientsCountFieldName = "leftClientsCount";
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private RectTransform inputActionsByUniqueIdParent;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI inputActionsByUniqueIdCountText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private float inputActionsByUniqueIdElemHeight;
         private object[] inputActionsByUniqueIdListObj;
         private DataDictionary inputActionsByUniqueId;
@@ -166,17 +165,17 @@ namespace JanSharp.Internal
         private const string InputActionsByUniqueIdsFieldName = "inputActionsByUniqueId";
         private const string InputActionHandlerEventNamesFieldName = "inputActionHandlerEventNames";
 
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private RectTransform uniqueIdsByTickParent;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private TextMeshProUGUI uniqueIdsByTickCountText;
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         [SerializeField] private float uniqueIdsByTickElemHeight;
         private object[] uniqueIdsByTickListObj;
         private DataDictionary uniqueIdsByTick;
@@ -426,7 +425,7 @@ namespace JanSharp.Internal
             {
                 ArrList.Clear(ref uniqueIdsByTickUnrolled, ref uibtuCount);
                 DataList keys = uniqueIdsByTick.GetKeys();
-                for (int i = 0; i < keys.Count; i ++)
+                for (int i = 0; i < keys.Count; i++)
                 {
                     DataToken keyToken = keys[i];
                     uint tick = keyToken.UInt;
@@ -548,17 +547,17 @@ namespace JanSharp.Internal
 
             for (int i = elemCount; i < backingDataCount; i++)
             {
-                #if LockstepDebug
+#if LockstepDebug
                 System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
-                #endif
+#endif
                 elemGameObj = Instantiate(
                     (GameObject)listObj[ListObj_ElemPrefab],
                     (RectTransform)listObj[ListObj_Parent]
                 );
-                #if LockstepDebug
+#if LockstepDebug
                 Debug.Log($"[LockstepDebug] [sw] LockstepDebugUI  UpdateList (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
-                #endif
+#endif
                 SendCustomEvent(createListObjElemEventName);
                 ArrList.Add(ref elems, ref elemCount, listElemObj);
             }

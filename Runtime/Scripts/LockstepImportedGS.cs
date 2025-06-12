@@ -1,7 +1,3 @@
-using UdonSharp;
-using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 
 // This file is generated from a definition file.
 // When working on this repository, modify the definition file instead.

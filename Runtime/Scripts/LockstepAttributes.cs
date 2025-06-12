@@ -1,5 +1,6 @@
 
-namespace JanSharp {
+namespace JanSharp
+{
     public enum LockstepEventType
     {
         /// <summary>

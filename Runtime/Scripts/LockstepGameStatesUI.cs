@@ -1,20 +1,19 @@
-﻿using UdonSharp;
+﻿using TMPro;
+using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 using UnityEngine.UI;
-using TMPro;
 using VRC.SDK3.Data;
+using VRC.SDKBase;
 
 namespace JanSharp.Internal
 {
-    #if !LockstepDebug
+#if !LockstepDebug
     [AddComponentMenu("")]
-    #endif
+#endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepGameStatesUI : UdonSharpBehaviour
     {
-        [SerializeField] [HideInInspector] [SingletonReference] private LockstepAPI lockstep;
+        [SerializeField][HideInInspector][SingletonReference] private LockstepAPI lockstep;
 
         [SerializeField] private GameObject mainGSEntryPrefab;
 

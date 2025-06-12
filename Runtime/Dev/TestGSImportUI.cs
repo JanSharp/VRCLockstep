@@ -1,14 +1,12 @@
 ﻿using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 
 namespace JanSharp
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class TestGSImportUI : LockstepGameStateOptionsUI
     {
-        [HideInInspector] [SerializeField] [SingletonReference] private TestGameState testGameState;
+        [HideInInspector][SerializeField][SingletonReference] private TestGameState testGameState;
 
         public override string OptionsClassName => nameof(TestGSImportOptions);
         private TestGSImportOptions currentOptions;

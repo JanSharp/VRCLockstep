@@ -1,7 +1,5 @@
 ﻿using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 
 namespace JanSharp
 {
@@ -33,9 +31,9 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public abstract class LockstepGameStateOptionsUI : UdonSharpBehaviour
     {
-        [HideInInspector] [SingletonReference] public LockstepAPI lockstep;
-        [HideInInspector] [SingletonReference] public WannaBeClassesManager wannaBeClasses;
-        [HideInInspector] [SingletonReference] public WidgetManager widgetManager;
+        [HideInInspector][SingletonReference] public LockstepAPI lockstep;
+        [HideInInspector][SingletonReference] public WannaBeClassesManager wannaBeClasses;
+        [HideInInspector][SingletonReference] public WidgetManager widgetManager;
         /// <summary>
         /// <para>The class name of a class deriving from <see cref="LockstepGameStateOptionsData"/> which is
         /// the class this options UI uses. <see cref="CurrentOptions"/>, <see cref="NewOptions"/> and

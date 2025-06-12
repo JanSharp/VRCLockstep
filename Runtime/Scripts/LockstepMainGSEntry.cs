@@ -1,20 +1,17 @@
-﻿using UdonSharp;
-using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
-using TMPro;
+﻿using TMPro;
+using UdonSharp;
 
 namespace JanSharp.Internal
 {
-    #if !LockstepDebug
+#if !LockstepDebug
     [AddComponentMenu("")]
-    #endif
+#endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepMainGSEntry : LockstepGameStateEntryBase
     {
-        #if !LockstepDebug
+#if !LockstepDebug
         [HideInInspector]
-        #endif
+#endif
         public TextMeshProUGUI autosaveText;
     }
 }

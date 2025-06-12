@@ -3,10 +3,10 @@
 return {
   is_class_definition = true,
   usings = {
-    "UdonSharp",
-    "UnityEngine",
-    "VRC.SDKBase",
-    "VRC.Udon",
+    -- "UdonSharp",
+    -- "UnityEngine",
+    -- "VRC.SDKBase",
+    -- "VRC.Udon",
   },
   namespace = "JanSharp",
   class_name = "LockstepImportedGS",

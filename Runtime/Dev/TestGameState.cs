@@ -1,8 +1,6 @@
 ﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDK3.Data;
-using VRC.SDKBase;
-using VRC.Udon;
 
 namespace JanSharp
 {
@@ -39,7 +37,7 @@ namespace JanSharp
             lockstep.SendEventDelayedTicks(delayedInputActionId, 50);
         }
 
-        [SerializeField] [HideInInspector] private uint delayedInputActionId;
+        [SerializeField][HideInInspector] private uint delayedInputActionId;
         [LockstepInputAction(nameof(delayedInputActionId))]
         public void OnDelayedInputAction()
         {
@@ -157,7 +155,7 @@ namespace JanSharp
             Debug.Log($"[LockstepTest] TestGameState  OnImportFinished - GameStatesWaitingForImportCount: {lockstep.GameStatesBeingImportedCount}");
         }
 
-        [SerializeField] [HideInInspector] private uint singletonTestIAId;
+        [SerializeField][HideInInspector] private uint singletonTestIAId;
         [LockstepInputAction(nameof(singletonTestIAId))]
         public void OnSingletonTestIA()
         {
@@ -180,7 +178,7 @@ namespace JanSharp
             lockstep.SendInputAction(setDescriptionNameIAId);
         }
 
-        [SerializeField] [HideInInspector] private uint setDescriptionNameIAId;
+        [SerializeField][HideInInspector] private uint setDescriptionNameIAId;
         [LockstepInputAction(nameof(setDescriptionNameIAId), TrackTiming = true)]
         public void OnSetDescriptionIA()
         {

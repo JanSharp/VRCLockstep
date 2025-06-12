@@ -1,8 +1,7 @@
 ﻿using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 using VRC.SDK3.Data;
+using VRC.SDKBase;
 
 namespace JanSharp
 {
@@ -48,8 +47,8 @@ namespace JanSharp
         public override LockstepGameStateOptionsUI ExportUI => null;
         public override LockstepGameStateOptionsUI ImportUI => null;
 
-        [HideInInspector] [SerializeField] private UdonSharpBehaviour[] onMasterPreferenceChangedListeners;
-        [HideInInspector] [SerializeField] private UdonSharpBehaviour[] onLatencyHiddenMasterPreferenceChangedListeners;
+        [HideInInspector][SerializeField] private UdonSharpBehaviour[] onMasterPreferenceChangedListeners;
+        [HideInInspector][SerializeField] private UdonSharpBehaviour[] onLatencyHiddenMasterPreferenceChangedListeners;
 
         private uint localPlayerId;
 
@@ -319,7 +318,7 @@ namespace JanSharp
                 RaiseOnMasterLatencyPreferenceChanged(playerId);
         }
 
-        [HideInInspector] [SerializeField] private uint onSetPreferenceIAId;
+        [HideInInspector][SerializeField] private uint onSetPreferenceIAId;
         [LockstepInputAction(nameof(onSetPreferenceIAId))]
         public void OnSetPreferenceIA()
         {

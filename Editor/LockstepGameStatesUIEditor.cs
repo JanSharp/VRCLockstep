@@ -1,16 +1,11 @@
-using UdonSharp;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using TMPro;
+using UdonSharpEditor;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
-using VRC.SDKBase;
-using VRC.Udon;
-using UnityEditor;
-using UdonSharpEditor;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-using System.Collections.ObjectModel;
-using System;
-using TMPro;
 
 namespace JanSharp.Internal
 {
@@ -137,11 +132,11 @@ namespace JanSharp.Internal
         {
             if (UdonSharpGUI.DrawDefaultUdonSharpBehaviourHeader(targets))
                 return;
-            #if LockstepDebug
+#if LockstepDebug
             EditorGUILayout.Space();
             GUILayout.Label("Debug", EditorStyles.boldLabel);
             DrawDefaultInspector();
-            #endif
+#endif
         }
     }
 }

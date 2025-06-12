@@ -1,7 +1,5 @@
 ﻿using UdonSharp;
 using UnityEngine;
-using VRC.SDKBase;
-using VRC.Udon;
 
 namespace JanSharp
 {
@@ -13,7 +11,7 @@ namespace JanSharp
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepOptionsEditorUI : UdonSharpBehaviour
     {
-        [HideInInspector] [SerializeField] [SingletonReference] private WidgetManager widgetManager;
+        [HideInInspector][SerializeField][SingletonReference] private WidgetManager widgetManager;
         [SerializeField] private GenericValueEditor editor;
         private GroupingWidgetData root;
         private FoldOutWidgetData general;
