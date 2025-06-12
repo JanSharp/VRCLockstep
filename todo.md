@@ -112,4 +112,4 @@
 - [x] info UI should have the clients list show by default, and auto switch to the notifications when there is a new one
 - [x] test if scripts receive events raised by lockstep even if the scripts are disabled. The expectation is that yes they will, so add that to the docs
 - [x] make info UI bigger, or at least taller
-- [ ] reset `sendingPlayerId`, `sendingUniqueId` and `sendingTime` after an input action handler got raised, or when early returning
+- [x] reset `sendingPlayerId`, `sendingUniqueId` and `sendingTime` after an input action handler got raised, or when early returning

@@ -1075,6 +1075,10 @@ namespace JanSharp.Internal
                     + $"input action is ignored. This is supposed to be an incredibly rare edge case, such "
                     + $"that it should effectively never happen.");
 #endif
+                // Prevent misuse of the API, as well as failing fast.
+                sendingPlayerId = 0u;
+                sendingUniqueId = 0uL;
+                sendingTime = 0f;
                 return;
             }
             inGameStateSafeEvent = true;
@@ -1085,6 +1089,10 @@ namespace JanSharp.Internal
 #endif
             if (flaggedToContinueNextFrame)
                 suspendedInputActionId = inputActionId;
+            // Prevent misuse of the API, as well as failing fast.
+            sendingPlayerId = 0u;
+            sendingUniqueId = 0uL;
+            sendingTime = 0f;
         }
 
         private void RunInputActionSuspendedPrevFrame()
