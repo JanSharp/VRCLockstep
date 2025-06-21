@@ -234,7 +234,7 @@ namespace JanSharp.Internal
                 string msg;
                 if (!importedGSByInternalName.TryGetValue(gameState.GameStateInternalName, out DataToken importedGSToken))
                     msg = gameState.GameStateSupportsImportExport
-                        ? "<color=#888888>not in imported data, unchanged"
+                        ? "<color=#888888>not in imported data"
                         : "<color=#888888>does not support import";
                 else
                 {
