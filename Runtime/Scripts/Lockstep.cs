@@ -4431,9 +4431,11 @@ namespace JanSharp.Internal
         private string currentExportName;
         private LockstepGameStateOptionsData[] currentAllExportOptions;
         private string exportResult = null;
+        private int exportByteCount = 0;
         public override bool IsExporting => isExporting;
         public override string ExportName => currentExportName;
         public override string ExportResult => exportResult;
+        public override int ExportByteCount => exportByteCount;
 
         public override bool StartExport(string exportName, LockstepGameStateOptionsData[] allExportOptions)
         {
@@ -4621,19 +4623,22 @@ namespace JanSharp.Internal
 #endif
             WriteUInt(crc);
 
-            byte[] exportedData = new byte[writeStreamSize];
-            System.Buffer.BlockCopy(writeStream, 0, exportedData, 0, writeStreamSize);
+            exportByteCount = writeStreamSize;
             ResetWriteStream();
+
+            byte[] exportedData = new byte[exportByteCount];
+            System.Buffer.BlockCopy(writeStream, 0, exportedData, 0, exportByteCount);
 
             exportResult = Base64.Encode(exportedData);
             Debug.Log("[Lockstep] Export:" + (currentExportName != null ? $" {currentExportName}:\n" : "\n") + exportResult);
 #if LockstepDebug
             sw.Stop();
-            Debug.Log($"[LockstepDebug] [sw] Lockstep  ExportInternal (inner) - binary size: {writeStreamSize}, crc: {crc}, crc calculation ms: {crcMs}, total ms: {sw.Elapsed.TotalMilliseconds}");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ExportInternal (inner) - binary size: {exportByteCount}, crc: {crc}, crc calculation ms: {crcMs}, total ms: {sw.Elapsed.TotalMilliseconds}");
 #endif
             isExporting = false;
             RaiseOnExportFinished();
             exportResult = null;
+            exportByteCount = 0;
             currentExportName = null;
         }
 

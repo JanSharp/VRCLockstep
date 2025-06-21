@@ -885,7 +885,7 @@ namespace JanSharp
         /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> for the currently running
         /// export.</para>
         /// <para>Usable if <see cref="IsExporting"/> is <see langword="true"/>, or inside of
-        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <see cref="LockstepEventType.OnExportFinished"/>.</para>
         /// <para>Not game state safe.</para>
         /// </summary>
         public abstract string ExportName { get; }
@@ -895,6 +895,12 @@ namespace JanSharp
         /// <para>Not game state safe.</para>
         /// </summary>
         public abstract string ExportResult { get; }
+        /// <summary>
+        /// <para>The amount of bytes of the result from the current export, before base64 encoding.</para>
+        /// <para>Usable inside of <see cref="LockstepEventType.OnExportFinished"/>.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public abstract int ExportByteCount { get; }
         /// <summary>
         /// <para><see langword="true"/> inside of
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> when
