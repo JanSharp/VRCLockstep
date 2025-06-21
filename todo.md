@@ -114,3 +114,5 @@
 - [x] make info UI bigger, or at least taller
 - [x] reset `sendingPlayerId`, `sendingUniqueId` and `sendingTime` after an input action handler got raised, or when early returning
 - [ ] update docs to mention vrc network event changes
+- [x] change "to import" to "supports import" in game state UI
+- [ ] add "raw: x xxx xxx bytes, base64: x xxx xxx bytes" to export UI

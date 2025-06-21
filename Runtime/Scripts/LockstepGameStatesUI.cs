@@ -245,7 +245,7 @@ namespace JanSharp.Internal
                     else
                     {
                         canImportCount++;
-                        msg = "<color=#99ccff>to import";
+                        msg = "<color=#99ccff>supports import";
                     }
                 }
                 gsFoldOut.AddChild(importOptionsUI.WidgetManager.NewLabel(
