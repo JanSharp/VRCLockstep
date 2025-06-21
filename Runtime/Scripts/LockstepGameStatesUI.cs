@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Text;
+using TMPro;
 using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,9 +16,9 @@ namespace JanSharp.Internal
     {
         [SerializeField][HideInInspector][SingletonReference] private LockstepAPI lockstep;
 
-        [SerializeField] private GameObject mainGSEntryPrefab;
+        [SerializeField] private GameObject mainGSEntryPrefab; // Used by editor scripting.
 
-        [SerializeField] private Transform mainGSList;
+        [SerializeField] private Transform mainGSList; // Used by editor scripting.
         [SerializeField] private GameObject dimBackground;
 
         [SerializeField] private Slider autosaveTimerSlider;
@@ -42,6 +43,7 @@ namespace JanSharp.Internal
         [SerializeField] private TextMeshProUGUI confirmExportButtonText;
 
         [SerializeField] private GameObject exportedDataWindow;
+        [SerializeField] private TextMeshProUGUI exportedDataSizeText;
         [SerializeField] private TMP_InputField serializedOutputField;
 
         [SerializeField] private GameObject autosaveWindow;
@@ -56,7 +58,7 @@ namespace JanSharp.Internal
         [SerializeField] private float defaultAutosaveInterval;
         [SerializeField] private float autosaveInterval;
 
-        [SerializeField] private LockstepMainGSEntry[] mainGSEntries;
+        [SerializeField] private LockstepMainGSEntry[] mainGSEntries; // Used by editor scripting.
 
         private bool isInitialized = false;
 
@@ -156,6 +158,7 @@ namespace JanSharp.Internal
         {
             dimBackground.SetActive(false);
             exportedDataWindow.SetActive(false);
+            SetExportedDataSizeText(0, 0);
             serializedOutputField.text = "";
         }
 
@@ -564,9 +567,38 @@ namespace JanSharp.Internal
                 return;
 
             waitingForExportToFinish = false;
-            serializedOutputField.text = lockstep.ExportResult;
+            string result = lockstep.ExportResult;
+            SetExportedDataSizeText(lockstep.ExportByteCount, result.Length);
+            serializedOutputField.text = result;
             CloseOpenWindow();
             OpenExportedDataWindow();
+        }
+
+        private string FormatNumberWithSpaces(int value) // TODO: Move this into the common package.
+        {
+            string sign;
+            if (value >= 0)
+                sign = "";
+            else
+            {
+                sign = "-";
+                value = -value;
+            }
+            string result = "";
+            string spacer = "";
+            while (value >= 1000)
+            {
+                result = $"{(value % 1000):d3}{spacer}{result}";
+                value /= 1000;
+                spacer = " ";
+            }
+            return $"{sign}{value}{spacer}{result}";
+        }
+
+        private void SetExportedDataSizeText(int byteCount, int characterCount)
+        {
+            exportedDataSizeText.text = $"Data: {FormatNumberWithSpaces(byteCount)} bytes, "
+                + $"Base64: {FormatNumberWithSpaces(characterCount)} characters";
         }
 
         [LockstepEvent(LockstepEventType.OnImportStart)]
