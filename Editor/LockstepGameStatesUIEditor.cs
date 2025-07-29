@@ -118,7 +118,7 @@ namespace JanSharp.Internal
             }
 
             while (list.childCount > allGameStates.Count)
-                Undo.DestroyObjectImmediate(list.GetChild(list.childCount - 1).gameObject);
+                OnBuildUtil.UndoDestroyObjectImmediate(list.GetChild(list.childCount - 1).gameObject);
 
             EditorUtil.SetArrayProperty(proxy.FindProperty(entriesArrayName), entries, (p, v) => p.objectReferenceValue = v);
         }
