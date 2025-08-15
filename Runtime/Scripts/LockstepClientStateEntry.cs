@@ -1,6 +1,9 @@
 ﻿using TMPro;
 using UdonSharp;
 using UnityEngine.UI;
+#if !LOCKSTEP_DEBUG
+using UnityEngine;
+#endif
 
 namespace JanSharp.Internal
 {

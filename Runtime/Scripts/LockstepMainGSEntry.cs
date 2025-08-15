@@ -1,5 +1,8 @@
 ﻿using TMPro;
 using UdonSharp;
+#if !LOCKSTEP_DEBUG
+using UnityEngine;
+#endif
 
 namespace JanSharp.Internal
 {
