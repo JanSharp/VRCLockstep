@@ -639,6 +639,7 @@ MonoBehaviour:
   lockstep: {fileID: 171763846}
   entitySystem: {fileID: 0}
   itemSystem: {fileID: 0}
+  updateManager: {fileID: 0}
 --- !u!4 &152086176
 Transform:
   m_ObjectHideFlags: 0
