@@ -3,13 +3,13 @@ using UdonSharp;
 
 namespace JanSharp.Internal
 {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
     [AddComponentMenu("")]
 #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class LockstepMainGSEntry : LockstepGameStateEntryBase
     {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         public TextMeshProUGUI autosaveText;

@@ -5,27 +5,27 @@ using UnityEngine.UI;
 
 namespace JanSharp.Internal
 {
-    public abstract class LockstepGameStateEntryBase : UdonSharpBehaviour
-    {
-#if !LockstepDebug
-        [HideInInspector]
+        public abstract class LockstepGameStateEntryBase : UdonSharpBehaviour
+        {
+#if !LOCKSTEP_DEBUG
+                [HideInInspector]
 #endif
-        public TextMeshProUGUI displayNameText;
-#if !LockstepDebug
-        [HideInInspector]
+                public TextMeshProUGUI displayNameText;
+#if !LOCKSTEP_DEBUG
+                [HideInInspector]
 #endif
-        public Toggle mainToggle;
-#if !LockstepDebug
-        [HideInInspector]
+                public Toggle mainToggle;
+#if !LOCKSTEP_DEBUG
+                [HideInInspector]
 #endif
-        public Image toggledImage;
-#if !LockstepDebug
-        [HideInInspector]
+                public Image toggledImage;
+#if !LOCKSTEP_DEBUG
+                [HideInInspector]
 #endif
-        public Color goodColor;
-#if !LockstepDebug
-        [HideInInspector]
+                public Color goodColor;
+#if !LOCKSTEP_DEBUG
+                [HideInInspector]
 #endif
-        public Color badColor;
-    }
+                public Color badColor;
+        }
 }

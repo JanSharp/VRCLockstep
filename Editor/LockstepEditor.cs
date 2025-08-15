@@ -446,7 +446,7 @@ namespace JanSharp.Internal
                 EditorGUILayout.PropertyField(worldNameProp);
             so.ApplyModifiedProperties();
 
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             EditorGUILayout.Space();
             GUILayout.Label("Debug", EditorStyles.boldLabel);
             DrawDefaultInspector();

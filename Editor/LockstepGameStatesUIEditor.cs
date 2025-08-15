@@ -132,7 +132,7 @@ namespace JanSharp.Internal
         {
             if (UdonSharpGUI.DrawDefaultUdonSharpBehaviourHeader(targets))
                 return;
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             EditorGUILayout.Space();
             GUILayout.Label("Debug", EditorStyles.boldLabel);
             DrawDefaultInspector();

@@ -8,7 +8,7 @@ using VRC.SDKBase;
 
 namespace JanSharp.Internal
 {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
     [AddComponentMenu("")]
 #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]

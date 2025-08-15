@@ -5,13 +5,13 @@ using VRC.Udon.Common;
 
 namespace JanSharp.Internal
 {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
     [AddComponentMenu("")]
 #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class LockstepTickSync : UdonSharpBehaviour
     {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         public Lockstep lockstep;
@@ -33,7 +33,7 @@ namespace JanSharp.Internal
 
         public void AddInputActionToRun(uint tickToRunIn, ulong uniqueId)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] LockstepTickSync  AddInputActionToRun");
 #endif
             uint playerId = (uint)(uniqueId >> Lockstep.PlayerIdKeyShift);
@@ -45,7 +45,7 @@ namespace JanSharp.Internal
 
         public void ClearInputActionsToRun()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] LockstepTickSync  ClearInputActionsToRun");
 #endif
             bufferSize = 0;
@@ -101,7 +101,7 @@ namespace JanSharp.Internal
                 tickLoopDelay = Mathf.Max(0.01f, tickLoopDelay - 0.001f);
             SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), tickLoopDelay);
             lastSyncedTick = tickInSyncedData;
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             syncCount++;
 #endif
         }
@@ -127,7 +127,7 @@ namespace JanSharp.Internal
 
         public override void OnOwnershipTransferred(VRCPlayerApi player)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] LockstepTickSync  OnOwnershipTransferred");
 #endif
             lockstep.SendCustomEventDelayedFrames(nameof(Lockstep.CheckMasterChange), 1);
@@ -135,7 +135,7 @@ namespace JanSharp.Internal
 
 
 
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
         private void Start()
         {
             SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);

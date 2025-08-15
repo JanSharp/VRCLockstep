@@ -5,7 +5,7 @@ using VRC.Udon.Common;
 
 namespace JanSharp.Internal
 {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
     [AddComponentMenu("")]
 #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
@@ -26,7 +26,7 @@ namespace JanSharp.Internal
         [System.NonSerialized] public uint ownerPlayerId;
         [System.NonSerialized] public VRCPlayerApi owner;
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private bool isLateJoinerSyncInst = false;
@@ -100,7 +100,7 @@ namespace JanSharp.Internal
 
         private void Start()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  Start");
 #endif
             if (isLateJoinerSyncInst)
@@ -110,7 +110,7 @@ namespace JanSharp.Internal
 
         public void StartDelayed()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  StartDelayed");
 #endif
             owner = Networking.GetOwner(this.gameObject);
@@ -121,7 +121,7 @@ namespace JanSharp.Internal
 
         private void OnDisable()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  OnDisable");
 #endif
             if (isLateJoinerSyncInst)
@@ -131,7 +131,7 @@ namespace JanSharp.Internal
 
         private void OnDestroy()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  OnDestroy");
 #endif
             if (isLateJoinerSyncInst)
@@ -141,7 +141,7 @@ namespace JanSharp.Internal
 
         public ulong MakeUniqueId()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  MakeUniqueId");
 #endif
             return shiftedOwnerPlayerId | (ulong)(nextInputActionIndex++);
@@ -153,7 +153,7 @@ namespace JanSharp.Internal
         /// </summary>
         private void MoveStageToQueue()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  MoveStageToQueue");
 #endif
             byte[] stageCopy = new byte[MaxSyncedDataSize];
@@ -180,7 +180,7 @@ namespace JanSharp.Internal
         /// <returns>The uniqueId for the sent input action.</returns>
         public ulong SendInputAction(uint inputActionId, byte[] inputActionData, int inputActionDataSize)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  SendInputAction - inputActionId: {inputActionId}, inputActionDataSize: {inputActionDataSize}");
 #endif
             if (stage == null)
@@ -198,7 +198,7 @@ namespace JanSharp.Internal
 
             uint index = nextInputActionIndex++;
             ulong uniqueId = shiftedOwnerPlayerId | index;
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  SendInputAction (inner) - uniqueId: 0x{uniqueId:x16}");
 #endif
 
@@ -223,7 +223,7 @@ namespace JanSharp.Internal
             int freeSpace = MaxSyncedDataSize - stageSize;
             while (remainingLength > freeSpace)
             {
-                // #if LockstepDebug
+                // #if LOCKSTEP_DEBUG
                 // Debug.Log($"[LockstepDebug] {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
                 // #endif
                 System.Buffer.BlockCopy(inputActionData, baseIndex, stage, stageSize, freeSpace);
@@ -234,7 +234,7 @@ namespace JanSharp.Internal
                 remainingLength -= freeSpace;
                 freeSpace = MaxSyncedDataSize - stageSize;
             }
-            // #if LockstepDebug
+            // #if LOCKSTEP_DEBUG
             // Debug.Log($"[LockstepDebug] {this.name}  SendInputAction (inner) - stageSize: {stageSize}, baseIndex: {baseIndex}, remainingLength: {remainingLength}, freeSpace: {freeSpace}");
             // #endif
             System.Buffer.BlockCopy(inputActionData, baseIndex, stage, stageSize, remainingLength);
@@ -249,7 +249,7 @@ namespace JanSharp.Internal
 
         public void AddUniqueIdsWaitingToBeSentToHashSet(VRC.SDK3.Data.DataDictionary lut)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  AddUniqueIdsWaitingToBeSentToHashSet - uiqCount: {uiqCount}");
 #endif
             int length = uniqueIdQueue.Length;
@@ -259,7 +259,7 @@ namespace JanSharp.Internal
 
         public void DequeueEverything(bool doCallback)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  DequeueEverything");
 #endif
             if (uiqCount == 0) // Absolutely nothing is being sent out right now, nothing to do.
@@ -305,7 +305,7 @@ namespace JanSharp.Internal
 
         private void CheckSyncStart()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  CheckSyncStart");
 #endif
             if (!isLateJoinerSyncInst && !Utilities.IsValid(owner)) // Ew, but this is faster than 'owner == null || !owner.IsValid()'.
@@ -320,7 +320,7 @@ namespace JanSharp.Internal
 
         public override void OnPreSerialization()
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  OnPreSerialization");
 #endif
             if (retrying)
@@ -377,7 +377,7 @@ namespace JanSharp.Internal
 
         public override void OnPostSerialization(SerializationResult result)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
             Debug.Log($"[LockstepDebug] {this.name}  OnPostSerialization - success: {result.success}, byteCount: {result.byteCount}, syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
 #endif
@@ -406,7 +406,7 @@ namespace JanSharp.Internal
 
         public override void OnDeserialization(DeserializationResult result)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             // syncedData should be impossible to be null, but well these debug messages are there for when the unexpected happens.
             Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization - syncedData.Length: {(syncedData == null ? "null" : syncedData.Length.ToString())}");
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
@@ -421,7 +421,7 @@ namespace JanSharp.Internal
             }
 
             byte firstByte = syncedData[0];
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - firstByte: 0x{firstByte:x2} or {firstByte}");
 #endif
             if (firstByte == ClearedDataMarker)
@@ -443,7 +443,7 @@ namespace JanSharp.Internal
                 i += bytesToRead;
                 partialContinueIndex += bytesToRead;
                 partialMissingSize -= bytesToRead;
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
                 Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
 #endif
                 if (partialMissingSize == 0)
@@ -467,7 +467,7 @@ namespace JanSharp.Internal
 
             while (i < syncedDataLength && syncedData[i] != IgnoreRestOfDataMarker)
             {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
                 Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - bytes left (syncedDataLength - i): {syncedDataLength - i}");
 #endif
                 // Read IA header.
@@ -485,12 +485,12 @@ namespace JanSharp.Internal
                     }
                     float sendTime = DataStream.ReadFloat(syncedData, ref i);
                     receivedSendTime = result.sendTime - (serializationTime - sendTime);
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
                     Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - receivedSendTime: {receivedSendTime}, sendTime: {sendTime}, serializationTime: {serializationTime}, result.sendTime: {result.sendTime}, result.receiveTime: {result.receiveTime}, Time.realtimeSinceStartup: {Time.realtimeSinceStartup}");
 #endif
                 }
                 int dataLength = (int)DataStream.ReadSmallUInt(syncedData, ref i);
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
                 Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - receivedUniqueId: 0x{receivedUniqueId:x16}, receivedInputActionId: {receivedInputActionId}, dataLength: {dataLength}");
 #endif
                 receivedData = new byte[dataLength];
@@ -501,7 +501,7 @@ namespace JanSharp.Internal
                     System.Buffer.BlockCopy(syncedData, i, receivedData, 0, rest);
                     partialContinueIndex = rest;
                     partialMissingSize = dataLength - rest;
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
                     Debug.Log($"[LockstepDebug] {this.name}  OnDeserialization (inner) - partialContinueIndex: {partialContinueIndex}, partialMissingSize: {partialMissingSize}");
 #endif
                     break;
@@ -511,7 +511,7 @@ namespace JanSharp.Internal
                 latestInputActionIndex = receivedInputActionIndex;
                 lockstep.ReceivedInputAction(isLateJoinerSyncInst, receivedInputActionId, receivedUniqueId, receivedSendTime, receivedData);
             }
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] [sw] {this.name}  OnDeserialization (inner) - ms: {sw.Elapsed.TotalMilliseconds}");
 #endif
         }

@@ -7,7 +7,7 @@ using VRC.SDKBase;
 
 namespace JanSharp.Internal
 {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
     [AddComponentMenu("")]
 #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
@@ -15,7 +15,7 @@ namespace JanSharp.Internal
     {
         [SerializeField][HideInInspector][SingletonReference] private LockstepAPI lockstep;
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Transform flagsParent;
@@ -58,7 +58,7 @@ namespace JanSharp.Internal
         private const float MinMaxTimeFrame = 5f;
         private int lastFullSecond = int.MinValue;
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI lockstepPerformanceText;
@@ -68,7 +68,7 @@ namespace JanSharp.Internal
         private double maxUpdateMS = double.MinValue;
         private string formattedMaxAndMax;
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI debugUIPerformanceText;
@@ -78,7 +78,7 @@ namespace JanSharp.Internal
         private double debugMaxUpdateMS = double.MinValue;
         private string debugFormattedMaxAndMax;
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Transform numbersParent;
@@ -107,15 +107,15 @@ namespace JanSharp.Internal
         private TextMeshProUGUI[] numbersValues;
         private TextMeshProUGUI[] numbersLabels;
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private RectTransform clientStatesParent;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI clientStatesCountText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private float clientStatesElemHeight;
@@ -129,15 +129,15 @@ namespace JanSharp.Internal
         private const string ClientNamesFieldName = "allClientNames";
         private const string ClientStatesCountFieldName = "allClientStatesCount";
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private RectTransform leftClientsParent;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI leftClientsCountText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private float leftClientsElemHeight;
@@ -146,15 +146,15 @@ namespace JanSharp.Internal
         private const string LeftClientsFieldName = "leftClients";
         private const string LeftClientsCountFieldName = "leftClientsCount";
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private RectTransform inputActionsByUniqueIdParent;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI inputActionsByUniqueIdCountText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private float inputActionsByUniqueIdElemHeight;
@@ -165,15 +165,15 @@ namespace JanSharp.Internal
         private const string InputActionsByUniqueIdsFieldName = "inputActionsByUniqueId";
         private const string InputActionHandlerEventNamesFieldName = "inputActionHandlerEventNames";
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private RectTransform uniqueIdsByTickParent;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI uniqueIdsByTickCountText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private float uniqueIdsByTickElemHeight;
@@ -547,7 +547,7 @@ namespace JanSharp.Internal
 
             for (int i = elemCount; i < backingDataCount; i++)
             {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
                 System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
 #endif
@@ -555,7 +555,7 @@ namespace JanSharp.Internal
                     (GameObject)listObj[ListObj_ElemPrefab],
                     (RectTransform)listObj[ListObj_Parent]
                 );
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
                 Debug.Log($"[LockstepDebug] [sw] LockstepDebugUI  UpdateList (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
 #endif
                 SendCustomEvent(createListObjElemEventName);

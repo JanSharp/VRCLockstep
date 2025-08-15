@@ -9,7 +9,7 @@ using VRC.SDKBase;
 
 namespace JanSharp.Internal
 {
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
     [AddComponentMenu("")]
 #endif
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
@@ -21,79 +21,79 @@ namespace JanSharp.Internal
         private const string LocalMasterPreferenceText = "Your Master Preference: ";
         private const string EntryMasterPreferenceText = "Master Preference: ";
 
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private GameObject notificationEntryPrefab;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private GameObject clientStateEntryPrefab;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI lockstepMasterText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private GameObject lockstepMasterNoValueObj;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI vrcMasterText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private GameObject vrcMasterNoValueObj;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI localClientStateText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Button becomeMasterButton;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI clientCountText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private GameObject localMasterPreferenceObject;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private TextMeshProUGUI localMasterPreferenceText;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Slider localMasterPreferenceSlider;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Toggle notificationLogTabToggle;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private CanvasGroup notificationLogCanvasGroup;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Transform notificationLogContent;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private ScrollRect notificationLogScrollRect;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Toggle clientStatesTabToggle;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private CanvasGroup clientStatesCanvasGroup;
-#if !LockstepDebug
+#if !LOCKSTEP_DEBUG
         [HideInInspector]
 #endif
         [SerializeField] private Transform clientStatesContent;
@@ -381,12 +381,12 @@ namespace JanSharp.Internal
                 entry.gameObject.SetActive(true);
                 return entry;
             }
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
 #endif
             GameObject entryGo = Instantiate(clientStateEntryPrefab);
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] [sw] LockstepInfoUI  GetOrCreateEntry (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
 #endif
             entryGo.transform.SetParent(clientStatesContent, worldPositionStays: false);
@@ -457,12 +457,12 @@ namespace JanSharp.Internal
 
         private void SendNotification(string message)
         {
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
 #endif
             GameObject entryGo = Instantiate(notificationEntryPrefab);
-#if LockstepDebug
+#if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] [sw] LockstepInfoUI  SendNotification (inner) - instantiateMs: {sw.Elapsed.TotalMilliseconds}");
 #endif
             entryGo.transform.SetParent(notificationLogContent, worldPositionStays: false);
