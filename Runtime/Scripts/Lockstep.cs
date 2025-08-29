@@ -4005,8 +4005,9 @@ namespace JanSharp.Internal
             }
             if (!ReadCustomClassInterludeOne(className)) // Keep the body of the RecursiveMethod small, because it is slow.
                 return null;
-            readCustomClassResult.Deserialize(isImport: true, readCustomClassImportedDataVersion);
-            return readCustomClassResult;
+            SerializableWannaBeClass result = readCustomClassResult; // Put it onto the recursion stack.
+            result.Deserialize(isImport: true, readCustomClassImportedDataVersion);
+            return result;
         }
         private SerializableWannaBeClass readCustomClassResult;
         private uint readCustomClassImportedDataVersion;
