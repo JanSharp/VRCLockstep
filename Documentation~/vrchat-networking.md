@@ -210,6 +210,8 @@ That's it. That's the whole magic. When doing this, and just this, not deviating
 
 These actions **must not have any lasting effects**, otherwise late joiners are going to inherently be desynced. For lasting effects use the normal serialization approach.
 
+Do not let the fact that custom network events can have parameters and have arguments be sent over the network be bait. **No lasting effects**. These parameters/arguments could be used for the position, rotation and or size of a **non looped** particle effect that is to be played for everybody for example, as that is temporary.
+
 There has been a bug with `SendCustomNetworkEvent` with ClientSim though, unknown if it has been fixed, where it quite simply did not run the sent event while testing in the editor. Even though the object has the correct sync mode (so non `None`), and when testing in VRChat it works just fine. So keep that in mind when using `SendCustomNetworkEvent`, it may or may just not work in editor.
 
 ## Timing
