@@ -21,13 +21,13 @@ This comparison only focuses on what systems are designed for, not if something 
 
 <!-- Yes this formatting is 10/10 -->
 
-|   |  VRChat Networking  |  Lockstep  |
-|---|---|---|
-|  Supported synced state size  |  small  |  large ([game states](game-states.md))  |
-|  Network events  |  yes ([`SendCustomNetworkEvent`](vrchat-networking.md#networked-events))  |  yes ([input actions](input-actions.md))  |
-|  Parameterized events  |  no  |  yes ([input actions](input-actions.md))  |
-|  Simultaneous interaction by multiple players  |  [no / race conditions](vrchat-networking.md#multiple-people-interacting-at-the-same-time)  |  makes no difference  |
-|  Saving/Exporting states  |  yes, with some work  |  [explicit support](game-states.md#exports-and-imports)  |
-|  Syncing for instantiated objects  |  no  |  [yes, through ids](synced-objects.md)  |
-|  Networking Overhead (bytes)  |  notable, but ok when not using arrays  |  [much more notable (0.68 kb/s while idle)](https://vrchat.canny.io/udon/p/synced-arrays-have-unexpectedly-large-overhead-in-bytes)  |
-|  Performance Overhead  |  whatever custom code is doing  |  (on most PCs) less than 0.02 ms Update while idle, plus unknown time per input action  |
+|                                              | VRChat Networking                                                                         | Lockstep                                                                                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Supported synced state size                  | small                                                                                     | large ([game states](game-states.md))                                                                                              |
+| Network events                               | yes ([`SendCustomNetworkEvent`](vrchat-networking.md#networked-events))                   | yes ([input actions](input-actions.md))                                                                                            |
+| Parameterized events                         | no                                                                                        | yes ([input actions](input-actions.md))                                                                                            |
+| Simultaneous interaction by multiple players | [no / race conditions](vrchat-networking.md#multiple-people-interacting-at-the-same-time) | makes no difference                                                                                                                |
+| Saving/Exporting states                      | yes, with some work                                                                       | [explicit support](game-states.md#exports-and-imports)                                                                             |
+| Syncing for instantiated objects             | no                                                                                        | [yes, through ids](synced-objects.md)                                                                                              |
+| Networking Overhead (bytes)                  | notable, but ok when not using arrays                                                     | [much more notable (0.68 kb/s while idle)](https://vrchat.canny.io/udon/p/synced-arrays-have-unexpectedly-large-overhead-in-bytes) |
+| Performance Overhead                         | whatever custom code is doing                                                             | (on most PCs) less than 0.02 ms Update while idle, plus unknown time per input action                                              |

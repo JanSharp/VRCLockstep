@@ -37,7 +37,7 @@ After `OnClientBeginCatchUp` the Lockstep system begins rapidly running game tic
 
 Note that during this process, it is good to keep in mind that any input action sent will run many many game ticks in the future, after the clint is fully caught up. Depending on what the input action is for it may make more sense not to send it at all. To do so check the `IsCatchingUp` flag on Lockstep.
 
-Once the client has fully caught up and is now running at the game tick every other client is at, the `OnClientCaughtUp` event will be raised on _every client_. This is a [game state safe event](events.md#game-state-safe-events) like any other, which means modification to game states is allowed within this event handler.
+Once the client has fully caught up and is now running at the game tick every other client is at, the `OnClientCaughtUp` event will be raised on _every client_. This is a [game state safe event](events.md#game-state-safe-events) like any other, which means modification of game states is allowed within this event handler.
 
 ## Joining and Leaving Clients
 

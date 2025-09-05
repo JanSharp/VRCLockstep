@@ -13,4 +13,4 @@ Lockstep distinguishes between clients and players.
   - The lifetime of a client is one join-leave cycle of a player
   - A rejoining player ends up being a different client
   - Lockstep stores the player's display name as part of the lockstep game state to enable checking if a client actually refers to a player which was in the world previously
-  - A client exists separate from the `VRCPlayerApi`. In particular when a player leaves, the client stays in the game state for a little bit longer, so the `VRCPlayerApi` for that client's player id no longer exits
+  - A client exists separate from the `VRCPlayerApi`. In particular when a player leaves, the client stays in the game state for a little bit longer, so the `VRCPlayerApi` for that client's player id no longer exists

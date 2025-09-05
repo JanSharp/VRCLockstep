@@ -65,7 +65,7 @@ public void OnDiceRollIA()
 
 ## Timing
 
-Input actions can be configured to keep track of how much time has passed from the Send call until the input action gets run. See `lockstep.SendingTime` and `lockstep.RealtimeSinceSending`. This **timing** information is **not game state safe**.
+Input actions can be configured to keep track of how much time has passed from the Send call until the input action gets run. See `lockstep.SendingTime` and `lockstep.RealtimeSinceSending`. This timing information is **not game state safe**.
 
 For things which require timing for both clients currently in the world as well as late joiners, save a tick value in the [game state](game-states.md) (see `lockstep.CurrentTick`). Then game state deserialization or another function later on can use `lockstep.RealtimeAtTick(tick)` and do math in the `Time.realtimeSinceStartup` scale to figure out proper timing.
 

@@ -58,7 +58,7 @@ This isn't really an event, but it is called by the Lockstep system:
 
 # Non Game State Safe Events
 
-Non game state safe events are events an any amount of clients and not running on any specific tick, just whenever they happen.
+Non game state safe events are raised on any amount of clients and not running on any specific tick, just whenever they happen.
 
 These events are not allowed to modify the game states.
 
