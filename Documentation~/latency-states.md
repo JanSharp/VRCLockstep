@@ -34,7 +34,15 @@ There are a few approaches to actually hiding latency:
   - Non zero means the latency state can differ from the game state however it wants
   - Zero means the latency state is in perfect sync with the game state
   - There can be multiple counters relating to different parts of the game state and input actions
-- Remember the entire list of latency hidden actions
+- Remember the unique ids of latency hidden actions (similar to the above)
+  - While here is any unique ids stored, the latency state can differ from the game state
+  - No stored unique ids means the latency state must match the game state
+  - When receiving an input action first modify the game state and then check if the `SendingUniqueId` is one of the latency hidden ids
+    - if there are zero stored unique ids, simply modify the latency state
+    - if yes (it is the unique id of a latency hidden action), remove it from the list and do not modify the latency state as the latency state has already been affected at the time of sending the input action
+    - if no, clear the list of unique ids and reset the latency state to match the game state. Since the game state has been modified already by this input action and now the latency state has been made to match the game state, once again do not further modify the latency state
+  - There can be multiple lists of unique ids relating to different parts of the game state and input actions
+- Remember the entire list of latency hidden actions and their data (very cumbersome)
   - Every time an action gets performed, reset the latency state back to the game state
   - If the input action's sending unique id matches one of the latency hidden actions, remove it from the list
   - Then apply all latency hidden actions to the latency state again
