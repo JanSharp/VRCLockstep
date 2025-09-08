@@ -47,6 +47,7 @@ namespace JanSharp.Internal
         [SerializeField] private InputActionSync lateJoinerInputActionSync;
         [SerializeField] private InputActionSync inputActionSyncPerPlayerTemplate;
         [SerializeField] private LockstepTickSync tickSync;
+        [SerializeField] private RNG rng;
         /// <summary>
         /// <para>On the master this is the currently running tick, as in new input actions are getting
         /// associated and run in this tick.</para>
@@ -1621,6 +1622,8 @@ namespace JanSharp.Internal
             AddClientState(localPlayerId, ClientState.Master, localPlayerDisplayName);
             ArrList.Clear(ref leftClients, ref leftClientsCount);
             masterPlayerId = localPlayerId;
+            // Not perfect, but good enough. Also bitwise OR instead of + is generating a nonsensical warning.
+            rng.SetSeed((((ulong)Random.Range(0, int.MaxValue)) << 32) + (ulong)Random.Range(0, int.MaxValue));
             // Just to quadruple check, setting owner on both. Trust issues with VRChat.
             Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
             Networking.SetOwner(localPlayer, tickSync.gameObject);
@@ -2682,6 +2685,9 @@ namespace JanSharp.Internal
                 WriteString(allClientNames[i]);
                 WriteSmallUInt(GetLatestInputActionIndex(playerId));
             }
+            WriteULong(rng.seed);
+            WriteULong(rng.lcg);
+            WriteULong(rng.hash);
 
             // Singleton input actions game state.
             WriteSmallUInt(nextSingletonId);
@@ -2805,6 +2811,9 @@ namespace JanSharp.Internal
                 if (clientState == ClientState.Master) // clientStates always has exactly 1 Master.
                     SetMasterPlayerId(playerId);
             }
+            rng.seed = ReadULong();
+            rng.lcg = ReadULong();
+            rng.hash = ReadULong();
 
             RemoveClientsFromLeftClientsWhichAreNotInClientStates();
 
@@ -3712,6 +3721,26 @@ namespace JanSharp.Internal
             Debug.LogError("[Lockstep] Attempt to call GetDisplayName with a playerId which is not currently "
                 + "part of the game state. This is indication of misuse of the API, make sure to fix this.");
             return null;
+        }
+
+        public override RNG NewRNG()
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  NewRNG");
+#endif
+            RNG result = wannaBeClassesManager.New<RNG>(nameof(RNG));
+            result.SetSeed(rng.PrvhashCore64());
+            return result;
+        }
+
+        public override SerializableRNG NewSerializableRNG()
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  NewSerializableRNG");
+#endif
+            SerializableRNG result = wannaBeClassesManager.New<SerializableRNG>(nameof(SerializableRNG));
+            result.rng.SetSeed(rng.PrvhashCore64());
+            return result;
         }
 
         private const int MinWriteStreamCapacity = 256;

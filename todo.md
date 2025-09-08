@@ -5,7 +5,7 @@
 - [ ] import/export ui needs a settings button for each game state, probably in the root/main list... maybe just in every list. That'll pop up a ui next to the main UI which has game state specific settings
 - [ ] maybe add option for other systems to add per client info into the info ui
 - [ ] make tick timing more consistent around master changes to improve RealtimeAtTick's usefulness
-- [ ] add game state safe prng
+- [x] add game state safe prng
 - [ ] make a tool to automatically extract autosaves and neatly arrange them in a folder, like the user's documents folder
 - [x] on nth tick? game state safe.
 - [x] raise event delayed by ticks, game state safe.

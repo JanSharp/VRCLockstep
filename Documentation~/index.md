@@ -14,6 +14,7 @@ The rest of the documentation is about the lockstep API which world creators usi
 - [Core Concepts](core-concepts.md)
 - [Data Lifecycle](data-lifecycle.md): Outlines the initialization process of lockstep
 - [Game States](game-states.md)
+- [Randomness](randomnees.md)
 - [Events](events.md)
 - [Serialization](serialization.md)
 - [Input Actions](input-actions.md)

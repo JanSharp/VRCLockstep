@@ -19,12 +19,12 @@ The LockstepAPI contains functions with the `Write` and `Read` prefixes for the 
 
 - `byte` (and array variants)
 - `sbyte`
-- `short` (and space optimized variant)
-- `ushort` (and space optimized variant)
-- `int` (and space optimized variant)
-- `uint` (and space optimized variant)
-- `long` (and space optimized variant)
-- `ulong` (and space optimized variant)
+- `short` (and a space optimized variant)
+- `ushort` (and a space optimized variant)
+- `int` (and a space optimized variant)
+- `uint` (and a space optimized variant)
+- `long` (and a space optimized variant)
+- `ulong` (and a space optimized variant)
 - `float`
 - `double`
 - `decimal`
@@ -39,7 +39,8 @@ The LockstepAPI contains functions with the `Write` and `Read` prefixes for the 
 - `Color32`
 - `DateTime`
 - `TimeSpan`
-- `SerializableWannaBeClass`
+- `SerializableWannaBeClass` (called CustomClass)
+- [`SerializableRNG`](randomnees.md) (derives from `SerializableWannaBeClass` so also called CustomClass, just mentioned explicitly for discoverability)
 
 ## Other Data Types
 
@@ -63,14 +64,14 @@ float[] myFloats = new float[4]; // Using 4 here but
 int length = myFloats.Length;
 lockstep.WriteSmallUInt((uint)length);
 for (int i = 0; i < length; i++)
-  lockstep.WriteFloat(myFloats[i]);
+    lockstep.WriteFloat(myFloats[i]);
 
 // ...
 
 int length = (int)lockstep.ReadSmallUInt();
 float[] myFloats = new float[length];
 for (int i = 0; i < length; i++)
-  myFloats[i] = lockstep.ReadFloat();
+    myFloats[i] = lockstep.ReadFloat();
 ```
 
 Similarly for dictionaries. Get the keys and get the values, then serialize and deserialize them as a list of pairs.

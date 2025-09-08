@@ -468,6 +468,36 @@ namespace JanSharp
         /// <returns>Display name for the given <paramref name="playerId"/>, or <see langword="null"/> if the
         /// given <paramref name="playerId"/> is not in the lockstep internal game state.</returns>
         public abstract string GetDisplayName(uint playerId);
+        /// <summary>
+        /// <para>Crates a new <see cref="RNG"/> instance and calls <see cref="RNG.SetSeed(ulong)"/> on this
+        /// instance with a seed obtained from an internal game state safe random number generator.</para>
+        /// <para>That internal random number generator gets initialized before
+        /// <see cref="LockstepEventType.OnInit"/> using Unity's <see cref="Random"/> to generate a seed. It
+        /// is not included in exports, therefore also not in imports.</para>
+        /// <para>Ultimately <see cref="NewRNG"/> always uses an unpredictable seed, while still being game
+        /// state safe.</para>
+        /// <para>For random number generators intended to be part of the game state it likely makes more
+        /// sense to use <see cref="NewSerializableRNG"/>, however <see cref="NewRNG"/> exists for any special
+        /// cases where it is easier to manage serialization and deserialization manually.</para>
+        /// <para>Usable inside of game state safe events.</para>
+        /// </summary>
+        /// <returns></returns>
+        public abstract RNG NewRNG();
+        /// <summary>
+        /// <para>Crates a new <see cref="SerializableRNG"/> instance and calls
+        /// <see cref="RNG.SetSeed(ulong)"/> on the underlying <see cref="SerializableRNG.rng"/> with a seed
+        /// obtained from an internal game state safe random number generator.</para>
+        /// <para>That internal random number generator gets initialized before
+        /// <see cref="LockstepEventType.OnInit"/> using Unity's <see cref="Random"/> to generate a seed. It
+        /// is not included in exports, therefore also not in imports.</para>
+        /// <para>Ultimately <see cref="NewSerializableRNG"/> always uses an unpredictable seed, while still
+        /// being game state safe.</para>
+        /// <para>The returned rng's state can be serialized and deserialized, making it useful for any game
+        /// states which require deterministic randomness.</para>
+        /// <para>Usable inside of game state safe events.</para>
+        /// </summary>
+        /// <returns></returns>
+        public abstract SerializableRNG NewSerializableRNG();
 
         /// <summary>
         /// <para>While inside of
