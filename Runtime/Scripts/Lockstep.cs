@@ -163,6 +163,7 @@ namespace JanSharp.Internal
         private ulong[] suspendedUniqueIds = null;
         private bool suspendedInStandaloneIA = false;
         private bool suspendedInLJSerialization = false;
+        private bool suspendedInBetweenGSSerializations = false;
         private bool suspendedInExportPreparation = false;
         private bool suspendedInExport = false;
         private bool suspendedInImportOptionsDeserialization = false;
@@ -173,7 +174,7 @@ namespace JanSharp.Internal
         /// <para>Must always be reset to 0 once done using it.</para>
         /// </summary>
         private int suspendedIndexInArray = 0;
-        private int suspendedGSIndexInExport = 0;
+        private int suspendedGSIndexInGSSerialization = 0;
         private int currentIncomingGSDataIndex = 0;
         /// <summary>
         /// <para>(object[] {int optionsByteCount, byte[] optionsBytes, byte[] gsBytes})[]</para>
@@ -2736,43 +2737,52 @@ namespace JanSharp.Internal
         {
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  SendLateJoinerCustomGameStatesIAs");
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
 #endif
-            for (int i = suspendedIndexInArray; i < allGameStatesCount; i++)
+            if (allGameStatesCount == 0)
+                return;
+            if (suspendedInBetweenGSSerializations)
             {
-#if LOCKSTEP_DEBUG
-                System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-                sw.Start();
-#endif
-                byte[] unsuspendedWriteStream = null;
-                if (flaggedToContinueNextFrame)
-                {
-                    flaggedToContinueNextFrame = false;
-                    unsuspendedWriteStream = writeStream;
-                    writeStream = suspendedWriteStream;
-                    writeStreamSize = suspendedWriteStreamSize;
-                    suspendedWriteStream = null;
-                    suspendedWriteStreamSize = 0;
-                    suspendedIndexInArray = 0;
-                    isContinuationFromPrevFrame = true;
-                }
-                allGameStates[i].SerializeGameState(false, null);
-                isContinuationFromPrevFrame = false;
-                if (flaggedToContinueNextFrame)
-                {
-                    suspendedInLJSerialization = true;
-                    suspendedWriteStream = writeStream;
-                    suspendedWriteStreamSize = writeStreamSize;
-                    suspendedIndexInArray = i;
-                    writeStream = unsuspendedWriteStream ?? new byte[MinWriteStreamCapacity];
-                    ResetWriteStream();
-                    return;
-                }
-#if LOCKSTEP_DEBUG
-                Debug.Log($"[LockstepDebug] [sw] Lockstep  SendLateJoinerData (inner) - serialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[i].GameStateInternalName}, writeStreamSize: {writeStreamSize}");
-#endif
-                lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)i, writeStream, writeStreamSize);
-                ResetWriteStream();
+                suspendedInBetweenGSSerializations = false;
+                flaggedToContinueNextFrame = false;
             }
+            byte[] unsuspendedWriteStream = null;
+            if (flaggedToContinueNextFrame)
+            {
+                flaggedToContinueNextFrame = false;
+                unsuspendedWriteStream = writeStream;
+                writeStream = suspendedWriteStream;
+                writeStreamSize = suspendedWriteStreamSize;
+                suspendedWriteStream = null;
+                suspendedWriteStreamSize = 0;
+                isContinuationFromPrevFrame = true;
+            }
+            allGameStates[suspendedGSIndexInGSSerialization].SerializeGameState(isExport: false, null);
+            isContinuationFromPrevFrame = false;
+            if (flaggedToContinueNextFrame)
+            {
+                suspendedInLJSerialization = true;
+                suspendedWriteStream = writeStream;
+                suspendedWriteStreamSize = writeStreamSize;
+                writeStream = unsuspendedWriteStream ?? new byte[MinWriteStreamCapacity];
+                ResetWriteStream();
+                return;
+            }
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  SendLateJoinerData (inner) - serialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {allGameStates[suspendedGSIndexInGSSerialization].GameStateInternalName}, writeStreamSize: {writeStreamSize}");
+#endif
+            lateJoinerInputActionSync.SendInputAction(LJFirstCustomGameStateIAId + (uint)suspendedGSIndexInGSSerialization, writeStream, writeStreamSize);
+            ResetWriteStream();
+            suspendedGSIndexInGSSerialization++;
+            if (suspendedGSIndexInGSSerialization == allGameStatesCount)
+            {
+                suspendedGSIndexInGSSerialization = 0;
+                return;
+            }
+            FlagToContinueNextFrame();
+            suspendedInLJSerialization = true;
+            suspendedInBetweenGSSerializations = true;
         }
 
         private void SendLateJoinerCurrentTickIA()
@@ -4560,7 +4570,7 @@ namespace JanSharp.Internal
             sw.Start();
 #endif
             byte[] unsuspendedWriteStream = null;
-            LockstepGameState gameState = gameStatesSupportingImportExport[suspendedGSIndexInExport];
+            LockstepGameState gameState = gameStatesSupportingImportExport[suspendedGSIndexInGSSerialization];
             if (!flaggedToContinueNextFrame)
             {
                 WriteString(gameState.GameStateInternalName);
@@ -4583,7 +4593,7 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             double serializeStartMs = sw.Elapsed.TotalMilliseconds;
 #endif
-            gameState.SerializeGameState(true, currentAllExportOptions[suspendedGSIndexInExport]);
+            gameState.SerializeGameState(isExport: true, currentAllExportOptions[suspendedGSIndexInGSSerialization]);
 #if LOCKSTEP_DEBUG
             double serializeMs = sw.Elapsed.TotalMilliseconds - serializeStartMs;
 #endif
@@ -4605,8 +4615,8 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - suspendedExportGSSizePosition - 4}");
 #endif
 
-            suspendedGSIndexInExport++;
-            if (suspendedGSIndexInExport == gameStatesSupportingImportExportCount)
+            suspendedGSIndexInGSSerialization++;
+            if (suspendedGSIndexInGSSerialization == gameStatesSupportingImportExportCount)
                 return;
             FlagToContinueNextFrame();
             suspendedInExport = true;
@@ -4633,7 +4643,7 @@ namespace JanSharp.Internal
             isSerializingForExport = false;
             if (flaggedToContinueNextFrame)
                 return;
-            suspendedGSIndexInExport = 0;
+            suspendedGSIndexInGSSerialization = 0;
 
             for (int i = 0; i < gameStatesSupportingImportExportCount; i++)
             {

@@ -48,6 +48,7 @@ namespace JanSharp.Internal
             "suspendedInInputActionsToRunNextFrame",
             "suspendedInStandaloneIA",
             "suspendedInLJSerialization",
+            "suspendedInBetweenGSSerializations",
             "suspendedInExportPreparation",
             "suspendedInExport",
             "suspendedInImportOptionsDeserialization",
@@ -101,7 +102,7 @@ namespace JanSharp.Internal
             "suspendedSingletonInputActionId",
             "suspendedExportGSSizePosition",
             "suspendedIndexInArray",
-            "suspendedGSIndexInExport",
+            "suspendedGSIndexInGSSerialization",
             "currentIncomingGSDataIndex",
         };
         private TextMeshProUGUI[] numbersValues;

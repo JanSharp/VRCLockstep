@@ -116,4 +116,4 @@
 - [x] update docs to mention vrc network event changes
 - [x] change "to import" to "supports import" in game state UI
 - [x] add "raw: x xxx xxx bytes, base64: x xxx xxx bytes" to export UI
-- [ ] maybe spread game state serialization for late joiners out across frames by default, one per frame. Serialization for exports already does this
+- [x] maybe spread game state serialization for late joiners out across frames by default, one per frame. Serialization for exports already does this
