@@ -13,6 +13,4 @@ To make this rng instance part of the game state, use `lockstep.WriteCustomClass
 
 # Shuffling
 
-Shuffling is similarly not game state safe and must therefore be shuffled manually using a game state safe random number generator as described above.
-
-<!-- TODO: Mention array shuffling api if it gets implemented in the JanSharp Common package. -->
+`VRC.SDKBase.Utilities.ShuffleArray(array)` is similarly not game state safe. The `RNG` WannaBeClass provides `ShuffleArray` and `ShuffleDataList` functions, which are naturally deterministic (and game state safe so long as the random number generator itself is game state safe).
