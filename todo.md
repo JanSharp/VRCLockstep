@@ -107,7 +107,7 @@
 - [x] becoming a new master due to the master leaving can potentially cause other clients to not run `OnMasterChangedIA` nor `OnClientLeftIA`, this is due to IAs being associated wit ha tick too early on the new master... somehow. My guess is a race condition with the tick sync script where 1 packet from that script was still in transit from the original master that had not been received on the new master yet
 - [x] I noticed that there is an event for the VRChat master changing, double check and use that for the info UI
 - [x] Is stopping asking for candidates really safe to do when finishing processing LJ game states?
-- [ ] reduce delay for when late joiner syncing starts. Yea it will increase the amount of networking when multiple people are joining, but when just 1 or 2 people are joining it should be sending data asap
+- [x] ~~reduce delay for when late joiner syncing starts. Yea it will increase the amount of networking when multiple people are joining, but when just 1 or 2 people are joining it should be sending data asap~~ it's just 5 seconds of total wait time, 2 before sending the join IA and then 3 on the master's end when one player joins. That's not so bad. And a maximum of 10 seconds in total if 16 players joined within 5 minutes. Also not so bad. It's fine.
 - [x] sort the clients list in the info UI please. Like please. It's such a bad look with it being undefined/unknown order. ~~Just add like a header that warns that the list is about to get reordered, a 1 or 2 second warning~~ Who cares about that warning. It really is not a big deal if the list shuffles, worst case is making the wrong player lockstep master, which can be fixed with 1 more click very quickly
 - [x] info UI should have the clients list show by default, and auto switch to the notifications when there is a new one
 - [x] test if scripts receive events raised by lockstep even if the scripts are disabled. The expectation is that yes they will, so add that to the docs
@@ -116,3 +116,4 @@
 - [x] update docs to mention vrc network event changes
 - [x] change "to import" to "supports import" in game state UI
 - [x] add "raw: x xxx xxx bytes, base64: x xxx xxx bytes" to export UI
+- [ ] maybe spread game state serialization for late joiners out across frames by default, one per frame. Serialization for exports already does this
