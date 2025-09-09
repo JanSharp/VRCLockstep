@@ -58,8 +58,8 @@ namespace JanSharp
         /// </summary>
         public abstract uint GameStateLowestSupportedDataVersion { get; }
         /// <summary>
-        /// <para>In order to have custom export options and an a UI for the user to modify them, this
-        /// property must be defined using a references to an instance of a custom implementation of the
+        /// <para>In order to have custom export options and a UI for the user to modify them, this property
+        /// must be defined using a reference to an instance of a custom implementation of the
         /// <see cref="LockstepGameStateOptionsUI"/> class. The instance being an object in the scene and the
         /// reference set in the inspector to a field best called <c>exportUI</c> on this script. Then this
         /// property would just be defined as <c>ExportUI => exportUI;</c>, for example.</para>
@@ -67,8 +67,8 @@ namespace JanSharp
         /// </summary>
         public abstract LockstepGameStateOptionsUI ExportUI { get; }
         /// <summary>
-        /// <para>In order to have custom import options and an a UI for the user to modify them, this
-        /// property must be defined using a references to an instance of a custom implementation of the
+        /// <para>In order to have custom import options and a UI for the user to modify them, this property
+        /// must be defined using a references to an instance of a custom implementation of the
         /// <see cref="LockstepGameStateOptionsUI"/> class. The instance being an object in the scene and the
         /// reference set in the inspector to a field best called <c>importUI</c> on this script. Then this
         /// property would just be defined as <c>ImportUI => importUI;</c>, for example.</para>
