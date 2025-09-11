@@ -344,7 +344,8 @@ namespace JanSharp
         /// <see cref="LockstepGameState.GameStateInternalName"/> (not converted to lower case to prevent
         /// ambiguity).</para>
         /// <para>This does not enforce that a given game state exists in the scene, if that is desired use
-        /// <see cref="SingletonScriptAttribute"/> and <see cref="SingletonReferenceAttribute"/>.</para>
+        /// <see cref="SingletonScriptAttribute"/> and <see cref="SingletonReferenceAttribute"/> or
+        /// <see cref="SingletonDependencyAttribute"/>.</para>
         /// </summary>
         /// <param name="gameStateType"></param>
         public LockstepGameStateDependencyAttribute(System.Type gameStateType)
