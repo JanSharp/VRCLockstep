@@ -342,8 +342,21 @@ namespace JanSharp
         public abstract bool IsInitialized { get; }
         /// <summary>
         /// <para><see langword="true"/> when the currently running function is in a game state safe context,
-        /// such as input actions, delayed events, game state deserialization, and most other lockstep events.
-        /// Each <see cref="LockstepEventType"/> states whether it is game state safe or not.</para>
+        /// such as input actions, delayed events, imports, and most other lockstep events. Each
+        /// <see cref="LockstepEventType"/> states whether it is game state safe or not.</para>
+        /// <para>Explicitly <see cref="false"/> inside of
+        /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
+        /// when <see cref="IsDeserializingForImport"/> is <see langword="false"/>. It is not a truly game
+        /// state safe event as the sole purpose of it is to restore the game state to match every other
+        /// client, without mutating it in the process.</para>
+        /// <para>When using this across systems, note that this being <see langword="true"/> when the calling
+        /// context is unknown and undefined is actually meaningless, because it is possible to transition
+        /// from a game state safe context into a game state unsafe context within the same function. For
+        /// example by branching based on a non game state safe condition. This being <see langword="false"/>
+        /// can always means it is in fact in a non game state safe context.</para>
+        /// <para>However even then if it is required to check if the current context is non game state safe,
+        /// well this could be <see langword="true"/> when in reality it is non game state safe. Thus it is
+        /// pretty useless when there is any unknown or undefined code somewhere up the call stack.</para>
         /// </summary>
         public abstract bool InGameStateSafeEvent { get; }
         /// <summary>
