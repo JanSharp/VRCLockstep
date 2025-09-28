@@ -36,7 +36,7 @@ namespace JanSharp
         /// <summary>
         /// <para>While <see cref="GenericValueEditor"/>s already have a root object with a list of children,
         /// that root is not itself a widget. So for the purposes of these options editor UIs there is simply
-        /// single widget - this root widget - in the root of the <see cref="GenericValueEditor"/>, and all
+        /// a single widget - this root widget - in the root of the <see cref="GenericValueEditor"/>, and all
         /// other systems can add do this widget whatever custom widgets they wish. Preferably appending
         /// because the <see cref="Info"/> and <see cref="General"/> widgets usually make the most sense being
         /// at the top.</para>

@@ -110,7 +110,7 @@ namespace JanSharp
 
         /// <summary>
         /// <para>Create an new options instance which is valid in the context of the current state of the
-        /// game state, would would make it already ready for
+        /// game state, which would make it already ready for
         /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>, depending on
         /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
@@ -123,7 +123,7 @@ namespace JanSharp
         protected abstract LockstepGameStateOptionsData NewOptionsImpl();
         /// <summary>
         /// <para>Creates an new options instance which is valid in the context of the current state of the
-        /// game state, would would make it already ready for
+        /// game state, which would make it already ready for
         /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>, depending on
         /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
