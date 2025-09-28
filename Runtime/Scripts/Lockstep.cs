@@ -5126,7 +5126,7 @@ namespace JanSharp.Internal
 #endif
             importErrorMessage = importedGameState.DeserializeGameState(isImport: true, importedDataVersion, importedGameState.OptionsForCurrentImport);
 #if LOCKSTEP_DEBUG
-            Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {importedGameState.GameStateInternalName}");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportGameState (inner) - deserialize GS ms: {sw.Elapsed.TotalMilliseconds}, GS internal name: {importedGameState.GameStateInternalName}, readStream.Length: {readStream.Length}, readStreamPosition: {readStreamPosition}, flaggedToContinueNextFrame: {flaggedToContinueNextFrame}");
 #endif
             isContinuationFromPrevFrame = false; // Must be false inside of the other raised events down below.
             isDeserializingForImport = false;
