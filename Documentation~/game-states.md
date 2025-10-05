@@ -152,7 +152,8 @@ namespace Example
         // This is the game state data structure.
         private int teamOneScore = 0;
         private int teamTwoScore = 0;
-        // Other scripts can only read, not write.
+        // Other scripts can only read, not write. Though the game state could be made public,
+        // however any external scripts must only modify it in game state safe events.
         public int TeamOneScore => teamOneScore;
         public int TeamTwoScore => teamTwoScore;
 
