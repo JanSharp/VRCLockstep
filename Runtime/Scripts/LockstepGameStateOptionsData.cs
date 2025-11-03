@@ -3,7 +3,7 @@
 namespace JanSharp
 {
     /// <summary>
-    /// <para>Implementations of this class are references by
+    /// <para>Implementations of this class are referenced by
     /// <see cref="LockstepGameStateOptionsUI.OptionsClassName"/> and subsequently ultimately used as either
     /// export or import options for game states. This data structure is effectively the bridge between the UI
     /// and the <see cref="LockstepGameState"/> serialize and deserialize functions.</para>
