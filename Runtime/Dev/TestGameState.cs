@@ -225,7 +225,7 @@ namespace JanSharp
         private int deserializeStage = 0;
         public override string DeserializeGameState(bool isImport, uint importedDataVersion, LockstepGameStateOptionsData importOptions)
         {
-            Debug.Log("[LockstepTest] TestGameState  DeserializeGameState");
+            Debug.Log($"[LockstepTest] TestGameState  DeserializeGameState - CurrentTick: {lockstep.CurrentTick}, lastRunnableTick: {(uint)lockstep.GetProgramVariable("lastRunnableTick")}, RealtimeAtTick(CurrentTick): {lockstep.RealtimeAtTick(lockstep.CurrentTick)}, Time.realtimeSinceStartup: {Time.realtimeSinceStartup}");
             if (deserializeStage == 0)
             {
                 lockstep.FlagToContinueNextFrame();
