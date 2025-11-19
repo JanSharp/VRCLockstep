@@ -1384,6 +1384,18 @@ namespace JanSharp
         /// <param name="flag8">The eighth flag (<c>0x80</c>) packed into a single byte.</param>
         public abstract void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7, bool flag8);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
+        /// <param name="flags">Groups of 8 flags get packed into one byte and written to the internal write
+        /// stream. The amount of flags does not need need to be divisible by 8.</param>
+        public abstract void WriteFlags(bool[] flags);
+        /// <inheritdoc cref="WriteFlags(bool[])"/>
+        /// <param name="startIndex">The index within <paramref name="flags"/> of the first flag to
+        /// write.</param>
+        public abstract void WriteFlags(bool[] flags, int startIndex);
+        /// <inheritdoc cref="WriteFlags(bool[], int)"/>
+        /// <param name="count">The amount of flags to write, starting from
+        /// <paramref name="startIndex"/>.</param>
+        public abstract void WriteFlags(bool[] flags, int startIndex, int count);
+        /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteShort(short value);
         /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteUShort(ushort value);
@@ -1566,6 +1578,19 @@ namespace JanSharp
         /// <inheritdoc cref="ReadFlags(out bool, out bool, out bool, out bool, out bool, out bool, out bool)"/>
         /// <param name="flag8">The eighth flag (<c>0x80</c>) unpacked from a single byte.</param>
         public abstract void ReadFlags(out bool flag1, out bool flag2, out bool flag3, out bool flag4, out bool flag5, out bool flag6, out bool flag7, out bool flag8);
+        /// <inheritdoc cref="ReadSByte"/>
+        /// <param name="flags">Groups of 8 flags get unpacked from one byte and saved in this given array.
+        /// The amount of flags does not need need to be divisible by 8. <paramref name="flags"/> must not be
+        /// <see langword="null"/>.</param>
+        public abstract void ReadFlags(bool[] flags);
+        /// <inheritdoc cref="ReadFlags(bool[])"/>
+        /// <param name="startIndex">The index within <paramref name="flags"/> of the first flag to
+        /// save.</param>
+        public abstract void ReadFlags(bool[] flags, int startIndex);
+        /// <inheritdoc cref="ReadFlags(bool[], int)"/>
+        /// <param name="count">The amount of flags to read, starting from
+        /// <paramref name="startIndex"/>.</param>
+        public abstract void ReadFlags(bool[] flags, int startIndex, int count);
         /// <inheritdoc cref="ReadSByte"/>
         public abstract short ReadShort();
         /// <inheritdoc cref="ReadSByte"/>

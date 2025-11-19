@@ -3776,6 +3776,75 @@ namespace JanSharp.Internal
         public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0) | (flag5 ? 16 : 0) | (flag6 ? 32 : 0)));
         public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0) | (flag5 ? 16 : 0) | (flag6 ? 32 : 0) | (flag7 ? 64 : 0)));
         public override void WriteFlags(bool flag1, bool flag2, bool flag3, bool flag4, bool flag5, bool flag6, bool flag7, bool flag8) => DataStream.Write(ref writeStream, ref writeStreamSize, (byte)((flag1 ? 1 : 0) | (flag2 ? 2 : 0) | (flag3 ? 4 : 0) | (flag4 ? 8 : 0) | (flag5 ? 16 : 0) | (flag6 ? 32 : 0) | (flag7 ? 64 : 0) | (flag8 ? 128 : 0)));
+        public override void WriteFlags(bool[] flags) => WriteFlags(flags, 0, flags.Length);
+        public override void WriteFlags(bool[] flags, int startIndex) => WriteFlags(flags, startIndex, flags.Length - startIndex);
+        public override void WriteFlags(bool[] flags, int startIndex, int count)
+        {
+            // -----------------------------------------------------------------------------------------------
+            // This function is licensed differently than the rest of the project!
+            // I want to make it expressly clear that anybody can copy and modify this function, for example
+            // for cases where the flags are part of some data structure, rather than a bool array directly.
+            // Applies until the line: "End of Unlicensed code, refer to LICENSE.md for the following code."
+            // -----------------------------------------------------------------------------------------------
+            /*
+            This is free and unencumbered software released into the public domain.
+
+            Anyone is free to copy, modify, publish, use, compile, sell, or
+            distribute this software, either in source code form or as a compiled
+            binary, for any purpose, commercial or non-commercial, and by any
+            means.
+
+            In jurisdictions that recognize copyright laws, the author or authors
+            of this software dedicate any and all copyright interest in the
+            software to the public domain. We make this dedication for the benefit
+            of the public at large and to the detriment of our heirs and
+            successors. We intend this dedication to be an overt act of
+            relinquishment in perpetuity of all present and future rights to this
+            software under copyright law.
+
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+            IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+            OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+            ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+            OTHER DEALINGS IN THE SOFTWARE.
+
+            For more information, please refer to <https://unlicense.org/>
+            */
+            int stopAt = startIndex + count;
+            int stopAtEarly = stopAt - 7;
+            int i = startIndex;
+            while (i < stopAtEarly)
+            {
+                // Use lockstep.WriteByte() when copying this function to somewhere else.
+                DataStream.Write(ref writeStream, ref writeStreamSize, (byte)(
+                    (flags[i] ? 1 : 0)
+                    | (flags[i + 1] ? 2 : 0)
+                    | (flags[i + 2] ? 4 : 0)
+                    | (flags[i + 3] ? 8 : 0)
+                    | (flags[i + 4] ? 16 : 0)
+                    | (flags[i + 5] ? 32 : 0)
+                    | (flags[i + 6] ? 64 : 0)
+                    | (flags[i + 7] ? 128 : 0)));
+                i += 8;
+            }
+            if (i == stopAt)
+                return;
+            int remainingFlags = 0;
+            while (i < stopAt)
+            {
+                remainingFlags <<= 1;
+                if (flags[i])
+                    remainingFlags += 1;
+                i++;
+            }
+            // Use lockstep.WriteByte() when copying this function to somewhere else.
+            DataStream.Write(ref writeStream, ref writeStreamSize, (byte)remainingFlags);
+            // -----------------------------------------------------------------------------------------------
+            // End of Unlicensed code, refer to LICENSE.md for the following code.
+            // -----------------------------------------------------------------------------------------------
+        }
         public override void WriteShort(short value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteUShort(ushort value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
         public override void WriteInt(int value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);
@@ -3980,6 +4049,71 @@ namespace JanSharp.Internal
             flag6 = (value & 32) != 0;
             flag7 = (value & 64) != 0;
             flag8 = (value & 128) != 0;
+        }
+        public override void ReadFlags(bool[] flags) => ReadFlags(flags, 0, flags.Length);
+        public override void ReadFlags(bool[] flags, int startIndex) => ReadFlags(flags, startIndex, flags.Length - startIndex);
+        public override void ReadFlags(bool[] flags, int startIndex, int count)
+        {
+            // -----------------------------------------------------------------------------------------------
+            // This function is licensed differently than the rest of the project!
+            // I want to make it expressly clear that anybody can copy and modify this function, for example
+            // for cases where the flags are part of some data structure, rather than a bool array directly.
+            // Applies until the line: "End of Unlicensed code, refer to LICENSE.md for the following code."
+            // -----------------------------------------------------------------------------------------------
+            /*
+            This is free and unencumbered software released into the public domain.
+
+            Anyone is free to copy, modify, publish, use, compile, sell, or
+            distribute this software, either in source code form or as a compiled
+            binary, for any purpose, commercial or non-commercial, and by any
+            means.
+
+            In jurisdictions that recognize copyright laws, the author or authors
+            of this software dedicate any and all copyright interest in the
+            software to the public domain. We make this dedication for the benefit
+            of the public at large and to the detriment of our heirs and
+            successors. We intend this dedication to be an overt act of
+            relinquishment in perpetuity of all present and future rights to this
+            software under copyright law.
+
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+            IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+            OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+            ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+            OTHER DEALINGS IN THE SOFTWARE.
+
+            For more information, please refer to <https://unlicense.org/>
+            */
+            int stopAt = startIndex + count;
+            int stopAtEarly = stopAt - 7;
+            int i = startIndex;
+            while (i < stopAtEarly)
+            {
+                int currentFlags = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
+                flags[i] = (currentFlags & 1) != 0;
+                flags[i + 1] = (currentFlags & 2) != 0;
+                flags[i + 2] = (currentFlags & 4) != 0;
+                flags[i + 3] = (currentFlags & 8) != 0;
+                flags[i + 4] = (currentFlags & 16) != 0;
+                flags[i + 5] = (currentFlags & 32) != 0;
+                flags[i + 6] = (currentFlags & 64) != 0;
+                flags[i + 7] = (currentFlags & 128) != 0;
+                i += 8;
+            }
+            if (i == stopAt)
+                return;
+            int remainingFlags = (int)DataStream.ReadByte(readStream, ref readStreamPosition);
+            while (stopAt > i)
+            {
+                stopAt--;
+                flags[stopAt] = (remainingFlags & 1) != 0;
+                remainingFlags >>= 1;
+            }
+            // -----------------------------------------------------------------------------------------------
+            // End of Unlicensed code, refer to LICENSE.md for the following code.
+            // -----------------------------------------------------------------------------------------------
         }
         public override short ReadShort() => DataStream.ReadShort(readStream, ref readStreamPosition);
         public override ushort ReadUShort() => DataStream.ReadUShort(readStream, ref readStreamPosition);
