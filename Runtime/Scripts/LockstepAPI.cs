@@ -873,7 +873,7 @@ namespace JanSharp
         /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/>.</para>
         /// <para>Even though exporting naturally uses the internal write stream as it is calling
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>, it is safe
-        /// to use <c>Write</c> functions to write the the internal write stream even while
+        /// to use <c>Write</c> functions to write to the internal write stream even while
         /// <see cref="IsExporting"/> is <see langword="true"/> (outside of SerializeGameState itself),
         /// because lockstep uses an effectively separate write stream for exporting.</para>
         /// <para>Before any
@@ -883,7 +883,10 @@ namespace JanSharp
         /// <see cref="LockstepGameStateOptionsData"/> from <paramref name="allExportOptions"/>. For further
         /// information about export options read <paramref name="allExportOptions"/> annotations.</para>
         /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised. <see cref="IsExporting"/> must be
+        /// <see langword="false"/> at the time of calling (if <see cref="IsExporting"/> is
+        /// <see langword="true"/> an error is logged and <see langword="false"/> is returned, should be
+        /// treated like an exception).</para>
         /// </summary>
         /// <param name="exportName">The name to save inside of the exported string which can be read back
         /// when importing in the future. <see langword="null"/> is a valid value. Must not contain
@@ -904,9 +907,10 @@ namespace JanSharp
         /// <para>Returning <see langword="false"/> indicates that the export did not actually start. This
         /// actually indicates improper use of the API in every case except when
         /// <see cref="GameStatesSupportingImportExportCount"/> is 0, in which case it returns
-        /// <see langword="false"/> without an error. An error is logged when
-        /// <see cref="IsInitialized"/> is <see langword="false"/> or when given an invalid
-        /// <paramref name="exportName"/> or <paramref name="allExportOptions"/>.</para></returns>
+        /// <see langword="false"/> without an error. An error is logged when <see cref="IsInitialized"/> is
+        /// <see langword="false"/>, when given an invalid <paramref name="exportName"/> or
+        /// <paramref name="allExportOptions"/> is given or when <see cref="IsExporting"/> is
+        /// <see langword="true"/> (an export already running).</para></returns>
         public abstract bool StartExport(string exportName, LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
         /// <para>During exports running input actions is suspended, which guarantees that the game state does
