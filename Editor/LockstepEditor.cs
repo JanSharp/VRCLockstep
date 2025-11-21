@@ -66,10 +66,13 @@ namespace JanSharp.Internal
             }
 
             List<GSTypeWithDeps> gameStateTypes = OnAssemblyLoadUtil.AllUdonSharpBehaviourTypes
-                .Where(t => EditorUtil.DerivesFrom(t, typeof(LockstepGameState)))
+                .Where(t => !t.IsAbstract && EditorUtil.DerivesFrom(t, typeof(LockstepGameState)))
                 .Select(t => new GSTypeWithDeps(t))
                 .ToList();
             gsTypeWithDepsLut = gameStateTypes.ToDictionary(t => t.gsType, t => t);
+            foreach (GSTypeWithDeps type in gameStateTypes)
+                if (!type.AddAndValidateAbstractBaseClasses(gsTypeWithDepsLut))
+                    return;
             foreach (GSTypeWithDeps type in gameStateTypes)
                 if (!type.TryResolveGSTypes(gsTypeWithDepsLut))
                     return;
@@ -93,15 +96,42 @@ namespace JanSharp.Internal
                     .ToList();
             }
 
+            public bool AddAndValidateAbstractBaseClasses(Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut)
+            {
+                System.Type baseType = gsType.BaseType;
+                while (baseType != typeof(LockstepGameState))
+                {
+                    if (!baseType.IsAbstract)
+                    {
+                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} inherits from the "
+                            + $"(non abstract) {baseType.Name} {nameof(LockstepGameState)}, which is not supported. \n"
+                            + $"Inheriting from abstract base classes is supported, so long as there is only one "
+                            + $"class deriving from any such abstract {nameof(LockstepGameState)} class.");
+                        return false;
+                    }
+                    if (gsTypeWithDepsLut.ContainsKey(baseType))
+                    {
+                        DependencyTreeError($"[Lockstep] There are multiple classes deriving from the "
+                            + $"abstract {baseType.Name} class, a {nameof(LockstepGameState)}, which is not supported. "
+                            + $"There must be at most one non abstract class deriving from it "
+                            + $"in the entire class hierarchy.");
+                        return false;
+                    }
+                    gsTypeWithDepsLut.Add(baseType, this);
+                    baseType = baseType.BaseType;
+                }
+                return true;
+            }
+
             public bool TryResolveGSTypes(Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut)
             {
-                if (!ValidateRawDependencyTypes())
+                if (!ValidateRawDependencyTypes(gsTypeWithDepsLut))
                     return false;
                 dependencies = rawDependencies.Select(t => gsTypeWithDepsLut[t]).ToList();
                 return true;
             }
 
-            public bool ValidateRawDependencyTypes()
+            public bool ValidateRawDependencyTypes(Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut)
             {
                 foreach (System.Type depType in rawDependencies)
                 {
@@ -115,6 +145,19 @@ namespace JanSharp.Internal
                     {
                         DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
                             + $"on the type {depType.Name}, however said type does not derive from {nameof(LockstepGameState)}.");
+                        return false;
+                    }
+                    if (depType == typeof(LockstepGameState))
+                    {
+                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
+                            + $"on the {nameof(LockstepGameState)} class itself, which is nonsensical.");
+                        return false;
+                    }
+                    if (depType.IsAbstract && !gsTypeWithDepsLut.ContainsKey(depType))
+                    {
+                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
+                            + $"on the abstract {depType.Name} {nameof(LockstepGameState)} class, however there is "
+                            + $"no class deriving from said abstract class - there is no implementation.");
                         return false;
                     }
                 }

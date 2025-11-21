@@ -120,7 +120,7 @@
 - [ ] maybe add functions to enter and exit game state unsafe scopes even within a game state safe event, purely in order for systems to be able to manipulate the values of `InGameStateSafeEvent` event. Systems would only have to use these game state unsafe scopes in situations where they call into other systems which run unknown code. Naturally there would be no way to change `InGameStateSafeEvent` to true when outside of game state safe events using these scopes
   - [ ] If this gets done, update `InitFromDefault` xml annotations in the `com.jansharp.entity-system` package in the `EntityExtensionData` file
 - [ ] Show a list of which game states support and don't support exporting in the export UI by default, very similar to how it is shown in the import UI
-- [ ] Detect and disallow inheritance for game states. Specifically game states inheriting from another implemented (non abstract class) game state
-- [ ] Detect and disallow multiple game states inheriting from the same abstract base class
-- [ ] Treat game state dependencies on abstract game state classes as though they were dependencies on the implementation of that abstract base class
-  - [ ] Same for dependencies _defined_ on abstract game state classes... though maybe that works automatically, if using the `inherited: true` thing that exists in reflection. I think
+- [x] Detect and disallow inheritance for game states. Specifically game states inheriting from another implemented (non abstract class) game state
+- [x] Detect and disallow multiple game states inheriting from the same abstract base class
+- [x] Treat game state dependencies on abstract game state classes as though they were dependencies on the implementation of that abstract base class
+  - [x] Same for dependencies _defined_ on abstract game state classes... though maybe that works automatically, if using the `inherited: true` thing that exists in reflection. I think

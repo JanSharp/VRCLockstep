@@ -343,6 +343,13 @@ namespace JanSharp
         /// lowercase for case insensitivity), and then by
         /// <see cref="LockstepGameState.GameStateInternalName"/> (not converted to lower case to prevent
         /// ambiguity).</para>
+        /// <para>Lockstep generally does not support inheritance for <see cref="LockstepGameState"/>, with
+        /// the only exception being <see langword="abstract"/> classes to a limited degree. Any
+        /// <see langword="abstract"/> <see cref="LockstepGameState"/> must only be derived from/implemented
+        /// by a single class. Therefore any <see cref="SingletonDependencyAttribute"/> on an
+        /// <see langword="abstract"/> class, or pointing to an <see langword="abstract"/> class, will be
+        /// treated as though they were on/pointing to the deriving class implementing the aforementioned
+        /// <see langword="abstract"/> class.</para>
         /// <para>This does not enforce that a given game state exists in the scene, if that is desired use
         /// <see cref="SingletonScriptAttribute"/> and <see cref="SingletonReferenceAttribute"/> or
         /// <see cref="SingletonDependencyAttribute"/>.</para>
