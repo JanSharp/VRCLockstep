@@ -1069,9 +1069,13 @@ namespace JanSharp
         /// <para><see langword="true"/> inside of
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
         /// when performing an import.</para>
-        /// <para>Note that an import could be in progress while other input actions are also being run,
-        /// making <see cref="IsDeserializingForImport"/> be <see langword="false"/> while
-        /// <see cref="IsImporting"/> is <see langword="true"/>.</para>
+        /// <para>Note that <see cref="IsImporting"/> gets set to <see langword="true"/>, or in other words an
+        /// import gets started, before the data to be imported actually gets sent to all clients. Therefore
+        /// there could be other input actions being run while we are waiting on that data, making
+        /// <see cref="IsDeserializingForImport"/> be <see langword="false"/> while <see cref="IsImporting"/>
+        /// is <see langword="true"/>.</para>
+        /// <para>Once game state deserialization for imports actually starts no other input actions will run
+        /// until <see cref="LockstepEventType.OnImportFinished"/> gets raised.</para>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>
