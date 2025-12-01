@@ -550,8 +550,6 @@ namespace JanSharp.Internal
         private byte[][] unprocessedLJSerializedGameStates = new byte[ArrList.MinCapacity][];
         private int unprocessedLJSerializedGSCount = 0;
         private int nextLJGameStateToProcess = -1;
-        private float nextLJGameStateToProcessTime = 0f;
-        private const float LJGameStateProcessingFrequency = 0.1f;
         private bool IsProcessingLJGameStates => nextLJGameStateToProcess != -1;
 
         private int flagForLateJoinerSyncSentCount = 0;
@@ -635,7 +633,7 @@ namespace JanSharp.Internal
 
             if (isTickPaused)
             {
-                if (IsProcessingLJGameStates && Time.realtimeSinceStartup >= nextLJGameStateToProcessTime)
+                if (IsProcessingLJGameStates)
                     ProcessNextLJSerializedGameState();
                 lastUpdateSW.Stop();
                 return;
@@ -2947,7 +2945,6 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  TryMoveToNextLJSerializedGameState");
 #endif
             nextLJGameStateToProcess++;
-            nextLJGameStateToProcessTime = Time.realtimeSinceStartup + LJGameStateProcessingFrequency;
             if (nextLJGameStateToProcess >= unprocessedLJSerializedGSCount)
                 DoneProcessingLJGameStates();
         }
