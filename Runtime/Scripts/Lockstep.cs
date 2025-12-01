@@ -235,10 +235,10 @@ namespace JanSharp.Internal
         /// </summary>
         private DataDictionary delayedEventsByTick = new DataDictionary();
 
-        ///cSpell:ignore iatrn
+        ///cSpell:ignore iatrnf
         ///<summary>(objet[] { uint inputActionId, byte[] inputActionData, ulong uniqueId, float sendTime })[]</summary>
         private object[][] inputActionsToRunNextFrame = new object[ArrList.MinCapacity][];
-        private int iatrnCount = 0;
+        private int iatrnfCount = 0;
 
         ///<summary>**Internal Game State**</summary>
         private uint nextSingletonId = 0;
@@ -562,24 +562,23 @@ namespace JanSharp.Internal
         // ALso used by the debug UI.
         private System.Diagnostics.Stopwatch lastUpdateSW = new System.Diagnostics.Stopwatch();
 
-        // The actions run during catch up are actions that
-        // have already been run by the previous master. Therefore this must return false, otherwise this
-        // IsMaster property would return true on 2 clients when running the same input action.
-        // I _think_ that this covers all edge cases, since if those input actions were to use this IsMaster
-        // to modify the game state, then the only way to do that is though sending another input action. If
-        // the master leaves shortly after doing so, those newly sent input actions would not even get
-        // associated with a tick to run in, which means that IsMaster then being true in an input action
-        // twice would be fine, because some other client became master and is running still queued actions,
-        // however it won't run newly sent input actions twice, because remember how the ones sent from the
-        // original master before leaving didn't get associated with a tick.
+        // The actions run during catch up are actions that have already been run by the previous master.
+        // Therefore this must return false, otherwise this IsMaster property would return true on 2 clients
+        // when running the same input action. I _think_ that this covers all edge cases, since if those input
+        // actions were to use this IsMaster to modify the game state, then the only way to do that is through
+        // sending another input action. If the master leaves shortly after doing so, those newly sent input
+        // actions would not even get associated with a tick to run in, which means that IsMaster then being
+        // true in an input action twice would be fine, because some other client became master and is running
+        // still queued actions, however it won't run newly sent input actions twice, because remember how the
+        // ones sent from the original master before leaving didn't get associated with a tick.
         // Now if they _did_ get associated with a tick then we can safely assume that at least 1 tick has
-        // passed since the moment where they got sent, That means waitTick has advanced past the original
-        // input action that sent the new input actions. Technically there is an edge case where if the ticks
-        // do not advance at all during this entire time and it ends up syncing the tick association without
-        // advancing any ticks, and the master leaves immediately afterwards, then another client would run
-        // an input action with IsMaster being true again, which would be incorrect behavior. But the only
-        // way this should be possible to happen is if ticks get paused using the tick pase boolean, which is
-        // currently not possible and should never be possible.
+        // passed since the moment where they got sent, That means lastRunnableTick has advanced past the
+        // original input action that sent the new input actions. Technically there is an edge case where if
+        // the ticks do not advance at all during this entire time and it ends up syncing the tick association
+        // without advancing any ticks, and the master leaves immediately afterwards, then another client
+        // would run an input action with IsMaster being true again, which would be incorrect behavior. But
+        // the only way this should be possible to happen is if ticks get paused using the tick pause boolean,
+        // which is currently not possible and should never be possible.
         public override bool IsMaster => isMaster && !isCatchingUp; // Even for non initial catch ups.
         public override uint MasterPlayerId => masterPlayerId;
         private uint oldMasterPlayerId;
@@ -673,7 +672,7 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (iatrnCount != 0 && (!flaggedToContinueNextFrame || suspendedInInputActionsToRunNextFrame))
+            if (iatrnfCount != 0 && (!flaggedToContinueNextFrame || suspendedInInputActionsToRunNextFrame))
             {
                 RunInputActionsForThisFrame();
                 if (flaggedToContinueNextFrame)
@@ -728,9 +727,9 @@ namespace JanSharp.Internal
             stopwatch.Stop(); // I don't think this actually matters, but it's not used anymore so sure.
 
             // As soon as we are within 1 second of the current tick, consider it done catching up.
-            // This little leeway is required, as it may not be able to reach waitTick because
+            // This little leeway is required, as it may not be able to reach lastRunnableTick because
             // input actions may arrive after tick sync data.
-            // Run all the way to waitTick when isMaster, otherwise other clients would most likely desync.
+            // Run all the way to lastRunnableTick when isMaster, otherwise other clients would most likely desync.
             if (isMaster
                 ? currentTick > lastRunnableTick // Yes it's duplicated but this is more readable.
                 : currentTick > lastRunnableTick || lastRunnableTick - currentTick < TickRate)
@@ -832,7 +831,7 @@ namespace JanSharp.Internal
 
             // Slowly increase the immutable tick. This prevents potential lag spikes when many input actions
             // were sent while catching up. This approach also prevents being stuck catching up forever by
-            // not touching waitTick.
+            // not touching lastRunnableTick.
             // Still continue increasing it even when done catching up, for the same reason: no lag spikes.
             if ((currentTick % TickRate) == 0u)
                 firstMutableTick++;
@@ -1003,7 +1002,7 @@ namespace JanSharp.Internal
 #endif
             inputActionsByUniqueId.Remove(uniqueId, out DataToken inputActionDataToken);
             object[] inputActionData = (object[])inputActionDataToken.Reference;
-            ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { (uint)inputActionData[0], (byte[])inputActionData[1], uniqueId, (float)inputActionData[2] });
+            ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnfCount, new object[] { (uint)inputActionData[0], (byte[])inputActionData[1], uniqueId, (float)inputActionData[2] });
         }
 
         private void RunInputActionsForThisFrame()
@@ -1011,7 +1010,7 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  RunInputActionsForThisFrame");
 #endif
-            for (int i = suspendedIndexInArray; i < iatrnCount; i++)
+            for (int i = suspendedIndexInArray; i < iatrnfCount; i++)
             {
                 if (flaggedToContinueNextFrame)
                 {
@@ -1033,7 +1032,7 @@ namespace JanSharp.Internal
                     return;
                 }
             }
-            iatrnCount = 0;
+            iatrnfCount = 0;
         }
 
         private void ForgetAboutInputActionsForThisFrame()
@@ -1041,9 +1040,9 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  ForgetAboutInputActionsForThisFrame");
 #endif
-            for (int i = 0; i < iatrnCount; i++)
+            for (int i = 0; i < iatrnfCount; i++)
                 inputActionsToRunNextFrame[i] = null; // Just to ensure that memory can be freed.
-            iatrnCount = 0;
+            iatrnfCount = 0;
         }
 
         private void RunInputAction(uint inputActionId, byte[] inputActionData, ulong uniqueId, float sendTime, bool bypassValidityCheck = false)
@@ -1389,7 +1388,7 @@ namespace JanSharp.Internal
                 return;
             }
 
-            if (iatrnCount != 0 // Must enqueue if there's already a queue to ensure proper order.
+            if (iatrnfCount != 0 // Must enqueue if there's already a queue to ensure proper order.
                 || flaggedToContinueNextFrame) // An input action is currently suspended, cannot run another one.
             {
                 if (!isSinglePlayer)
@@ -3286,7 +3285,7 @@ namespace JanSharp.Internal
                 uniqueId = inputActionSyncForLocalPlayer.MakeUniqueId();
 
             if (forceOneFrameDelay || flaggedToContinueNextFrame)
-                ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnCount, new object[] { inputActionId, inputActionData, uniqueId, sendTime });
+                ArrList.Add(ref inputActionsToRunNextFrame, ref iatrnfCount, new object[] { inputActionId, inputActionData, uniqueId, sendTime });
             else
             {
                 RunInputAction(inputActionId, inputActionData, uniqueId, sendTime);
