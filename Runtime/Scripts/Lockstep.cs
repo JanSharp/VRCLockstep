@@ -66,6 +66,13 @@ namespace JanSharp.Internal
         /// since in order for a tick to fully run it must increment <see cref="currentTick"/> at the end.</para>
         /// </summary>
         private uint lastRunnableTick;
+        /// <summary>
+        /// <para>Hidden API.</para>
+        /// <para>Intended to be used for loading progress kind of UIs.</para>
+        /// <inheritdoc cref="lastRunnableTick"/>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public uint LastRunnableTick => lastRunnableTick;
         public override uint CurrentTick => currentTick;
         public override float RealtimeAtTick(uint tick) => tickStartTime + (float)tick / TickRate;
 
@@ -140,6 +147,12 @@ namespace JanSharp.Internal
         public override bool IsCatchingUp => isCatchingUp && isInitialCatchUp;
         public override bool IsSinglePlayer => isSinglePlayer;
         public override bool IsInitialized => lockstepIsInitialized;
+        /// <summary>
+        /// <para>Hidden API.</para>
+        /// <para>Intended to be used for loading progress kind of UIs.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public bool IsWaitingForLateJoinerSync => isWaitingForLateJoinerSync;
 
         private bool inGameStateSafeEvent = false;
         public override bool InGameStateSafeEvent => inGameStateSafeEvent;
@@ -550,7 +563,18 @@ namespace JanSharp.Internal
         private byte[][] unprocessedLJSerializedGameStates = new byte[ArrList.MinCapacity][];
         private int unprocessedLJSerializedGSCount = 0;
         private int nextLJGameStateToProcess = -1;
-        private bool IsProcessingLJGameStates => nextLJGameStateToProcess != -1;
+        /// <summary>
+        /// <para>Hidden API.</para>
+        /// <para>Intended to be used for loading progress kind of UIs.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public bool IsProcessingLJGameStates => nextLJGameStateToProcess != -1;
+        /// <summary>
+        /// <para>Hidden API.</para>
+        /// <para>Intended to be used for loading progress kind of UIs.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public int NextLJGameStateToProcess => nextLJGameStateToProcess;
 
         private int flagForLateJoinerSyncSentCount = 0;
         private int processLeftPlayersSentCount = 0;
