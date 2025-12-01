@@ -119,6 +119,15 @@ namespace JanSharp
         /// </summary>
         public abstract LockstepGameState[] AllGameStates { get; }
         /// <summary>
+        /// <para>Get a single game state from <see cref="AllGameStates"/>.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="index">Must greater or equal to zero and less than <see cref="AllGameStatesCount"/>,
+        /// throws an exception otherwise.</param>
+        /// <returns>Never <see langword="null"/>.</returns>
+        public abstract LockstepGameState GetGameState(int index);
+        /// <summary>
         /// <para>The length of the <see cref="GameStatesSupportingImportExport"/> array. To prevent
         /// unnecessary array copies for when all that's needed is the length/count.</para>
         /// <para>Usable any time.</para>
@@ -133,6 +142,15 @@ namespace JanSharp
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract LockstepGameState[] GameStatesSupportingImportExport { get; }
+        /// <summary>
+        /// <para>Get a single game state from <see cref="GameStatesSupportingImportExport"/>.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="index">Must greater or equal to zero and less than
+        /// <see cref="GameStatesSupportingImportExportCount"/>, throws an exception otherwise.</param>
+        /// <returns>Never <see langword="null"/>.</returns>
+        public abstract LockstepGameState GetGameStatesSupportingImportExport(int index);
         /// <summary>
         /// <para>Note that <see cref="TryGetClientState(uint, out ClientState)"/> can be used to both get the
         /// current state and check if the given client exists, making <see cref="ClientStateExists(uint)"/>

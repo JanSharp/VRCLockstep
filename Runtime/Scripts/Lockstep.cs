@@ -310,6 +310,7 @@ namespace JanSharp.Internal
                 return result;
             }
         }
+        public override LockstepGameState GetGameState(int index) => allGameStates[index];
         public override int GameStatesSupportingImportExportCount => gameStatesSupportingImportExportCount;
         public override LockstepGameState[] GameStatesSupportingImportExport
         {
@@ -320,6 +321,7 @@ namespace JanSharp.Internal
                 return result;
             }
         }
+        public override LockstepGameState GetGameStatesSupportingImportExport(int index) => gameStatesSupportingImportExport[index];
 
         private bool PlayerIdHasClientState(uint playerId)
         {
