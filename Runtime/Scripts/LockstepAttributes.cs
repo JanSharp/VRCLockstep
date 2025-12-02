@@ -155,11 +155,13 @@ namespace JanSharp
         OnImportStart,
         /// <summary>
         /// <para>Use "import" related properties on <see cref="LockstepAPI"/> for information about the
-        /// started import.</para>
+        /// starting import.</para>
         /// <para>Gets raised right after all <see cref="LockstepGameState.OptionsForCurrentImport"/> have
         /// been populated and right before
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
         /// gets run for each game state.</para>
+        /// <para>Gets raised regardless of if any game states defined any import options, ultimately making
+        /// it a generic "about to start deserializing game states for import" event too.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportOptionsDeserialized,

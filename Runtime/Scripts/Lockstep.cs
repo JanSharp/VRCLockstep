@@ -5074,6 +5074,8 @@ namespace JanSharp.Internal
         }
         public override int GameStatesBeingImportedCount => gameStatesBeingImported == null ? 0 : gameStatesBeingImported.Length;
         public override int GameStatesBeingImportedFinishedCount => gameStatesBeingImportedFinishedCount;
+        public override LockstepGameState GetGameStateBeingImported(int index) => gameStatesBeingImported[index];
+        public override uint GetGameStateBeingImportedDataVersion(int index) => gameStatesBeingImportedDataVersions[index];
         private LockstepGameState[] gameStatesBeingImported = null;
         private uint[] gameStatesBeingImportedDataVersions = null;
         private int gameStatesBeingImportedFinishedCount = 0;

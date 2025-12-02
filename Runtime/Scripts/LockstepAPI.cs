@@ -1185,7 +1185,7 @@ namespace JanSharp
         /// <para>Returns just the length of <see cref="GameStatesBeingImported"/> such that when all
         /// that's needed is the length there isn't an entire array being constructed and copied just to be
         /// thrown away again immediately afterwards.</para>
-        /// <para>Usable if <see cref="IsImporting"/> is true, or inside of
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -1194,11 +1194,31 @@ namespace JanSharp
         /// <para>Indicates how many of the <see cref="GameStatesBeingImported"/> have finished importing.
         /// This value gets incremented/updated right before
         /// <see cref="LockstepEventType.OnImportedGameState"/> gets raised.</para>
-        /// <para>Usable if <see cref="IsImporting"/> is true, or inside of
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract int GameStatesBeingImportedFinishedCount { get; }
+        /// <summary>
+        /// <para>Get a single game state from <see cref="GameStatesBeingImported"/>.</para>
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
+        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="index">Must greater or equal to zero and less than
+        /// <see cref="GameStatesBeingImportedCount"/>, throws an exception otherwise.</param>
+        /// <returns>Never <see langword="null"/>.</returns>
+        public abstract LockstepGameState GetGameStateBeingImported(int index);
+        /// <summary>
+        /// <para>Get a single data version from <see cref="GameStatesBeingImportedDataVersions"/>.</para>
+        /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
+        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        /// <param name="index">Must greater or equal to zero and less than
+        /// <see cref="GameStatesBeingImportedCount"/>, throws an exception otherwise.</param>
+        /// <returns>Never <see langword="null"/>.</returns>
+        public abstract uint GetGameStateBeingImportedDataVersion(int index);
 
         /// <summary>
         /// <para>Autosaves are written to the
