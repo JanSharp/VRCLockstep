@@ -102,7 +102,7 @@ namespace JanSharp.Internal
             SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), tickLoopDelay);
             lastSyncedTick = tickInSyncedData;
 #if LOCKSTEP_DEBUG
-            syncCount++;
+            // syncCount++;
 #endif
         }
 
@@ -136,18 +136,18 @@ namespace JanSharp.Internal
 
 
 #if LOCKSTEP_DEBUG
-        private void Start()
-        {
-            SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
-        }
+        // private void Start()
+        // {
+        //     SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
+        // }
 
-        private int syncCount = 0;
-        public void SyncCountTestLoop()
-        {
-            Debug.Log($"[LockstepDebug] tick sync count in the last 10 seconds: {syncCount}, {((float)syncCount) / 10f}/s, current tickLoopDelay: {tickLoopDelay}");
-            syncCount = 0;
-            SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
-        }
+        // private int syncCount = 0;
+        // public void SyncCountTestLoop()
+        // {
+        //     Debug.Log($"[LockstepDebug] tick sync count in the last 10 seconds: {syncCount}, {((float)syncCount) / 10f}/s, current tickLoopDelay: {tickLoopDelay}");
+        //     syncCount = 0;
+        //     SendCustomEventDelayedSeconds(nameof(SyncCountTestLoop), 10f);
+        // }
 #endif
     }
 }
