@@ -32,9 +32,10 @@ namespace JanSharp
         /// <see cref="OnClientBeginCatchUp"/> is not game state safe, the 2 events serve the same purpose in
         /// allowing other systems - non game states - to initialize and to start accepting user input.</para>
         /// <para>From within this event and going forward sending input actions is allowed.</para>
-        /// <para>At this point in time, this client - the local client - is not yet part of the game state in
-        /// any of the custom game states. <see cref="OnClientJoined"/> eventually gets raised after this
-        /// event.</para>
+        /// <para>At the <see cref="LockstepAPI.CurrentTick"/>, the only way for this client - the local
+        /// client - to be part of custom game states is if they listen to the <see cref="OnPreClientJoined"/>
+        /// event. When systems are using the <see cref="OnClientJoined"/> event, that has not been raised yet
+        /// for the local client (again, as of the <see cref="LockstepAPI.CurrentTick"/>).</para>
         /// <para>Since the <see cref="VRC.SDKBase.VRCPlayerApi"/> is not part of the game state, if it is
         /// desired to input <see cref="VRC.SDKBase.VRCPlayerApi"/> data into the game state, sending input
         /// actions from within this event may make sense.</para>
