@@ -125,4 +125,5 @@
 - [x] Treat game state dependencies on abstract game state classes as though they were dependencies on the implementation of that abstract base class
   - [x] Same for dependencies _defined_ on abstract game state classes... though maybe that works automatically, if using the `inherited: true` thing that exists in reflection. I think
 - [ ] Let OnInit be spread out across frames
+- [ ] Let OnClientBeginCatchUp be spread out across frames
 - [ ] Let OnImportFinished be spread out across frames
