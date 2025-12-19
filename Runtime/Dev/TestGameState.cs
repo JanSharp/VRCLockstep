@@ -32,7 +32,12 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnInit)]
         public void OnInit()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnInit");
+            Debug.Log($"[LockstepTest] TestGameState  OnInit - lockstep.IsContinuationFromPrevFrame: {lockstep.IsContinuationFromPrevFrame}");
+            if (!lockstep.IsContinuationFromPrevFrame)
+            {
+                lockstep.FlagToContinueNextFrame();
+                return;
+            }
             lockstep.WriteSmallUInt(1u);
             lockstep.SendEventDelayedTicks(delayedInputActionId, 50);
         }

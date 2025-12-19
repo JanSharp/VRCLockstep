@@ -18,12 +18,36 @@ namespace JanSharp
         /// existing game states. Since <see cref="OnInit"/> is the very first initialization, it is allowed
         /// to use any data to initialize the game state(s). This is natural since there is no previous game
         /// state data to mutate.</para>
+        /// <para>Unlike most events, <see cref="LockstepAPI.FlagToContinueNextFrame"/> can be used within
+        /// <see cref="OnInit"/>.</para>
         /// <para>Even though <see cref="OnInit"/> is raised before <see cref="OnClientJoined"/>, the master
         /// client already exists in the internal client states game state inside of
         /// <see cref="OnInit"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnInit,
+        /// <summary>
+        /// <para>Gets raised immediately after <see cref="OnInit"/>, see there fore more details.</para>
+        /// <para>The primary difference between <see cref="OnInit"/> and <see cref="OnInitFinished"/> is that
+        /// <see cref="LockstepAPI.FlagToContinueNextFrame"/> cannot be used in <see cref="OnInitFinished"/>.
+        /// All event listeners for this event run within the same frame, making it a true notification that
+        /// lockstep has been initialized, as well as every system using lockstep being initialized by the
+        /// end of this frame.</para>
+        /// <para><see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/> within
+        /// <see cref="OnInit"/>, however if <see cref="OnInit"/> ends up spanning multiple frames, in the
+        /// time between those frames <see cref="LockstepAPI.IsInitialized"/> is set back to
+        /// <see langword="false"/>. Therefore when checking the value of
+        /// <see cref="LockstepAPI.IsInitialized"/> at any point in time (that isn't within some
+        /// <see cref="OnInit"/> or <see cref="OnInitFinished"/> listener itself), it being
+        /// <see langword="true"/> provides the guarantee that every system has received both the
+        /// <see cref="OnInit"/> and <see cref="OnInitFinished"/> events.</para>
+        /// <para>The purpose of this event is enabling systems interacting with other systems, potentially
+        /// even unknown systems, to handle initialization more cleanly. Most systems only need
+        /// <see cref="OnInit"/> and the rest of the documentation generally only mentions
+        /// <see cref="OnInit"/> for simplicity, even though mentioning both would be more accurate.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        OnInitFinished,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.CatchingUpPlayerId"/> to get the id of the client which is
         /// beginning to catch up.</para>

@@ -169,11 +169,15 @@ namespace JanSharp.Internal
         public override bool IsContinuationFromPrevFrame => isContinuationFromPrevFrame;
         private bool flaggedToContinueNextFrame = false;
         private bool flaggedToContinueInsideOfGSImport = false;
+        private System.Diagnostics.Stopwatch suspensionLogicSw = new System.Diagnostics.Stopwatch();
+        private const long MaxMSForTimedSuspensionLogic = 10L;
+        private bool suspendedDueToRunningLong = false;
         private uint suspendedInputActionId;
         private uint suspendedSingletonInputActionId;
         private bool suspendedInInputActionsToRunNextFrame = false;
         private DataList suspendedDelayedEventsList = null;
         private ulong[] suspendedUniqueIds = null;
+        private bool suspendedInOnInit = false;
         private bool suspendedInStandaloneIA = false;
         private bool suspendedInLJSerialization = false;
         private bool suspendedInBetweenGSSerializations = false;
@@ -183,6 +187,7 @@ namespace JanSharp.Internal
         private int suspendedExportGSSizePosition;
         private byte[] suspendedWriteStream = null;
         private int suspendedWriteStreamSize = 0;
+        private int suspendedDestroyedListenersCount = 0;
         /// <summary>
         /// <para>Must always be reset to 0 once done using it.</para>
         /// </summary>
@@ -274,6 +279,7 @@ namespace JanSharp.Internal
         [SerializeField] private uint[] onNthTickIntervals;
 
         [SerializeField] private UdonSharpBehaviour[] onInitListeners;
+        [SerializeField] private UdonSharpBehaviour[] onInitFinishedListeners;
         [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
         [SerializeField] private UdonSharpBehaviour[] onClientJoinedListeners;
         [SerializeField] private UdonSharpBehaviour[] onPreClientJoinedListeners;
@@ -654,8 +660,7 @@ namespace JanSharp.Internal
 
         private void Update()
         {
-            lastUpdateSW.Reset();
-            lastUpdateSW.Start();
+            lastUpdateSW.Restart();
 
             if (isTickPaused)
             {
@@ -679,6 +684,8 @@ namespace JanSharp.Internal
                     SendLateJoinerData();
                 else if (suspendedInExport)
                     ExportInternal();
+                else if (suspendedInOnInit)
+                    BecomeInitialMaster();
                 else
                     relevant = false;
 
@@ -1634,32 +1641,44 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  BecomeInitialMaster");
 #endif
-            isMaster = true;
-            currentlyNoMaster = false;
-            ignoreLocalInputActions = false;
-            ignoreIncomingInputActions = false;
-            isWaitingToSendClientJoinedIA = false;
-            isWaitingForLateJoinerSync = false;
-            lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = false;
-            isInitialCatchUp = false; // The master never raises a caught up event for itself.
-            SetClientStatesToEmpty();
-            AddClientState(localPlayerId, ClientState.Master, localPlayerDisplayName);
-            ArrList.Clear(ref leftClients, ref leftClientsCount);
-            masterPlayerId = localPlayerId;
-            // Not perfect, but good enough. Also bitwise OR instead of + is generating a nonsensical warning.
-            rng.SetSeed((((ulong)Random.Range(0, int.MaxValue)) << 32) + (ulong)Random.Range(0, int.MaxValue));
-            // Just to quadruple check, setting owner on both. Trust issues with VRChat.
-            Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
-            Networking.SetOwner(localPlayer, tickSync.gameObject);
-            tickSync.RequestSerialization();
-            currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
-            lastRunnableTick = uint.MaxValue;
-            EnterSingePlayerMode();
+            if (flaggedToContinueNextFrame)
+                suspendedInOnInit = false;
+            else
+            {
+                isMaster = true;
+                currentlyNoMaster = false;
+                ignoreLocalInputActions = false;
+                ignoreIncomingInputActions = false;
+                isWaitingToSendClientJoinedIA = false;
+                isWaitingForLateJoinerSync = false;
+                lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = false;
+                isInitialCatchUp = false; // The master never raises a caught up event for itself.
+                SetClientStatesToEmpty();
+                AddClientState(localPlayerId, ClientState.Master, localPlayerDisplayName);
+                ArrList.Clear(ref leftClients, ref leftClientsCount);
+                masterPlayerId = localPlayerId;
+                // Not perfect, but good enough. Also bitwise OR instead of + is generating a nonsensical warning.
+                rng.SetSeed((((ulong)Random.Range(0, int.MaxValue)) << 32) + (ulong)Random.Range(0, int.MaxValue));
+                // Just to quadruple check, setting owner on both. Trust issues with VRChat.
+                Networking.SetOwner(localPlayer, lateJoinerInputActionSync.gameObject);
+                Networking.SetOwner(localPlayer, tickSync.gameObject);
+                tickSync.RequestSerialization();
+                currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
+                lastRunnableTick = uint.MaxValue;
+                EnterSingePlayerMode();
+                StartOrStopAutosave();
+                isTickPaused = false; // Must unset in order for flaggedToContinueNextFrame to work.
+            }
             lockstepIsInitialized = true;
-            StartOrStopAutosave();
             RaiseOnInit();
+            if (flaggedToContinueNextFrame)
+            {
+                suspendedInOnInit = true;
+                lockstepIsInitialized = false; // See OnInitFinished xml annotations for an explanation.
+                return;
+            }
+            RaiseOnInitFinished();
             RaiseOnClientJoined(localPlayerId);
-            isTickPaused = false;
             InitAllImportExportOptionsWidgetData();
             tickStartTimeShift = 0f;
             SetTickStartTime();
@@ -3411,15 +3430,66 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnInit");
 #endif
+            if (flaggedToContinueNextFrame)
+            {
+                flaggedToContinueNextFrame = false;
+                isContinuationFromPrevFrame = !suspendedDueToRunningLong;
+                suspendedDueToRunningLong = false;
+            }
+            suspensionLogicSw.Restart();
+
+            inGameStateSafeEvent = true; // Calling function is not an IA.
+
+            int length = onInitListeners.Length;
+            while (suspendedIndexInArray < length)
+            {
+                if (suspensionLogicSw.ElapsedMilliseconds >= MaxMSForTimedSuspensionLogic)
+                {
+                    flaggedToContinueNextFrame = true;
+                    suspendedDueToRunningLong = true;
+                    inGameStateSafeEvent = false;
+                    return;
+                }
+                UdonSharpBehaviour listener = onInitListeners[suspendedIndexInArray];
+                if (listener == null)
+                {
+                    suspendedDestroyedListenersCount++;
+                    suspendedIndexInArray++;
+                    continue;
+                }
+                listener.SendCustomEvent(nameof(LockstepEventType.OnInit));
+                isContinuationFromPrevFrame = false;
+                if (flaggedToContinueNextFrame)
+                {
+                    inGameStateSafeEvent = false;
+                    return;
+                }
+                suspendedIndexInArray++;
+            }
+            suspendedIndexInArray = 0;
+
+            if (suspendedDestroyedListenersCount != 0)
+            {
+                onInitListeners = CleanUpRemovedListeners(onInitListeners, suspendedDestroyedListenersCount, nameof(LockstepEventType.OnInit));
+                suspendedDestroyedListenersCount = 0;
+            }
+            inGameStateSafeEvent = false;
+        }
+
+        private void RaiseOnInitFinished() // Game state safe.
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnInitFinished");
+#endif
             inGameStateSafeEvent = true; // Calling function is not an IA.
             int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onInitListeners)
+            foreach (UdonSharpBehaviour listener in onInitFinishedListeners)
                 if (listener == null)
                     destroyedCount++;
                 else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnInit));
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnInitFinished));
             if (destroyedCount != 0)
-                onInitListeners = CleanUpRemovedListeners(onInitListeners, destroyedCount, nameof(LockstepEventType.OnInit));
+                onInitFinishedListeners = CleanUpRemovedListeners(onInitFinishedListeners, destroyedCount, nameof(LockstepEventType.OnInitFinished));
             inGameStateSafeEvent = false;
         }
 
