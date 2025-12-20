@@ -3140,6 +3140,8 @@ namespace JanSharp.Internal
                 ignoreLocalInputActions = false;
                 stillAllowLocalClientJoinedIA = false;
                 SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
+                isCatchingUp = true;
+                isInitialCatchUp = true;
                 isTickPaused = false; // Must unset in order for flaggedToContinueNextFrame to work.
             }
             lockstepIsInitialized = true; // Close before OnClientBeginCatchUp.
@@ -3152,8 +3154,6 @@ namespace JanSharp.Internal
                 return;
             }
             RaiseOnPostClientBeginCatchUp(localPlayerId);
-            isCatchingUp = true;
-            isInitialCatchUp = true;
 
             if (checkMasterChangeAfterProcessingLJGameStates)
             {
