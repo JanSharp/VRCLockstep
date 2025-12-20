@@ -129,4 +129,6 @@
 - [x] Let OnClientBeginCatchUp be spread out across frames
   - [x] Add OnPostClientBeginCatchUp which cannot be spread out across frames
   - [ ] test this
-- [ ] Let OnImportFinished be spread out across frames
+- [x] Let OnImportFinished be spread out across frames
+  - [x] Add OnPostImportFinished which cannot be spread out across frames
+  - [ ] test this

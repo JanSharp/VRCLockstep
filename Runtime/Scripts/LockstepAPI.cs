@@ -551,8 +551,9 @@ namespace JanSharp
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
         /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
-        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/> and
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/>.</para>
+        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/>,
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
+        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// </summary>
         public abstract void FlagToContinueNextFrame();
         /// <summary>
@@ -566,8 +567,9 @@ namespace JanSharp
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
         /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
-        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/> and
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/>.</para>
+        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/>,
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
+        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe, however mind that
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> in
         /// particular is not a game state safe event.</para>
@@ -582,8 +584,9 @@ namespace JanSharp
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
         /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
-        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/> and
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/>.</para>
+        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/>,
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
+        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool IsContinuationFromPrevFrame { get; }
@@ -1102,6 +1105,8 @@ namespace JanSharp
         /// is <see langword="true"/>.</para>
         /// <para>Once game state deserialization for imports actually starts no other input actions will run
         /// until <see cref="LockstepEventType.OnImportFinished"/> gets raised.</para>
+        /// <para>For more intricate details about the lifetime and meaning of this value, see
+        /// <see cref="LockstepEventType.OnPostImportFinished"/>.</para>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>

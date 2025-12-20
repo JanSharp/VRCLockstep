@@ -225,9 +225,35 @@ namespace JanSharp
         /// <see cref="OnImportOptionsDeserialized"/> did not get raised and
         /// <see cref="LockstepAPI.GameStatesBeingImportedFinishedCount"/> is <c>0</c>. Additionally the
         /// <see cref="OnClientLeft"/> event gets raised shortly after.</para>
+        /// <para>Unlike most events, <see cref="LockstepAPI.FlagToContinueNextFrame"/> can be used within
+        /// <see cref="OnClientBeginCatchUp"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         OnImportFinished,
+        /// <summary>
+        /// <para>Gets raised immediately after <see cref="OnImportFinished"/>, see there fore more
+        /// details. Import related properties are still usable within
+        /// <see cref="OnPostImportFinished"/>.</para>
+        /// <para>The primary difference between <see cref="OnImportFinished"/> and
+        /// <see cref="OnPostImportFinished"/> is that <see cref="LockstepAPI.FlagToContinueNextFrame"/>
+        /// cannot be used in <see cref="OnPostImportFinished"/>. All event listeners for this event run
+        /// within the same frame, making it a true notification that the import has finished.</para>
+        /// <para>Game state safe.</para>
+        /// <para><see cref="LockstepAPI.IsImporting"/> is <see langword="false"/> within
+        /// <see cref="OnImportFinished"/>, however if <see cref="OnImportFinished"/> ends up spanning
+        /// multiple frames, in the time between those frames <see cref="LockstepAPI.IsImporting"/> is set
+        /// back to <see langword="true"/>. Therefore when checking the value of
+        /// <see cref="LockstepAPI.IsImporting"/> at any point in time (that isn't within some
+        /// <see cref="OnImportFinished"/> or <see cref="OnPostImportFinished"/> listener itself), it being
+        /// <see langword="false"/> provides the guarantee that every system has received both the
+        /// <see cref="OnImportFinished"/> and <see cref="OnPostImportFinished"/> events.</para>
+        /// <para>The purpose of this event is enabling systems interacting with other systems, potentially
+        /// even unknown systems, to handle finishing up of imports more cleanly. Most systems only need
+        /// <see cref="OnImportFinished"/> and the rest of the documentation generally only mentions
+        /// <see cref="OnImportFinished"/> for simplicity, even though mentioning both would be more
+        /// accurate.</para>
+        /// </summary>
+        OnPostImportFinished,
         /// <summary>
         /// <para>Raised whenever <see cref="LockstepAPI.ExportOptionsForAutosave"/> changed.</para>
         /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes

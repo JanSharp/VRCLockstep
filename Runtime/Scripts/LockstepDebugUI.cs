@@ -54,6 +54,7 @@ namespace JanSharp.Internal
             "suspendedInExportPreparation",
             "suspendedInExport",
             "suspendedInImportOptionsDeserialization",
+            "suspendedInOnImportFinished",
         };
         private Toggle[] flagToggles;
         private TextMeshProUGUI[] flagLabels;
@@ -102,6 +103,7 @@ namespace JanSharp.Internal
             "acceptForcedCandidateFromPlayerId",
             "suspendedInputActionId",
             "suspendedSingletonInputActionId",
+            "suspendedLeftPlayerId",
             "suspendedExportGSSizePosition",
             "suspendedDestroyedListenersCount",
             "suspendedIndexInArray",

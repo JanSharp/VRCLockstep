@@ -185,6 +185,8 @@ namespace JanSharp.Internal
         private bool suspendedInExportPreparation = false;
         private bool suspendedInExport = false;
         private bool suspendedInImportOptionsDeserialization = false;
+        private bool suspendedInOnImportFinished = false;
+        private uint suspendedLeftPlayerId;
         private int suspendedExportGSSizePosition;
         private byte[] suspendedWriteStream = null;
         private int suspendedWriteStreamSize = 0;
@@ -295,6 +297,7 @@ namespace JanSharp.Internal
         [SerializeField] private UdonSharpBehaviour[] onImportOptionsDeserializedListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportedGameStateListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportFinishedListeners;
+        [SerializeField] private UdonSharpBehaviour[] onPostImportFinishedListeners;
         [SerializeField] private UdonSharpBehaviour[] onExportOptionsForAutosaveChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
@@ -3217,14 +3220,18 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  OnClientLeftIA");
 #endif
-            uint playerId = ReadSmallUInt();
-            CheckIfImportingPlayerLeft(playerId); // Can raise an event, must therefore happen before removing the client state.
-            RemoveClientState(playerId, out ClientState clientState, out string playerName);
-            // leftClients may not contain playerId, and that is fine.
-            ArrList.Remove(ref leftClients, ref leftClientsCount, playerId);
+            if (!isContinuationFromPrevFrame)
+                suspendedLeftPlayerId = ReadSmallUInt();
+            CheckIfImportingPlayerLeft(suspendedLeftPlayerId); // Can raise an event, must therefore happen before removing the client state.
+            // isContinuationFromPrevFrame is guaranteed to be false again here due to how the raise event function works.
+            if (flaggedToContinueNextFrame)
+                return;
+            RemoveClientState(suspendedLeftPlayerId, out ClientState clientState, out string playerName);
+            // leftClients may not contain suspendedLeftPlayerId, and that is fine.
+            ArrList.Remove(ref leftClients, ref leftClientsCount, suspendedLeftPlayerId);
             // Only one of the following is going to still contain data for the given player id. No need to
             // check for which one it is though, because all that needs to happen is removal.
-            DataToken keyToken = playerId;
+            DataToken keyToken = suspendedLeftPlayerId;
             inputActionSyncByPlayerId.Remove(keyToken);
             latestInputActionIndexByPlayerId.Remove(keyToken);
 
@@ -3233,11 +3240,12 @@ namespace JanSharp.Internal
                     + "the master leaves a new client should have taken the master state before this IA ran.");
 
             CheckIfLateJoinerSyncShouldStop();
-            CheckIfSingletonInputActionGotDropped(playerId);
-            CheckIfRequestedMasterClientLeft(playerId);
+            CheckIfSingletonInputActionGotDropped(suspendedLeftPlayerId);
+            CheckIfRequestedMasterClientLeft(suspendedLeftPlayerId);
             leftClientName = playerName;
-            RaiseOnClientLeft(playerId);
+            RaiseOnClientLeft(suspendedLeftPlayerId);
             leftClientName = null;
+            suspendedLeftPlayerId = 0u;
         }
 
         private void SendClientCaughtUpIA()
@@ -3740,14 +3748,29 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportFinished");
 #endif
+            RaiseSuspendAbleEvent(onImportFinishedListeners, nameof(LockstepEventType.OnImportFinished));
+            if (flaggedToContinueNextFrame)
+                return;
+            if (suspendedDestroyedListenersCount != 0)
+            {
+                onImportFinishedListeners = CleanUpRemovedListeners(onImportFinishedListeners, suspendedDestroyedListenersCount, nameof(LockstepEventType.OnImportFinished));
+                suspendedDestroyedListenersCount = 0;
+            }
+        }
+
+        private void RaiseOnPostImportFinished() // Game state safe.
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnPostImportFinished");
+#endif
             int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onImportFinishedListeners)
+            foreach (UdonSharpBehaviour listener in onPostImportFinishedListeners)
                 if (listener == null)
                     destroyedCount++;
                 else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnImportFinished));
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnPostImportFinished));
             if (destroyedCount != 0)
-                onImportFinishedListeners = CleanUpRemovedListeners(onImportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnImportFinished));
+                onPostImportFinishedListeners = CleanUpRemovedListeners(onPostImportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnPostImportFinished));
         }
 
         private bool markedForOnExportOptionsForAutosaveChanged;
@@ -5114,32 +5137,50 @@ namespace JanSharp.Internal
         // None of this is part of an internal game state, which is fine because late joiner sync will not be
         // performed while isImporting is true.
         private bool isImporting = false;
-        private void SetIsImporting(bool value)
+        private void SetIsImportingToTrue()
         {
-            if (isImporting == value)
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  SetIsImportingToTrue");
+#endif
+            if (isImporting)
                 return;
-            isImporting = value;
+            isImporting = true;
             StartOrStopAutosave();
-            if (value)
-                RaiseOnImportStart();
-            else
+            RaiseOnImportStart();
+        }
+        private void SetIsImportingToFalse()
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  SetIsImportingToFalse");
+#endif
+            if (suspendedInOnImportFinished)
+                suspendedInOnImportFinished = false;
+            else if (!isImporting)
+                return;
+            isImporting = false;
+            RaiseOnImportFinished();
+            if (flaggedToContinueNextFrame)
             {
-                RaiseOnImportFinished();
-                // To make these properties game state safe.
-                importingPlayerId = 0u;
-                importingFromDate = new System.DateTime();
-                importingFromWorldName = null;
-                importingFromName = null;
-                gameStatesBeingImported = null;
-                gameStatesBeingImportedDataVersions = null;
-                gameStatesBeingImportedFinishedCount = 0;
-                foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
-                    if (gameState.OptionsForCurrentImport != null)
-                    {
-                        gameState.OptionsForCurrentImport.DecrementRefsCount();
-                        gameState.SetProgramVariable("optionsForCurrentImport", null);
-                    }
+                suspendedInOnImportFinished = true;
+                isImporting = true; // See OnPostImportFinished xml annotations for an explanation.
+                return;
             }
+            RaiseOnPostImportFinished();
+            StartOrStopAutosave();
+            // To make these properties game state safe.
+            importingPlayerId = 0u;
+            importingFromDate = new System.DateTime();
+            importingFromWorldName = null;
+            importingFromName = null;
+            gameStatesBeingImported = null;
+            gameStatesBeingImportedDataVersions = null;
+            gameStatesBeingImportedFinishedCount = 0;
+            foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
+                if (gameState.OptionsForCurrentImport != null)
+                {
+                    gameState.OptionsForCurrentImport.DecrementRefsCount();
+                    gameState.SetProgramVariable("optionsForCurrentImport", null);
+                }
         }
         private uint importingPlayerId;
         private System.DateTime importingFromDate;
@@ -5247,7 +5288,7 @@ namespace JanSharp.Internal
                 gameStatesBeingImported[i] = allGameStates[(int)ReadSmallUInt()];
                 gameStatesBeingImportedDataVersions[i] = ReadSmallUInt();
             }
-            SetIsImporting(true); // Raises an event, do it last so all the fields are populated.
+            SetIsImportingToTrue(); // Raises an event, do it last so all the fields are populated.
 
             if (SendingPlayerId != localPlayerId)
                 return;
@@ -5282,6 +5323,11 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  OnImportGameStatesIA");
 #endif
+            if (suspendedInOnImportFinished)
+            {
+                SetIsImportingToFalse();
+                return;
+            }
 
             if (!isContinuationFromPrevFrame)
             {
@@ -5327,8 +5373,9 @@ namespace JanSharp.Internal
                 return;
             }
             incomingGameStateData = null; // Make GC happy.
-            isContinuationFromPrevFrame = false; // Must be false inside of OnImportFinished.
-            SetIsImporting(false);
+            isContinuationFromPrevFrame = false; // Must be false for the initial call to RaiseOnImportFinished.
+            SetIsImportingToFalse();
+            // If flaggedToContinueNextFrame got set to true continuation is handled at the top of this function.
         }
 
         private void DeserializeImportOptions()
@@ -5418,9 +5465,9 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  CheckIfImportingPlayerLeft");
 #endif
-            if (!isImporting || leftPlayerId != ImportingPlayerId)
+            if (leftPlayerId != importingPlayerId)
                 return;
-            SetIsImporting(false);
+            SetIsImportingToFalse();
         }
 
         private bool AutosaveShouldBeRunning
