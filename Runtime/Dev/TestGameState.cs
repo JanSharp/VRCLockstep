@@ -73,20 +73,20 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnClientBeginCatchUp - {lockstep.CatchingUpPlayerId}");
+            Debug.Log($"[LockstepTest] TestGameState  OnClientBeginCatchUp - lockstep.CatchingUpPlayerId: {lockstep.CatchingUpPlayerId}");
         }
 
         [LockstepEvent(LockstepEventType.OnPreClientJoined)]
         public void OnPreClientJoined()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnPreClientJoined - {lockstep.JoinedPlayerId}");
+            Debug.Log($"[LockstepTest] TestGameState  OnPreClientJoined - lockstep.JoinedPlayerId: {lockstep.JoinedPlayerId}");
         }
 
         [LockstepEvent(LockstepEventType.OnClientJoined)]
         public void OnClientJoined()
         {
             uint joinedPlayerId = lockstep.JoinedPlayerId;
-            Debug.Log($"[LockstepTest] TestGameState  OnClientJoined - {joinedPlayerId}");
+            Debug.Log($"[LockstepTest] TestGameState  OnClientJoined - lockstep.JoinedPlayerId: {joinedPlayerId}");
 
             object[] playerData = new object[PlayerData_Size];
             playerData[PlayerData_PlayerId] = joinedPlayerId;
@@ -100,13 +100,13 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnClientCaughtUp)]
         public void OnClientCaughtUp()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnClientCaughtUp - {lockstep.CatchingUpPlayerId}");
+            Debug.Log($"[LockstepTest] TestGameState  OnClientCaughtUp - lockstep.CatchingUpPlayerId: {lockstep.CatchingUpPlayerId}");
         }
 
         [LockstepEvent(LockstepEventType.OnClientLeft)]
         public void OnClientLeft()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnClientLeft - {lockstep.LeftPlayerId}");
+            Debug.Log($"[LockstepTest] TestGameState  OnClientLeft - lockstep.LeftPlayerId: {lockstep.LeftPlayerId}");
 
             allPlayerData.Remove(lockstep.LeftPlayerId);
 
