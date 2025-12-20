@@ -201,6 +201,12 @@ namespace JanSharp.Internal
         /// <para>(object[] {int optionsByteCount, byte[] optionsBytes, byte[] gsBytes})[]</para>
         /// </summary>
         private object[][] incomingGameStateData = null;
+        /// <summary>
+        /// <para>Hidden API.</para>
+        /// <para>Intended to be used for loading progress kind of UIs.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public bool SuspendedInOnInit => suspendedInOnInit;
 
         /// <summary>
         /// <para><see langword="true"/> on a single client, the asking client.</para>
