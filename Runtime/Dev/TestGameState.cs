@@ -73,7 +73,9 @@ namespace JanSharp
         [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
         public void OnClientBeginCatchUp()
         {
-            Debug.Log($"[LockstepTest] TestGameState  OnClientBeginCatchUp - lockstep.CatchingUpPlayerId: {lockstep.CatchingUpPlayerId}");
+            Debug.Log($"[LockstepTest] TestGameState  OnClientBeginCatchUp - lockstep.CatchingUpPlayerId: {lockstep.CatchingUpPlayerId}, lockstep.IsContinuationFromPrevFrame: {lockstep.IsContinuationFromPrevFrame}");
+            if (!lockstep.IsContinuationFromPrevFrame)
+                lockstep.FlagToContinueNextFrame();
         }
 
         [LockstepEvent(LockstepEventType.OnPreClientJoined)]

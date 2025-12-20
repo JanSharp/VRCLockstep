@@ -126,5 +126,7 @@
   - [x] Same for dependencies _defined_ on abstract game state classes... though maybe that works automatically, if using the `inherited: true` thing that exists in reflection. I think
 - [x] Let OnInit be spread out across frames
   - [x] Add OnInitFinished which cannot be spread out across frames
-- [ ] Let OnClientBeginCatchUp be spread out across frames
+- [x] Let OnClientBeginCatchUp be spread out across frames
+  - [x] Add OnPostClientBeginCatchUp which cannot be spread out across frames
+  - [ ] test this
 - [ ] Let OnImportFinished be spread out across frames

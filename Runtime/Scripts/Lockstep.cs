@@ -178,6 +178,7 @@ namespace JanSharp.Internal
         private DataList suspendedDelayedEventsList = null;
         private ulong[] suspendedUniqueIds = null;
         private bool suspendedInOnInit = false;
+        private bool suspendedInOnClientBeginCatchUp = false;
         private bool suspendedInStandaloneIA = false;
         private bool suspendedInLJSerialization = false;
         private bool suspendedInBetweenGSSerializations = false;
@@ -281,6 +282,7 @@ namespace JanSharp.Internal
         [SerializeField] private UdonSharpBehaviour[] onInitListeners;
         [SerializeField] private UdonSharpBehaviour[] onInitFinishedListeners;
         [SerializeField] private UdonSharpBehaviour[] onClientBeginCatchUpListeners;
+        [SerializeField] private UdonSharpBehaviour[] onPostClientBeginCatchUpListeners;
         [SerializeField] private UdonSharpBehaviour[] onClientJoinedListeners;
         [SerializeField] private UdonSharpBehaviour[] onPreClientJoinedListeners;
         [SerializeField] private UdonSharpBehaviour[] onClientCaughtUpListeners;
@@ -684,6 +686,8 @@ namespace JanSharp.Internal
                     SendLateJoinerData();
                 else if (suspendedInExport)
                     ExportInternal();
+                else if (suspendedInOnClientBeginCatchUp)
+                    DoneProcessingLJGameStates();
                 else if (suspendedInOnInit)
                     BecomeInitialMaster();
                 else
@@ -3120,26 +3124,41 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  DoneProcessingLJGameStates");
 #endif
-            bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
-            ForgetAboutUnprocessedLJSerializedGameSates();
-            CleanUpOldInputActions();
-            if (!currentlyNoMaster)
+            if (flaggedToContinueNextFrame)
+                suspendedInOnClientBeginCatchUp = false;
+            else
             {
-                StopWaitingForCandidates();
-                acceptForcedCandidate = false;
+                bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
+                ForgetAboutUnprocessedLJSerializedGameSates();
+                CleanUpOldInputActions();
+                if (!currentlyNoMaster)
+                {
+                    StopWaitingForCandidates();
+                    acceptForcedCandidate = false;
+                }
+                ignoreLocalInputActions = false;
+                stillAllowLocalClientJoinedIA = false;
+                SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
+                isTickPaused = false; // Must unset in order for flaggedToContinueNextFrame to work.
             }
-            ignoreLocalInputActions = false;
-            stillAllowLocalClientJoinedIA = false;
-            SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
             lockstepIsInitialized = true; // Close before OnClientBeginCatchUp.
             SetDilatedTickStartTime(); // Right before OnClientBeginCatchUp.
             RaiseOnClientBeginCatchUp(localPlayerId);
-            isTickPaused = false;
+            if (flaggedToContinueNextFrame)
+            {
+                suspendedInOnClientBeginCatchUp = true;
+                lockstepIsInitialized = false; // See OnPostClientBeginCatchUp xml annotations for an explanation.
+                return;
+            }
+            RaiseOnPostClientBeginCatchUp(localPlayerId);
             isCatchingUp = true;
             isInitialCatchUp = true;
 
-            if (doCheckMasterChange)
+            if (checkMasterChangeAfterProcessingLJGameStates)
+            {
+                checkMasterChangeAfterProcessingLJGameStates = false;
                 CheckMasterChange();
+            }
         }
 
         private void CheckIfLateJoinerSyncShouldStop()
@@ -3425,10 +3444,10 @@ namespace JanSharp.Internal
             return newListeners;
         }
 
-        private void RaiseOnInit() // Game state safe.
+        private void RaiseSuspendAbleEvent(UdonSharpBehaviour[] listeners, string eventName)
         {
 #if LOCKSTEP_DEBUG
-            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnInit");
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseSuspendAbleEvent");
 #endif
             if (flaggedToContinueNextFrame)
             {
@@ -3438,42 +3457,46 @@ namespace JanSharp.Internal
             }
             suspensionLogicSw.Restart();
 
-            inGameStateSafeEvent = true; // Calling function is not an IA.
-
-            int length = onInitListeners.Length;
+            int length = listeners.Length;
             while (suspendedIndexInArray < length)
             {
                 if (suspensionLogicSw.ElapsedMilliseconds >= MaxMSForTimedSuspensionLogic)
                 {
                     flaggedToContinueNextFrame = true;
                     suspendedDueToRunningLong = true;
-                    inGameStateSafeEvent = false;
                     return;
                 }
-                UdonSharpBehaviour listener = onInitListeners[suspendedIndexInArray];
+                UdonSharpBehaviour listener = listeners[suspendedIndexInArray];
                 if (listener == null)
                 {
                     suspendedDestroyedListenersCount++;
                     suspendedIndexInArray++;
                     continue;
                 }
-                listener.SendCustomEvent(nameof(LockstepEventType.OnInit));
+                listener.SendCustomEvent(eventName);
                 isContinuationFromPrevFrame = false;
                 if (flaggedToContinueNextFrame)
-                {
-                    inGameStateSafeEvent = false;
                     return;
-                }
                 suspendedIndexInArray++;
             }
             suspendedIndexInArray = 0;
+        }
 
+        private void RaiseOnInit() // Game state safe.
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnInit");
+#endif
+            inGameStateSafeEvent = true; // Calling function is not an IA.
+            RaiseSuspendAbleEvent(onInitListeners, nameof(LockstepEventType.OnInit));
+            inGameStateSafeEvent = false;
+            if (flaggedToContinueNextFrame)
+                return;
             if (suspendedDestroyedListenersCount != 0)
             {
                 onInitListeners = CleanUpRemovedListeners(onInitListeners, suspendedDestroyedListenersCount, nameof(LockstepEventType.OnInit));
                 suspendedDestroyedListenersCount = 0;
             }
-            inGameStateSafeEvent = false;
         }
 
         private void RaiseOnInitFinished() // Game state safe.
@@ -3499,14 +3522,31 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnClientBeginCatchUp");
 #endif
             this.catchingUpPlayerId = catchingUpPlayerId;
+            RaiseSuspendAbleEvent(onClientBeginCatchUpListeners, nameof(LockstepEventType.OnClientBeginCatchUp));
+            this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
+            if (flaggedToContinueNextFrame)
+                return;
+            if (suspendedDestroyedListenersCount != 0)
+            {
+                onClientBeginCatchUpListeners = CleanUpRemovedListeners(onClientBeginCatchUpListeners, suspendedDestroyedListenersCount, nameof(LockstepEventType.OnClientBeginCatchUp));
+                suspendedDestroyedListenersCount = 0;
+            }
+        }
+
+        private void RaiseOnPostClientBeginCatchUp(uint catchingUpPlayerId) // Not game state safe.
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnPostClientBeginCatchUp");
+#endif
+            this.catchingUpPlayerId = catchingUpPlayerId;
             int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onClientBeginCatchUpListeners)
+            foreach (UdonSharpBehaviour listener in onPostClientBeginCatchUpListeners)
                 if (listener == null)
                     destroyedCount++;
                 else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnClientBeginCatchUp));
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnPostClientBeginCatchUp));
             if (destroyedCount != 0)
-                onClientBeginCatchUpListeners = CleanUpRemovedListeners(onClientBeginCatchUpListeners, destroyedCount, nameof(LockstepEventType.OnClientBeginCatchUp));
+                onPostClientBeginCatchUpListeners = CleanUpRemovedListeners(onPostClientBeginCatchUpListeners, destroyedCount, nameof(LockstepEventType.OnPostClientBeginCatchUp));
             this.catchingUpPlayerId = 0u; // To prevent misuse of the API which would cause desyncs.
         }
 

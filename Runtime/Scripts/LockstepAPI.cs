@@ -551,7 +551,8 @@ namespace JanSharp
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
         /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
-        /// there is an exception. It is usable inside of <see cref="LockstepEventType.OnInit"/>.</para>
+        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/> and
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/>.</para>
         /// </summary>
         public abstract void FlagToContinueNextFrame();
         /// <summary>
@@ -565,7 +566,8 @@ namespace JanSharp
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
         /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
-        /// there is an exception. It is usable inside of <see cref="LockstepEventType.OnInit"/>.</para>
+        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/> and
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/>.</para>
         /// <para>Game state safe, however mind that
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> in
         /// particular is not a game state safe event.</para>
@@ -580,7 +582,8 @@ namespace JanSharp
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> and
         /// inside of game state safe events which have serialized data to deserialize. So notably
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
-        /// there is an exception. It is usable inside of <see cref="LockstepEventType.OnInit"/>.</para>
+        /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/> and
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool IsContinuationFromPrevFrame { get; }

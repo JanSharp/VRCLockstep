@@ -63,6 +63,8 @@ namespace JanSharp
         /// <para>Since the <see cref="VRC.SDKBase.VRCPlayerApi"/> is not part of the game state, if it is
         /// desired to input <see cref="VRC.SDKBase.VRCPlayerApi"/> data into the game state, sending input
         /// actions from within this event may make sense.</para>
+        /// <para>Unlike most events, <see cref="LockstepAPI.FlagToContinueNextFrame"/> can be used within
+        /// <see cref="OnClientBeginCatchUp"/>.</para>
         /// <para>The state of the local client in and after this event is
         /// <see cref="ClientState.WaitingForLateJoinerSync"/>. <see cref="LockstepAPI.IsCatchingUp"/> is
         /// <see langword="true"/> however. It may seem odd that the client state is not
@@ -71,6 +73,18 @@ namespace JanSharp
         /// <para><b>Not game state safe</b> - only raised on one client, the one beginning catch up.</para>
         /// </summary>
         OnClientBeginCatchUp,
+        /// <summary>
+        /// <para>Gets raised immediately after <see cref="OnClientBeginCatchUp"/>, see there fore more
+        /// details.</para>
+        /// <para>The difference between <see cref="OnClientBeginCatchUp"/> and
+        /// <see cref="OnPostClientBeginCatchUp"/> is effectively equivalent to the difference between
+        /// <see cref="OnInit"/> and <see cref="OnInitFinished"/>. Therefore see <see cref="OnInitFinished"/>
+        /// for relevant documentation, all of its xml annotations apply here too just with the event names
+        /// interchanged. All of them, technically even the very first one with the event name
+        /// interchanged.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        OnPostClientBeginCatchUp,
         /// <summary>
         /// <para>Use <see cref="LockstepAPI.JoinedPlayerId"/> to get the id of the joined client.</para>
         /// <para>The <see cref="VRC.SDKBase.VRCPlayerApi"/> for the joining player may not even exist anymore
