@@ -1670,10 +1670,11 @@ namespace JanSharp.Internal
                 currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
                 lastRunnableTick = uint.MaxValue;
                 EnterSingePlayerMode();
+                lockstepIsInitialized = true; // Must be set before StartOrStopAutosave.
                 StartOrStopAutosave();
                 isTickPaused = false; // Must unset in order for flaggedToContinueNextFrame to work.
             }
-            lockstepIsInitialized = true;
+            lockstepIsInitialized = true; // This looks duplicated, but that is intended. See below.
             RaiseOnInit();
             if (flaggedToContinueNextFrame)
             {
