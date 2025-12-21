@@ -81,8 +81,31 @@ namespace JanSharp
         /// since this is specifically not meant to be modified by the user, there's just the public
         /// getter.</para>
         /// </summary>
+        private bool isPartOfCurrentImport = false;
+        /// <inheritdoc cref="isPartOfCurrentImport"/>
+        private uint currentImportedDataVersion = 0u;
+        /// <summary>
+        /// <para><see langword="true"/> if this game state is in the
+        /// <see cref="LockstepAPI.GameStatesBeingImported"/>, which is only going to be the case when
+        /// <see cref="LockstepAPI.IsImporting"/> is <see langword="true"/>, or inside of
+        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <para>Otherwise <see langword="false"/>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public bool IsPartOfCurrentImport => isPartOfCurrentImport;
+        /// <summary>
+        /// <para>The version of the data that is being or has been imported for this game state, which is
+        /// what <see cref="GameStateDataVersion"/> was at the time of the export.</para>
+        /// <para>Only relevant when <see cref="LockstepAPI.IsImporting"/> is <see langword="true"/>, or
+        /// inside of <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <para>Otherwise <c>0u</c>.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public uint CurrentImportedDataVersion => currentImportedDataVersion;
+
+        /// <inheritdoc cref="isPartOfCurrentImport"/>
         private LockstepGameStateOptionsData optionsForCurrentExport;
-        /// <inheritdoc cref="optionsForCurrentExport"/>
+        /// <inheritdoc cref="isPartOfCurrentImport"/>
         private LockstepGameStateOptionsData optionsForCurrentImport;
         /// <summary>
         /// <para>The instance of export options used for the current
@@ -94,7 +117,7 @@ namespace JanSharp
         /// <para>Always <see langword="null"/> if <see cref="ExportUI"/> is <see langword="null"/>.</para>
         /// <para>Usable while <see cref="LockstepAPI.IsSerializingForExport"/> is
         /// <see langword="true"/>.</para>
-        /// <para>Game stat safe.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         public LockstepGameStateOptionsData OptionsForCurrentExport => optionsForCurrentExport;
         /// <summary>
@@ -107,7 +130,7 @@ namespace JanSharp
         /// <para>Always <see langword="null"/> if <see cref="ImportUI"/> is <see langword="null"/>.</para>
         /// <para>Usable while <see cref="LockstepAPI.IsDeserializingForImport"/> is
         /// <see langword="true"/>.</para>
-        /// <para>Game stat safe.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         public LockstepGameStateOptionsData OptionsForCurrentImport => optionsForCurrentImport;
 

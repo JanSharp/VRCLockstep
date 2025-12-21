@@ -1168,7 +1168,9 @@ namespace JanSharp
         /// <summary>
         /// <para>The version of the data that has just been imported, which is what
         /// <see cref="LockstepGameState.GameStateDataVersion"/> was for the <see cref="ImportedGameState"/>
-        /// at at the time of the export.</para>
+        /// at the time of the export.</para>
+        /// <para>Can also read <see cref="LockstepGameState.CurrentImportedDataVersion"/> to obtain the same
+        /// value.</para>
         /// <para>Usable inside of <see cref="LockstepEventType.OnImportedGameState"/> and
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>
         /// even though that gets this value through the parameter anyway, but why not.</para>
@@ -1180,6 +1182,8 @@ namespace JanSharp
         /// <para>The game states which are part of the current import.</para>
         /// <para><see cref="GameStatesBeingImportedFinishedCount"/> indicates how many of the game states in
         /// this list have finished importing. They get imported in the order they are in this array.</para>
+        /// <para>For every game state in this array <see cref="LockstepGameState.IsPartOfCurrentImport"/> is
+        /// <see langword="true"/>, for every other game state it is <see langword="false"/>.</para>
         /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>
@@ -1189,6 +1193,8 @@ namespace JanSharp
         /// <para>This returns a new copy of the array every time it is accessed.</para>
         /// <para>The data versions of the game states which are part of the current import.</para>
         /// <para>Matches the order of the <see cref="GameStatesBeingImported"/> array.</para>
+        /// <para>Can also read <see cref="LockstepGameState.CurrentImportedDataVersion"/> on each of the
+        /// <see cref="GameStatesBeingImported"/> to obtain the same values.</para>
         /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>
@@ -1224,6 +1230,8 @@ namespace JanSharp
         public abstract LockstepGameState GetGameStateBeingImported(int index);
         /// <summary>
         /// <para>Get a single data version from <see cref="GameStatesBeingImportedDataVersions"/>.</para>
+        /// <para>Can also read <see cref="LockstepGameState.CurrentImportedDataVersion"/> to obtain the same
+        /// value.</para>
         /// <para>Usable if <see cref="IsImporting"/> is <see langword="true"/>, or inside of
         /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
         /// <para>Game state safe.</para>

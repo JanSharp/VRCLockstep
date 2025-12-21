@@ -5190,11 +5190,15 @@ namespace JanSharp.Internal
             gameStatesBeingImportedDataVersions = null;
             gameStatesBeingImportedFinishedCount = 0;
             foreach (LockstepGameState gameState in gameStatesSupportingImportExport)
+            {
+                gameState.SetProgramVariable("isPartOfCurrentImport", false);
+                gameState.SetProgramVariable("currentImportedDataVersion", 0u);
                 if (gameState.OptionsForCurrentImport != null)
                 {
                     gameState.OptionsForCurrentImport.DecrementRefsCount();
                     gameState.SetProgramVariable("optionsForCurrentImport", null);
                 }
+            }
         }
         private uint importingPlayerId;
         private System.DateTime importingFromDate;
@@ -5299,8 +5303,12 @@ namespace JanSharp.Internal
             gameStatesBeingImportedFinishedCount = 0; // Should already be zero, but do it anyway for clarity.
             for (int i = 0; i < importedGSsCount; i++)
             {
-                gameStatesBeingImported[i] = allGameStates[(int)ReadSmallUInt()];
-                gameStatesBeingImportedDataVersions[i] = ReadSmallUInt();
+                LockstepGameState gameState = allGameStates[(int)ReadSmallUInt()];
+                uint dataVersion = ReadSmallUInt();
+                gameState.SetProgramVariable("isPartOfCurrentImport", true);
+                gameState.SetProgramVariable("currentImportedDataVersion", dataVersion);
+                gameStatesBeingImported[i] = gameState;
+                gameStatesBeingImportedDataVersions[i] = dataVersion;
             }
             SetIsImportingToTrue(); // Raises an event, do it last so all the fields are populated.
 
