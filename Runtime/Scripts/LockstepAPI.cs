@@ -349,7 +349,10 @@ namespace JanSharp
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> have been raised. Gets set to
         /// <see langword="true"/> right before those events.</para>
         /// <para>For more intricate details about the lifetime and meaning of this value, see
-        /// <see cref="LockstepEventType.OnInitFinished"/>.</para>
+        /// <see cref="LockstepEventType.OnInitFinished"/>. Most importantly receiving
+        /// <see cref="LockstepEventType.OnInit"/> does not guarantee that <see cref="IsInitialized"/> is
+        /// going to be <see langword="true"/> from that point forward. That guarantee only exists after
+        /// having received <see cref="LockstepEventType.OnInitFinished"/>.</para>
         /// <para>Many things only work once either of those two events have been raised, things like
         /// <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/> and its
         /// overload, <see cref="SendEventDelayedTicks(uint, uint)"/>, export and import
