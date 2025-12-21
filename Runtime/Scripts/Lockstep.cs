@@ -191,6 +191,7 @@ namespace JanSharp.Internal
         private byte[] suspendedWriteStream = null;
         private int suspendedWriteStreamSize = 0;
         private int suspendedDestroyedListenersCount = 0;
+        private int suspendedIndexInEventListeners = 0;
         /// <summary>
         /// <para>Must always be reset to 0 once done using it.</para>
         /// </summary>
@@ -1655,7 +1656,11 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  BecomeInitialMaster");
 #endif
             if (flaggedToContinueNextFrame)
+            {
+                flaggedToContinueNextFrame = false;
+                isContinuationFromPrevFrame = true;
                 suspendedInOnInit = false;
+            }
             else
             {
                 isMaster = true;
@@ -3135,7 +3140,11 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] Lockstep  DoneProcessingLJGameStates");
 #endif
             if (flaggedToContinueNextFrame)
+            {
+                flaggedToContinueNextFrame = false;
+                isContinuationFromPrevFrame = true;
                 suspendedInOnClientBeginCatchUp = false;
+            }
             else
             {
                 bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
@@ -3462,18 +3471,17 @@ namespace JanSharp.Internal
         private void RaiseSuspendAbleEvent(UdonSharpBehaviour[] listeners, string eventName)
         {
 #if LOCKSTEP_DEBUG
-            Debug.Log($"[LockstepDebug] Lockstep  RaiseSuspendAbleEvent");
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseSuspendAbleEvent - flaggedToContinueNextFrame: {flaggedToContinueNextFrame}, isContinuationFromPrevFrame: {isContinuationFromPrevFrame}, suspendedDueToRunningLong: {suspendedDueToRunningLong}");
 #endif
-            if (flaggedToContinueNextFrame)
+            if (isContinuationFromPrevFrame)
             {
-                flaggedToContinueNextFrame = false;
                 isContinuationFromPrevFrame = !suspendedDueToRunningLong;
                 suspendedDueToRunningLong = false;
             }
             suspensionLogicSw.Restart();
 
             int length = listeners.Length;
-            while (suspendedIndexInArray < length)
+            while (suspendedIndexInEventListeners < length)
             {
                 if (suspensionLogicSw.ElapsedMilliseconds >= MaxMSForTimedSuspensionLogic)
                 {
@@ -3481,20 +3489,20 @@ namespace JanSharp.Internal
                     suspendedDueToRunningLong = true;
                     return;
                 }
-                UdonSharpBehaviour listener = listeners[suspendedIndexInArray];
+                UdonSharpBehaviour listener = listeners[suspendedIndexInEventListeners];
                 if (listener == null)
                 {
                     suspendedDestroyedListenersCount++;
-                    suspendedIndexInArray++;
+                    suspendedIndexInEventListeners++;
                     continue;
                 }
                 listener.SendCustomEvent(eventName);
                 isContinuationFromPrevFrame = false;
                 if (flaggedToContinueNextFrame)
                     return;
-                suspendedIndexInArray++;
+                suspendedIndexInEventListeners++;
             }
-            suspendedIndexInArray = 0;
+            suspendedIndexInEventListeners = 0;
         }
 
         private void RaiseOnInit() // Game state safe.

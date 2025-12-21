@@ -106,6 +106,7 @@ namespace JanSharp.Internal
             "suspendedLeftPlayerId",
             "suspendedExportGSSizePosition",
             "suspendedDestroyedListenersCount",
+            "suspendedIndexInEventListeners",
             "suspendedIndexInArray",
             "suspendedGSIndexInGSSerialization",
             "currentIncomingGSDataIndex",
