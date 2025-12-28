@@ -48,8 +48,7 @@ namespace JanSharp
         public abstract string WorldName { get; }
         /// <summary>
         /// <para>The first tick is <c>1u</c>, not <c>0u</c>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepIsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint CurrentTick { get; }
@@ -66,8 +65,7 @@ namespace JanSharp
         /// catching up period.</para>
         /// <para>Usable inside of
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/>,
-        /// and then usable again once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// and then usable again <see cref="LockstepIsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Not game state safe.</para>
         /// </summary>
         /// <param name="tick">Even though <c>0u</c> is an invalid tick - Lockstep starts at tick <c>1u</c> -
@@ -259,8 +257,7 @@ namespace JanSharp
         /// <para><see cref="IsMaster"/> may be <see langword="true"/> even before
         /// <see cref="MasterPlayerId"/> is equal to the local player id.</para>
         /// <para><see cref="VRCPlayerApi"/> is not guaranteed to be valid for the given player id.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepIsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract uint MasterPlayerId { get; }
@@ -345,18 +342,38 @@ namespace JanSharp
         /// </summary>
         public abstract float RealtimeSinceSending { get; }
         /// <summary>
-        /// <para>Enables checking if <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> have been raised. Gets set to
-        /// <see langword="true"/> right before those events.</para>
-        /// <para>For more intricate details about the lifetime and meaning of this value, see
-        /// <see cref="LockstepEventType.OnInitFinished"/>. Most importantly receiving
-        /// <see cref="LockstepEventType.OnInit"/> does not guarantee that <see cref="IsInitialized"/> is
-        /// going to be <see langword="true"/> from that point forward. That guarantee only exists after
-        /// having received <see cref="LockstepEventType.OnInitFinished"/>.</para>
-        /// <para>Many things only work once either of those two events have been raised, things like
-        /// <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/> and its
-        /// overload, <see cref="SendEventDelayedTicks(uint, uint)"/>, export and import
-        /// <see cref="LockstepGameStateOptionsData"/> related apis,
+        /// <para><see cref="LockstepIsInitialized"/> being <see langword="true"/> indicates that lockstep
+        /// itself is initialized.</para>
+        /// <para>Gets set to <see langword="true"/> right before <see cref="LockstepEventType.OnInit"/> or
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> gets raised.</para>
+        /// <para>Since <see cref="LockstepEventType.OnInit"/> and
+        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> are both exceptional events in that they can
+        /// be spread out across multiple frames (see <see cref="FlagToContinueNextFrame"/>),
+        /// <see cref="LockstepIsInitialized"/> being <see langword="true"/> does not actually guarantee that
+        /// every system has ran their event listeners for these events by the end of the frame of receiving
+        /// these events. For cases where checking for that would be necessary see
+        /// <see cref="IsInitialized"/>.</para>
+        /// <para>Once <see cref="LockstepIsInitialized"/> is <see langword="true"/> sending input actions is
+        /// possible through <see cref="SendInputAction(uint)"/>, <see cref="SendSingletonInputAction(uint)"/>
+        /// and its overload, and <see cref="SendEventDelayedTicks(uint, uint)"/> is allowed.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
+        /// </summary>
+        public abstract bool LockstepIsInitialized { get; }
+        /// <summary>
+        /// <para><see cref="IsInitialized"/> is almost like an extension upon
+        /// <see cref="LockstepIsInitialized"/>. It gets set to <see langword="true"/> after
+        /// <see cref="LockstepEventType.OnInit"/> or <see cref="LockstepEventType.OnClientBeginCatchUp"/> has
+        /// been raised and right before <see cref="LockstepEventType.OnInitFinished"/> or
+        /// <see cref="LockstepEventType.OnPostClientBeginCatchUp"/> gets raised.</para>
+        /// <para>Every system which finishes initialization without using the latter 2 mentioned events is
+        /// thus guaranteed to have finished initialization once <see cref="IsInitialized"/> is
+        /// <see langword="true"/>. With that in mind it is advised to perform as much initialization as
+        /// possible in the former 2 events, since said events also allow being spread out across frames,
+        /// allowing systems to reduce the lag spike of initialization if a lot of work needs to be
+        /// done.</para>
+        /// <para>With <see cref="IsInitialized"/> being <see langword="true"/> more of the lockstep api can
+        /// be used, such as export and import <see cref="LockstepGameStateOptionsData"/> related apis,
         /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> and
         /// <see cref="StartImport(object[][], System.DateTime, string, string)"/>, etc, ect.</para>
         /// <para>Usable any time.</para>
@@ -399,8 +416,8 @@ namespace JanSharp
         /// </summary>
         /// <param name="inputActionId">The id associated with a method with the
         /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
-        /// <returns>The unique id of the input action that got sent. If <see cref="IsInitialized"/> is
-        /// <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
+        /// <returns>The unique id of the input action that got sent. If <see cref="LockstepIsInitialized"/>
+        /// is <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
         /// returned. Inside of the input action <see cref="SendingUniqueId"/> can then be used in order to
         /// match it up with some part of the latency state, for example.</returns>
         public abstract ulong SendInputAction(uint inputActionId);
@@ -422,8 +439,8 @@ namespace JanSharp
         /// </summary>
         /// <param name="inputActionId">The id associated with a method with the
         /// <see cref="LockstepInputActionAttribute"/> to be sent.</param>
-        /// <returns>The unique id of the input action that got sent. If <see cref="IsInitialized"/> is
-        /// <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
+        /// <returns>The unique id of the input action that got sent. If <see cref="LockstepIsInitialized"/>
+        /// is <see langword="false"/> then 0uL - an invalid id - indicating that it did not get sent will be
         /// returned. The unique id is only returned on the initial responsible client, on all other clients
         /// it is going to be 0uL. Inside of the input action <see cref="SendingUniqueId"/> can then be used
         /// in order to match it up with some part of the latency state, for example.</returns>
@@ -483,7 +500,7 @@ namespace JanSharp
         /// is invalid.</para>
         /// </param>
         /// <returns>Returns <see langword="true"/> if the input action was sent successfully. It will only be
-        /// sent if <see cref="IsInitialized"/> is <see langword="true"/>, if the
+        /// sent if <see cref="LockstepIsInitialized"/> is <see langword="true"/>, if the
         /// <paramref name="newMasterClientId"/> is different than the <see cref="MasterPlayerId"/>, if the
         /// <see cref="ClientState"/> of the <paramref name="newMasterClientId"/> is
         /// <see cref="ClientState.Normal"/> and if
@@ -517,7 +534,7 @@ namespace JanSharp
         /// cases where it is easier to manage serialization and deserialization manually.</para>
         /// <para>Usable inside of game state safe events.</para>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A game state safe instance of a random number generator.</returns>
         public abstract RNG NewRNG();
         /// <summary>
         /// <para>Crates a new <see cref="SerializableRNG"/> instance and calls
@@ -532,7 +549,7 @@ namespace JanSharp
         /// states which require deterministic randomness.</para>
         /// <para>Usable inside of game state safe events.</para>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A game state safe instance of a random number generator.</returns>
         public abstract SerializableRNG NewSerializableRNG();
 
         /// <summary>
@@ -556,7 +573,7 @@ namespace JanSharp
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
         /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/>,
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
-        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <see cref="LockstepEventType.OnImportFinishingUp"/>.</para>
         /// </summary>
         public abstract void FlagToContinueNextFrame();
         /// <summary>
@@ -572,7 +589,7 @@ namespace JanSharp
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
         /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/>,
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
-        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <see cref="LockstepEventType.OnImportFinishingUp"/>.</para>
         /// <para>Game state safe, however mind that
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> in
         /// particular is not a game state safe event.</para>
@@ -589,7 +606,7 @@ namespace JanSharp
         /// <see cref="LockstepEventType"/> and <see cref="LockstepOnNthTickAttribute"/> are excluded, however
         /// there are exceptions. It is usable inside of <see cref="LockstepEventType.OnInit"/>,
         /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> and
-        /// <see cref="LockstepEventType.OnImportFinished"/>.</para>
+        /// <see cref="LockstepEventType.OnImportFinishingUp"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool IsContinuationFromPrevFrame { get; }
@@ -597,8 +614,7 @@ namespace JanSharp
         /// <summary>
         /// <para>Creates a new array and uses <see cref="LockstepGameStateOptionsData.Clone"/> to populate
         /// it.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="allOptions">Must not be <see langword="null"/>.</param>
         /// <returns></returns>
@@ -610,8 +626,7 @@ namespace JanSharp
         /// leak since those are <see cref="WannaBeClass"/>es.</para>
         /// <para>Calls <see cref="WannaBeClass.DecrementRefsCount"/> on each given non <see langword="null"/>
         /// options instance.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="allExportOptions"></param>
         public abstract void CleanupAllExportOptions(LockstepGameStateOptionsData[] allExportOptions);
@@ -620,8 +635,7 @@ namespace JanSharp
         /// without leaving <see cref="LockstepGameStateOptionsData"/> behind, which would cause a  memory
         /// leak since those are <see cref="WannaBeClass"/>es.</para>
         /// <para>Calls <see cref="WannaBeClass.DecrementRefsCount"/> on each given options instance.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="allImportOptions">Keys: <see cref="string"/>
         /// <see cref="LockstepGameState.GameStateInternalName"/>,<br/>
@@ -633,8 +647,7 @@ namespace JanSharp
         /// memory leak since those are <see cref="WannaBeClass"/>es.</para>
         /// <para>Calls <see cref="WannaBeClass.DecrementRefsCount"/> on each given non <see langword="null"/>
         /// <see cref="LockstepImportedGS.GetImportOptions(object[])"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
@@ -646,8 +659,7 @@ namespace JanSharp
         /// each game state which has a <see langword="null"/>
         /// <see cref="LockstepGameState.ExportUI"/>.</para>
         /// <para>Uses <see cref="LockstepGameStateOptionsUI.NewOptions"/> to create options instances.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <returns></returns>
         public abstract LockstepGameStateOptionsData[] GetNewExportOptions();
@@ -656,16 +668,14 @@ namespace JanSharp
         /// for each <see langword="null"/> entry where the associated game state in
         /// <see cref="GameStatesSupportingImportExport"/> has a non <see langword="null"/>
         /// <see cref="LockstepGameState.ExportUI"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="allExportOptions"></param>
         /// <returns>The amount of new options instances it had to create.</returns>
         public abstract int FillInMissingExportOptionsWithDefaults(
             LockstepGameStateOptionsData[] allExportOptions);
         /// <summary>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <returns><see langword="true"/> if <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> is
         /// <see langword="true"/> for any non <see langword="null"/> <see cref="LockstepGameState.ExportUI"/>
@@ -676,8 +686,7 @@ namespace JanSharp
         /// <see langword="null"/> <see cref="LockstepGameState.ExportUI"/> where
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> is <see langword="true"/> in all
         /// <see cref="GameStatesSupportingImportExport"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         public abstract void UpdateAllCurrentExportOptionsFromWidgets();
         /// <summary>
@@ -690,8 +699,7 @@ namespace JanSharp
         /// then fetches the <see cref="LockstepGameStateOptionsUI.CurrentOptions"/> to populate the
         /// array. Ignores <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/>, unlike
         /// <see cref="UpdateAllCurrentExportOptionsFromWidgets"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="weakReferences">When <see langword="false"/>,
         /// <see cref="WannaBeClass.IncrementRefsCount"/> is called on each returned non
@@ -706,8 +714,7 @@ namespace JanSharp
         /// <paramref name="allExportOptions"/> this is no concern. Having non <see langword="null"/>
         /// <see cref="LockstepGameStateOptionsData"/> with an associated <see langword="null"/>
         /// <see cref="LockstepGameState.ExportUI"/> does not make sense.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="allExportOptions">Must not be <see langword="null"/>.</param>
         public abstract void ValidateExportOptions(LockstepGameStateOptionsData[] allExportOptions);
@@ -719,8 +726,7 @@ namespace JanSharp
         /// <paramref name="allExportOptions"/> using the matching (and also non <see langword="null"/>)
         /// <see cref="LockstepGameState.ExportUI"/> from
         /// <see cref="GameStatesSupportingImportExport"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="ui">The ui instance which gets passed along to
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
@@ -733,8 +739,7 @@ namespace JanSharp
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> non <see langword="null"/>
         /// <see cref="LockstepGameState.ExportUI"/> in <see cref="GameStatesSupportingImportExport"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         public abstract void HideExportOptionsEditor();
         /// <summary>
@@ -742,8 +747,7 @@ namespace JanSharp
         /// <see cref="GameStatesSupportingImportExport"/>. For <see langword="null"/>
         /// <see cref="LockstepGameState.ImportUI"/> no key value pair is added to the dictionary.</para>
         /// <para>Uses <see cref="LockstepGameStateOptionsUI.NewOptions"/> to create options instances.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <returns>Keys: <see cref="string"/> <see cref="LockstepGameState.GameStateInternalName"/>,<br/>
         /// Values: <see cref="LockstepGameStateOptionsData"/> <c>importOptions</c>.</returns>
@@ -754,8 +758,7 @@ namespace JanSharp
         /// <see cref="GameStatesSupportingImportExport"/> where <paramref name="allImportOptions"/> does not
         /// contain a <see cref="LockstepGameStateOptionsData"/> for the given
         /// <see cref="LockstepGameState.GameStateInternalName"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="allImportOptions">Keys: <see cref="string"/>
         /// <see cref="LockstepGameState.GameStateInternalName"/>,<br/>
@@ -769,8 +772,7 @@ namespace JanSharp
         /// <see cref="LockstepImportedGS.GetImportOptions(object[])"/> is <see langword="null"/> where the
         /// associated game state in <see cref="GameStatesSupportingImportExport"/> has a non
         /// <see langword="null"/> <see cref="LockstepGameState.ImportUI"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
@@ -778,8 +780,7 @@ namespace JanSharp
         /// <returns>The amount of new options instances it had to create.</returns>
         public abstract int FillInMissingImportOptionsWithDefaults(object[][] importedGameStates);
         /// <summary>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <returns><see langword="true"/> if <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> is
         /// <see langword="true"/> for any non <see langword="null"/> <see cref="LockstepGameState.ImportUI"/>
@@ -790,8 +791,7 @@ namespace JanSharp
         /// <see langword="null"/> <see cref="LockstepGameState.ImportUI"/> where
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> is <see langword="true"/> in all
         /// <see cref="GameStatesSupportingImportExport"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         public abstract void UpdateAllCurrentImportOptionsFromWidgets();
         /// <summary>
@@ -803,8 +803,7 @@ namespace JanSharp
         /// then fetches the <see cref="LockstepGameStateOptionsUI.CurrentOptions"/> to populate the
         /// dictionary. Ignores <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/>, unlike
         /// <see cref="UpdateAllCurrentImportOptionsFromWidgets"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="weakReferences">When <see langword="false"/>,
         /// <see cref="WannaBeClass.IncrementRefsCount"/> is called on each returned
@@ -831,8 +830,7 @@ namespace JanSharp
         /// <see cref="CleanupImportedGameStatesData(object[][])"/> which should very most likely be used in
         /// most cases before letting <paramref name="allImportOptions"/> or
         /// <paramref name="importedGameStates"/> go out of scope.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
@@ -851,8 +849,7 @@ namespace JanSharp
         /// <paramref name="allImportOptions"/> this is no concern. Having non <see langword="null"/>
         /// <see cref="LockstepGameStateOptionsData"/> with an associated <see langword="null"/>
         /// <see cref="LockstepGameState.ImportUI"/> does not make sense.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="allImportOptions">Keys: <see cref="string"/>
         /// <see cref="LockstepGameState.GameStateInternalName"/>,<br/>
@@ -873,8 +870,7 @@ namespace JanSharp
         /// LockstepGameStateOptionsData, uint)"/>, which is required by the specification of the
         /// <c>ShowOptionsEditor</c> api in order to allow import options to read data from the associated
         /// serialized game state to populate dynamic options depending on the data to be imported.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="ui">The ui instance which gets passed along to
         /// <see cref="LockstepGameStateOptionsUI.ShowOptionsEditor(LockstepOptionsEditorUI,
@@ -889,8 +885,7 @@ namespace JanSharp
         /// <para><see cref="LockstepGameStateOptionsUI.HideOptionsEditor"/> all
         /// <see cref="LockstepGameStateOptionsUI.CurrentlyShown"/> non <see langword="null"/>
         /// <see cref="LockstepGameState.ImportUI"/> in <see cref="GameStatesSupportingImportExport"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         public abstract void HideImportOptionsEditor();
         /// <summary>
@@ -914,9 +909,8 @@ namespace JanSharp
         /// <see cref="GameStatesSupportingImportExport"/> gets set to the associated
         /// <see cref="LockstepGameStateOptionsData"/> from <paramref name="allExportOptions"/>. For further
         /// information about export options read <paramref name="allExportOptions"/> annotations.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised. <see cref="IsExporting"/> must be
-        /// <see langword="false"/> at the time of calling (if <see cref="IsExporting"/> is
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>. <see cref="IsExporting"/>
+        /// must be <see langword="false"/> at the time of calling (if <see cref="IsExporting"/> is
         /// <see langword="true"/> an error is logged and <see langword="false"/> is returned, should be
         /// treated like an exception).</para>
         /// </summary>
@@ -1061,8 +1055,7 @@ namespace JanSharp
         /// to write to the internal write stream such as when sending input actions, all data written to the
         /// write stream so far will get cleared when calling
         /// <see cref="StartImport(object[][], System.DateTime, string, string)"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="importedGameStates">An array containing <see cref="LockstepImportedGS"/> objects
         /// obtained from
@@ -1092,7 +1085,10 @@ namespace JanSharp
         /// import.</para>
         /// <para>Set to <see langword="true"/> right before <see cref="LockstepEventType.OnImportStart"/>
         /// and set to <see langword="false"/> right before <see cref="LockstepEventType.OnImportFinished"/>.
-        /// </para>
+        /// Note the existence of <see cref="LockstepEventType.OnImportFinishingUp"/> which is commonly useful
+        /// as the event to finish up importing rather than <see cref="LockstepEventType.OnImportFinished"/>,
+        /// since <see cref="LockstepEventType.OnImportFinishingUp"/> is allowed to be spread out across
+        /// frames, enabling prevention of lag spikes.</para>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -1108,8 +1104,6 @@ namespace JanSharp
         /// is <see langword="true"/>.</para>
         /// <para>Once game state deserialization for imports actually starts no other input actions will run
         /// until <see cref="LockstepEventType.OnImportFinished"/> gets raised.</para>
-        /// <para>For more intricate details about the lifetime and meaning of this value, see
-        /// <see cref="LockstepEventType.OnPostImportFinished"/>.</para>
         /// <para>Usable any time.</para>
         /// <para>Game state safe.</para>
         /// </summary>
@@ -1269,8 +1263,7 @@ namespace JanSharp
         /// prevent recursion, subsequently if there are multiple changes within a frame the event only gets
         /// raised once (you can thank Udon).</para>
         /// <para>Default: <see langword="null"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Not game state safe, all APIs related to autosaving are local only.</para>
         /// </summary>
         public abstract LockstepGameStateOptionsData[] ExportOptionsForAutosave { get; set; }

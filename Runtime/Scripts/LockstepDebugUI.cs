@@ -34,6 +34,7 @@ namespace JanSharp.Internal
             "currentlyNoMaster",
             "checkMasterChangeAfterProcessingLJGameStates",
             "lockstepIsInitialized",
+            "areAllGSInitialized",
             "isExporting",
             "isImporting",
             "isAskingForMasterCandidates",

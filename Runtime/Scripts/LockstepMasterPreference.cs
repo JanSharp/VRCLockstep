@@ -225,8 +225,7 @@ namespace JanSharp
 
         /// <summary>
         /// <para>Gets the preference for the given <paramref name="playerId"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         /// <param name="playerId">Must be an id of a client that actually exists, see
@@ -236,8 +235,7 @@ namespace JanSharp
         /// <summary>
         /// <para>Gets the highest preference out of all clients that are in the world. Offline players
         /// excluded, even though their preferences are saved.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         /// <returns></returns>
@@ -245,8 +243,7 @@ namespace JanSharp
         /// <summary>
         /// <para>Gets the lowest preference out of all clients that are in the world. Offline players
         /// excluded, even though their preferences are saved.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Game state safe.</para>
         /// </summary>
         /// <returns></returns>
@@ -255,8 +252,7 @@ namespace JanSharp
         /// <summary>
         /// <para>Gets the latency hidden preference for the given <paramref name="playerId"/>.</para>
         /// <para>See <c>latency-states.md</c> in the documentation folder.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Non game state safe.</para>
         /// </summary>
         /// <param name="playerId">Must be an id of a client that actually exists, see
@@ -267,8 +263,7 @@ namespace JanSharp
         /// <para>Gets the highest latency hidden preference out of all clients that are in the world. Offline
         /// players excluded, even though their preferences are saved.</para>
         /// <para>See <c>latency-states.md</c> in the documentation folder.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Non game state safe.</para>
         /// </summary>
         /// <returns></returns>
@@ -277,8 +272,7 @@ namespace JanSharp
         /// <para>Gets the lowest latency hidden preference out of all clients that are in the world. Offline
         /// players excluded, even though their preferences are saved.</para>
         /// <para>See <c>latency-states.md</c> in the documentation folder.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Non game state safe.</para>
         /// </summary>
         /// <returns></returns>

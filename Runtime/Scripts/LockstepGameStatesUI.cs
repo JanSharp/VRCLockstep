@@ -545,11 +545,11 @@ namespace JanSharp.Internal
             OnImportSerializedTextValueChanged();
         }
 
-        [LockstepEvent(LockstepEventType.OnInit)]
-        public void OnInit() => OnInitialized();
+        [LockstepEvent(LockstepEventType.OnInitFinished)]
+        public void OnInitFinished() => OnInitialized();
 
-        [LockstepEvent(LockstepEventType.OnClientBeginCatchUp)]
-        public void OnClientBeginCatchUp() => OnInitialized();
+        [LockstepEvent(LockstepEventType.OnPostClientBeginCatchUp)]
+        public void OnPostClientBeginCatchUp() => OnInitialized();
 
         [LockstepEvent(LockstepEventType.OnExportStart)]
         public void OnExportStart()

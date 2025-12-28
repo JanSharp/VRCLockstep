@@ -63,9 +63,8 @@ namespace JanSharp
         /// <para>While <see langword="true"/> <see cref="CurrentOptions"/> is never <see langword="null"/>,
         /// while <see langword="false"/> <see cref="CurrentOptions"/> is always
         /// <see langword="null"/>.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Not game state safe.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
         public bool CurrentlyShown => currentlyShown;
 
@@ -80,9 +79,8 @@ namespace JanSharp
         /// gets raised.</para>
         /// <para><see langword="null"/> when <see cref="CurrentlyShown"/> is <see langword="false"/>.</para>
         /// <para></para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Not game state safe.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
         public LockstepOptionsEditorUI CurrentUI => currentUI;
 
@@ -90,11 +88,10 @@ namespace JanSharp
         /// <para>When deriving from this class, there must be a <c>currentOptions</c> field with the same
         /// type as specified by <see cref="OptionsClassName"/> defined in the deriving class. Said field is
         /// the backing field for this property.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Generally not game state safe, unless <see cref="LockstepAPI.IsSerializingForExport"/> or
         /// <see cref="LockstepAPI.IsDeserializingForImport"/> is <see langword="true"/>, depending on if this
         /// is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
         /// </summary>
         public LockstepGameStateOptionsData CurrentOptions => (LockstepGameStateOptionsData)GetProgramVariable("currentOptions");
 
@@ -109,27 +106,25 @@ namespace JanSharp
         }
 
         /// <summary>
-        /// <para>Create an new options instance which is valid in the context of the current state of the
+        /// <para>Create a new options instance which is valid in the context of the current state of the
         /// game state, which would make it already ready for
         /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>, depending on
         /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
         /// accordingly.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <returns>A new instance of the <see cref="OptionsClassName"/> class, must not be
         /// <see langword="null"/>.</returns>
         protected abstract LockstepGameStateOptionsData NewOptionsImpl();
         /// <summary>
-        /// <para>Creates an new options instance which is valid in the context of the current state of the
+        /// <para>Creates a new options instance which is valid in the context of the current state of the
         /// game state, which would make it already ready for
         /// <see cref="LockstepAPI.StartExport(string, LockstepGameStateOptionsData[])"/> or
         /// <see cref="LockstepAPI.StartImport(object[][], System.DateTime, string, string)"/>, depending on
         /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
         /// accordingly.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <returns>A new instance of the <see cref="OptionsClassName"/> class. Errors and returns
         /// <see langword="null"/> if <see cref="LockstepAPI.IsInitialized"/> is <see langword="false"/>.
@@ -261,8 +256,7 @@ namespace JanSharp
         /// if this is an <see cref="LockstepGameState.ExportUI"/> or <see cref="LockstepGameState.ImportUI"/>
         /// accordingly.</para>
         /// <para>Must be called while <see cref="CurrentlyShown"/> is <see langword="false"/>.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         public void UpdateCurrentOptionsFromWidgets()
         {
@@ -291,8 +285,7 @@ namespace JanSharp
         /// imported.</para>
         /// <para>Holds a strong reference to <paramref name="options"/> - which is a
         /// <see cref="WannaBeClass"/> at the end of the day - so long as the UI is shown.</para>
-        /// <para>Usable once <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> is raised.</para>
+        /// <para>Usable once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// </summary>
         /// <param name="ui">The ui to be used and to be assigned to <see cref="CurrentUI"/>.</param>
         /// <param name="options">The options to be used and to be assigned to

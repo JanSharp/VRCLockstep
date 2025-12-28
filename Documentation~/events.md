@@ -49,8 +49,8 @@ Modification of game states is restricted to inside of these events. See [game s
 - `OnImportStart()` Use import related properties on Lockstep
 - `OnImportOptionsDeserialized()` Use import related properties on Lockstep
 - `OnImportedGameState()` Use import related properties on Lockstep
+- `OnImportFinishingUp()` Use import related properties on Lockstep
 - `OnImportFinished()` Use import related properties on Lockstep
-- `OnPostImportFinished()` Exists for unusual use cases. See its xml annotations
 - Every custom input action event handler
 - Game state deserialization for import specifically (late joiner deserialization is different)
 

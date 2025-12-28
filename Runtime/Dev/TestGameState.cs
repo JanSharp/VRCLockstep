@@ -42,6 +42,12 @@ namespace JanSharp
             lockstep.SendEventDelayedTicks(delayedInputActionId, 50);
         }
 
+        [LockstepEvent(LockstepEventType.OnInitFinished)]
+        public void OnInitFinished()
+        {
+            Debug.Log($"[LockstepTest] TestGameState  OnInitFinished");
+        }
+
         [SerializeField][HideInInspector] private uint delayedInputActionId;
         [LockstepInputAction(nameof(delayedInputActionId))]
         public void OnDelayedInputAction()
@@ -76,6 +82,12 @@ namespace JanSharp
             Debug.Log($"[LockstepTest] TestGameState  OnClientBeginCatchUp - lockstep.CatchingUpPlayerId: {lockstep.CatchingUpPlayerId}, lockstep.IsContinuationFromPrevFrame: {lockstep.IsContinuationFromPrevFrame}");
             if (!lockstep.IsContinuationFromPrevFrame)
                 lockstep.FlagToContinueNextFrame();
+        }
+
+        [LockstepEvent(LockstepEventType.OnPostClientBeginCatchUp)]
+        public void OnPostClientBeginCatchUp()
+        {
+            Debug.Log($"[LockstepTest] TestGameState  OnPostClientBeginCatchUp - lockstep.CatchingUpPlayerId: {lockstep.CatchingUpPlayerId}");
         }
 
         [LockstepEvent(LockstepEventType.OnPreClientJoined)]
@@ -154,6 +166,12 @@ namespace JanSharp
         public void OnImportedGameState()
         {
             Debug.Log($"[LockstepTest] TestGameState  OnImportedGameState - ImportedGameState.GameStateInternalName: {lockstep.ImportedGameState.GameStateInternalName}, ImportErrorMessage: {lockstep.ImportErrorMessage ?? "<null>"}");
+        }
+
+        [LockstepEvent(LockstepEventType.OnImportFinishingUp)]
+        public void OnImportFinishingUp()
+        {
+            Debug.Log($"[LockstepTest] TestGameState  OnImportFinishingUp - GameStatesWaitingForImportCount: {lockstep.GameStatesBeingImportedCount}");
         }
 
         [LockstepEvent(LockstepEventType.OnImportFinished)]

@@ -141,12 +141,14 @@ namespace JanSharp.Internal
         private bool isSinglePlayer = false;
         private bool checkMasterChangeAfterProcessingLJGameStates = false;
         private bool lockstepIsInitialized = false;
+        private bool areAllGSInitialized = false;
         // Only true for the initial catch up to avoid it being true for just a few ticks seemingly randomly
         // (Caused by the master changing which requires catching up to what the previous master had already
         // processed. See IsMaster property.)
         public override bool IsCatchingUp => isCatchingUp && isInitialCatchUp;
         public override bool IsSinglePlayer => isSinglePlayer;
-        public override bool IsInitialized => lockstepIsInitialized;
+        public override bool LockstepIsInitialized => lockstepIsInitialized;
+        public override bool IsInitialized => areAllGSInitialized;
         /// <summary>
         /// <para>Hidden API.</para>
         /// <para>Intended to be used for loading progress kind of UIs.</para>
@@ -303,8 +305,8 @@ namespace JanSharp.Internal
         [SerializeField] private UdonSharpBehaviour[] onImportStartListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportOptionsDeserializedListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportedGameStateListeners;
+        [SerializeField] private UdonSharpBehaviour[] onImportFinishingUpListeners;
         [SerializeField] private UdonSharpBehaviour[] onImportFinishedListeners;
-        [SerializeField] private UdonSharpBehaviour[] onPostImportFinishedListeners;
         [SerializeField] private UdonSharpBehaviour[] onExportOptionsForAutosaveChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
@@ -1684,18 +1686,17 @@ namespace JanSharp.Internal
                 currentTick = 1u; // Start at 1 because tick sync will always be 1 behind, and ticks are unsigned.
                 lastRunnableTick = uint.MaxValue;
                 EnterSingePlayerMode();
-                lockstepIsInitialized = true; // Must be set before StartOrStopAutosave.
-                StartOrStopAutosave();
+                lockstepIsInitialized = true;
                 isTickPaused = false; // Must unset in order for flaggedToContinueNextFrame to work.
             }
-            lockstepIsInitialized = true; // This looks duplicated, but that is intended. See below.
             RaiseOnInit();
             if (flaggedToContinueNextFrame)
             {
                 suspendedInOnInit = true;
-                lockstepIsInitialized = false; // See OnInitFinished xml annotations for an explanation.
                 return;
             }
+            areAllGSInitialized = true; // Must be set before StartOrStopAutosave.
+            StartOrStopAutosave();
             RaiseOnInitFinished();
             RaiseOnClientJoined(localPlayerId);
             InitAllImportExportOptionsWidgetData();
@@ -3160,17 +3161,17 @@ namespace JanSharp.Internal
                 SendClientGotLateJoinerDataIA(); // Must be before OnClientBeginCatchUp, because that can also send input actions.
                 isCatchingUp = true;
                 isInitialCatchUp = true;
+                lockstepIsInitialized = true; // Close before OnClientBeginCatchUp.
                 isTickPaused = false; // Must unset in order for flaggedToContinueNextFrame to work.
             }
-            lockstepIsInitialized = true; // Close before OnClientBeginCatchUp.
             SetDilatedTickStartTime(); // Right before OnClientBeginCatchUp.
             RaiseOnClientBeginCatchUp(localPlayerId);
             if (flaggedToContinueNextFrame)
             {
                 suspendedInOnClientBeginCatchUp = true;
-                lockstepIsInitialized = false; // See OnPostClientBeginCatchUp xml annotations for an explanation.
                 return;
             }
+            areAllGSInitialized = true;
             RaiseOnPostClientBeginCatchUp(localPlayerId);
 
             if (checkMasterChangeAfterProcessingLJGameStates)
@@ -3757,34 +3758,34 @@ namespace JanSharp.Internal
                 onImportedGameStateListeners = CleanUpRemovedListeners(onImportedGameStateListeners, destroyedCount, nameof(LockstepEventType.OnImportedGameState));
         }
 
+        private void RaiseOnImportFinishingUp() // Game state safe.
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportFinishingUp");
+#endif
+            RaiseSuspendAbleEvent(onImportFinishingUpListeners, nameof(LockstepEventType.OnImportFinishingUp));
+            if (flaggedToContinueNextFrame)
+                return;
+            if (suspendedDestroyedListenersCount != 0)
+            {
+                onImportFinishingUpListeners = CleanUpRemovedListeners(onImportFinishingUpListeners, suspendedDestroyedListenersCount, nameof(LockstepEventType.OnImportFinishingUp));
+                suspendedDestroyedListenersCount = 0;
+            }
+        }
+
         private void RaiseOnImportFinished() // Game state safe.
         {
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  RaiseOnImportFinished");
 #endif
-            RaiseSuspendAbleEvent(onImportFinishedListeners, nameof(LockstepEventType.OnImportFinished));
-            if (flaggedToContinueNextFrame)
-                return;
-            if (suspendedDestroyedListenersCount != 0)
-            {
-                onImportFinishedListeners = CleanUpRemovedListeners(onImportFinishedListeners, suspendedDestroyedListenersCount, nameof(LockstepEventType.OnImportFinished));
-                suspendedDestroyedListenersCount = 0;
-            }
-        }
-
-        private void RaiseOnPostImportFinished() // Game state safe.
-        {
-#if LOCKSTEP_DEBUG
-            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnPostImportFinished");
-#endif
             int destroyedCount = 0;
-            foreach (UdonSharpBehaviour listener in onPostImportFinishedListeners)
+            foreach (UdonSharpBehaviour listener in onImportFinishedListeners)
                 if (listener == null)
                     destroyedCount++;
                 else
-                    listener.SendCustomEvent(nameof(LockstepEventType.OnPostImportFinished));
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnImportFinished));
             if (destroyedCount != 0)
-                onPostImportFinishedListeners = CleanUpRemovedListeners(onPostImportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnPostImportFinished));
+                onImportFinishedListeners = CleanUpRemovedListeners(onImportFinishedListeners, destroyedCount, nameof(LockstepEventType.OnImportFinished));
         }
 
         private bool markedForOnExportOptionsForAutosaveChanged;
@@ -4804,7 +4805,7 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  PrepareForExport");
 #endif
-            if (!lockstepIsInitialized)
+            if (!areAllGSInitialized)
             {
                 Debug.LogError("[Lockstep] Attempt to call Export before OnInit or OnClientBeginCatchUp, ignoring.");
                 return false;
@@ -5090,7 +5091,7 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  StartImport");
 #endif
-            if (!lockstepIsInitialized)
+            if (!areAllGSInitialized)
             {
                 Debug.LogError("[Lockstep] Attempt to call StartImport before OnInit or OnClientBeginCatchUp, ignoring.");
                 return;
@@ -5169,17 +5170,17 @@ namespace JanSharp.Internal
 #endif
             if (suspendedInOnImportFinished)
                 suspendedInOnImportFinished = false;
-            else if (!isImporting)
+            else if (isImporting)
+                isImporting = false;
+            else
                 return;
-            isImporting = false;
-            RaiseOnImportFinished();
+            RaiseOnImportFinishingUp();
             if (flaggedToContinueNextFrame)
             {
                 suspendedInOnImportFinished = true;
-                isImporting = true; // See OnPostImportFinished xml annotations for an explanation.
                 return;
             }
-            RaiseOnPostImportFinished();
+            RaiseOnImportFinished();
             StartOrStopAutosave();
             // To make these properties game state safe.
             importingPlayerId = 0u;
@@ -5493,7 +5494,7 @@ namespace JanSharp.Internal
         }
 
         private bool AutosaveShouldBeRunning
-            => lockstepIsInitialized
+            => areAllGSInitialized
             && !(isCatchingUp && isInitialCatchUp)
             && autosavePauseScopeCount == 0
             && !isImporting;

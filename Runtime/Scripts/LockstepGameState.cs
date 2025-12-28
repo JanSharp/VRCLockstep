@@ -141,8 +141,7 @@ namespace JanSharp
         /// <see cref="LockstepAPI.SendSingletonInputAction(uint)"/>, its overload or
         /// <see cref="LockstepAPI.SendEventDelayedTicks(uint, uint)"/>.</para>
         /// <para>This function may get called at any point in time once game states have been initialized, so
-        /// after <see cref="LockstepEventType.OnInit"/> or
-        /// <see cref="LockstepEventType.OnClientBeginCatchUp"/> have been raised.</para>
+        /// after once <see cref="LockstepAPI.IsInitialized"/> is <see langword="true"/>.</para>
         /// <para>This function is disallowed to fail serialization of the game state. It must always
         /// succeed.</para>
         /// <para>Hover the parameters to read docs about exports.</para>
