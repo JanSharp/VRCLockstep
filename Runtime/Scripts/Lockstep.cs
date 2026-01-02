@@ -773,7 +773,7 @@ namespace JanSharp.Internal
             // Run all the way to lastRunnableTick when isMaster, otherwise other clients would most likely desync.
             if (isMaster
                 ? currentTick > lastRunnableTick // Yes it's duplicated but this is more readable.
-                : currentTick > lastRunnableTick || lastRunnableTick - currentTick < TickRate)
+                : currentTick > lastRunnableTick || lastRunnableTick - currentTick < TickRateUInt)
             {
                 CleanUpOldTickAssociations();
                 isCatchingUp = false;
@@ -874,7 +874,7 @@ namespace JanSharp.Internal
             // were sent while catching up. This approach also prevents being stuck catching up forever by
             // not touching lastRunnableTick.
             // Still continue increasing it even when done catching up, for the same reason: no lag spikes.
-            if ((currentTick % TickRate) == 0u)
+            if ((currentTick / TickRateUInt) * TickRateUInt == currentTick) // uint modulo is not exposed in Udon.
                 firstMutableTick++;
 #if LOCKSTEP_DEBUG
             // Debug.Log($"[LockstepDebug] Running tick {currentTick}");

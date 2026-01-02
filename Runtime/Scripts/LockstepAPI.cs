@@ -27,11 +27,19 @@ namespace JanSharp
         /// <see cref="LockstepEventType.OnLockstepTick"/> gets raised per second.</para>
         /// </summary>
         public const float TickRate = 10f;
+        /// <inheritdoc cref="TickRate"/>
+        public const int TickRateInt = 10;
+        /// <inheritdoc cref="TickRate"/>
+        public const uint TickRateUInt = 10u;
         /// <summary>
         /// <para>The amount of times lockstep sends input action tick associations and the current tick from
         /// the lockstep master to other clients per second.</para>
         /// </summary>
         public const float NetworkTickRate = 10f;
+        /// <inheritdoc cref="NetworkTickRate"/>
+        public const float NetworkTickRateInt = 10;
+        /// <inheritdoc cref="NetworkTickRate"/>
+        public const float NetworkTickRateUInt = 10u;
         /// <summary>
         /// <para>The current name of the world as defined in the inspector for the Lockstep script (on the
         /// prefab instance). Unless the world creator explicitly set the name it defaults to the scene name,
