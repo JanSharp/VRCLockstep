@@ -5164,9 +5164,7 @@ namespace JanSharp.Internal
 #endif
             if (suspendedInOnImportFinished)
                 suspendedInOnImportFinished = false;
-            else if (isImporting)
-                isImporting = false;
-            else
+            else if (!isImporting)
                 return;
             RaiseOnImportFinishingUp();
             if (flaggedToContinueNextFrame)
@@ -5174,6 +5172,7 @@ namespace JanSharp.Internal
                 suspendedInOnImportFinished = true;
                 return;
             }
+            isImporting = false;
             RaiseOnImportFinished();
             StartOrStopAutosave();
             // To make these properties game state safe.
