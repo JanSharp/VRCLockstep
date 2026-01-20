@@ -14,9 +14,13 @@ namespace JanSharp.Internal
     [InitializeOnLoad]
     public static class LockstepOnBuild
     {
-        private static Lockstep lockstep = null;
         private static string gameStateDependencyTreeErrorMessage = null;
-        private static Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut = null;
+        /// <summary>
+        /// <para>Only <see langword="abstract"/> types may have multiple associated (deriving)
+        /// <see cref="GSTypeWithDeps"/>. Non <see langword="abstract"/> types are always going to contain a
+        /// single element in their list.</para>
+        /// </summary>
+        private static Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut = null;
 
         private static List<LockstepGameState> allGameStates = new List<LockstepGameState>();
         public static ReadOnlyCollection<LockstepGameState> AllGameStates => allGameStates.AsReadOnly();
@@ -35,7 +39,7 @@ namespace JanSharp.Internal
         {
             BuildDependencyTree();
             OnBuildUtil.RegisterAction(PrepareDependencyTreeOnBuild, -2);
-            OnBuildUtil.RegisterType<Lockstep>(PreOnBuild, -1);
+            OnBuildUtil.RegisterAction(PreOnBuild, -1);
             OnBuildUtil.RegisterType<UdonSharpBehaviour>(InputActionsOnBuild, 0);
             OnBuildUtil.RegisterType<LockstepGameState>(GameStatesOnBuild, 0);
             OnBuildUtil.RegisterType<Lockstep>(PostOnBuild, 1);
@@ -69,7 +73,7 @@ namespace JanSharp.Internal
                 .Where(t => !t.IsAbstract && EditorUtil.DerivesFrom(t, typeof(LockstepGameState)))
                 .Select(t => new GSTypeWithDeps(t))
                 .ToList();
-            gsTypeWithDepsLut = gameStateTypes.ToDictionary(t => t.gsType, t => t);
+            gsTypeWithDepsLut = gameStateTypes.ToDictionary(t => t.gsType, t => new List<GSTypeWithDeps>() { t });
             foreach (GSTypeWithDeps type in gameStateTypes)
                 if (!type.AddAndValidateAbstractBaseClasses(gsTypeWithDepsLut))
                     return;
@@ -96,7 +100,7 @@ namespace JanSharp.Internal
                     .ToList();
             }
 
-            public bool AddAndValidateAbstractBaseClasses(Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut)
+            public bool AddAndValidateAbstractBaseClasses(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
             {
                 System.Type baseType = gsType.BaseType;
                 while (baseType != typeof(LockstepGameState))
@@ -104,34 +108,28 @@ namespace JanSharp.Internal
                     if (!baseType.IsAbstract)
                     {
                         DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} inherits from the "
-                            + $"(non abstract) {baseType.Name} {nameof(LockstepGameState)}, which is not supported. \n"
-                            + $"Inheriting from abstract base classes is supported, so long as there is only one "
-                            + $"class deriving from any such abstract {nameof(LockstepGameState)} class.");
+                            + $"(non abstract) {baseType.Name} {nameof(LockstepGameState)}, which is not supported. "
+                            + $"Deriving from abstract classes is supported.");
                         return false;
                     }
-                    if (gsTypeWithDepsLut.ContainsKey(baseType))
-                    {
-                        DependencyTreeError($"[Lockstep] There are multiple classes deriving from the "
-                            + $"abstract {baseType.Name} class, a {nameof(LockstepGameState)}, which is not supported. "
-                            + $"There must be at most one non abstract class deriving from it "
-                            + $"in the entire class hierarchy.");
-                        return false;
-                    }
-                    gsTypeWithDepsLut.Add(baseType, this);
+                    if (gsTypeWithDepsLut.TryGetValue(baseType, out var list))
+                        list.Add(this);
+                    else
+                        gsTypeWithDepsLut.Add(baseType, new() { this });
                     baseType = baseType.BaseType;
                 }
                 return true;
             }
 
-            public bool TryResolveGSTypes(Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut)
+            public bool TryResolveGSTypes(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
             {
                 if (!ValidateRawDependencyTypes(gsTypeWithDepsLut))
                     return false;
-                dependencies = rawDependencies.Select(t => gsTypeWithDepsLut[t]).ToList();
+                dependencies = rawDependencies.SelectMany(t => gsTypeWithDepsLut[t]).Distinct().ToList();
                 return true;
             }
 
-            public bool ValidateRawDependencyTypes(Dictionary<System.Type, GSTypeWithDeps> gsTypeWithDepsLut)
+            public bool ValidateRawDependencyTypes(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
             {
                 foreach (System.Type depType in rawDependencies)
                 {
@@ -226,11 +224,8 @@ namespace JanSharp.Internal
             return true;
         }
 
-        private static bool PreOnBuild(Lockstep lockstep)
+        private static bool PreOnBuild()
         {
-            // Lockstep is using the SingletonScriptAttribute which ensures there is only 1 instance.
-            LockstepOnBuild.lockstep = lockstep;
-
             allGameStates.Clear();
             allInputActions.Clear();
             allOnNthTickListeners.Clear();
@@ -244,7 +239,7 @@ namespace JanSharp.Internal
             SerializedObject lockstepSo = new SerializedObject(lockstep);
 
             allGameStates = allGameStates
-                .Select(gs => new GSTypeWithDepsInstance(gsTypeWithDepsLut[gs.GetType()], gs))
+                .Select(gs => new GSTypeWithDepsInstance(gsTypeWithDepsLut[gs.GetType()].Single(), gs))
                 .OrderBy(t => t)
                 .Select(t => t.instance)
                 .ToList();
