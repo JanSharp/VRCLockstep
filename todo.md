@@ -134,3 +134,4 @@
 - [ ] move the next minor version, the is initialized and is importing changes are breaking changes
 - [ ] change export to happen at the end of the frame, to prevent issues with calling StartExport inside of lockstep raised events
 - [x] change many things like all of the export related ones to only be allowed once the game states have been initialized
+- [ ] add a signature and a data format version to exports. Very major breaking change

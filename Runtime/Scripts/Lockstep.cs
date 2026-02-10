@@ -4998,6 +4998,8 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
                 Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - invalid base64 encoding:\n{exportedString}");
 #endif
+                if (flaggedToContinueNextFrame)
+                    readStream = suspendedReadStream;
                 return null;
             }
             if (readStream.Length < 4)
@@ -5005,6 +5007,8 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
                 Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - exported data too short:\n{exportedString}");
 #endif
+                if (flaggedToContinueNextFrame)
+                    readStream = suspendedReadStream;
                 return null;
             }
 
@@ -5022,7 +5026,14 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] [sw] Lockstep  ImportPreProcess (inner) - binary size: {readStream.Length}, expected crc: {expectedCrc}, got crc: {gotCrc}, crc calculation ms: {crcStopwatch.Elapsed.TotalMilliseconds}");
 #endif
             if (gotCrc != expectedCrc)
+            {
+                if (flaggedToContinueNextFrame)
+                {
+                    readStream = suspendedReadStream;
+                    readStreamPosition = suspendedReadPosition;
+                }
                 return null;
+            }
 
             ResetReadStream();
 
