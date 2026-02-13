@@ -1,5 +1,4 @@
-﻿using System.Text;
-using TMPro;
+﻿using TMPro;
 using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
@@ -574,31 +573,10 @@ namespace JanSharp.Internal
             OpenExportedDataWindow();
         }
 
-        private string FormatNumberWithSpaces(int value) // TODO: Move this into the common package.
-        {
-            string sign;
-            if (value >= 0)
-                sign = "";
-            else
-            {
-                sign = "-";
-                value = -value;
-            }
-            string result = "";
-            string spacer = "";
-            while (value >= 1000)
-            {
-                result = $"{(value % 1000):d3}{spacer}{result}";
-                value /= 1000;
-                spacer = " ";
-            }
-            return $"{sign}{value}{spacer}{result}";
-        }
-
         private void SetExportedDataSizeText(int byteCount, int characterCount)
         {
-            exportedDataSizeText.text = $"Data: {FormatNumberWithSpaces(byteCount)} bytes, "
-                + $"Base64: {FormatNumberWithSpaces(characterCount)} characters";
+            exportedDataSizeText.text = $"Data: {StringUtil.FormatNumberWithSpaces(byteCount)} bytes, "
+                + $"Base64: {StringUtil.FormatNumberWithSpaces(characterCount)} characters";
         }
 
         [LockstepEvent(LockstepEventType.OnImportStart)]
