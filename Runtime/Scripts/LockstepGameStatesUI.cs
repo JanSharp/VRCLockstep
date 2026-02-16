@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Text;
+using TMPro;
 using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
@@ -70,6 +71,10 @@ namespace JanSharp.Internal
         private string exportName;
         private bool waitingForExportToFinish = false;
 
+        /// <summary>
+        /// <para>Keys: <see cref="string"/> <see cref="LockstepGameState.GameStateInternalName"/>,<br/>
+        /// Values: <see cref="LockstepGameStateOptionsData"/> <c>importOptions</c>.</para>
+        /// </summary>
         private DataDictionary importOptions;
         private bool anyImportedGSHasNoErrors;
         private LockstepGameStateOptionsData[] exportOptions;
@@ -223,50 +228,12 @@ namespace JanSharp.Internal
                 return;
             }
 
-            DataDictionary importedGSByInternalName = new DataDictionary();
-            foreach (object[] importedGS in importedGameStates)
-                importedGSByInternalName.Add(LockstepImportedGS.GetInternalName(importedGS), new DataToken(importedGS));
-
             LabelWidgetData mainInfoLabel = importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewLabel(""));
+
             FoldOutWidgetData gsFoldOut = importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewFoldOutScope("Game States", true));
-
-            int canImportCount = 0;
-            foreach (LockstepGameState gameState in lockstep.AllGameStates)
-            {
-                string msg;
-                if (!importedGSByInternalName.TryGetValue(gameState.GameStateInternalName, out DataToken importedGSToken))
-                    msg = gameState.GameStateSupportsImportExport
-                        ? "<color=#888888>not in imported data"
-                        : "<color=#888888>does not support import";
-                else
-                {
-                    object[] importedGS = (object[])importedGSToken.Reference;
-                    msg = LockstepImportedGS.GetErrorMsg(importedGS);
-                    if (msg != null)
-                        msg = "<color=#ffaaaa>" + msg;
-                    else
-                    {
-                        canImportCount++;
-                        msg = "<color=#99ccff>supports import";
-                    }
-                }
-                gsFoldOut.AddChild(importOptionsUI.WidgetManager.NewLabel(
-                    $"<size=80%>{gameState.GameStateDisplayName} - {msg}").StdMoveWidget());
-            }
-            anyImportedGSHasNoErrors = canImportCount != 0;
-
-            foreach (object[] importedGS in importedGameStates)
-            {
-                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
-                if (gameState != null)
-                    continue;
-                string displayName = LockstepImportedGS.GetDisplayName(importedGS);
-                string errorMsg = LockstepImportedGS.GetErrorMsg(importedGS);
-                gsFoldOut.AddChild(importOptionsUI.WidgetManager.NewLabel(
-                    $"<size=80%>{displayName} - <color=#ffaaaa>{errorMsg}").StdMoveWidget());
-            }
-
+            gsFoldOut.AddChild(importOptionsUI.WidgetManager.NewLabel(BuildImportedGameStatesMsg(out int canImportCount)).StdMoveWidget());
             gsFoldOut.DecrementRefsCount();
+            anyImportedGSHasNoErrors = canImportCount != 0;
 
             int cannotImportCount = importedGameStates.Length - canImportCount;
             mainInfoLabel.Label = $"Can import {(cannotImportCount == 0 ? "all " : "")}{canImportCount}"
@@ -281,6 +248,67 @@ namespace JanSharp.Internal
             importOptionsUI.Draw();
 
             UpdateImportButton();
+        }
+
+        private string BuildImportedGameStatesMsg(out int canImportCount)
+        {
+            DataDictionary importedGSByInternalName = new DataDictionary();
+            foreach (object[] importedGS in importedGameStates)
+                importedGSByInternalName.Add(LockstepImportedGS.GetInternalName(importedGS), new DataToken(importedGS));
+
+            canImportCount = 0;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("<size=80%>");
+            bool isFirstLine = true;
+
+            foreach (LockstepGameState gameState in lockstep.AllGameStates)
+            {
+                if (isFirstLine)
+                    isFirstLine = false;
+                else
+                    sb.Append('\n'); // AppendLine could add \r\n. \r is outdated. \n is the future.
+
+                sb.Append(gameState.GameStateDisplayName);
+                if (!importedGSByInternalName.TryGetValue(gameState.GameStateInternalName, out DataToken importedGSToken))
+                    sb.Append(gameState.GameStateSupportsImportExport
+                        ? " - <color=#888888>not in imported data</color>"
+                        : " - <color=#888888>does not support import</color>");
+                else
+                {
+                    object[] importedGS = (object[])importedGSToken.Reference;
+                    string errorMsg = LockstepImportedGS.GetErrorMsg(importedGS);
+                    if (errorMsg != null)
+                    {
+                        sb.Append(" - <color=#ffaaaa>");
+                        sb.Append(errorMsg);
+                        sb.Append("</color>");
+                    }
+                    else
+                    {
+                        canImportCount++;
+                        sb.Append(" - <color=#99ccff>supports import</color>");
+                    }
+                }
+            }
+
+            foreach (object[] importedGS in importedGameStates)
+            {
+                LockstepGameState gameState = LockstepImportedGS.GetGameState(importedGS);
+                if (gameState != null)
+                    continue;
+
+                if (isFirstLine)
+                    isFirstLine = false;
+                else
+                    sb.Append('\n'); // AppendLine could add \r\n. \r is outdated. \n is the future.
+
+                sb.Append(LockstepImportedGS.GetDisplayName(importedGS));
+                sb.Append(" - <color=#ffaaaa>");
+                sb.Append(LockstepImportedGS.GetErrorMsg(importedGS));
+                sb.Append("</color>");
+            }
+
+            return sb.ToString();
         }
 
         private bool CanImport() => isInitialized && anyImportedGSHasNoErrors && !lockstep.IsImporting;
@@ -601,9 +629,7 @@ namespace JanSharp.Internal
         public void OnAutosaveIntervalSecondsChanged()
         {
             autosaveInterval = Mathf.Floor(lockstep.AutosaveIntervalSeconds / 60f);
-            // SetTextWithoutNotify is not exposed for TextMeshProUGUI, but this only raises the text changed
-            // event, not the end edit, so it's fine.
-            autosaveIntervalField.text = ((int)autosaveInterval).ToString();
+            autosaveIntervalField.SetTextWithoutNotify(((int)autosaveInterval).ToString());
             autosaveIntervalSlider.SetValueWithoutNotify(autosaveInterval);
             TryStartAutosaveTimerUpdateLoop();
         }
