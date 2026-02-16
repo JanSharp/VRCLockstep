@@ -275,7 +275,7 @@ namespace JanSharp
         /// <para>Must be called while <see cref="CurrentlyShown"/> is <see langword="false"/>.</para>
         /// <para>Sets <see cref="CurrentlyShown"/> to <see langword="true"/>.</para>
         /// <para><see cref="LockstepOptionsEditorUI.Clear"/> should have been called since the last time this
-        /// function gets called, otherwise the same <see cref="WidgetData"/> will most likely end up being
+        /// function got called, otherwise the same <see cref="WidgetData"/> will most likely end up being
         /// used for multiple <see cref="Widget"/>s, which is not supported.</para>
         /// <para>When calling this for <see cref="LockstepGameState.ImportUI"/> instances, the associated
         /// serialized binary data must be set as the current read stream for lockstep. See

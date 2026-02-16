@@ -28,7 +28,7 @@ namespace JanSharp
         /// <summary>
         /// <para>The generic value editor instance used for this custom options UI.</para>
         /// <para>Likely hardly used directly, since the rest of the api already expose enough functionality
-        /// for the vast majority of use cases. The reset of the api being <see cref="Root"/>,
+        /// for the vast majority of use cases. The rest of the api being <see cref="Root"/>,
         /// <see cref="Info"/>, <see cref="General"/>, notably <see cref="WidgetManager"/>,
         /// <see cref="Clear"/> and <see cref="Draw"/>.</para>
         /// </summary>
