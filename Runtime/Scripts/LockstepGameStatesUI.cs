@@ -84,17 +84,9 @@ namespace JanSharp.Internal
 
         private VRCPlayerApi localPlayer;
 
-        private void Start()
-        {
-            localPlayer = Networking.LocalPlayer;
-            exportOptionsUI.Init();
-            importOptionsUI.Init();
-        }
-
         private void OnEnable()
         {
-            if (isInitialized)
-                TryStartAutosaveTimerUpdateLoop();
+            TryStartAutosaveTimerUpdateLoop();
         }
 
         public void OpenImportWindow()
@@ -487,7 +479,7 @@ namespace JanSharp.Internal
         private bool autosaveUpdateTImerLoopIsRunning = false;
         private void TryStartAutosaveTimerUpdateLoop()
         {
-            if (autosaveUpdateTImerLoopIsRunning)
+            if (!isInitialized || autosaveUpdateTImerLoopIsRunning)
                 return;
             autosaveUpdateTImerLoopIsRunning = true;
             AutosaveTimerUpdateLoop();
@@ -561,6 +553,9 @@ namespace JanSharp.Internal
         private void OnInitialized()
         {
             isInitialized = true;
+            localPlayer = Networking.LocalPlayer;
+            exportOptionsUI.Init();
+            importOptionsUI.Init();
             exportOptions = lockstep.GetNewExportOptions();
             autosaveOptions = exportOptions;
             importOptions = lockstep.GetNewImportOptions();
