@@ -107,6 +107,7 @@ namespace JanSharp.Internal
                 return;
             exportOptionsEditorTransform.SetParent(exportOptionsEditorContainer, worldPositionStays: false);
             exportOptionsUI.Clear();
+            AddGameStatesToExportToInfoWidget();
             lockstep.ShowExportOptionsEditor(exportOptionsUI, exportOptions);
             exportOptionsUI.Draw();
             dimBackground.SetActive(true);
@@ -304,6 +305,38 @@ namespace JanSharp.Internal
             return sb.ToString();
         }
 
+        private string BuildGameStatesToExportMsg()
+        {
+            if (lockstep.AllGameStatesCount == 0)
+                return "<size=80%>There are no game states in this world";
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("<size=80%>");
+            bool isFirstLine = true;
+
+            foreach (LockstepGameState gameState in lockstep.AllGameStates)
+            {
+                if (isFirstLine)
+                    isFirstLine = false;
+                else
+                    sb.Append('\n'); // AppendLine could add \r\n. \r is outdated. \n is the future.
+
+                sb.Append(gameState.GameStateDisplayName);
+                sb.Append(gameState.GameStateSupportsImportExport
+                    ? " - <color=#99ccff>supports export</color>"
+                    : " - <color=#888888>does not support export</color>");
+            }
+
+            return sb.ToString();
+        }
+
+        private void AddGameStatesToExportToInfoWidget()
+        {
+            FoldOutWidgetData gsFoldOut = exportOptionsUI.Info.AddChild(exportOptionsUI.WidgetManager.NewFoldOutScope("Game States", true));
+            gsFoldOut.AddChild(exportOptionsUI.WidgetManager.NewLabel(BuildGameStatesToExportMsg()).StdMoveWidget());
+            gsFoldOut.DecrementRefsCount();
+        }
+
         private bool CanImport() => isInitialized && anySupportImportExport && anyImportedGSHasNoErrors && !lockstep.IsImporting;
 
         private void UpdateImportButton()
@@ -374,6 +407,7 @@ namespace JanSharp.Internal
                 "Autosaves periodically write exported data to the VRChat log file. Export and autosave log "
                     + "messages use the prefix '[Lockstep] Export:'.");
             exportOptionsUI.Info.AddChild(autosaveInfoLabel);
+            AddGameStatesToExportToInfoWidget();
             lockstep.ShowExportOptionsEditor(exportOptionsUI, autosaveOptions);
             if (autosaveUsesExportOptionsToggle.isOn)
             {
