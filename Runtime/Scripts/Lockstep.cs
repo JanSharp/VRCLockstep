@@ -4811,7 +4811,7 @@ namespace JanSharp.Internal
                 return false;
             }
             if (gameStatesSupportingImportExportCount == 0) // No error log here, because this is the only sensible
-                return false; // and by definition acceptable error case in which by definition null is returned.
+                return false; // and by definition acceptable error case in which by definition false is returned.
 
             if (isExporting)
             {

@@ -69,6 +69,7 @@ namespace JanSharp.Internal
         private System.DateTime exportDate;
         private string exportWorldName;
         private string exportName;
+        private bool anySupportImportExport;
         private bool waitingForExportToFinish = false;
 
         /// <summary>
@@ -311,12 +312,13 @@ namespace JanSharp.Internal
             return sb.ToString();
         }
 
-        private bool CanImport() => isInitialized && anyImportedGSHasNoErrors && !lockstep.IsImporting;
+        private bool CanImport() => isInitialized && anySupportImportExport && anyImportedGSHasNoErrors && !lockstep.IsImporting;
 
         private void UpdateImportButton()
         {
             confirmImportButton.interactable = CanImport();
             confirmImportButtonText.text = !isInitialized ? "Loading..."
+                : !anySupportImportExport ? "None Support Importing"
                 : lockstep.IsImporting ? "Importing..."
                 : "Import";
         }
@@ -450,12 +452,13 @@ namespace JanSharp.Internal
             lockstep.AutosaveIntervalSeconds = autosaveInterval * 60f; // Raises OnAutosaveIntervalSecondsChanged.
         }
 
-        private bool CanExport() => isInitialized && !lockstep.IsExporting && !lockstep.IsImporting;
+        private bool CanExport() => isInitialized && anySupportImportExport && !lockstep.IsExporting && !lockstep.IsImporting;
 
         private void UpdateExportButton()
         {
             confirmExportButton.interactable = CanExport();
             confirmExportButtonText.text = !isInitialized ? "Loading..."
+                : !anySupportImportExport ? "None Support Exporting"
                 : lockstep.IsExporting ? "Exporting..."
                 : lockstep.IsImporting ? "Importing..."
                 : "Export";
@@ -536,12 +539,13 @@ namespace JanSharp.Internal
             SendCustomEventDelayedSeconds(nameof(AutosaveTimerUpdateLoop), delay);
         }
 
-        private bool CanAutosave() => isInitialized && !lockstep.IsImporting;
+        private bool CanAutosave() => isInitialized && anySupportImportExport && !lockstep.IsImporting;
 
         private void UpdateAutosaveToggle()
         {
             autosaveToggle.interactable = CanAutosave();
             autosaveToggleText.text = !isInitialized ? "Loading..."
+                : !anySupportImportExport ? "None Support Exporting"
                 : lockstep.IsExporting ? "Exporting..."
                 : lockstep.IsImporting ? "Importing..."
                 : "Autosave";
@@ -560,6 +564,7 @@ namespace JanSharp.Internal
             exportOptions = lockstep.GetNewExportOptions();
             autosaveOptions = exportOptions;
             importOptions = lockstep.GetNewImportOptions();
+            anySupportImportExport = lockstep.GameStatesSupportingImportExportCount != 0;
             openImportWindowButton.interactable = true;
             openExportWindowButton.interactable = true;
             openAutosaveWindowButton.interactable = true;
