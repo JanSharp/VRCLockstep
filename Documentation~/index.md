@@ -22,6 +22,7 @@ The rest of the documentation is about the lockstep API which world creators usi
 - [Clients](clients.md)
 - [Master Preference](master-preference.md)
 - [Latency States](latency-states.md)
+- [Migrations](migrations.md): Information about dealing with changes in lockstep updates
 
 # Licenses
 
