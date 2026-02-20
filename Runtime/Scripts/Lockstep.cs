@@ -4801,7 +4801,7 @@ namespace JanSharp.Internal
 #endif
             if (!areAllGSInitialized)
             {
-                Debug.LogError("[Lockstep] Attempt to call Export before OnInit or OnClientBeginCatchUp, ignoring.");
+                Debug.LogError("[Lockstep] Attempt to call Export before OnInitFinished or OnPostClientBeginCatchUp, ignoring.");
                 return false;
             }
             if (exportName != null && (exportName.Contains("\n") || exportName.Contains("\r")))
