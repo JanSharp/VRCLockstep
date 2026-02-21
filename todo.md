@@ -136,5 +136,5 @@
 - [x] change many things like all of the export related ones to only be allowed once the game states have been initialized
 - [x] add a signature and a data format version to exports. Very major breaking change
 - [x] do not use Start in GameStatesUI
-- [ ] fix StartExport annotations for the return value
+- [x] fix StartExport annotations for the return value
 - [ ] mention how allExportOptions are allowed to be null for StartExport

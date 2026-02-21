@@ -904,6 +904,8 @@ namespace JanSharp
         /// worlds.</para>
         /// <para>The actual export process will wait until the system is otherwise not busy, such as catching
         /// up, being inside of input actions or suspended in a tick.</para>
+        /// <para>Listen to the <see cref="LockstepEventType.OnExportFinished"/> event to get the finished
+        /// <see cref="ExportResult"/>.</para>
         /// <para>Even though exporting naturally uses the internal write stream as it is calling
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>, it is safe
         /// to use <c>Write</c> functions to write to the internal write stream even while
@@ -932,13 +934,9 @@ namespace JanSharp
         /// <see cref="GetNewExportOptions"/> before calling
         /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> and calling
         /// <see cref="CleanupAllExportOptions(LockstepGameStateOptionsData[])"/> afterwards.</param>
-        /// <returns><para>A base 64 encoded string containing a bit of metadata such as which game states
-        /// have been exported, their version, the current UTC date and time, the <see cref="WorldName"/> and
-        /// then of course exported data retrieved from
-        /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>.</para>
-        /// <para>Returning <see langword="false"/> indicates that the export did not actually start. This
-        /// actually indicates improper use of the API in every case except when
-        /// <see cref="GameStatesSupportingImportExportCount"/> is 0, in which case it returns
+        /// <returns><para><see langword="false"/> indicates that the export did not actually start. This
+        /// actually indicates improper use of the API in every case except for when
+        /// <see cref="GameStatesSupportingImportExportCount"/> is <c>0</c>, in which case it returns
         /// <see langword="false"/> without an error. An error is logged when <see cref="IsInitialized"/> is
         /// <see langword="false"/>, when given an invalid <paramref name="exportName"/> or
         /// <paramref name="allExportOptions"/> is given or when <see cref="IsExporting"/> is
