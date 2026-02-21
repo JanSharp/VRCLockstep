@@ -395,13 +395,21 @@ namespace JanSharp
         public System.Type GameStateType => gameStateType;
 
         /// <summary>
+        /// <para>When <see langword="true"/> the <see cref="LockstepGameState"/> this attribute is applied to
+        /// will load before the <see cref="LockstepGameState"/> it depends on.</para>
+        /// <para>Default: <see langword="false"/>.</para>
+        /// </summary>
+        public bool SelfLoadsBeforeDependency { get; set; }
+
+        /// <summary>
         /// <para>A game state dependency tells Lockstep that serializing and deserializing (including
         /// exporting and importing) of <see cref="LockstepGameState"/>s should happen in a specific
         /// order.</para>
         /// <para>The <see cref="LockstepGameState"/> the <see cref="LockstepGameStateDependencyAttribute"/>
-        /// is applied to is going to be ordered after the given <paramref name="gameStateType"/>. After
-        /// dependencies they are sorted by <see cref="LockstepGameState.GameStateDisplayName"/> (converted to
-        /// lowercase for case insensitivity), and then by
+        /// is applied to is going to be ordered after the given <paramref name="gameStateType"/> (or the
+        /// other way around if <see cref="SelfLoadsBeforeDependency"/> is <see langword="true"/>).</para>
+        /// <para>After dependencies they are sorted by <see cref="LockstepGameState.GameStateDisplayName"/>
+        /// (converted to lowercase for case insensitivity), and then by
         /// <see cref="LockstepGameState.GameStateInternalName"/> (not converted to lower case to prevent
         /// ambiguity).</para>
         /// <para>Lockstep generally does not support inheritance for <see cref="LockstepGameState"/>, with

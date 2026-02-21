@@ -78,8 +78,12 @@ namespace JanSharp.Internal
                 if (!type.AddAndValidateAbstractBaseClasses(gsTypeWithDepsLut))
                     return;
             foreach (GSTypeWithDeps type in gameStateTypes)
-                if (!type.TryResolveGSTypes(gsTypeWithDepsLut))
+                if (!type.ValidateRawDependencyTypes(gsTypeWithDepsLut))
                     return;
+            foreach (GSTypeWithDeps type in gameStateTypes)
+                type.PopulateIncomingReverseDependencies(gsTypeWithDepsLut);
+            foreach (GSTypeWithDeps type in gameStateTypes)
+                type.PopulateResolvedDependencies(gsTypeWithDepsLut);
             foreach (GSTypeWithDeps type in gameStateTypes)
                 if (!type.TryPopulateRecursiveDependencies())
                     return;
@@ -88,16 +92,29 @@ namespace JanSharp.Internal
         private class GSTypeWithDeps
         {
             public System.Type gsType;
-            public List<System.Type> rawDependencies;
+            /// <summary>
+            /// <para>Dependencies this game states has which it must load after.</para>
+            /// </summary>
+            public List<System.Type> rawDependencies = new();
+            /// <summary>
+            /// <para>Dependencies this game states has which it must load before.</para>
+            /// </summary>
+            public List<System.Type> rawReverseDependencies = new();
+            /// <summary>
+            /// <para>Dependencies other game states have which this game state must load after.</para>
+            /// </summary>
+            public List<GSTypeWithDeps> incomingReverseDependencies = new();
             public List<GSTypeWithDeps> dependencies;
             public List<GSTypeWithDeps> recursiveDependenciesLut;
 
             public GSTypeWithDeps(System.Type gsType)
             {
                 this.gsType = gsType;
-                rawDependencies = gsType.GetCustomAttributes<LockstepGameStateDependencyAttribute>(inherit: true)
-                    .Select(a => a.GameStateType)
-                    .ToList();
+                foreach (var attr in gsType.GetCustomAttributes<LockstepGameStateDependencyAttribute>(inherit: true))
+                    if (attr.SelfLoadsBeforeDependency)
+                        rawReverseDependencies.Add(attr.GameStateType);
+                    else
+                        rawDependencies.Add(attr.GameStateType);
             }
 
             public bool AddAndValidateAbstractBaseClasses(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
@@ -121,45 +138,60 @@ namespace JanSharp.Internal
                 return true;
             }
 
-            public bool TryResolveGSTypes(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
-            {
-                if (!ValidateRawDependencyTypes(gsTypeWithDepsLut))
-                    return false;
-                dependencies = rawDependencies.SelectMany(t => gsTypeWithDepsLut[t]).Distinct().ToList();
-                return true;
-            }
-
             public bool ValidateRawDependencyTypes(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
             {
                 foreach (System.Type depType in rawDependencies)
+                    if (!ValidateRawDependencyType(gsTypeWithDepsLut, depType))
+                        return false;
+                foreach (System.Type depType in rawReverseDependencies)
+                    if (!ValidateRawDependencyType(gsTypeWithDepsLut, depType))
+                        return false;
+                return true;
+            }
+
+            private bool ValidateRawDependencyType(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut, System.Type dependencyType)
+            {
+                if (dependencyType == null)
                 {
-                    if (depType == null)
-                    {
-                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency on 'null'. "
-                            + $"Use 'typeof()' as the argument for {nameof(LockstepGameStateDependencyAttribute)}.");
-                        return false;
-                    }
-                    if (!EditorUtil.DerivesFrom(depType, typeof(LockstepGameState)))
-                    {
-                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
-                            + $"on the type {depType.Name}, however said type does not derive from {nameof(LockstepGameState)}.");
-                        return false;
-                    }
-                    if (depType == typeof(LockstepGameState))
-                    {
-                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
-                            + $"on the {nameof(LockstepGameState)} class itself, which is nonsensical.");
-                        return false;
-                    }
-                    if (depType.IsAbstract && !gsTypeWithDepsLut.ContainsKey(depType))
-                    {
-                        DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
-                            + $"on the abstract {depType.Name} {nameof(LockstepGameState)} class, however there is "
-                            + $"no class deriving from said abstract class - there is no implementation.");
-                        return false;
-                    }
+                    DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency on 'null'. "
+                        + $"Use 'typeof()' as the argument for {nameof(LockstepGameStateDependencyAttribute)}.");
+                    return false;
+                }
+                if (!EditorUtil.DerivesFrom(dependencyType, typeof(LockstepGameState)))
+                {
+                    DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
+                        + $"on the type {dependencyType.Name}, however said type does not derive from {nameof(LockstepGameState)}.");
+                    return false;
+                }
+                if (dependencyType == typeof(LockstepGameState))
+                {
+                    DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
+                        + $"on the {nameof(LockstepGameState)} class itself, which is nonsensical.");
+                    return false;
+                }
+                if (dependencyType.IsAbstract && !gsTypeWithDepsLut.ContainsKey(dependencyType))
+                {
+                    DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
+                        + $"on the abstract {dependencyType.Name} {nameof(LockstepGameState)} class, however there is "
+                        + $"no class deriving from said abstract class - there is no implementation.");
+                    return false;
                 }
                 return true;
+            }
+
+            public void PopulateIncomingReverseDependencies(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
+            {
+                foreach (System.Type depType in rawReverseDependencies)
+                    foreach (GSTypeWithDeps type in gsTypeWithDepsLut[depType])
+                        type.incomingReverseDependencies.AddRange(gsTypeWithDepsLut[gsType]);
+            }
+
+            public void PopulateResolvedDependencies(Dictionary<System.Type, List<GSTypeWithDeps>> gsTypeWithDepsLut)
+            {
+                dependencies = rawDependencies.SelectMany(t => gsTypeWithDepsLut[t])
+                    .Union(incomingReverseDependencies)
+                    .Distinct()
+                    .ToList();
             }
 
             public bool TryPopulateRecursiveDependencies()
