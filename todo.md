@@ -138,3 +138,4 @@
 - [x] do not use Start in GameStatesUI
 - [x] fix StartExport annotations for the return value
 - [x] mention how allExportOptions are allowed to be null for StartExport
+- [ ] add editor scripting to validate that classes deriving from `LockstepGameStateOptionsUI` have `currentOptions` and `optionsToValidate` fields

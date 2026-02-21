@@ -247,8 +247,7 @@ namespace JanSharp.Internal
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("allGameStates"),
                 allGameStates,
-                (p, v) => p.objectReferenceValue = v
-            );
+                (p, v) => p.objectReferenceValue = v);
 
             List<LockstepGameState> gameStatesSupportingImportExport = allGameStates
                 .Where(gs => gs.GameStateSupportsImportExport)
@@ -257,26 +256,22 @@ namespace JanSharp.Internal
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("gameStatesSupportingImportExport"),
                 gameStatesSupportingImportExport,
-                (p, v) => p.objectReferenceValue = v
-            );
+                (p, v) => p.objectReferenceValue = v);
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("inputActionHandlerInstances"),
-                allInputActions.Select(ia => ia.inst).ToList(),
-                (p, v) => p.objectReferenceValue = v
-            );
+                allInputActions,
+                (p, v) => p.objectReferenceValue = v.inst);
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("inputActionHandlerEventNames"),
-                allInputActions.Select(ia => ia.iaName).ToList(),
-                (p, v) => p.stringValue = v
-            );
+                allInputActions,
+                (p, v) => p.stringValue = v.iaName);
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("inputActionHandlersRequireTimeTracking"),
-                allInputActions.Select(ia => ia.timed).ToList(),
-                (p, v) => p.boolValue = v
-            );
+                allInputActions,
+                (p, v) => p.boolValue = v.timed);
 
 
             allOnNthTickListeners = allOnNthTickListeners
@@ -287,15 +282,13 @@ namespace JanSharp.Internal
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("onNthTickHandlerInstances"),
-                allOnNthTickListeners.Select(l => l.inst).ToList(),
-                (p, v) => p.objectReferenceValue = v
-            );
+                allOnNthTickListeners,
+                (p, v) => p.objectReferenceValue = v.inst);
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("onNthTickHandlerEventNames"),
-                allOnNthTickListeners.Select(l => l.listenerName).ToList(),
-                (p, v) => p.stringValue = v
-            );
+                allOnNthTickListeners,
+                (p, v) => p.stringValue = v.listenerName);
 
             var grouped = allOnNthTickListeners.GroupBy(l => l.interval).ToList();
 
@@ -303,15 +296,13 @@ namespace JanSharp.Internal
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("onNthTickHandlerGroupSizes"),
-                grouped.Select(g => g.Count()).ToList(),
-                (p, v) => p.intValue = v
-            );
+                grouped,
+                (p, v) => p.intValue = v.Count());
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("onNthTickIntervals"),
-                grouped.Select(g => g.Key).ToList(),
-                (p, v) => p.uintValue = v
-            );
+                grouped,
+                (p, v) => p.uintValue = v.Key);
 
             lockstepSo.ApplyModifiedProperties();
             return true;
