@@ -339,8 +339,8 @@ namespace JanSharp.Internal
                     return;
                 }
                 FieldInfo idField = EditorUtil.GetFieldIncludingBase(ubType, attr.IdFieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                bool hasNonSerializedAttribute = idField?.GetCustomAttribute<System.NonSerializedAttribute>(inherit: true) != null;
-                bool hasSerializeFieldAttribute = idField?.GetCustomAttribute<SerializeField>(inherit: true) != null;
+                bool hasNonSerializedAttribute = idField?.GetCustomAttributes<System.NonSerializedAttribute>(inherit: true).Any() ?? false;
+                bool hasSerializeFieldAttribute = idField?.GetCustomAttributes<SerializeField>(inherit: true).Any() ?? false;
                 if (!(idField != null
                     && idField.FieldType == typeof(uint)
                     && ((idField.IsPublic && !hasNonSerializedAttribute)
