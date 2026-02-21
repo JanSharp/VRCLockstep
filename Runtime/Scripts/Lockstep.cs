@@ -597,7 +597,7 @@ namespace JanSharp.Internal
         private int someoneLeftWhileWeWereWaitingForLJSyncSentCount = 0;
         private bool waitingForCandidatesLoopRunning = false;
 
-        // ALso used by the debug UI.
+        // Also used by the debug UI.
         private System.Diagnostics.Stopwatch lastUpdateSW = new System.Diagnostics.Stopwatch();
 
         // The actions run during catch up are actions that have already been run by the previous master.
@@ -740,6 +740,9 @@ namespace JanSharp.Internal
                 // the current tick on the master without having to queue them for the next tick.
                 tickSync.lastRunnableTick = currentTick - 1u;
             }
+
+            if (startExportingWhenNotBusy)
+                TrulyStartExport();
 
             lastUpdateSW.Stop();
         }
@@ -4766,6 +4769,7 @@ namespace JanSharp.Internal
             }
         }
 
+        private bool startExportingWhenNotBusy = false;
         private bool isExporting = false;
         private string currentExportName;
         private LockstepGameStateOptionsData[] currentAllExportOptions;
@@ -4786,10 +4790,12 @@ namespace JanSharp.Internal
             currentExportName = exportName;
             currentAllExportOptions = allExportOptions;
             isExporting = true;
+            bool wasFlagged = flaggedToContinueNextFrame;
             RaiseOnExportStart();
-            suspendedInExportPreparation = true;
-            suspendedInExport = true;
-            FlagToContinueNextFrame();
+            // Prevent OnExportStart handlers from using FlagToContinueNextFrame, particularly for when
+            // StartExport gets called in a context which supports being spread out across frames.
+            flaggedToContinueNextFrame = wasFlagged;
+            startExportingWhenNotBusy = true;
             return true;
         }
 
@@ -4843,13 +4849,6 @@ namespace JanSharp.Internal
                     }
             }
 
-            ResetWriteStream();
-
-            WriteDateTime(System.DateTime.UtcNow);
-            WriteString(WorldName);
-            WriteString(exportName);
-            WriteSmallUInt((uint)gameStatesSupportingImportExportCount);
-
             for (int i = 0; i < gameStatesSupportingImportExportCount; i++)
             {
                 LockstepGameStateOptionsData exportOptions = allExportOptions[i];
@@ -4859,6 +4858,22 @@ namespace JanSharp.Internal
             }
 
             return true;
+        }
+
+        private void TrulyStartExport()
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  TrulyStartExport");
+#endif
+            startExportingWhenNotBusy = false;
+            ResetWriteStream();
+            WriteDateTime(System.DateTime.UtcNow);
+            WriteString(WorldName);
+            WriteString(currentExportName);
+            WriteSmallUInt((uint)gameStatesSupportingImportExportCount);
+            suspendedInExportPreparation = true;
+            suspendedInExport = true;
+            FlagToContinueNextFrame();
         }
 
         private void ExportGameStates()

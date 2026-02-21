@@ -902,10 +902,8 @@ namespace JanSharp
         /// be passed to <see cref="ImportPreProcess(string, out System.DateTime, out string, out string)"/>
         /// at a future point in time, including in a future/new instance of the world or even different
         /// worlds.</para>
-        /// <para>Note that this calls <see cref="ResetWriteStream"/>, which is to say if there were any calls
-        /// to write to the internal write stream such as when sending input actions, all data written to the
-        /// write stream so far will get cleared when calling
-        /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/>.</para>
+        /// <para>The actual export process will wait until the system is otherwise not busy, such as catching
+        /// up, being inside of input actions or suspended in a tick.</para>
         /// <para>Even though exporting naturally uses the internal write stream as it is calling
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/>, it is safe
         /// to use <c>Write</c> functions to write to the internal write stream even while
