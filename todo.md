@@ -137,4 +137,4 @@
 - [x] add a signature and a data format version to exports. Very major breaking change
 - [x] do not use Start in GameStatesUI
 - [x] fix StartExport annotations for the return value
-- [ ] mention how allExportOptions are allowed to be null for StartExport
+- [x] mention how allExportOptions are allowed to be null for StartExport

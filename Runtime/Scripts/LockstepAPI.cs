@@ -926,14 +926,16 @@ namespace JanSharp
         /// when importing in the future. <see langword="null"/> is a valid value. Must not contain
         /// "<c>\n</c>" nor "<c>\r</c>"; If it does <see langword="false"/> is returned, however it will also
         /// log an error message so this should be treated like an exception.</param>
-        /// <param name="allExportOptions">An array matching the order in
+        /// <param name="allExportOptions"><para>An array matching the order in
         /// <see cref="GameStatesSupportingImportExport"/>. For every game state where
         /// <see cref="LockstepGameState.ExportUI"/> is non <see langword="null"/> there must a
         /// <see cref="LockstepGameStateOptionsData"/> provided, matching the
         /// <see cref="LockstepGameStateOptionsUI.OptionsClassName"/>. The bare minimum would be to use
         /// <see cref="GetNewExportOptions"/> before calling
         /// <see cref="StartExport(string, LockstepGameStateOptionsData[])"/> and calling
-        /// <see cref="CleanupAllExportOptions(LockstepGameStateOptionsData[])"/> afterwards.</param>
+        /// <see cref="CleanupAllExportOptions(LockstepGameStateOptionsData[])"/> afterwards.</para>
+        /// <para>Can be left <see langword="null"/> in which case lockstep creates temporary default options
+        /// using <see cref="GetNewExportOptions"/>.</para></param>
         /// <returns><para><see langword="false"/> indicates that the export did not actually start. This
         /// actually indicates improper use of the API in every case except for when
         /// <see cref="GameStatesSupportingImportExportCount"/> is <c>0</c>, in which case it returns

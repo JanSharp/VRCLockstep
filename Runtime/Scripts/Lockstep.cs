@@ -4794,7 +4794,7 @@ namespace JanSharp.Internal
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  StartExport");
 #endif
-            if (!PrepareForExport(exportName, allExportOptions))
+            if (!PrepareForExport(exportName, ref allExportOptions))
                 return false;
             currentExportName = exportName;
             currentAllExportOptions = allExportOptions;
@@ -4809,7 +4809,7 @@ namespace JanSharp.Internal
         }
 
         private uint[] crc32LookupCache;
-        private bool PrepareForExport(string exportName, LockstepGameStateOptionsData[] allExportOptions)
+        private bool PrepareForExport(string exportName, ref LockstepGameStateOptionsData[] allExportOptions)
         {
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] Lockstep  PrepareForExport");
