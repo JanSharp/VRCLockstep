@@ -134,5 +134,7 @@
 - [x] move to the next minor version, the is initialized and is importing changes are breaking changes
 - [x] change export to happen at the end of the frame, to prevent issues with calling StartExport inside of lockstep raised events - actually was a bigger issue than just that, it could have been inside of input actions that were suspended across frames
 - [x] change many things like all of the export related ones to only be allowed once the game states have been initialized
-- [ ] add a signature and a data format version to exports. Very major breaking change
+- [x] add a signature and a data format version to exports. Very major breaking change
 - [x] do not use Start in GameStatesUI
+- [ ] fix StartExport annotations for the return value
+- [ ] mention how allExportOptions are allowed to be null for StartExport

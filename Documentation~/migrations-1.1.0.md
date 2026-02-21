@@ -29,3 +29,87 @@ There are 2 reasons for this change:
 It would be good to move logic to `OnImportFinishingUp` where possible, as it is going to reduce the amount of logic run in a single frame, reducing lag spikes, as well as making `OnImportFinished` a more useful notification of an import being finished.
 
 `OnImportFinished` did not receive any breaking changes.
+
+## Export Format Changes
+
+The export format has been changed to have both a lockstep export signature as well as an internal data version. There's a few reasons:
+
+- Further ensures invalid data does not get attempted to be parsed, which would throw exceptions
+- Enables other tools to detect some data being a lockstep export string
+- Makes it possible for lockstep to change its internal data structure while keeping the ability to import older data
+
+However the introduction of this prevents importing previously exported strings, thus this is a breaking change.
+
+If it is desired to import one of said old strings:
+
+- Make sure to have the `com.jansharp.common` package installed
+- Create the `Assets/Editor/LockstepUpdate.cs` file (see foldout below)
+- In Unity go to Tools => Lockstep Update
+- Paste an old export string into the input field
+- Hit the convert button
+- Copy the export string from the output field
+- This export string is now valid for the new format and can be imported
+- Delete the `Assets/Editor/LockstepUpdate.cs` again, it no longer serves any purpose
+
+<details>
+<summary><b>Assets/Editor/LockstepUpdate.cs</b></summary>
+
+```cs
+using UnityEditor;
+using UnityEngine;
+
+namespace JanSharp
+{
+    public class LockstepUpdateWindow : EditorWindow
+    {
+        [SerializeField] string input;
+        [SerializeField] string output;
+        SerializedObject so;
+        SerializedProperty inputProp;
+        SerializedProperty outputProp;
+
+        private byte[] lockstepExportHeader = new byte[] { 0x20, 0x23, 0x05, 0x24, 0x6c, 0x73, 0x65, 0x3a, 0x00, 0x00, 0x00, 0x00 };
+        private static uint[] crc32LookupCache;
+
+        [MenuItem("Tools/Lockstep Update", priority = 1001)]
+        public static void CreateLockstepUpdateWindow()
+        {
+            // This method is called when the user selects the menu item in the Editor
+            EditorWindow wnd = GetWindow<LockstepUpdateWindow>();
+            wnd.titleContent = new GUIContent("Lockstep Update");
+        }
+
+        private void OnEnable()
+        {
+            so = new SerializedObject(this);
+            inputProp = so.FindProperty(nameof(input));
+            outputProp = so.FindProperty(nameof(output));
+        }
+
+        private void OnGUI()
+        {
+            so.Update();
+            EditorGUILayout.PropertyField(inputProp);
+
+            if (GUILayout.Button("Convert to Lockstep 1.1.0 export format"))
+                if (!Base64.TryDecode(inputProp.stringValue, out byte[] data) || data.Length < 4)
+                    outputProp.stringValue = "Malformed input";
+                else
+                {
+                    byte[] newData = new byte[data.Length + 12];
+                    System.Array.Copy(lockstepExportHeader, newData, 12);
+                    System.Array.Copy(data, 0, newData, 12, data.Length - 4);
+                    int size = newData.Length - 4;
+                    uint crc = CRC32.Compute(ref crc32LookupCache, newData, 0, size);
+                    DataStream.Write(ref newData, ref size, crc);
+                    outputProp.stringValue = Base64.Encode(newData);
+                }
+
+            EditorGUILayout.PropertyField(so.FindProperty(nameof(output)));
+            so.ApplyModifiedProperties();
+        }
+    }
+}
+```
+
+</details>

@@ -4769,6 +4769,15 @@ namespace JanSharp.Internal
             }
         }
 
+        /// <summary>
+        /// <para>The date of the first commit (when formatted in hex and then interpreted as decimal).</para>
+        /// <para>Followed by 'lse:' which stands for "lockstep export:".</para>
+        /// </summary>
+        private byte[] lockstepExportSignature = new byte[] { 0x20, 0x23, 0x05, 0x24, 0x6c, 0x73, 0x65, 0x3a };
+        private const int LockstepExportHeaderSize = 12;
+        private const uint LockstepExportDataVersion = 0u;
+        private const uint LowestSupportedLockstepExportDataVersion = 0u;
+
         private bool startExportingWhenNotBusy = false;
         private bool isExporting = false;
         private string currentExportName;
@@ -4867,6 +4876,10 @@ namespace JanSharp.Internal
 #endif
             startExportingWhenNotBusy = false;
             ResetWriteStream();
+            // Header.
+            WriteBytes(lockstepExportSignature);
+            WriteUInt(LockstepExportDataVersion); // Not using WriteSmallUInt so third party tools can read the version number more easily.
+            // Data.
             WriteDateTime(System.DateTime.UtcNow);
             WriteString(WorldName);
             WriteString(currentExportName);
@@ -5017,13 +5030,40 @@ namespace JanSharp.Internal
                     readStream = suspendedReadStream;
                 return null;
             }
-            if (readStream.Length < 4)
+            if (readStream.Length < LockstepExportHeaderSize + 4) // + 4 for the crc.
             {
 #if LOCKSTEP_DEBUG
                 Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - exported data too short:\n{exportedString}");
 #endif
                 if (flaggedToContinueNextFrame)
                     readStream = suspendedReadStream;
+                return null;
+            }
+
+            int signatureLength = lockstepExportSignature.Length;
+            for (int i = 0; i < signatureLength; i++)
+                if (readStream[i] != lockstepExportSignature[i])
+                {
+#if LOCKSTEP_DEBUG
+                    Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - invalid lockstep export signature:\n{exportedString}");
+#endif
+                    if (flaggedToContinueNextFrame)
+                        readStream = suspendedReadStream;
+                    return null;
+                }
+
+            readStreamPosition = signatureLength;
+            uint exportDataVersion = ReadUInt();
+            if (exportDataVersion < LowestSupportedLockstepExportDataVersion || LockstepExportDataVersion < exportDataVersion)
+            {
+#if LOCKSTEP_DEBUG
+                Debug.Log($"[LockstepDebug] Lockstep  ImportPreProcess (inner) - not supported lockstep export data version:\n{exportedString}");
+#endif
+                if (flaggedToContinueNextFrame)
+                {
+                    readStream = suspendedReadStream;
+                    readStreamPosition = suspendedReadPosition;
+                }
                 return null;
             }
 
@@ -5052,6 +5092,7 @@ namespace JanSharp.Internal
 
             ResetReadStream();
 
+            ReadBytes(LockstepExportHeaderSize, skip: true);
             exportedDate = ReadDateTime();
             exportWorldName = SanitizeWorldName(ReadString()); // Sanitize to handle fabricated export strings.
             exportName = ReadString();
