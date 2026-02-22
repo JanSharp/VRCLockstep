@@ -82,6 +82,9 @@ namespace JanSharp.Internal
         private LockstepGameStateOptionsData[] autosaveOptions;
         private bool AutosaveUsesExportOptions => autosaveOptions == exportOptions;
 
+        private FoldOutWidgetData exportGameStatesFoldOut;
+        private LabelWidgetData exportGameStatesInfoLabel;
+
         private VRCPlayerApi localPlayer;
 
         private void OnEnable()
@@ -345,11 +348,19 @@ namespace JanSharp.Internal
             return sb.ToString();
         }
 
+        /// <summary>
+        /// <para>The widgets this adds can only be used by one options UI concurrently.</para>
+        /// </summary>
         private void AddGameStatesToExportToInfoWidget()
         {
-            FoldOutWidgetData gsFoldOut = exportOptionsUI.Info.AddChild(exportOptionsUI.WidgetManager.NewFoldOutScope("Game States", true));
-            gsFoldOut.AddChild(exportOptionsUI.WidgetManager.NewLabel(BuildGameStatesToExportMsg()).StdMoveWidget());
-            gsFoldOut.DecrementRefsCount();
+            // By reusing the fold out widget data it remembers the fold out state.
+            exportGameStatesFoldOut = exportGameStatesFoldOut ?? exportOptionsUI.WidgetManager.NewFoldOutScope("Game States", false);
+            exportGameStatesInfoLabel = exportGameStatesInfoLabel ?? exportOptionsUI.WidgetManager.NewLabel("");
+            // Clear and readd the child in case any other system decided to add something to this widget.
+            exportGameStatesFoldOut.ClearChildren();
+            exportGameStatesFoldOut.AddChild(exportGameStatesInfoLabel);
+            exportGameStatesInfoLabel.Label = BuildGameStatesToExportMsg();
+            exportOptionsUI.Info.AddChild(exportGameStatesFoldOut);
         }
 
         private bool CanImport() => isInitialized && anySupportImportExport && anyImportedGSHasNoErrors && !lockstep.IsImporting;
@@ -431,6 +442,7 @@ namespace JanSharp.Internal
                     "Currently using export options for autosaves. Modifying is disabled to prevent "
                         + "accidentally confusing exports vs autosaves.");
                 exportOptionsUI.Info.AddChild(autosaveUsingExportInfoLabel);
+                exportOptionsUI.Info.FoldedOut = true; // Ensure this info message is visible.
             }
             exportOptionsUI.Draw();
         }
