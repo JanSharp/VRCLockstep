@@ -149,13 +149,17 @@ namespace JanSharp
         /// </summary>
         protected abstract void ValidateOptionsImpl();
         /// <summary>
-        /// <para>This function gets called either after <see cref="LockstepEventType.OnInit"/> or immediately
-        /// after
+        /// <para>This function gets called either after <see cref="LockstepEventType.OnInit"/> (but before
+        /// <see cref="LockstepEventType.OnInitFinished"/>) or immediately after
         /// <see cref="LockstepGameState.DeserializeGameState(bool, uint, LockstepGameStateOptionsData)"/> for
         /// late joiners. Meaning game states coming later in load order (the order of
         /// <see cref="LockstepAPI.AllGameStates"/>) are not yet deserialized and initialized. Use the
         /// <see cref="LockstepGameStateDependencyAttribute"/> in any scenario where cross game state
         /// interaction is required.</para>
+        /// <para><see cref="LockstepAPI.IsInitialized"/> is still <see langword="false"/> inside of this
+        /// event. <see cref="LockstepAPI.LockstepIsInitialized"/> is inconsistent, it is
+        /// <see langword="true"/> on the very first client, <see langword="false"/> for all late
+        /// joiners.</para>
         /// </summary>
         protected abstract void InitWidgetData();
         /// <summary>

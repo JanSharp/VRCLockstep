@@ -1692,11 +1692,11 @@ namespace JanSharp.Internal
                 suspendedInOnInit = true;
                 return;
             }
+            InitAllImportExportOptionsWidgetData();
             areAllGSInitialized = true; // Must be set before StartOrStopAutosave.
             StartOrStopAutosave();
             RaiseOnInitFinished();
             RaiseOnClientJoined(localPlayerId);
-            InitAllImportExportOptionsWidgetData();
             tickStartTimeShift = 0f;
             SetTickStartTime();
         }
