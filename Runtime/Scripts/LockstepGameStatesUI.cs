@@ -149,7 +149,7 @@ namespace JanSharp.Internal
             exportWindow.SetActive(false);
             lockstep.UpdateAllCurrentExportOptionsFromWidgets();
             lockstep.HideExportOptionsEditor();
-            if (!AutosaveUsesExportOptions && autosaveToggle.isOn)
+            if (AutosaveUsesExportOptions && autosaveToggle.isOn)
                 lockstep.ExportOptionsForAutosave = exportOptions; // exportOptions == autosaveOptions
             exportOptionsUI.Clear();
             exportOptionsUI.Draw(); // Return widgets to the pool.
