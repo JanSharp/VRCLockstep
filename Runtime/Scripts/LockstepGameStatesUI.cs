@@ -206,12 +206,20 @@ namespace JanSharp.Internal
             onImportSerializedTextValueChangedDelayedQueued = false;
             if (!isInitialized)
                 return;
+
+            bool importWindowIsOpen = importWindow.activeSelf;
+            if (importWindowIsOpen)
+                importWindow.SetActive(false); // Reduce UI layout overhead and prevent nonsensical generic value editor UI animations.
             // Reset regardless, because 2 consecutive valid yet different imports could be pasted in.
             ResetImport(leaveInputFieldUntouched: true);
 
             string importString = serializedInputField.text;
             if (importString == "")
+            {
+                if (importWindowIsOpen)
+                    importWindow.SetActive(true);
                 return;
+            }
             importedGameStates = lockstep.ImportPreProcess(
                 importString,
                 out exportDate,
@@ -222,6 +230,8 @@ namespace JanSharp.Internal
                 importOptionsUI.Info.AddChild(importOptionsUI.WidgetManager.NewLabel(
                     "Malformed or invalid data.").StdMoveWidget());
                 importOptionsUI.Draw();
+                if (importWindowIsOpen)
+                    importWindow.SetActive(true);
                 return;
             }
 
@@ -250,6 +260,9 @@ namespace JanSharp.Internal
             importOptionsUI.Draw();
 
             UpdateImportButton();
+
+            if (importWindowIsOpen)
+                importWindow.SetActive(true);
         }
 
         private string BuildImportedGameStatesMsg(out int canImportCount, out bool anyWarnings)
@@ -419,8 +432,13 @@ namespace JanSharp.Internal
                         options.DecrementRefsCount();
                 autosaveOptions = exportOptions;
             }
+            bool autosaveWindowIsOpen = autosaveWindow.activeSelf;
+            if (autosaveWindowIsOpen)
+                autosaveWindow.SetActive(false); // Reduce UI layout overhead and prevent nonsensical generic value editor UI animations.
             HideAutosaveOptionsEditor();
             ShowAutosaveOptionsEditor();
+            if (autosaveWindowIsOpen)
+                autosaveWindow.SetActive(true);
         }
 
         private LabelWidgetData autosaveInfoLabel;
