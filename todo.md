@@ -139,3 +139,4 @@
 - [x] fix StartExport annotations for the return value
 - [x] mention how allExportOptions are allowed to be null for StartExport
 - [ ] add editor scripting to validate that classes deriving from `LockstepGameStateOptionsUI` have `currentOptions` and `optionsToValidate` fields
+- [ ] `IsDeserializingForImport` is `false` inside of `LockstepGameStateOptionsUI.ShowOptionsEditor`. This is quite bothersome
