@@ -105,7 +105,17 @@ namespace JanSharp.Internal
             /// </summary>
             public List<GSTypeWithDeps> incomingReverseDependencies = new();
             public List<GSTypeWithDeps> dependencies;
-            public List<GSTypeWithDeps> recursiveDependenciesLut;
+            /// <summary>
+            /// <para>Game states this game state must load after. Recursive in that if a dependency of this
+            /// game state depends on another game state, that second game state is also be in this
+            /// list.</para>
+            /// </summary>
+            public HashSet<GSTypeWithDeps> selfLoadsAfterRecursiveLut = new();
+            /// <summary>
+            /// <para>The exact same as <see cref="selfLoadsAfterRecursiveLut"/> except that this game state
+            /// must load after, not before.</para>
+            /// </summary>
+            public HashSet<GSTypeWithDeps> selfLoadsBeforeRecursiveLut = new();
 
             public GSTypeWithDeps(System.Type gsType)
             {
@@ -196,10 +206,11 @@ namespace JanSharp.Internal
 
             public bool TryPopulateRecursiveDependencies()
             {
-                recursiveDependenciesLut = new();
                 foreach (GSTypeWithDeps dep in dependencies)
                     if (!Walk(dep))
                         return false;
+                foreach (var dep in selfLoadsAfterRecursiveLut)
+                    dep.selfLoadsBeforeRecursiveLut.Add(this);
                 return true;
             }
 
@@ -210,10 +221,10 @@ namespace JanSharp.Internal
                     DependencyTreeError($"[Lockstep] GameState dependency loop detected for {gsType.Name}.");
                     return false;
                 }
-                if (recursiveDependenciesLut.Contains(toWalk))
+                if (selfLoadsAfterRecursiveLut.Contains(toWalk))
                     return true;
-                recursiveDependenciesLut.Add(toWalk);
-                foreach (GSTypeWithDeps dep in dependencies)
+                selfLoadsAfterRecursiveLut.Add(toWalk);
+                foreach (GSTypeWithDeps dep in toWalk.dependencies)
                     if (!Walk(dep))
                         return false;
                 return true;
@@ -235,10 +246,6 @@ namespace JanSharp.Internal
             {
                 if (instance == null || other.instance == null)
                     throw new System.Exception("Impossible.");
-                if (typeWithDeps.recursiveDependenciesLut.Contains(other.typeWithDeps))
-                    return 1;
-                if (other.typeWithDeps.recursiveDependenciesLut.Contains(typeWithDeps))
-                    return -1;
                 int result = instance.GameStateDisplayName.ToLower().CompareTo(other.instance.GameStateDisplayName.ToLower());
                 if (result != 0)
                     return result;
@@ -264,31 +271,50 @@ namespace JanSharp.Internal
             return true;
         }
 
+        private static List<GSTypeWithDepsInstance> GetAllGameStatesInLoadOrder()
+        {
+            List<GSTypeWithDepsInstance> allGSInLoadOrder = new(allGameStates.Count);
+            foreach (GSTypeWithDepsInstance gs in allGameStates
+                .Select(gs => new GSTypeWithDepsInstance(gsTypeWithDepsLut[gs.GetType()].Single(), gs))
+                .OrderBy(t => t)) // Order alphabetically and deterministically.
+            {
+                HashSet<GSTypeWithDeps> loadsBeforeLut = gs.typeWithDeps.selfLoadsBeforeRecursiveLut;
+                if (loadsBeforeLut.Count == 0)
+                {
+                    allGSInLoadOrder.Add(gs);
+                    continue;
+                }
+                int targetIndex = allGSInLoadOrder.Count - 1;
+                for (int j = targetIndex - 1; j >= 0; j--)
+                    if (loadsBeforeLut.Contains(allGSInLoadOrder[j].typeWithDeps))
+                        targetIndex = j;
+                allGSInLoadOrder.Insert(targetIndex, gs);
+            }
+            return allGSInLoadOrder;
+        }
+
         private static bool PostOnBuild(Lockstep lockstep)
         {
             RecheckWorldName(new Lockstep[] { lockstep }, lockstep.gameObject.scene);
 
             SerializedObject lockstepSo = new SerializedObject(lockstep);
 
-            allGameStates = allGameStates
-                .Select(gs => new GSTypeWithDepsInstance(gsTypeWithDepsLut[gs.GetType()].Single(), gs))
-                .OrderBy(t => t)
-                .Select(t => t.instance)
-                .ToList();
-            lockstepSo.FindProperty("allGameStatesCount").intValue = allGameStates.Count;
+            List<GSTypeWithDepsInstance> allGSInLoadOrder = GetAllGameStatesInLoadOrder();
+
+            lockstepSo.FindProperty("allGameStatesCount").intValue = allGSInLoadOrder.Count;
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("allGameStates"),
-                allGameStates,
-                (p, v) => p.objectReferenceValue = v);
+                allGSInLoadOrder,
+                (p, v) => p.objectReferenceValue = v.instance);
 
-            List<LockstepGameState> gameStatesSupportingImportExport = allGameStates
-                .Where(gs => gs.GameStateSupportsImportExport)
+            List<GSTypeWithDepsInstance> gameStatesSupportingImportExport = allGSInLoadOrder
+                .Where(gs => gs.instance.GameStateSupportsImportExport)
                 .ToList();
             lockstepSo.FindProperty("gameStatesSupportingImportExportCount").intValue = gameStatesSupportingImportExport.Count;
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("gameStatesSupportingImportExport"),
                 gameStatesSupportingImportExport,
-                (p, v) => p.objectReferenceValue = v);
+                (p, v) => p.objectReferenceValue = v.instance);
 
             EditorUtil.SetArrayProperty(
                 lockstepSo.FindProperty("inputActionHandlerInstances"),

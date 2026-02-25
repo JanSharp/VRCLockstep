@@ -408,10 +408,8 @@ namespace JanSharp
         /// <para>The <see cref="LockstepGameState"/> the <see cref="LockstepGameStateDependencyAttribute"/>
         /// is applied to is going to be ordered after the given <paramref name="gameStateType"/> (or the
         /// other way around if <see cref="SelfLoadsBeforeDependency"/> is <see langword="true"/>).</para>
-        /// <para>After dependencies they are sorted by <see cref="LockstepGameState.GameStateDisplayName"/>
-        /// (converted to lowercase for case insensitivity), and then by
-        /// <see cref="LockstepGameState.GameStateInternalName"/> (not converted to lower case to prevent
-        /// ambiguity).</para>
+        /// <para>Outside of dependencies <see cref="LockstepGameState"/> load order is undefined behavior.
+        /// While it is not random, that order cannot be relied upon.</para>
         /// <para>Lockstep generally does not support inheritance for <see cref="LockstepGameState"/>, with
         /// the only exception being <see langword="abstract"/> classes to a limited degree. Any
         /// <see langword="abstract"/> <see cref="LockstepGameState"/> must only be derived from/implemented
