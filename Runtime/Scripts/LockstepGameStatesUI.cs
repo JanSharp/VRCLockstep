@@ -133,11 +133,11 @@ namespace JanSharp.Internal
             autosaveWindow.SetActive(true);
         }
 
-        public void CloseImportWindow()
+        public void CloseImportWindow(bool alreadyUpdatedOptions = false)
         {
             dimBackground.SetActive(false);
             importWindow.SetActive(false);
-            ResetImport();
+            ResetImport(leaveInputFieldUntouched: false, alreadyUpdatedOptions);
             importOptionsUI.Draw(); // Return widgets to the pool.
         }
 
@@ -397,16 +397,18 @@ namespace JanSharp.Internal
             }
             lockstep.UpdateAllCurrentImportOptionsFromWidgets();
             lockstep.StartImport(importedGameStates, exportDate, exportWorldName, exportName);
-            CloseImportWindow();
+            CloseImportWindow(alreadyUpdatedOptions: true);
         }
 
-        private void ResetImport(bool leaveInputFieldUntouched = false)
+        private void ResetImport(bool leaveInputFieldUntouched = false, bool alreadyUpdatedOptions = false)
         {
             if (!leaveInputFieldUntouched)
                 serializedInputField.SetTextWithoutNotify("");
 
             if (importedGameStates != null)
             {
+                if (!alreadyUpdatedOptions)
+                    lockstep.UpdateAllCurrentImportOptionsFromWidgets(); // Remember options even when not confirming an import.
                 lockstep.HideImportOptionsEditor();
                 lockstep.CleanupImportedGameStatesData(importedGameStates);
             }
