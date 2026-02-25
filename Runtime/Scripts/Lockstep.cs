@@ -4751,7 +4751,7 @@ namespace JanSharp.Internal
                 if (importUI == null || importOptions == null)
                     continue;
                 SetReadStream(LockstepImportedGS.GetBinaryData(importedGS));
-                importUI.ShowOptionsEditor(ui, importOptions);
+                importUI.ShowOptionsEditor(ui, importOptions, LockstepImportedGS.GetDataVersion(importedGS));
             }
         }
 
