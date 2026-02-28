@@ -284,7 +284,7 @@ namespace JanSharp.Internal
                     allGSInLoadOrder.Add(gs);
                     continue;
                 }
-                int targetIndex = allGSInLoadOrder.Count - 1;
+                int targetIndex = allGSInLoadOrder.Count;
                 for (int j = targetIndex - 1; j >= 0; j--)
                     if (loadsBeforeLut.Contains(allGSInLoadOrder[j].typeWithDeps))
                         targetIndex = j;
