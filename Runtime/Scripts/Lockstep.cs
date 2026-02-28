@@ -4750,6 +4750,9 @@ namespace JanSharp.Internal
                 LockstepGameStateOptionsData importOptions = LockstepImportedGS.GetImportOptions(importedGS);
                 if (importUI == null || importOptions == null)
                     continue;
+#if LOCKSTEP_DEBUG
+                Debug.Log($"[LockstepDebug] Lockstep  ShowImportOptionsEditor (inner) - showing options for: {gameState.GameStateInternalName}");
+#endif
                 SetReadStream(LockstepImportedGS.GetBinaryData(importedGS));
                 importUI.ShowOptionsEditor(ui, importOptions, LockstepImportedGS.GetDataVersion(importedGS));
             }
