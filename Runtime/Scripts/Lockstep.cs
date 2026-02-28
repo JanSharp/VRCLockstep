@@ -4076,7 +4076,7 @@ namespace JanSharp.Internal
                     + "This is invalid and will throw an exception.");
             if (!isExport)
             {
-                instance.Serialize(isExport: false);
+                instance.Serialize(isExport: false); // BUG: Fix this, this is recursive.
                 return false;
             }
             if (!instance.SupportsImportExport)
@@ -4585,8 +4585,12 @@ namespace JanSharp.Internal
                 if (exportUI.CurrentlyShown)
                     exportUI.HideOptionsEditor();
                 LockstepGameStateOptionsData options = allExportOptions[i];
-                if (options != null)
-                    exportUI.ShowOptionsEditor(ui, options);
+                if (options == null)
+                    continue;
+#if LOCKSTEP_DEBUG
+                Debug.Log($"[LockstepDebug] Lockstep  ShowExportOptionsEditor (inner) - showing options for: {gameStatesSupportingImportExport[i].GameStateInternalName}");
+#endif
+                exportUI.ShowOptionsEditor(ui, options);
             }
         }
 
