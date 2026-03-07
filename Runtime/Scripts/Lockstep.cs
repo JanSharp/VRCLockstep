@@ -2780,7 +2780,7 @@ namespace JanSharp.Internal
                 WriteSmallUInt((uint)eventsCount);
                 for (int j = 0; j < eventsCount; j++)
                 {
-                    object[] eventData = (object[])eventDataList[i].Reference;
+                    object[] eventData = (object[])eventDataList[j].Reference;
                     WriteSmallUInt((uint)eventData[0]); // inputActionId
                     byte[] inputActionData = (byte[])eventData[1]; // inputActionData
                     WriteSmallUInt((uint)inputActionData.Length);
