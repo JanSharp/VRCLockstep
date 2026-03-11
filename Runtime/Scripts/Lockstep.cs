@@ -4925,6 +4925,7 @@ namespace JanSharp.Internal
                 isContinuationFromPrevFrame = true;
             }
 #if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ExportGameStates (inner) - GS internal name: {gameState.GameStateInternalName}");
             double serializeStartMs = sw.Elapsed.TotalMilliseconds;
 #endif
             gameState.SerializeGameState(isExport: true, currentAllExportOptions[suspendedGSIndexInGSSerialization]);
@@ -4946,7 +4947,7 @@ namespace JanSharp.Internal
             WriteInt(stopPosition - suspendedExportGSSizePosition - 4); // The 4 bytes got reserved prior, cannot use WriteSmall.
             writeStreamSize = stopPosition;
 #if LOCKSTEP_DEBUG
-            Debug.Log($"[LockstepDebug] [sw] Lockstep  Export (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - suspendedExportGSSizePosition - 4}");
+            Debug.Log($"[LockstepDebug] [sw] Lockstep  ExportGameStates (inner) - serialization ms: {serializeMs}, GS internal name: {gameState.GameStateInternalName}, GS binary size: {stopPosition - suspendedExportGSSizePosition - 4}");
 #endif
 
             suspendedGSIndexInGSSerialization++;
