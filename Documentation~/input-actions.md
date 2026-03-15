@@ -82,7 +82,7 @@ In other words:
 
 Game state safe contexts naturally imply that code is running on every client. Using `SendInputAction` here subsequently means every client sends an input action.
 
-`SendSingletonInputAction` however ensures that only 1 client sends an input action. All other clients are going to wait until this input action gets run.
+`SendSingletonInputAction` however ensures that only 1 client sends an input action. All other clients are going to remember the input action data but otherwise hold off on doing anything with it.
 
 If the responsible client leaves immediately after sending the input action got sent it may not actually have been sent. In that case a different clients becomes responsible and effectively re-sends the input action.
 
