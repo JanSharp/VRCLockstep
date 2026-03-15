@@ -1548,9 +1548,11 @@ namespace JanSharp
         /// <see cref="LockstepGameState.SerializeGameState(bool, LockstepGameStateOptionsData)"/> when
         /// exporting the same serialization technique is used.</para>
         /// <para>The <p>WriteSmall</p> variants of these serialization functions use fewer bytes to
-        /// serialize given values if the given value is small enough. For the signed variants, small signed
-        /// values are also supported and will use fewer bytes, however unsigned variants are slightly more
-        /// efficient, both in terms of speed and size.</para>
+        /// serialize a given value the smaller said value is. They still support the entire range of values
+        /// for a given data type however.</para>
+        /// <para>For the signed variants, small unsigned/positive values are naturally also supported and
+        /// will too use fewer bytes, however unsigned variants are slightly more efficient, both in terms of
+        /// speed and size.</para>
         /// <para>Usable any time (technically).</para>
         /// </summary>
         public abstract void WriteSmallShort(short value);
