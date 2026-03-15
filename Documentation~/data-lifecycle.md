@@ -20,7 +20,7 @@ After a bit of time, `OnInit()` will get raised, any handlers listening to `OnIn
 
 [Input actions](input-actions.md) can be sent as soon as `OnInit` is running, before then they are invalid and ignored. While sending input actions inside of `OnInit` is possible, there's little reason to, as `OnInit` is allowed to modify game states already anyway. However if it's easier to send some input actions, that's perfectly fine, they'll run _very_ shortly after `OnInit`, if not in the same game tick.
 
-Once `OnInit` is raised, `lockstep.IsInitialized` is `true`.
+After all `OnInit` listeners have run, `lockstep.IsInitialized` is `true`. See also `OnInitFinished` and `lockstep.LockstepIsInitialized` xml annotations for more details.
 
 ## Every Other Client
 
@@ -31,7 +31,7 @@ Every other client does not run `OnInit`. Instead, all [game states](game-states
 
 Speaking of input actions, similar to `OnInit` as soon as `OnClientBeginCatchUp` is running sending input actions is allowed, before then they are invalid and ignored. Therefore if modifying the game state in `OnClientBeginCatchUp` is desired, an input action must be sent first. Note however that this input action has a very high likelihood of running many many game ticks after it was sent, since as the name of the event suggests, the client is just starting to catch up to all other clients.
 
-Once `OnClientBeginCatchUp` is raised, `lockstep.IsInitialized` is `true`.
+After all `OnClientBeginCatchUp` listeners have run, `lockstep.IsInitialized` is `true`. See also `OnPostClientBeginCatchUp` and `lockstep.LockstepIsInitialized` xml annotations for more details.
 
 After `OnClientBeginCatchUp` the Lockstep system begins rapidly running game ticks and raising events as well as input action handlers in those game ticks in order to catch up with every other client in the world. The reason why this client is behind in the first place is because sending all the game states to it may have taken some time, depending on the size of game states, so the client then has to run all actions performed after the game states were captured and sent over the network.
 
