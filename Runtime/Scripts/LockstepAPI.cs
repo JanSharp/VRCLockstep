@@ -1553,7 +1553,6 @@ namespace JanSharp
         /// efficient, both in terms of speed and size.</para>
         /// <para>Usable any time (technically).</para>
         /// </summary>
-        /// <inheritdoc cref="WriteSByte(sbyte)"/>
         public abstract void WriteSmallShort(short value);
         /// <inheritdoc cref="WriteSmallShort(short)"/>
         public abstract void WriteSmallUShort(ushort value);
