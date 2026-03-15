@@ -24,6 +24,11 @@ namespace JanSharp
             rng = WannaBeClasses.New<RNG>(nameof(RNG));
         }
 
+        public override void WannaBeDestructor()
+        {
+            rng.DecrementRefsCount();
+        }
+
         public override void Serialize(bool isExport)
         {
             lockstep.WriteULong(rng.seed);
