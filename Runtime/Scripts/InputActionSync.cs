@@ -12,7 +12,7 @@ namespace JanSharp.Internal
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     public class InputActionSync : UdonSharpBehaviour
     {
-        private const int MaxSyncedDataSize = 4096;
+        public const int MaxSyncedDataSize = 4096;
         ///<summary>WriteSmall((uint)inputActionIndex) never writes 0xfe as the first byte, making this distinguishable.</summary>
         private const byte SplitDataMarker = 0xfe;
         ///<summary>WriteSmall((uint)inputActionIndex) never writes 0xff as the first byte, making this distinguishable.</summary>

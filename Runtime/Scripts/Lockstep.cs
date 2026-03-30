@@ -2734,8 +2734,13 @@ namespace JanSharp.Internal
                         + "supported, and this call to SendLateJoinerData is ignored.");
                     return;
                 }
-                if (lateJoinerInputActionSync.QueuedBytesCount >= Clamp(byteCountForLatestLJSync / 2, 2048, 2048 * 5))
+                if (lateJoinerInputActionSync.QueuedBytesCount >= Clamp(
+                    byteCountForLatestLJSync / 2,
+                    InputActionSync.MaxSyncedDataSize * 2,
+                    InputActionSync.MaxSyncedDataSize * 10))
+                {
                     lateJoinerInputActionSync.DequeueEverything(doCallback: false);
+                }
 
                 SendLateJoinerInternalGameStatesIA();
             }
@@ -2746,6 +2751,11 @@ namespace JanSharp.Internal
 
             SendLateJoinerCurrentTickIA();
 
+            // While this does not actually accurately represent the total amount of bytes all game states
+            // took combined, this does represent the amount of bytes left to be sent once all serialization
+            // is done. This is still quite useful, as if it were to try to send late joiner data again later
+            // on and there's still more than half of the data left that was in the queue at this time here,
+            // that's, well, useful information. No need to add extra complexity for total size tracking.
             byteCountForLatestLJSync = lateJoinerInputActionSync.QueuedBytesCount;
         }
 
