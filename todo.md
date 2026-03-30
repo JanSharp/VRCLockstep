@@ -141,4 +141,4 @@
 - [ ] add editor scripting to validate that classes deriving from `LockstepGameStateOptionsUI` have `currentOptions` and `optionsToValidate` fields
 - [ ] `IsDeserializingForImport` is `false` inside of `LockstepGameStateOptionsUI.ShowOptionsEditor`. This is quite bothersome
 - [ ] make max work ms per frame a configurable variable in the lockstep API, both used by lockstep itself as well as any other systems spreading logic out across frames
-- [ ] add a max delay before it sends late joiner data
+- [x] add a max delay before it sends late joiner data - actually no. Introducing this also introduces the requirement to handle not wasting time serializing data for late joiners with large game states just to then cancel sending all of that data due to having already serialized it again because more clients joined and asked and it reached the max time out for waiting until it sends to those clients already again. It's just bothersome

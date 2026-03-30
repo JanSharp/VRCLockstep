@@ -2644,17 +2644,17 @@ namespace JanSharp.Internal
 #endif
             string playerName = ReadString();
             DataToken keyToken = sendingPlayerId;
-            bool doRaise = true;
+            bool alreadyKnownClient = false;
             if (TryGetClientState(sendingPlayerId, out ClientState currentState))
             {
-                doRaise = false;
+                alreadyKnownClient = true;
                 if (currentState != ClientState.WaitingForLateJoinerSync)
                     return;
             }
             else
                 AddClientState(sendingPlayerId, ClientState.WaitingForLateJoinerSync, playerName);
 
-            if (isMaster)
+            if (isMaster && (!alreadyKnownClient || flagForLateJoinerSyncSentCount == 0)) // Ignore impatient clients.
             {
                 CheckSingePlayerModeChange();
                 clientsJoinedInTheLastFiveMinutes++;
@@ -2664,7 +2664,7 @@ namespace JanSharp.Internal
                 SendCustomEventDelayedSeconds(nameof(FlagForLateJoinerSync), lateJoinerSyncDelay);
             }
 
-            if (doRaise)
+            if (!alreadyKnownClient)
                 RaiseOnPreClientJoined(sendingPlayerId);
         }
 
@@ -3027,12 +3027,8 @@ namespace JanSharp.Internal
             if (allClientStates != null)
                 return;
 
-            Debug.LogWarning($"[Lockstep] The master has not sent another set of late joiner data for 2.5 seconds "
-                + "since the last set finished, however this client is still waiting on that data. This "
-                + "should be impossible because the master keeps track of joined clients, however "
-                + "through mysterious means the first input action for late joiner sync may have been "
-                + "lost to the ether, through means unknown to me. Therefore this client is asking the "
-                + "master to send late joiner data again.");
+            // With the many different ways how master changes could happen, ensure that the current master is
+            // aware that we are still waiting for late joiner data.
             SendClientJoinedIA();
         }
 
