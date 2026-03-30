@@ -583,6 +583,8 @@ namespace JanSharp.Internal
         /// <summary>
         /// <para>Hidden API.</para>
         /// <para>Intended to be used for loading progress kind of UIs.</para>
+        /// <para>If it is processing, it has received all late joiner data and is thus guaranteed to finish
+        /// eventually. It cannot be interrupted.</para>
         /// <para>Not game state safe.</para>
         /// </summary>
         public bool IsProcessingLJGameStates => nextLJGameStateToProcess != -1;
@@ -1609,33 +1611,37 @@ namespace JanSharp.Internal
             if ((--someoneLeftWhileWeWereWaitingForLJSyncSentCount) != 0)
                 return;
 
-            if (allClientStates == null)
+            if (allClientStates != null)
             {
-                if (!currentlyNoMaster)
-                {
-                    Debug.LogError("[Lockstep] currentlyNoMaster should be impossible to "
-                        + "be false when clientStates is null. Setting it to true "
-                        + "in order to resolve this error state.");
-                    currentlyNoMaster = true;
-                }
+                // When this is the case both the OnPlayerLeft event and late joiner client states
+                // deserialization are responsible for calling CheckMasterChange.
+                return;
+            }
 
-                if (inputActionSyncForLocalPlayer == null)
-                {
-                    // CheckMasterChange should happen, but the local player needs the sync script first.
-                    someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
-                    SendCustomEventDelayedSeconds(nameof(SomeoneLeftWhileWeWereWaitingForLJSync), 1f);
-                    return;
-                }
+            if (!currentlyNoMaster)
+            {
+                Debug.LogError("[Lockstep] currentlyNoMaster should be impossible to "
+                    + "be false when clientStates is null. Setting it to true "
+                    + "in order to resolve this error state.");
+                currentlyNoMaster = true;
+            }
 
-                // clientStates is still null... so maybe this client should be taking charge.
-                CheckMasterChange();
+            if (inputActionSyncForLocalPlayer == null)
+            {
+                // CheckMasterChange should happen, but the local player needs the sync script first.
+                someoneLeftWhileWeWereWaitingForLJSyncSentCount++;
+                SendCustomEventDelayedSeconds(nameof(SomeoneLeftWhileWeWereWaitingForLJSync), 1f);
+                return;
+            }
 
-                // Nope, did not take charge, so some other client is not giving us late joiner data.
-                if (!isMaster)
-                {
-                    // Tell that client that we exist.
-                    SendClientJoinedIA();
-                }
+            // clientStates is still null... so maybe this client should be taking charge.
+            CheckMasterChange();
+
+            // Nope, did not take charge, so some other client is not giving us late joiner data.
+            if (!isMaster)
+            {
+                // Tell that client that we exist.
+                SendClientJoinedIA();
             }
         }
 
@@ -2864,6 +2870,8 @@ namespace JanSharp.Internal
 
             // Client states game state.
             SetClientStatesToEmpty();
+            currentlyNoMaster = false; // Setting this to false here is required in order for
+            // SetMasterLeftFlag potentially called via SetMasterPlayerId to make a call to CheckMasterChange.
             bool containsLocalPlayer = false;
             latestInputActionIndexByPlayerIdForLJ = new DataDictionary();
             int count = (int)ReadSmallUInt();
@@ -3160,6 +3168,7 @@ namespace JanSharp.Internal
             {
                 bool doCheckMasterChange = checkMasterChangeAfterProcessingLJGameStates;
                 ForgetAboutUnprocessedLJSerializedGameSates();
+                checkMasterChangeAfterProcessingLJGameStates = doCheckMasterChange;
                 CleanUpOldInputActions();
                 if (!currentlyNoMaster)
                 {

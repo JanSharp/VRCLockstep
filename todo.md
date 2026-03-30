@@ -141,3 +141,4 @@
 - [ ] add editor scripting to validate that classes deriving from `LockstepGameStateOptionsUI` have `currentOptions` and `optionsToValidate` fields
 - [ ] `IsDeserializingForImport` is `false` inside of `LockstepGameStateOptionsUI.ShowOptionsEditor`. This is quite bothersome
 - [ ] make max work ms per frame a configurable variable in the lockstep API, both used by lockstep itself as well as any other systems spreading logic out across frames
+- [ ] add a max delay before it sends late joiner data
