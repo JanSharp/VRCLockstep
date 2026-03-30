@@ -2297,6 +2297,20 @@ namespace JanSharp.Internal
 
             if (!TryGetMasterCandidate(out uint candidateClientId))
             {
+                if (CouldTakeOverMaster())
+                {
+                    // On the off chance that this client ran CheckMasterChange before it had received the
+                    // LJCurrentTickIA, because the master left, however it then received the LJCurrentTickIA
+                    // afterwards anyway, which could be possible since that order of events is undefined
+                    // behavior from VRChat's side.
+                    // Then the local client would have said that it itself cannot take over master initially,
+                    // however turns out now it can - in fact, calling FactoryReset would be invalid.
+                    // That said, the local client may only do this if no other client said they could take
+                    // master as another client could have already been told to become master due to a
+                    // previous VRChat master running the check for candidates process.
+                    BecomeNewMaster();
+                    return;
+                }
                 FactoryReset();
                 BecomeInitialMaster();
                 return;
