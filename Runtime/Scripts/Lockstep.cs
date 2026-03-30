@@ -1233,7 +1233,7 @@ namespace JanSharp.Internal
                 if (ignoreLocalInputActions)
                 {
 #if LOCKSTEP_DEBUG
-                    Debug.Log($"[LockstepDebug] Lockstep  SendInputAction (inner) - ignoreLocalInputActions is true, returning");
+                    Debug.Log($"[LockstepDebug] Lockstep  SendInputActionInternal (inner) - ignoreLocalInputActions is true, returning");
 #endif
                     return 0uL; // Do not save client joined IA because it will never be executed locally.
                 }
