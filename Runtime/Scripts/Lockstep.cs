@@ -1136,7 +1136,10 @@ namespace JanSharp.Internal
             Debug.Log($"[LockstepDebug] [sw] Lockstep  RunInputActionWithCurrentReadStream (inner) - ms: {sw.Elapsed.TotalMilliseconds}, event name: {inputActionHandlerEventNames[inputActionId]}");
 #endif
             if (flaggedToContinueNextFrame)
+            {
                 suspendedInputActionId = inputActionId;
+                return;
+            }
             // Prevent misuse of the API, as well as failing fast.
             sendingPlayerId = 0u;
             sendingUniqueId = 0uL;
@@ -1158,6 +1161,13 @@ namespace JanSharp.Internal
             inst.SendCustomEvent(inputActionHandlerEventNames[suspendedInputActionId]);
             inGameStateSafeEvent = false;
             isContinuationFromPrevFrame = false;
+            if (!flaggedToContinueNextFrame)
+            {
+                // Prevent misuse of the API, as well as failing fast.
+                sendingPlayerId = 0u;
+                sendingUniqueId = 0uL;
+                sendingTime = 0f;
+            }
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] [sw] Lockstep  RunInputActionSuspendedPrevFrame (inner) - ms: {sw.Elapsed.TotalMilliseconds}, event name: {inputActionHandlerEventNames[suspendedInputActionId]}");
 #endif
