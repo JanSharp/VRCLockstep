@@ -467,6 +467,7 @@ namespace JanSharp.Internal
             allClientStatesCount = 0;
             allClientNames = null;
             allClientNamesCount = 0;
+            currentlyNoMaster = true; // When clientStates is null, this must be true.
         }
 
         private void AddClientState(uint playerId, ClientState clientState, string playerName)
@@ -1990,7 +1991,6 @@ namespace JanSharp.Internal
             SetClientStatesToNull();
             firstMutableTick = 0u; // Technically not needed, but it makes a lot of sense to be here.
             latestInputActionIndexByPlayerIdForLJ = null;
-            currentlyNoMaster = true;
             StopWaitingForCandidates();
             acceptForcedCandidate = false;
             // The times where ignoreLocalInputActions would be false, FactoryReset should no longer get called.
@@ -2610,7 +2610,6 @@ namespace JanSharp.Internal
             isWaitingForLateJoinerSync = true;
             lateJoinerInputActionSync.lockstepIsWaitingForLateJoinerSync = true;
             SetClientStatesToNull(); // To know if this client actually received all data, first to last.
-            currentlyNoMaster = true; // When clientStates is null, this must be true.
             latestInputActionIndexByPlayerIdForLJ = null;
             WriteString(localPlayerDisplayName);
             SendInputAction(clientJoinedIAId, forceOneFrameDelay: false);
@@ -2865,11 +2864,14 @@ namespace JanSharp.Internal
 
             // Client states game state.
             SetClientStatesToEmpty();
+            bool containsLocalPlayer = false;
             latestInputActionIndexByPlayerIdForLJ = new DataDictionary();
             int count = (int)ReadSmallUInt();
             for (int i = 0; i < count; i++)
             {
                 uint playerId = ReadSmallUInt();
+                if (playerId == localPlayerId)
+                    containsLocalPlayer = true;
                 ClientState clientState = (ClientState)ReadByte();
                 string clientName = ReadString();
                 uint latestInputActionIndex = ReadSmallUInt();
@@ -2880,11 +2882,22 @@ namespace JanSharp.Internal
                 if (clientState == ClientState.Master) // clientStates always has exactly 1 Master.
                     SetMasterPlayerId(playerId);
             }
+            if (!containsLocalPlayer)
+            {
+                // This client's ClientJoinedIA did not run before the data that is being received here has
+                // been serialized. In order to uphold the guarantee that the local client has all data needed
+                // in order to catch up, its ClientJoinedIA must have run already.
+                // In short, this data is not meant for this client, the lockstep master must send another set
+                // of data. It is keeping track of that already on its own so just wait.
+                SetClientStatesToNull();
+                return;
+            }
+
+            RemoveClientsFromLeftClientsWhichAreNotInClientStates();
+
             rng.seed = ReadULong();
             rng.lcg = ReadULong();
             rng.hash = ReadULong();
-
-            RemoveClientsFromLeftClientsWhichAreNotInClientStates();
 
             // Singleton input actions game state.
             singletonInputActions.Clear();
