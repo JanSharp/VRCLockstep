@@ -1,5 +1,6 @@
 ﻿using UdonSharp;
 using UnityEngine;
+using VRC.SDK3.Data;
 using VRC.SDKBase;
 using VRC.Udon.Common;
 
@@ -95,8 +96,6 @@ namespace JanSharp.Internal
         private byte[] receivedData;
         private int partialContinueIndex;
         private int partialMissingSize;
-        private bool partialRequiresTimeTracking;
-        private float partialSendTime;
 
         private void Start()
         {
@@ -205,7 +204,6 @@ namespace JanSharp.Internal
             // Write IA header. This is what MaxHeaderSize correlates to.
             DataStream.WriteSmall(ref stage, ref stageSize, index);
             DataStream.WriteSmall(ref stage, ref stageSize, inputActionId);
-            float sendTime = lockstep.currentInputActionSendTime; // Fetch into local as an optimization.
             if (lockstep.inputActionHandlersRequireTimeTracking[inputActionId])
             {
                 if (!stageRequiresTimeTracking)
@@ -214,7 +212,7 @@ namespace JanSharp.Internal
                     stageTimeTrackingIndex = stageSize;
                     stageSize += 4; // Reserve 4 bytes, which will be written to right before sending.
                 }
-                DataStream.Write(ref stage, ref stageSize, sendTime);
+                DataStream.Write(ref stage, ref stageSize, lockstep.currentInputActionSendTime);
             }
             DataStream.WriteSmall(ref stage, ref stageSize, (uint)inputActionDataSize);
 
@@ -247,7 +245,7 @@ namespace JanSharp.Internal
             return uniqueId;
         }
 
-        public void AddUniqueIdsWaitingToBeSentToHashSet(VRC.SDK3.Data.DataDictionary lut)
+        public void AddUniqueIdsWaitingToBeSentToHashSet(DataDictionary lut)
         {
 #if LOCKSTEP_DEBUG
             Debug.Log($"[LockstepDebug] {this.name}  AddUniqueIdsWaitingToBeSentToHashSet - uiqCount: {uiqCount}");
@@ -292,14 +290,12 @@ namespace JanSharp.Internal
             // In most cases, if not all, the DequeueEverything function will be called when there aren't
             // any player's receiving data anymore, that's kind of the purpose of this function, however
             // just in case something weird happens with VRChat, this here exists.
-            // This is using 0xfe as a special value
             syncedData = new byte[1] { ClearedDataMarker };
             sendingUniqueIdsCount = 0;
             syncedDataRequiresTimeTracking = false;
             syncedDataTimeTrackingIndex = 0;
             // Abuse retrying because it causes serialization to just send whatever is currently set in the
             // syncedData variable without touching the stage or queue or anything.
-            // And by setting sendingUniqueIdCount it also doesn't touch the unique id queue.
             retrying = true;
         }
 
