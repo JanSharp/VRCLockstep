@@ -124,7 +124,6 @@ namespace JanSharp.Internal
         private const float MaxTickStartTimeShift = (1f / TickRate) * 0.05f; // At most 5% faster or slower.
         /// <summary>Bit shorter interval to make the system try to run ticks slightly sooner.</summary>
         private const float PredictedTimeUntilNextNetworkTick = (1f / NetworkTickRate) * 0.925f;
-        private const long MaxMSWhileCatchingUp = 10L;
         private int byteCountForLatestLJSync = -1;
         // private uint resetTickRateTick = uint.MaxValue; // At the end of this tick it gets reset to TickRate.
         // private float currentTickRate = TickRate;
@@ -172,7 +171,6 @@ namespace JanSharp.Internal
         private bool flaggedToContinueNextFrame = false;
         private bool flaggedToContinueInsideOfGSImport = false;
         private System.Diagnostics.Stopwatch suspensionLogicSw = new System.Diagnostics.Stopwatch();
-        private const long MaxMSForTimedSuspensionLogic = 10L;
         private bool suspendedDueToRunningLong = false;
         private uint suspendedInputActionId;
         private uint suspendedSingletonInputActionId;
@@ -305,6 +303,7 @@ namespace JanSharp.Internal
         [SerializeField] private UdonSharpBehaviour[] onAutosaveIntervalSecondsChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onIsAutosavePausedChangedListeners;
         [SerializeField] private UdonSharpBehaviour[] onLockstepNotificationListeners;
+        [SerializeField] private UdonSharpBehaviour[] onMaxWorkMSPerFrameChangedListeners;
 
         [SerializeField] private LockstepGameState[] allGameStates;
         [SerializeField] private int allGameStatesCount;
@@ -336,6 +335,23 @@ namespace JanSharp.Internal
             }
         }
         public override LockstepGameState GetGameStatesSupportingImportExport(int index) => gameStatesSupportingImportExport[index];
+
+        private double maxWorkMSPerFrame = 5d;
+        private long maxWorkMSPerFrameLong = 5L;
+        private float maxWorkSecondsPerFrame = 0.005f;
+        public override double MaxWorkMSPerFrame
+        {
+            get => maxWorkMSPerFrame;
+            set
+            {
+                maxWorkMSPerFrame = System.Math.Max(0.25d, value);
+                maxWorkMSPerFrameLong = System.Math.Max(1L, (long)maxWorkMSPerFrame);
+                maxWorkSecondsPerFrame = (float)(maxWorkMSPerFrame / 1000d);
+                MarkForOnMaxWorkMSPerFrameChanged();
+            }
+        }
+        public override long MaxWorkMSPerFrameLong => maxWorkMSPerFrameLong;
+        public override float MaxWorkSecondsPerFrame => maxWorkSecondsPerFrame;
 
         private bool PlayerIdHasClientState(uint playerId)
         {
@@ -733,7 +749,7 @@ namespace JanSharp.Internal
                 if (!TryRunCurrentTick())
                     break;
                 tickStartTime += tickStartTimeShift;
-                if (lastUpdateSW.ElapsedMilliseconds >= MaxMSWhileCatchingUp)
+                if (lastUpdateSW.Elapsed.TotalMilliseconds > maxWorkMSPerFrame)
                     break;
             }
 
@@ -769,7 +785,7 @@ namespace JanSharp.Internal
             SetDilatedTickStartTime();
             while (currentTick <= lastRunnableTick
                 && TryRunCurrentTick()
-                && stopwatch.ElapsedMilliseconds < MaxMSWhileCatchingUp)
+                && stopwatch.Elapsed.TotalMilliseconds <= maxWorkMSPerFrame)
             { }
             stopwatch.Stop(); // I don't think this actually matters, but it's not used anymore so sure.
 
@@ -3533,7 +3549,7 @@ namespace JanSharp.Internal
             int length = listeners.Length;
             while (suspendedIndexInEventListeners < length)
             {
-                if (suspensionLogicSw.ElapsedMilliseconds >= MaxMSForTimedSuspensionLogic)
+                if (suspensionLogicSw.Elapsed.TotalMilliseconds > maxWorkMSPerFrame)
                 {
                     flaggedToContinueNextFrame = true;
                     suspendedDueToRunningLong = true;
@@ -3936,6 +3952,34 @@ namespace JanSharp.Internal
             if (destroyedCount != 0)
                 onLockstepNotificationListeners = CleanUpRemovedListeners(onLockstepNotificationListeners, destroyedCount, nameof(LockstepEventType.OnLockstepNotification));
             notificationMessage = null;
+        }
+
+        private bool markedForOnMaxWorkMSPerFrameChanged;
+        private void MarkForOnMaxWorkMSPerFrameChanged()
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  MarkForOnMaxWorkMSPerFrameChanged");
+#endif
+            if (markedForOnMaxWorkMSPerFrameChanged)
+                return;
+            markedForOnMaxWorkMSPerFrameChanged = true;
+            SendCustomEventDelayedFrames(nameof(RaiseOnMaxWorkMSPerFrameChanged), 1);
+        }
+
+        public void RaiseOnMaxWorkMSPerFrameChanged() // Not game state safe.
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  RaiseOnMaxWorkMSPerFrameChanged");
+#endif
+            markedForOnMaxWorkMSPerFrameChanged = false;
+            int destroyedCount = 0;
+            foreach (UdonSharpBehaviour listener in onMaxWorkMSPerFrameChangedListeners)
+                if (listener == null)
+                    destroyedCount++;
+                else
+                    listener.SendCustomEvent(nameof(LockstepEventType.OnMaxWorkMSPerFrameChanged));
+            if (destroyedCount != 0)
+                onMaxWorkMSPerFrameChangedListeners = CleanUpRemovedListeners(onMaxWorkMSPerFrameChangedListeners, destroyedCount, nameof(LockstepEventType.OnMaxWorkMSPerFrameChanged));
         }
 
         public override string GetDisplayName(uint playerId)

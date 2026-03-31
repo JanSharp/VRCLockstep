@@ -277,11 +277,21 @@ namespace JanSharp
         /// <para>Notifications are messages sent by lockstep with the intent for them to be shown to the
         /// local player.</para>
         /// <para><see cref="LockstepAPI.InGameStateSafeEvent"/> may be <see langword="true"/> inside of this
-        /// event, however as stated below it generally not game state safe because this is not always the
+        /// event, however as stated below it generally is not game state safe because this is not always the
         /// case.</para>
         /// <para>Not game state safe.</para>
         /// </summary>
         OnLockstepNotification,
+        /// <summary>
+        /// <para>Raised whenever <see cref="LockstepAPI.MaxWorkMSPerFrame"/> and with it also
+        /// <see cref="LockstepAPI.MaxWorkMSPerFrameLong"/> and
+        /// <see cref="LockstepAPI.MaxWorkSecondsPerFrame"/> changed.</para>
+        /// <para>Gets raised 1 frame delayed to prevent recursion, subsequently if there are multiple changes
+        /// within a frame the event only gets raised once (you can thank Udon). Which subsequently means the
+        /// value may not actually be different from the last time it was read.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        OnMaxWorkMSPerFrameChanged,
     }
 
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = true, AllowMultiple = false)]

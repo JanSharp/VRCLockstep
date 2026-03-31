@@ -55,6 +55,50 @@ namespace JanSharp
         /// </summary>
         public abstract string WorldName { get; }
         /// <summary>
+        /// <para>Default: <c>5d</c>.</para>
+        /// <para>If work such as catching up or otherwise logic spread out across frames exceeds this amount
+        /// of time passed, it shall suspend and continue next frame.</para>
+        /// <para>Lockstep itself uses this. Any other system spreading logic out across frames is encouraged
+        /// to use this same value. The <see cref="LockstepEventType.OnMaxWorkMSPerFrameChanged"/> event
+        /// exists to enable fetching this value into a local variable reliably.</para>
+        /// <para>Intended to be compared to <see cref="System.TimeSpan.TotalMilliseconds"/> obtained from
+        /// <see cref="System.Diagnostics.Stopwatch.Elapsed"/>.</para>
+        /// <para>Always greater or equal to <c>0.25d</c>. Attempts to write a smaller value will get clamped
+        /// to said value.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public abstract double MaxWorkMSPerFrame { get; set; }
+        /// <summary>
+        /// <para>Default: <c>5L</c>.</para>
+        /// <para>If work such as catching up or otherwise logic spread out across frames exceeds this amount
+        /// of time passed, it shall suspend and continue next frame.</para>
+        /// <para>Lockstep itself uses this. Any other system spreading logic out across frames is encouraged
+        /// to use this same value. The <see cref="LockstepEventType.OnMaxWorkMSPerFrameChanged"/> event
+        /// exists to enable fetching this value into a local variable reliably.</para>
+        /// <para>Intended to be compared to
+        /// <see cref="System.Diagnostics.Stopwatch.ElapsedMilliseconds"/>.</para>
+        /// <para>The same value as <see cref="MaxWorkMSPerFrame"/> rounded down, but always greater or equal
+        /// to <c>1L</c>.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public abstract long MaxWorkMSPerFrameLong { get; }
+        /// <summary>
+        /// <para>Default: <c>0.005f</c>.</para>
+        /// <para>If work such as catching up or otherwise logic spread out across frames exceeds this amount
+        /// of time passed, it shall suspend and continue next frame.</para>
+        /// <para>Lockstep itself uses this. Any other system spreading logic out across frames is encouraged
+        /// to use this same value. The <see cref="LockstepEventType.OnMaxWorkMSPerFrameChanged"/> event
+        /// exists to enable fetching this value into a local variable reliably.</para>
+        /// <para>Intended to be compared to time measurements taken using
+        /// <see cref="Time.realtimeSinceStartup"/>.</para>
+        /// <para>Always greater or equal to <c>0.00025f</c>.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        public abstract float MaxWorkSecondsPerFrame { get; }
+        /// <summary>
         /// <para>The first tick is <c>1u</c>, not <c>0u</c>.</para>
         /// <para>Usable once <see cref="LockstepIsInitialized"/> is <see langword="true"/>.</para>
         /// <para>Game state safe.</para>
