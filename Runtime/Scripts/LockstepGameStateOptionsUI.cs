@@ -202,6 +202,9 @@ namespace JanSharp
         /// going to read from is the exported serialized game state data which is to be imported.
         /// Additionally The <paramref name="importedDataVersion"/> is what the
         /// <see cref="LockstepGameState.GameStateDataVersion"/> was at the time of the export.</para>
+        /// <para>Note that <see cref="LockstepAPI.IsDeserializingForImport"/> is <see langword="false"/>
+        /// inside of this event, therefore it is required to use overloads of deserialize functions which
+        /// take an explicit <c>isImport</c> argument, passing <see langword="true"/> to that.</para>
         /// </summary>
         /// <param name="ui">The same value as <see cref="CurrentUI"/>.</param>
         /// <param name="importedDataVersion">Only relevant for implementations intended for use as
