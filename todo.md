@@ -128,9 +128,9 @@
   - [x] Add OnInitFinished which cannot be spread out across frames
 - [x] Let OnClientBeginCatchUp be spread out across frames
   - [x] Add OnPostClientBeginCatchUp which cannot be spread out across frames
-  - [ ] test this
+  - [x] test this - the RP menu uses this, it works
 - [x] Add OnImportFinishingUp which can be spread out across frames
-  - [ ] test this
+  - [x] test this - the RP menu uses this, it works
 - [x] move to the next minor version, the is initialized and is importing changes are breaking changes
 - [x] change export to happen at the end of the frame, to prevent issues with calling StartExport inside of lockstep raised events - actually was a bigger issue than just that, it could have been inside of input actions that were suspended across frames
 - [x] change many things like all of the export related ones to only be allowed once the game states have been initialized
