@@ -441,16 +441,35 @@ namespace JanSharp
         /// when <see cref="IsDeserializingForImport"/> is <see langword="false"/>. It is not a truly game
         /// state safe event as the sole purpose of it is to restore the game state to match every other
         /// client, without mutating it in the process.</para>
-        /// <para>When using this across systems, note that this being <see langword="true"/> when the calling
-        /// context is unknown and undefined is actually meaningless, because it is possible to transition
-        /// from a game state safe context into a game state unsafe context within the same function. For
-        /// example by branching based on a non game state safe condition. This being <see langword="false"/>
-        /// can always means it is in fact in a non game state safe context.</para>
-        /// <para>However even then if it is required to check if the current context is non game state safe,
-        /// well this could be <see langword="true"/> when in reality it is non game state safe. Thus it is
-        /// pretty useless when there is any unknown or undefined code somewhere up the call stack.</para>
+        /// <para>When implementing a system which makes calls to other systems or raises events other systems
+        /// may listen to, ensure to use <see cref="OpenGameStateUnsafeScope"/> and
+        /// <see cref="CloseGameStateUnsafeScope"/> where appropriate in order for other systems to be able to
+        /// confidently rely on the value of <see cref="InGameStateSafeEvent"/>.</para>
+        /// <para>Which is to say, when in a game state safe context, transitioning to a game state unsafe
+        /// context should be indicated using <see cref="OpenGameStateUnsafeScope"/>. This can be the case for
+        /// example when using game state unsafe conditions when branching. But again, this is only necessary
+        /// when running foreign code inside of the now game state unsafe scope.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Game state safe.</para>
         /// </summary>
         public abstract bool InGameStateSafeEvent { get; }
+        /// <summary>
+        /// <para>When implementing a system which makes calls to other systems or raises events other systems
+        /// may listen to, ensure to use <see cref="OpenGameStateUnsafeScope"/> and
+        /// <see cref="CloseGameStateUnsafeScope"/> where appropriate in order for other systems to be able to
+        /// confidently rely on the value of <see cref="InGameStateSafeEvent"/>.</para>
+        /// <para>Which is to say, when in a game state safe context, transitioning to a game state unsafe
+        /// context should be indicated using <see cref="OpenGameStateUnsafeScope"/>. This can be the case for
+        /// example when using game state unsafe conditions when branching. But again, this is only necessary
+        /// when running foreign code inside of the now game state unsafe scope.</para>
+        /// <para><see cref="OpenGameStateUnsafeScope"/> and <see cref="CloseGameStateUnsafeScope"/> must
+        /// always be called in pairs.</para>
+        /// <para>Usable any time. While it is only useful inside of game state safe events, using it outside
+        /// of them is allowed for convenience.</para>
+        /// </summary>
+        public abstract void OpenGameStateUnsafeScope();
+        /// <inheritdoc cref="OpenGameStateUnsafeScope"/>
+        public abstract void CloseGameStateUnsafeScope();
         /// <summary>
         /// <para>The message which lockstep sent as a notification with the intent for it to be shown to the
         /// local player.</para>
