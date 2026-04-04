@@ -1,6 +1,92 @@
 
 # Changelog
 
+## [1.1.0] - 2026-04-04
+
+_For migration regarding OnInit, OnClientBeginCatchUp, OnImportFinishingUp and (separately) export string format changes see [migrations-1.1.0.md](Documentation~/migrations-1.1.0.md)._
+
+### Changed
+
+- **Breaking:** Make InitWidgetData run sooner on the first client, which is more consistent with late joiners ([`6fa9a0c`](https://github.com/JanSharp/VRCLockstep/commit/6fa9a0ce42c2398416dd05d997389c82340f2ee7))
+- **Breaking:** Add a signature and internal data version to export strings ([`2e9614a`](https://github.com/JanSharp/VRCLockstep/commit/2e9614aa2046acd9c57f2f8ad066570b334cab36))
+- **Breaking:** Make export/import and their options APIs only usable once all `OnInit` or all `OnClientBeginCatchUp` listeners have been run to prevent systems getting events or callbacks relating to these APIs before they've even been initialized ([`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3))
+- **Breaking:** Allow `OnClientBeginCatchUp` to be spread out across frames ([`6132b9e`](https://github.com/JanSharp/VRCLockstep/commit/6132b9eca81fa34003808fd8a40175cfb2fe6893), [`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3))
+- **Breaking:** Allow `OnInit` to be spread out across frames ([`c141304`](https://github.com/JanSharp/VRCLockstep/commit/c141304dade93b861285fa3203be5a5c64ac6c6e), [`cac2eca`](https://github.com/JanSharp/VRCLockstep/commit/cac2ecaf38a4de1608731a0eacd8bab3a3a86cbd), [`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3))
+- **Breaking:** Make `InGameStateSafeEvent` more useful when cross system interactions are involved ([`ec65c14`](https://github.com/JanSharp/VRCLockstep/commit/ec65c14f466cefee2718c7bfbaf422e0dbe5810d))
+- Improve performance of write and read custom class functions ([`5b9d9a8`](https://github.com/JanSharp/VRCLockstep/commit/5b9d9a80fd7cf3f536c1c82dd6192f76ab9bc7ca))
+- Make cancelling of ongoing late joiner sync less aggressive to reduce how long clients may have to wait before receiving late joiner data ([`8609a29`](https://github.com/JanSharp/VRCLockstep/commit/8609a294dafa0074c270e46f1bb4bc1631f120c0))
+- Remove potential unintentional additional delay before late joiner data gets sent ([`c4eb771`](https://github.com/JanSharp/VRCLockstep/commit/c4eb7715463f2c36405e8ba0fd5274bbcd7ce665))
+- Clarify xml annotations for `WriteSmall` variants ([`d163cfd`](https://github.com/JanSharp/VRCLockstep/commit/d163cfdf262483e4666c1a1c104e7c7cc279e5b2))
+- Make lifecycle docs more accurate reflecting initialization changes ([`7a33972`](https://github.com/JanSharp/VRCLockstep/commit/7a339726a2c15cf9a1749b733a4e9fca582a2edf))
+- Improve wording for singleton input action docs ([`7cf5f0c`](https://github.com/JanSharp/VRCLockstep/commit/7cf5f0c4b973bb7212fe70119ff6006d33706d64))
+- Remember import options consistently in GameStatesUI, like including remembering even when not confirming the import ([`aac3961`](https://github.com/JanSharp/VRCLockstep/commit/aac39614032bf8d8cb1f6d56baa3badf5f34aa1e))
+- Prevent nonsensical generic value editor UI fade animations in GameStatesUI ([`8fa5e2a`](https://github.com/JanSharp/VRCLockstep/commit/8fa5e2a21bbf263d14d3d66e87b87c28d7765929))
+- Make export game states info in GameStatesUI collapsed by default and remember the fold out state ([`0c0ca11`](https://github.com/JanSharp/VRCLockstep/commit/0c0ca111425d988175102db715bf4f9bd2176a42))
+- Only fold out import info in GameStatesUI if there are any warnings ([`af7ac67`](https://github.com/JanSharp/VRCLockstep/commit/af7ac675c0fea8eae5835b65d002563ffd75ce36))
+- Make "not in imported data" in GameStatesUI red instead of gray for consistency ([`fdd525f`](https://github.com/JanSharp/VRCLockstep/commit/fdd525f30dc64505d9db7f11e918f55c23a50864), [`f576900`](https://github.com/JanSharp/VRCLockstep/commit/f576900a9ebadbfd4fd33a11512f777365acb260))
+- Support `StartExport` being called with `allExportOptions` being `null` ([`df89663`](https://github.com/JanSharp/VRCLockstep/commit/df896630961caffdac2c720a8bb20f0f050b621f))
+- Make `StartExport` no longer call `ResetWriteStream` ([`fe58894`](https://github.com/JanSharp/VRCLockstep/commit/fe58894302a2caf8d77549e8a220a3ca5aee99b2))
+- Support GameStatesUI being disabled in the hierarchy by default ([`d5fdc3f`](https://github.com/JanSharp/VRCLockstep/commit/d5fdc3f74a06e1c9c8547113e53c761c8b690c24))
+- Improve GameStatesUI import info text generation performance ([`4c8f8d9`](https://github.com/JanSharp/VRCLockstep/commit/4c8f8d9dc31ba365f43c8ba7dd19ab9fb035e049))
+- Allow multiple games states to derive from the same abstract base class ([`be413e1`](https://github.com/JanSharp/VRCLockstep/commit/be413e1e06b4ccba6e54c79c269ab9f3cd678052))
+- Update `IsInitialized` docs due to initialization life cycle changes ([`4f3a27f`](https://github.com/JanSharp/VRCLockstep/commit/4f3a27f8eff9bef7b6e2163e7bf713526d13123e), [`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3))
+- Update `IsImporting` docs due to initialization life cycle changes ([`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3))
+- Remove pointless delay between deserializing of game states for late joiners ([`8d20b25`](https://github.com/JanSharp/VRCLockstep/commit/8d20b2550ad68ff66d40a489a9235e846be763f6))
+- Make `IsDeserializingForImport` docs clearer ([`609389b`](https://github.com/JanSharp/VRCLockstep/commit/609389b15efc741400f3cd7dffe55ba3343d3528))
+- Properly mention `IsExporting` in `StartExport` annotations ([`3ec9669`](https://github.com/JanSharp/VRCLockstep/commit/3ec966939dadb267ed58351388f3d831aca07e0e))
+- Further elaborate in a comment in the game state example in the documentation ([`b3835f6`](https://github.com/JanSharp/VRCLockstep/commit/b3835f663e9f1bcba6a42b78bee404d9df83691b))
+- Mention `SingletonDependencyAttribute` alongside `SingletonReferenceAttribute` when describing `LockstepGameStateDependencyAttribute` ([`d7e8125`](https://github.com/JanSharp/VRCLockstep/commit/d7e81257baf644d28fa092df7cb4b2f05ef76f1c))
+
+### Added
+
+- Add `OpenGameStateUnsafeScope` and `CloseGameStateUnsafeScope` to give systems limited control over the value of `InGameStateSafeContext` specifically in conjunction with running foreign code ([`c5c97bd`](https://github.com/JanSharp/VRCLockstep/commit/c5c97bd63bf93ee6156da864996f7c9690b01719))
+- Add editor scripting to ensure classes deriving from `LockstepGameStateOptionsUI` define appropriate `currentOptions` and `optionsToValidate` fields ([`5d38363`](https://github.com/JanSharp/VRCLockstep/commit/5d383634dda829d06d3779f4ce269987a73652dc))
+- Add `MaxWorkMSPerFrame`, `MaxWorkMSPerFrameLong`, `MaxWorkSecondsPerFrame` and `OnMaxWorkMSPerFrameChanged`, used both by lockstep as well as for other systems which implement logic which gets spread out across frames ([`0275e05`](https://github.com/JanSharp/VRCLockstep/commit/0275e058a39d54a346609a2b1d0a7236d69c82a4))
+- Specifically state `IsDeserializingForImport` always being `false` in `ShowOptionsEditor` ([`f445ec9`](https://github.com/JanSharp/VRCLockstep/commit/f445ec9d0e3d3eb58e630ec0a5930e43ffff351a))
+- Add `SelfLoadsBeforeDependency` to `LockstepGameStateDependencyAttribute` ([`a2f170b`](https://github.com/JanSharp/VRCLockstep/commit/a2f170be9ebea5443b08ebdabf3e5ae7a9ebd6d4))
+- Add migration docs, including editor scripting to convert old export strings ([`72f0d8b`](https://github.com/JanSharp/VRCLockstep/commit/72f0d8b3eadd69ba586022a3fc4dd985811c6e52), [`2e9614a`](https://github.com/JanSharp/VRCLockstep/commit/2e9614aa2046acd9c57f2f8ad066570b334cab36))
+- Add list of game states to export to GameStatesUI ([`6a2e120`](https://github.com/JanSharp/VRCLockstep/commit/6a2e1200836be6be1ea598c057570aa401a8e756))
+- Add int and uint variants for tick rate constants ([`510c739`](https://github.com/JanSharp/VRCLockstep/commit/510c73900247d62c644c7f49079e576f46e2120e))
+- Add `LockstepIsInitialized` to better handle `OnInit` now being spread out across frames ([`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3))
+- Add `IsPartOfCurrentImport` and `CurrentImportedDataVersion` to `LockstepGameState` ([`2f058b1`](https://github.com/JanSharp/VRCLockstep/commit/2f058b1fb103c96392918f958ae64c1e76ac6e69))
+- Add `OnImportFinishingUp` which can be spread out across frames ([`5eddc9b`](https://github.com/JanSharp/VRCLockstep/commit/5eddc9b4aab56c04abdeec65e0b9d2c319b9181a), [`268a851`](https://github.com/JanSharp/VRCLockstep/commit/268a8512a656b5c10c131a223f11b9aabff4bc70), [`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3), [`43bfa07`](https://github.com/JanSharp/VRCLockstep/commit/43bfa07d2fd445b4ac4f7effaa2e1606253dc523))
+- Add `OnPostClientBeginCatchUp` to not lose out on old functionality ([`6132b9e`](https://github.com/JanSharp/VRCLockstep/commit/6132b9eca81fa34003808fd8a40175cfb2fe6893), [`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3), [`75bfa25`](https://github.com/JanSharp/VRCLockstep/commit/75bfa253fa430a7db50f1aaaeef68e71bcc59cef))
+- Add `OnInitFinished` to not lose out on old functionality ([`c141304`](https://github.com/JanSharp/VRCLockstep/commit/c141304dade93b861285fa3203be5a5c64ac6c6e), [`6033282`](https://github.com/JanSharp/VRCLockstep/commit/60332822380b7baffefd1f1ed02b1cdbb4000ad3), [`75bfa25`](https://github.com/JanSharp/VRCLockstep/commit/75bfa253fa430a7db50f1aaaeef68e71bcc59cef))
+- Fix outdated `OnClientBeginCatchUp` xml annotations due to the existence of `OnPreClientJoined` ([`2ad1b22`](https://github.com/JanSharp/VRCLockstep/commit/2ad1b22f09bda072bb11708ebb96bda14846cd15))
+- Add `GetGameStateBeingImported` and `GetGameStateBeingImportedDataVersion` ([`644bff1`](https://github.com/JanSharp/VRCLockstep/commit/644bff116c4751042da271ee958b7f026b93f2ef))
+- Add API to get game states at a specific index ([`dcf8828`](https://github.com/JanSharp/VRCLockstep/commit/dcf882822f1ab1b8da25ee0e3b9b1168f0f79fb3))
+- Add hidden api for systems making a loading UI ([`b327d3c`](https://github.com/JanSharp/VRCLockstep/commit/b327d3c3090b21c1d3a780df7a2eca4171bbb4e4), [`e956c0f`](https://github.com/JanSharp/VRCLockstep/commit/e956c0f700eade66f75a5f87a8b209176f0866e9), [`010774c`](https://github.com/JanSharp/VRCLockstep/commit/010774cbb27646cf26d4a0c99288e9e4a85a2147))
+- Add xml annotations for `LockstepMasterPreferenceEventAttribute` ([`d099f93`](https://github.com/JanSharp/VRCLockstep/commit/d099f93f58dcab98f6979f3f9dfaace1ca37f77d))
+- Add support for `LockstepGameStateDependencyAttribute` involving abstract classes ([`11d7dcc`](https://github.com/JanSharp/VRCLockstep/commit/11d7dcce638ce2579152141e8e16d7e8eba6c698))
+- Add `WriteFlags` and `ReadFlags` for bool arrays, with clear allowance to copy and modify without any restrictions ([`5e70333`](https://github.com/JanSharp/VRCLockstep/commit/5e7033302f39df3ae3dd3b383fb00ce8af9ce79e))
+
+### Removed
+
+- Remove a warning log message that is actually valid when requesting late joiner data again ([`c4eb771`](https://github.com/JanSharp/VRCLockstep/commit/c4eb7715463f2c36405e8ba0fd5274bbcd7ce665))
+
+### Fixed
+
+- **Breaking:** Fix game state dependency load order actually being undefined behavior, but also remove the guarantee of being sorted alphabetically outside of dependencies ([`35851d7`](https://github.com/JanSharp/VRCLockstep/commit/35851d73b7d4f64e986ea31bc2086b7fc220ac97), [`891c92e`](https://github.com/JanSharp/VRCLockstep/commit/891c92e79bb599ad8ef21eef8765a01e44bb5930))
+- Fix `SendingPlayerId`, `SendingUniqueId` and `SendingTime` not being available when resuming next frame ([`40643c4`](https://github.com/JanSharp/VRCLockstep/commit/40643c441a2d888131fbf9f9a030314f662b1410))
+- Handle another edge case around masters leaving, related to the order of events of the last input action sent for late joiners and VRChat's player left event ([`392984f`](https://github.com/JanSharp/VRCLockstep/commit/392984fe9387b3fe1d78c4d91e3823d04b5c7c0c))
+- Fix potentially being stuck not changing lockstep master after finishing loading late joiner data ([`0f32c48`](https://github.com/JanSharp/VRCLockstep/commit/0f32c483e89fb2b2285e0a93f8139c296cfba424))
+- Fix clients potentially being stuck in catching up or straight up erroring when multiple clients joined at the same time ([`06b92a5`](https://github.com/JanSharp/VRCLockstep/commit/06b92a5ea95794c9dac2b291bc490221115a045f))
+- Fix `SerializableRNG` not freeing internal `RNG` instance, causing a memory leak ([`a1a5d3f`](https://github.com/JanSharp/VRCLockstep/commit/a1a5d3f338d2312c50d870a636966a00695a49f4))
+- Fix late joiner serialization for delayed events by tick when there is more than just one current delayed event ([`fc911bf`](https://github.com/JanSharp/VRCLockstep/commit/fc911bfbaf510e91371cdfc6c83298520e26ac4c))
+- Fix `ShowImportOptionsEditor` not passing along imported data version to `LockstepGameStateOptionsUI.ShowOptionsEditor` ([`9365e1c`](https://github.com/JanSharp/VRCLockstep/commit/9365e1cd303d7036935e72b7f5c0f58e28617253))
+- Fix changing export options in GameStatesUI not updating options used by autosaves when it should ([`aa4e437`](https://github.com/JanSharp/VRCLockstep/commit/aa4e43759bcae2d0764c60ad3e63de32e2c1d173))
+- Fix potential exception when having multiple of the same attributes through some odd means ([`c389a68`](https://github.com/JanSharp/VRCLockstep/commit/c389a68d7475d3b0b50e184a9f90e3bf218883f9))
+- Fix `StartExport` annotations regarding obtaining the resulting string ([`4c6738e`](https://github.com/JanSharp/VRCLockstep/commit/4c6738e523475e72b6064cecd9c728f1fe186424))
+- Fix exports interfering while lockstep is busy ([`fe58894`](https://github.com/JanSharp/VRCLockstep/commit/fe58894302a2caf8d77549e8a220a3ca5aee99b2))
+- Fix GameStatesUI improperly handling no game states supporting import export ([`9a25678`](https://github.com/JanSharp/VRCLockstep/commit/9a256788a4caef05a4bdfa641c9311ddbfe506da))
+- Fix `ImportPreProcess` breaking input actions currently flagged to continue next frame ([`4f6508a`](https://github.com/JanSharp/VRCLockstep/commit/4f6508a52b67c4e497471accb9c749817b42c486))
+- Fix classes deriving from classes with input actions erroring at build time ([`2b66bc1`](https://github.com/JanSharp/VRCLockstep/commit/2b66bc1612ec3099d41157fc2aa1b77ef47976e8))
+- Add missing events to events.md docs ([`0c78bab`](https://github.com/JanSharp/VRCLockstep/commit/0c78bab61c1785987a5dcf00d2505d9ff3e03f29))
+- Fix `IsCatchingUp` being `false` in `OnClientBeginCatchUp` ([`8a3c359`](https://github.com/JanSharp/VRCLockstep/commit/8a3c359bb7e7073ee0e54c26c0fd09c17ec66961))
+- Fix grammar in the xml annotation for `LockstepGameStateOptionsData` ([`43cb095`](https://github.com/JanSharp/VRCLockstep/commit/43cb0951fef92d65cc18a0bb96b5981be0c167c5))
+- Fix some typos/grammar regarding game state options UIs ([`914aa1b`](https://github.com/JanSharp/VRCLockstep/commit/914aa1b9b64765da7c2d96dfb5b6b706810e5b85), [`cd8c604`](https://github.com/JanSharp/VRCLockstep/commit/cd8c604f178e468a4777b185bf123fa228bcc3f0))
+- Fix some grammar in `ExportUI` and `ImportUI` xml annotations ([`8706a40`](https://github.com/JanSharp/VRCLockstep/commit/8706a40c8ed0ccf15c6ac8bcdeee0deb32519916))
+
 ## [1.0.2] - 2025-09-08
 
 ### Changed
@@ -99,6 +185,7 @@ _A few additions to the API got their own mentions in this list, however a lot o
 - Add lots of debug log messages, off by default ([`32f2b49`](https://github.com/JanSharp/VRCLockstep/commit/32f2b494dd82b3d760bc4a6b80e0aae987182e3f), [`0009cc5`](https://github.com/JanSharp/VRCLockstep/commit/0009cc5f567c001b62f90b6468502e4400362ff9), [`81ecf21`](https://github.com/JanSharp/VRCLockstep/commit/81ecf2184c8f8050e618d7185863ad629a55fcdb), [`a8153c6`](https://github.com/JanSharp/VRCLockstep/commit/a8153c60df362c11596ef9533165abc5bcfdbeb1), [`079263f`](https://github.com/JanSharp/VRCLockstep/commit/079263f5da7fe33011661384669f56d872a87f03), [`e6f18ec`](https://github.com/JanSharp/VRCLockstep/commit/e6f18ec3d730c0f1bf88c3a5601e08d3bba2b325), [`ff24e9f`](https://github.com/JanSharp/VRCLockstep/commit/ff24e9f0f077808aa72a840fcc6d22ee75a4203a), [`20dc7b5`](https://github.com/JanSharp/VRCLockstep/commit/20dc7b594d73ebc2748575209c7b9cefc74698ae), [`1ab744a`](https://github.com/JanSharp/VRCLockstep/commit/1ab744a7c9bc6466395a978876d80f84e5d0a7ee), [`791de2e`](https://github.com/JanSharp/VRCLockstep/commit/791de2ed7044ab3d2b34beb5072bf877b95e1580), [`a91cce9`](https://github.com/JanSharp/VRCLockstep/commit/a91cce9f58115198b58114267150c38f5c680da2), [`fdc42f5`](https://github.com/JanSharp/VRCLockstep/commit/fdc42f5f2a4cf5f6ae8751d3cdf5010ed2672849))
 - Add LockstepDebugUI prefab ([`ccb53a9`](https://github.com/JanSharp/VRCLockstep/commit/ccb53a9d941710f2cfd076e552fede0b8736d51e), [`6b12dd9`](https://github.com/JanSharp/VRCLockstep/commit/6b12dd985aa14c045dcb8dff6fd4da5ed8d37431), [`a2a7e97`](https://github.com/JanSharp/VRCLockstep/commit/a2a7e97effb473c574801d989e3484c664aa06f1), [`2354311`](https://github.com/JanSharp/VRCLockstep/commit/23543112430ef6fd4b9fbf846619a60735853808), [`ddcaf06`](https://github.com/JanSharp/VRCLockstep/commit/ddcaf06233f22f03b33067a1b8264ef41cd337bc), [`70c7eb4`](https://github.com/JanSharp/VRCLockstep/commit/70c7eb457b15d4ccccb5e168b25108f345802c0c), [`40a58e1`](https://github.com/JanSharp/VRCLockstep/commit/40a58e12d94f174683fc337f7a3604896966a842), [`a4a740a`](https://github.com/JanSharp/VRCLockstep/commit/a4a740a62c91baf732c24e910a2372301cf974b6), [`2f91fb5`](https://github.com/JanSharp/VRCLockstep/commit/2f91fb5862d15711fc748669d1b4cd1089a32e87), [`e82f68f`](https://github.com/JanSharp/VRCLockstep/commit/e82f68f0d7e330e657abf1c37529fd18487b71f5), [`b7137a3`](https://github.com/JanSharp/VRCLockstep/commit/b7137a3540e846ee442e11114f6bee69ee1d3849))
 
+[1.1.0]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.1.0
 [1.0.2]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.0.2
 [1.0.1]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.0.1
 [1.0.0]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.0.0
