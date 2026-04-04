@@ -1,6 +1,12 @@
 
 # Changelog
 
+## [1.1.1] - 2026-04-04
+
+### Fixed
+
+- Update `com.jansharp.common` dependency to `1.3.1` ([`2869f3c`](https://github.com/JanSharp/VRCLockstep/commit/2869f3c965a1ed7daf95497d33ace0d36f5f3b13))
+
 ## [1.1.0] - 2026-04-04
 
 _For migration regarding OnInit, OnClientBeginCatchUp, OnImportFinishingUp and (separately) export string format changes see [migrations-1.1.0.md](Documentation~/migrations-1.1.0.md)._
@@ -185,6 +191,7 @@ _A few additions to the API got their own mentions in this list, however a lot o
 - Add lots of debug log messages, off by default ([`32f2b49`](https://github.com/JanSharp/VRCLockstep/commit/32f2b494dd82b3d760bc4a6b80e0aae987182e3f), [`0009cc5`](https://github.com/JanSharp/VRCLockstep/commit/0009cc5f567c001b62f90b6468502e4400362ff9), [`81ecf21`](https://github.com/JanSharp/VRCLockstep/commit/81ecf2184c8f8050e618d7185863ad629a55fcdb), [`a8153c6`](https://github.com/JanSharp/VRCLockstep/commit/a8153c60df362c11596ef9533165abc5bcfdbeb1), [`079263f`](https://github.com/JanSharp/VRCLockstep/commit/079263f5da7fe33011661384669f56d872a87f03), [`e6f18ec`](https://github.com/JanSharp/VRCLockstep/commit/e6f18ec3d730c0f1bf88c3a5601e08d3bba2b325), [`ff24e9f`](https://github.com/JanSharp/VRCLockstep/commit/ff24e9f0f077808aa72a840fcc6d22ee75a4203a), [`20dc7b5`](https://github.com/JanSharp/VRCLockstep/commit/20dc7b594d73ebc2748575209c7b9cefc74698ae), [`1ab744a`](https://github.com/JanSharp/VRCLockstep/commit/1ab744a7c9bc6466395a978876d80f84e5d0a7ee), [`791de2e`](https://github.com/JanSharp/VRCLockstep/commit/791de2ed7044ab3d2b34beb5072bf877b95e1580), [`a91cce9`](https://github.com/JanSharp/VRCLockstep/commit/a91cce9f58115198b58114267150c38f5c680da2), [`fdc42f5`](https://github.com/JanSharp/VRCLockstep/commit/fdc42f5f2a4cf5f6ae8751d3cdf5010ed2672849))
 - Add LockstepDebugUI prefab ([`ccb53a9`](https://github.com/JanSharp/VRCLockstep/commit/ccb53a9d941710f2cfd076e552fede0b8736d51e), [`6b12dd9`](https://github.com/JanSharp/VRCLockstep/commit/6b12dd985aa14c045dcb8dff6fd4da5ed8d37431), [`a2a7e97`](https://github.com/JanSharp/VRCLockstep/commit/a2a7e97effb473c574801d989e3484c664aa06f1), [`2354311`](https://github.com/JanSharp/VRCLockstep/commit/23543112430ef6fd4b9fbf846619a60735853808), [`ddcaf06`](https://github.com/JanSharp/VRCLockstep/commit/ddcaf06233f22f03b33067a1b8264ef41cd337bc), [`70c7eb4`](https://github.com/JanSharp/VRCLockstep/commit/70c7eb457b15d4ccccb5e168b25108f345802c0c), [`40a58e1`](https://github.com/JanSharp/VRCLockstep/commit/40a58e12d94f174683fc337f7a3604896966a842), [`a4a740a`](https://github.com/JanSharp/VRCLockstep/commit/a4a740a62c91baf732c24e910a2372301cf974b6), [`2f91fb5`](https://github.com/JanSharp/VRCLockstep/commit/2f91fb5862d15711fc748669d1b4cd1089a32e87), [`e82f68f`](https://github.com/JanSharp/VRCLockstep/commit/e82f68f0d7e330e657abf1c37529fd18487b71f5), [`b7137a3`](https://github.com/JanSharp/VRCLockstep/commit/b7137a3540e846ee442e11114f6bee69ee1d3849))
 
+[1.1.1]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.1.1
 [1.1.0]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.1.0
 [1.0.2]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.0.2
 [1.0.1]: https://github.com/JanSharp/VRCLockstep/releases/tag/v1.0.1
