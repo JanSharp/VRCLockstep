@@ -333,7 +333,9 @@ MonoBehaviour:
   onNthTickHandlerGroupSizes: 
   onNthTickIntervals: 
   onInitListeners: []
+  onInitFinishedListeners: []
   onClientBeginCatchUpListeners: []
+  onPostClientBeginCatchUpListeners: []
   onClientJoinedListeners: []
   onPreClientJoinedListeners: []
   onClientCaughtUpListeners: []
@@ -345,11 +347,13 @@ MonoBehaviour:
   onImportStartListeners: []
   onImportOptionsDeserializedListeners: []
   onImportedGameStateListeners: []
+  onImportFinishingUpListeners: []
   onImportFinishedListeners: []
   onExportOptionsForAutosaveChangedListeners: []
   onAutosaveIntervalSecondsChangedListeners: []
   onIsAutosavePausedChangedListeners: []
   onLockstepNotificationListeners: []
+  onMaxWorkMSPerFrameChangedListeners: []
   allGameStates: []
   allGameStatesCount: 0
   gameStatesSupportingImportExport: []
