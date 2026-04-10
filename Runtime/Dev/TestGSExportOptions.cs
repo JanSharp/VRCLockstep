@@ -14,7 +14,7 @@ namespace JanSharp
 
         public override LockstepGameStateOptionsData Clone()
         {
-            TestGSExportOptions other = WannaBeClasses.New<TestGSExportOptions>(nameof(TestGSExportOptions));
+            TestGSExportOptions other = wannaBeClasses.New<TestGSExportOptions>(nameof(TestGSExportOptions));
             other.shouldExport = shouldExport;
             return other;
         }

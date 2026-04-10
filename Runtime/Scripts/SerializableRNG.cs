@@ -21,7 +21,7 @@ namespace JanSharp
 
         public override void WannaBeConstructor()
         {
-            rng = WannaBeClasses.New<RNG>(nameof(RNG));
+            rng = wannaBeClasses.New<RNG>(nameof(RNG));
         }
 
         public override void WannaBeDestructor()
