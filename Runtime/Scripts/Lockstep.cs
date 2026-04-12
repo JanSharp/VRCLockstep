@@ -4082,6 +4082,13 @@ namespace JanSharp.Internal
             System.Buffer.BlockCopy(writeStream, sourcePosition, writeStream, destinationPosition, count);
         }
 
+        public override byte[] GetCurrentWriteStream()
+        {
+            byte[] result = new byte[writeStreamSize];
+            System.Buffer.BlockCopy(writeStream, 0, result, 0, writeStreamSize);
+            return result;
+        }
+
         public override void ResetWriteStream() => writeStreamSize = 0;
         public override int WriteStreamPosition { get => writeStreamSize; set => writeStreamSize = value; }
         public override void WriteSByte(sbyte value) => DataStream.Write(ref writeStream, ref writeStreamSize, value);

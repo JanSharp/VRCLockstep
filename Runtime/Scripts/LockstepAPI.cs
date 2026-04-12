@@ -1429,6 +1429,22 @@ namespace JanSharp
         /// <param name="count">The amount of bytes to be shifted.</param>
         public abstract void ShiftWriteStream(int sourcePosition, int destinationPosition, int count);
         /// <summary>
+        /// <para>Obtain a copy of the current internal write stream, containing all the data up to the
+        /// current <see cref="WriteStreamPosition"/>. Which is to say, the length of the returned array
+        /// matches <see cref="WriteStreamPosition"/>.</para>
+        /// <para>The purpose of this function is to enable systems to use the lockstep serialization and
+        /// deserialization API - the write and read streams and functions interacting with them - for
+        /// purposes outside of what lockstep itself is doing.</para>
+        /// <para>Which means the workflow would likely be to call <c>Write</c> functions, then
+        /// <see cref="GetCurrentWriteStream"/> immediately followed by <see cref="ResetWriteStream"/>. Then
+        /// later to deserialize the data again, call <see cref="SetReadStream(byte[])"/> followed by
+        /// <c>Read</c> calls.</para>
+        /// <para>Usable any time.</para>
+        /// <para>Not game state safe.</para>
+        /// </summary>
+        /// <returns></returns>
+        public abstract byte[] GetCurrentWriteStream();
+        /// <summary>
         /// <para>When data has already been written to the internal write stream using any of the
         /// <c>Write</c> functions, however the call to <see cref="SendInputAction(uint)"/>,
         /// <see cref="SendSingletonInputAction(uint)"/>, its overload or
