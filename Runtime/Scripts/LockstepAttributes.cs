@@ -18,7 +18,7 @@ namespace JanSharp
         /// existing game states. Since <see cref="OnInit"/> is the very first initialization, it is allowed
         /// to use any data to initialize the game state(s). This is natural since there is no previous game
         /// state data to mutate.</para>
-        /// <para><see cref="LockstepAPI.LockstepIsInitialized"/> get set to <see langword="true"/> right
+        /// <para><see cref="LockstepAPI.LockstepIsInitialized"/> gets set to <see langword="true"/> right
         /// before this event gets raised.</para>
         /// <para>Unlike most events, <see cref="LockstepAPI.FlagToContinueNextFrame"/> can be used within
         /// <see cref="OnInit"/>.</para>
@@ -29,7 +29,7 @@ namespace JanSharp
         /// </summary>
         OnInit,
         /// <summary>
-        /// <para>Gets raised immediately after <see cref="OnInit"/>, see there fore more details.</para>
+        /// <para>Gets raised immediately after <see cref="OnInit"/>, see there for more details.</para>
         /// <para>The primary difference between <see cref="OnInit"/> and <see cref="OnInitFinished"/> is that
         /// <see cref="LockstepAPI.FlagToContinueNextFrame"/> cannot be used in <see cref="OnInitFinished"/>.
         /// All event listeners for this event run within the same frame, making it a true notification that
@@ -57,7 +57,7 @@ namespace JanSharp
         /// <para>Since the <see cref="VRC.SDKBase.VRCPlayerApi"/> is not part of the game state, if it is
         /// desired to input <see cref="VRC.SDKBase.VRCPlayerApi"/> data into the game state, sending input
         /// actions from within this event may make sense.</para>
-        /// <para><see cref="LockstepAPI.LockstepIsInitialized"/> get set to <see langword="true"/> right
+        /// <para><see cref="LockstepAPI.LockstepIsInitialized"/> gets set to <see langword="true"/> right
         /// before this event gets raised.</para>
         /// <para>Unlike most events, <see cref="LockstepAPI.FlagToContinueNextFrame"/> can be used within
         /// <see cref="OnClientBeginCatchUp"/>.</para>
@@ -70,7 +70,7 @@ namespace JanSharp
         /// </summary>
         OnClientBeginCatchUp,
         /// <summary>
-        /// <para>Gets raised immediately after <see cref="OnClientBeginCatchUp"/>, see there fore more
+        /// <para>Gets raised immediately after <see cref="OnClientBeginCatchUp"/>, see there for more
         /// details.</para>
         /// <para>The primary difference between <see cref="OnClientBeginCatchUp"/> and
         /// <see cref="OnPostClientBeginCatchUp"/> is that <see cref="LockstepAPI.FlagToContinueNextFrame"/>
