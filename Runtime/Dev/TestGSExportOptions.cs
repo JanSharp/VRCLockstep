@@ -12,6 +12,13 @@ namespace JanSharp
 
         [System.NonSerialized] public bool shouldExport = true;
 
+        public override bool WannaBeClassSupportsPooling => true;
+        public override void ResetWannaBeClassToDefault()
+        {
+            base.ResetWannaBeClassToDefault();
+            shouldExport = true;
+        }
+
         public override LockstepGameStateOptionsData Clone()
         {
             TestGSExportOptions other = wannaBeClasses.New<TestGSExportOptions>(nameof(TestGSExportOptions));

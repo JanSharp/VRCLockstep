@@ -19,6 +19,13 @@ namespace JanSharp
         /// </summary>
         [System.NonSerialized] public RNG rng;
 
+        public override bool WannaBeClassSupportsPooling => true;
+        public override void ResetWannaBeClassToDefault()
+        {
+            base.ResetWannaBeClassToDefault();
+            rng = default;
+        }
+
         public override void WannaBeConstructor()
         {
             rng = wannaBeClasses.New<RNG>(nameof(RNG));

@@ -12,6 +12,13 @@ namespace JanSharp
 
         [System.NonSerialized] public bool shouldImport = true;
 
+        public override bool WannaBeClassSupportsPooling => true;
+        public override void ResetWannaBeClassToDefault()
+        {
+            base.ResetWannaBeClassToDefault();
+            shouldImport = true;
+        }
+
         public override LockstepGameStateOptionsData Clone()
         {
             TestGSImportOptions other = wannaBeClasses.New<TestGSImportOptions>(nameof(TestGSImportOptions));
