@@ -37,9 +37,9 @@ namespace JanSharp
         /// </summary>
         public const float NetworkTickRate = 10f;
         /// <inheritdoc cref="NetworkTickRate"/>
-        public const float NetworkTickRateInt = 10;
+        public const int NetworkTickRateInt = 10;
         /// <inheritdoc cref="NetworkTickRate"/>
-        public const float NetworkTickRateUInt = 10u;
+        public const uint NetworkTickRateUInt = 10u;
         /// <summary>
         /// <para>The current name of the world as defined in the inspector for the Lockstep script (on the
         /// prefab instance). Unless the world creator explicitly set the name it defaults to the scene name,
