@@ -74,7 +74,7 @@ namespace JanSharp.Internal
                 return false;
             }
 
-            if (!EditorUtil.DerivesFrom(currentOptionsType, typeof(LockstepGameStateOptionsData)))
+            if (!typeof(LockstepGameStateOptionsData).IsAssignableFrom(currentOptionsType))
             {
                 Debug.LogError($"[Lockstep] The {ubType.Name} class, a {nameof(LockstepGameStateOptionsUI)}, "
                     + $"is trying to use the class '{currentOptionsType.Name}' for"
@@ -89,7 +89,7 @@ namespace JanSharp.Internal
 
         private static void EarlyChecks(System.Type ubType)
         {
-            if (ubType.IsAbstract || !EditorUtil.DerivesFrom(ubType, typeof(LockstepGameStateOptionsUI)))
+            if (ubType.IsAbstract || !typeof(LockstepGameStateOptionsUI).IsAssignableFrom(ubType))
                 return;
 
             FieldInfo currentOptionsField = EditorUtil.GetFieldIncludingBase(ubType, "currentOptions", PrivateAndPublicFlags);

@@ -58,7 +58,7 @@ namespace JanSharp.Internal
 
             var nonGSTypesWithDepAttr = OnAssemblyLoadUtil.AllUdonSharpBehaviourTypes
                 .Where(t => t.IsDefined(typeof(LockstepGameStateDependencyAttribute), inherit: true)
-                    && !EditorUtil.DerivesFrom(t, typeof(LockstepGameState)))
+                    && !typeof(LockstepGameState).IsAssignableFrom(t))
                 .Select(t => t.Name)
                 .ToList();
             if (nonGSTypesWithDepAttr.Any())
@@ -70,7 +70,7 @@ namespace JanSharp.Internal
             }
 
             List<GSTypeWithDeps> gameStateTypes = OnAssemblyLoadUtil.AllUdonSharpBehaviourTypes
-                .Where(t => !t.IsAbstract && EditorUtil.DerivesFrom(t, typeof(LockstepGameState)))
+                .Where(t => !t.IsAbstract && typeof(LockstepGameState).IsAssignableFrom(t))
                 .Select(t => new GSTypeWithDeps(t))
                 .ToList();
             gsTypeWithDepsLut = gameStateTypes.ToDictionary(t => t.gsType, t => new List<GSTypeWithDeps>() { t });
@@ -167,7 +167,7 @@ namespace JanSharp.Internal
                         + $"Use 'typeof()' as the argument for {nameof(LockstepGameStateDependencyAttribute)}.");
                     return false;
                 }
-                if (!EditorUtil.DerivesFrom(dependencyType, typeof(LockstepGameState)))
+                if (!typeof(LockstepGameState).IsAssignableFrom(dependencyType))
                 {
                     DependencyTreeError($"[Lockstep] The {gsType.Name} {nameof(LockstepGameState)} has a dependency "
                         + $"on the type {dependencyType.Name}, however said type does not derive from {nameof(LockstepGameState)}.");
