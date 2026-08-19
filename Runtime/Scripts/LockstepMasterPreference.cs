@@ -114,11 +114,6 @@ namespace JanSharp
         {
             if (!lockstep.IsMaster)
                 return;
-            if (preferences[BinarySearch(lockstep.MasterPlayerId)] == currentHighestPreference)
-            {
-                playerIdWithHighestPreference = lockstep.MasterPlayerId;
-                return;
-            }
             PotentiallySendMasterChangeRequestIA();
         }
 
@@ -158,7 +153,7 @@ namespace JanSharp
         {
             if (preferences[BinarySearch(lockstep.MasterPlayerId)] == currentHighestPreference)
             {
-                // The current master also has the same preference as the one that's about to be changed to,
+                // The previous master also had the same preference as the one that was changed to,
                 // so don't actually change master, just update the player id in this script.
                 playerIdWithHighestPreference = lockstep.MasterPlayerId;
                 return;
