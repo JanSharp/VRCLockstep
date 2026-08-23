@@ -21,7 +21,7 @@ namespace JanSharp.Internal
         private uint tickInSyncedData;
         [UdonSynced] private byte[] syncedData = new byte[0];
         private int readPosition = 0;
-        private float tickLoopDelay = 1f / Lockstep.NetworkTickRate;
+        private float tickLoopDelay = 1f / LockstepAPI.NetworkTickRate;
         private uint lastSyncedTick = 0u; // Default value really doesn't matter.
 
         private byte[] buffer = new byte[ArrList.MinCapacity];
