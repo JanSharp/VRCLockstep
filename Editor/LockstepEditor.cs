@@ -11,7 +11,6 @@ using UnityEngine.SceneManagement;
 
 namespace JanSharp.Internal
 {
-    [InitializeOnLoad]
     public static class LockstepOnBuild
     {
         private static string gameStateDependencyTreeErrorMessage = null;
@@ -35,7 +34,8 @@ namespace JanSharp.Internal
             public List<(string eventName, uint interval, int order)> onNthTickListeners;
         }
 
-        static LockstepOnBuild()
+        [OrderedInitializeOnLoad]
+        private static void OnAssemblyLoad()
         {
             BuildDependencyTree();
             OnBuildUtil.RegisterAction(PrepareDependencyTreeOnBuild, -2);

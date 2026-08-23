@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace JanSharp.Internal
 {
-    [InitializeOnLoad]
     public static class LockstepGameStateOptionsUIOnBuild
     {
         private static HashSet<System.Type> knownValidTypes = new();
         private const BindingFlags PrivateAndPublicFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
-        static LockstepGameStateOptionsUIOnBuild()
+        [OrderedInitializeOnLoad]
+        private static void OnAssemblyLoad()
         {
             knownValidTypes.Clear();
             OnBuildUtil.RegisterTypeCumulative<LockstepGameStateOptionsUI>(OnBuildCumulative, order: -350000);

@@ -9,10 +9,10 @@ using UnityEngine.UI;
 
 namespace JanSharp.Internal
 {
-    [InitializeOnLoad]
     public static class LockstepGameStatesUIEditorOnBuild
     {
-        static LockstepGameStatesUIEditorOnBuild() => JanSharp.OnBuildUtil.RegisterType<LockstepGameStatesUI>(OnBuild, 2);
+        [OrderedInitializeOnLoad]
+        private static void OnAssemblyLoad() => JanSharp.OnBuildUtil.RegisterType<LockstepGameStatesUI>(OnBuild, 2);
 
         private static bool OnBuild(LockstepGameStatesUI gameStatesUI)
         {
