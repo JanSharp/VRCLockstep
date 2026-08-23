@@ -106,27 +106,39 @@ There is technically more to ownership, like instance masters, ownership transfe
 It might be surprising that this is a concept exposed in a system designed for new programmers, but it is. Not a big deal though, just implement exponential back off in every script. It might sound hard but it isn't. It is just tedium. Here's an example:
 
 ```cs
-private const float MinBackOffTime = 1f;
-private const float MaxBackOffTime = 16f;
-private float currentBackOffTime = MinBackOffTime;
+private bool requestSerializationIsQueued = false;
 
-public override void OnPostSerialization(SerializationResult result)
+private void RequestSerializationRespectingCongestion()
 {
-    if (result.success)
-        currentBackOffTime = MinBackOffTime;
-    else
+    if (requestSerializationIsQueued)
+        return;
+    // Networking.IsClogged only becomes true once Suffering is greater (or equals?) 100, which is silly.
+    float suffering = Stats.Suffering;
+    if (suffering == 0f)
     {
-        SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), currentBackOffTime);
-        currentBackOffTime = Mathf.Min(currentBackOffTime * 2, MaxBackOffTime); // Exponential back off.
+        RequestSerialization();
+        return;
     }
+    requestSerializationIsQueued = true;
+    // Exponential backoff, but only up to 16 seconds. Which it reaches at Suffering 45.
+    // And a minimum of 1 second since once Suffering is non zero there's already problems.
+    suffering = 1f + suffering / 15f;
+    float delay = Mathf.Min(suffering * suffering, 16f);
+    SendCustomEventDelayedSeconds(nameof(RequestSerializationDelayed), delay);
 }
 
-public void RequestSerializationDelayed() => RequestSerialization();
+public void RequestSerializationDelayed()
+{
+    requestSerializationIsQueued = false;
+    RequestSerialization();
+}
 ```
+
+And then call `RequestSerializationRespectingCongestion` rather than `RequestSerialization`.
 
 When otherwise using VRChat networking the way it is "supposed" to be used, that snippet of code can be copy pasted as is into every script and it would be correct.
 
-Oh but make sure to **never have a synced array variable be null**, it is always going to fail syncing - `result.success` being `false`.
+Oh but make sure to **never have a synced array variable be null**, it is always going to fail syncing - `result.success` in `OnPostSerialization` being `false`.
 
 ## The Intended Usage
 
