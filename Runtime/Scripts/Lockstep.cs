@@ -2966,7 +2966,7 @@ namespace JanSharp.Internal
         private void OnLJInternalGameStatesIA()
         {
 #if LOCKSTEP_DEBUG
-            Debug.Log($"[LockstepDebug] Lockstep  OnLJClientStatesIA");
+            Debug.Log($"[LockstepDebug] Lockstep  OnLJInternalGameStatesIA");
 #endif
             // If this client was already receiving data, but then it restarted from
             // the beginning, forget about everything that's been received so far.
