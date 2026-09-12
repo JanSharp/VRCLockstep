@@ -21,7 +21,7 @@ In order for some data structure to qualify as a game state, interaction with th
 Additionally to these rules there are `SerializeGameState` and `DeserializeGameState` functions game states must implement. Here [serialization rules](serialization.md#serialization-and-deserialization) also apply.
 
 - A serialize => deserialize cycle must result in the **exact same** data structure
-- [Exporting and Importing](#exports-and-imports) uses these same functions, though it behaves notably differently
+- [Exporting and Importing](#exports-and-imports) uses these same functions, though it behaves notably different
 
 Only when the rules for modifying data are followed and serialization + deserialization has been implemented, then that data can be considered part of the game state, and that data therefore also becomes game state safe.
 

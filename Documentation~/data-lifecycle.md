@@ -35,7 +35,7 @@ After all `OnClientBeginCatchUp` listeners have run, `lockstep.IsInitialized` is
 
 After `OnClientBeginCatchUp` the Lockstep system begins rapidly running game ticks and raising events as well as input action handlers in those game ticks in order to catch up with every other client in the world. The reason why this client is behind in the first place is because sending all the game states to it may have taken some time, depending on the size of game states, so the client then has to run all actions performed after the game states were captured and sent over the network.
 
-Note that during this process, it is good to keep in mind that any input action sent will run many many game ticks in the future, after the clint is fully caught up. Depending on what the input action is for it may make more sense not to send it at all. To do so check the `IsCatchingUp` flag on Lockstep.
+Note that during this process, it is good to keep in mind that any input action sent will run many many game ticks in the future, after the client is fully caught up. Depending on what the input action is for it may make more sense not to send it at all. To do so check the `IsCatchingUp` flag on Lockstep.
 
 Once the client has fully caught up and is now running at the game tick every other client is at, the `OnClientCaughtUp` event will be raised on _every client_. This is a [game state safe event](events.md#game-state-safe-events) like any other, which means modification of game states is allowed within this event handler.
 
