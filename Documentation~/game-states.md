@@ -110,7 +110,7 @@ A custom options UI consists of 2 parts:
 In order to make proper use of this API an understanding of 2 other (external) systems is required:
 
 - The [`GenericValueEditor`](https://github.com/JanSharp/VRCGenericValueEditor) and its Widgets/WidgetData
-- The [`WannaBeClass`](https://github.com/JanSharp/VRCJanSharpCommon?tab=readme-ov-file#wannabeclasses) concept from the JanSharp Common package
+- The [`WannaBeClass`](https://github.com/JanSharp/VRCJanSharpCommon#wannabeclasses) concept from the JanSharp Common package
 
 Both `LockstepGameStateOptionsData` and `WidgetData` derive from `WannaBeClass`, making it particularly important to understand this concept to avoid memory leaks.
 
