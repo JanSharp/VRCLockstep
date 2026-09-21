@@ -77,7 +77,7 @@ namespace JanSharp.Internal
             if (!typeof(LockstepGameStateOptionsData).IsAssignableFrom(currentOptionsType))
             {
                 Debug.LogError($"[Lockstep] The {ubType.Name} class, a {nameof(LockstepGameStateOptionsUI)}, "
-                    + $"is trying to use the class '{currentOptionsType.Name}' for"
+                    + $"is trying to use the class '{currentOptionsType.Name}' for "
                     + $"{nameof(LockstepGameStateOptionsUI.OptionsClassName)}, however said class does not "
                     + $"derive from {nameof(LockstepGameStateOptionsData)}.", optionsUI);
                 return false;
