@@ -28,6 +28,7 @@ namespace JanSharp.Internal
             "ignoreIncomingInputActions",
             "isWaitingToSendClientJoinedIA",
             "sendLateJoinerDataAtStartOfTick",
+            "letCurrentLateJoinerSyncFinish",
             "isCatchingUp",
             "isInitialCatchUp",
             "isSinglePlayer",

@@ -135,6 +135,7 @@ namespace JanSharp.Internal
         private bool isWaitingToSendClientJoinedIA = true;
         private bool isWaitingForLateJoinerSync = false;
         private bool sendLateJoinerDataAtStartOfTick = false;
+        private bool letCurrentLateJoinerSyncFinish = false;
         private bool isCatchingUp = false;
         private bool isInitialCatchUp = true;
         private bool isSinglePlayer = false;
@@ -999,7 +1000,10 @@ namespace JanSharp.Internal
                 return false; // To break out of the tick running loop.
             }
 
-            if (sendLateJoinerDataAtStartOfTick && currentTick > firstMutableTick && !isImporting && !masterChangeRequestInProgress)
+            if (sendLateJoinerDataAtStartOfTick
+                && currentTick > firstMutableTick
+                && !isImporting
+                && !masterChangeRequestInProgress)
             {
                 // Waiting until the first mutable tick, because if the master was catching up and
                 // associating new input actions with ticks while doing so, those would be enqueued at
@@ -1010,8 +1014,7 @@ namespace JanSharp.Internal
                 // it knows which input actions were associated with ticks right after receiving LJ data.
                 // It would think that there are no actions there, so it would desync. This edge case
                 // requires multiple players to join while the master is still catching up.
-                sendLateJoinerDataAtStartOfTick = false;
-                SendLateJoinerData();
+                PotentiallySendLateJoinerData();
             }
 
             if (sendMasterChangeConfirmationInFirstMutableTick && currentTick > firstMutableTick)
@@ -2798,6 +2801,36 @@ namespace JanSharp.Internal
             return 0u;
         }
 
+        private void PotentiallySendLateJoinerData()
+        {
+#if LOCKSTEP_DEBUG
+            Debug.Log($"[LockstepDebug] Lockstep  PotentiallySendLateJoinerData");
+#endif
+            if (lateJoinerInputActionSync.QueuedBytesCount == 0)
+                letCurrentLateJoinerSyncFinish = false; // The upcoming sync is allowed to get cancelled.
+            else
+            {
+                if (letCurrentLateJoinerSyncFinish)
+                    return;
+                // Whether we cancel the current sync or wait for it to finish,
+                // the resulting active sync will not be allowed to get cancelled.
+                letCurrentLateJoinerSyncFinish = true;
+
+                if (lateJoinerInputActionSync.QueuedBytesCount < Clamp(
+                    (byteCountForLatestLJSync * 3) / 4,
+                    InputActionSync.MaxSyncedDataSize * 10,
+                    InputActionSync.MaxSyncedDataSize * 60))
+                {
+                    // If it's already sent a quarter, let it finish the current sync before resending.
+                    return;
+                }
+                lateJoinerInputActionSync.DequeueEverything(doCallback: false);
+            }
+
+            sendLateJoinerDataAtStartOfTick = false;
+            SendLateJoinerData();
+        }
+
         private void SendLateJoinerData()
         {
 #if LOCKSTEP_DEBUG
@@ -2814,14 +2847,6 @@ namespace JanSharp.Internal
                         + "supported, and this call to SendLateJoinerData is ignored.");
                     return;
                 }
-                if (lateJoinerInputActionSync.QueuedBytesCount >= Clamp(
-                    byteCountForLatestLJSync / 2,
-                    InputActionSync.MaxSyncedDataSize * 2,
-                    InputActionSync.MaxSyncedDataSize * 10))
-                {
-                    lateJoinerInputActionSync.DequeueEverything(doCallback: false);
-                }
-
                 SendLateJoinerInternalGameStatesIA();
             }
 
@@ -2834,7 +2859,7 @@ namespace JanSharp.Internal
             // While this does not actually accurately represent the total amount of bytes all game states
             // took combined, this does represent the amount of bytes left to be sent once all serialization
             // is done. This is still quite useful, as if it were to try to send late joiner data again later
-            // on and there's still more than half of the data left that was in the queue at this time here,
+            // on and there's still more than 3/4 of the data left that was in the queue at this time here,
             // that's, well, useful information. No need to add extra complexity for total size tracking.
             byteCountForLatestLJSync = lateJoinerInputActionSync.QueuedBytesCount;
         }
