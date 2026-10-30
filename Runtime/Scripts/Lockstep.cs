@@ -4484,7 +4484,8 @@ namespace JanSharp.Internal
                 return false;
             }
             dataVersion--;
-            data = DataStream.ReadBytes(readStream, ref readStreamPosition, ((int)DataStream.ReadSmallUInt(readStream, ref readStreamPosition)));
+            int dataLength = (int)DataStream.ReadSmallUInt(readStream, ref readStreamPosition);
+            data = DataStream.ReadBytes(readStream, ref readStreamPosition, dataLength);
             return true;
         }
         public override SerializableWannaBeClass ReadCustomNullableClass(string className) => ReadCustomNullableClass(className, isDeserializingForImport);
